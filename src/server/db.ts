@@ -25,6 +25,10 @@ function openDb(): Database.Database {
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
+  // Let a second concurrent process (e.g. a build tool evaluating several
+  // route modules in parallel) wait for the writer lock instead of failing
+  // outright — paired with the .immediate() seed transaction below.
+  db.pragma("busy_timeout = 5000");
   return db;
 }
 
@@ -473,7 +477,14 @@ const DEFAULT_QUESTIONS: Omit<QuizQuestion, "id">[] = [
   },
 ];
 
-function seedIfNeeded() {
+// Module-level side effect — runs once per process, but a build tool or a
+// burst of cold starts can easily evaluate this module in several processes
+// at once, all racing to seed the same empty database. An IMMEDIATE
+// transaction takes the write lock before the SELECT even runs, so a second
+// racer blocks (via busy_timeout above) until the first one commits, then
+// sees the data already there and does nothing — no duplicate rows, no
+// UNIQUE-constraint crash.
+const seedTransaction = db.transaction(() => {
   const userCount = (db.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number }).n;
   if (userCount === 0) {
     createUser({
@@ -493,8 +504,17 @@ function seedIfNeeded() {
   if (questionCount === 0) {
     for (const q of DEFAULT_QUESTIONS) createQuestion(q);
   }
-}
+});
 
-seedIfNeeded();
+try {
+  seedTransaction.immediate();
+} catch (err) {
+  // A rare last-instant collision (both racers pass busy_timeout within the
+  // same tick) can still surface a UNIQUE-constraint error here — safe to
+  // ignore, since it only ever means "another process just seeded this".
+  if (!(err instanceof Error) || !err.message.includes("UNIQUE constraint")) {
+    throw err;
+  }
+}
 
 export default db;
