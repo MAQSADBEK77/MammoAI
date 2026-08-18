@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   Calendar,
@@ -11,10 +12,21 @@ import {
 import { Navbar } from "@/components/Navbar";
 import { LinkButton } from "@/components/ui";
 import { Reveal } from "@/components/Reveal";
+import { apiGetGuideMedia } from "@/lib/store";
 import { useT } from "@/lib/i18n/context";
+
+function youtubeEmbedUrl(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+}
 
 export default function GuidePage() {
   const t = useT();
+  const [media, setMedia] = useState<{ imageUrls: string[]; videoUrl: string }>({ imageUrls: [], videoUrl: "" });
+
+  useEffect(() => {
+    apiGetGuideMedia().then(setMedia);
+  }, []);
 
   const STEPS = [
     { icon: Calendar, title: t.guide.step1Title, text: t.guide.step1Text },
@@ -70,6 +82,33 @@ export default function GuidePage() {
             </Reveal>
           ))}
         </div>
+
+        {(media.imageUrls.length > 0 || media.videoUrl) && (
+          <Reveal delay={110} className="mt-10 flex flex-col gap-4">
+            {media.videoUrl && (
+              (() => {
+                const embed = youtubeEmbedUrl(media.videoUrl);
+                return embed ? (
+                  <div className="aspect-video w-full overflow-hidden rounded-2xl shadow-sm">
+                    <iframe src={embed} className="h-full w-full" allowFullScreen title="guide-video" />
+                  </div>
+                ) : (
+                  <a href={media.videoUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                    {media.videoUrl}
+                  </a>
+                );
+              })()
+            )}
+            {media.imageUrls.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {media.imageUrls.map((url) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={url} src={url} alt="" className="aspect-square w-full rounded-xl object-cover" />
+                ))}
+              </div>
+            )}
+          </Reveal>
+        )}
 
         <Reveal delay={120} className="mt-12">
           <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">

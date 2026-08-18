@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { getSetting, setSetting } from "@/server/db";
-import { requireAdmin } from "@/server/session";
+import { requireAdmin, requireAdminOrModerator } from "@/server/session";
 import { handleApiError } from "@/server/api-utils";
 
 const KEY = "high_risk_info_text";
 
 export async function GET() {
   try {
-    await requireAdmin();
+    await requireAdminOrModerator();
     return NextResponse.json({ text: getSetting(KEY) ?? "" });
   } catch (err) {
     return handleApiError(err);

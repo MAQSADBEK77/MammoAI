@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSetting, setSetting } from "@/server/db";
-import { requireAdmin } from "@/server/session";
+import { requireAdmin, requireAdminOrModerator } from "@/server/session";
 import { ApiError, handleApiError } from "@/server/api-utils";
 
 // Defaults match what scripts/telegram-bot.mjs used before these became
@@ -10,7 +10,7 @@ const DEFAULT_SELF_EXAM_DAYS = 30;
 
 export async function GET() {
   try {
-    await requireAdmin();
+    await requireAdminOrModerator();
     return NextResponse.json({
       retestDays: Number(getSetting("retest_days")) || DEFAULT_RETEST_DAYS,
       selfExamDays: Number(getSetting("self_exam_days")) || DEFAULT_SELF_EXAM_DAYS,

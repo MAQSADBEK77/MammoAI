@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createQuestion, getQuestions } from "@/server/db";
+import { createQuestion, getQuestions, logAdminAction } from "@/server/db";
 import { requireAdmin } from "@/server/session";
 import { handleApiError } from "@/server/api-utils";
 import { validateQuestionBody } from "@/server/validate";
@@ -11,10 +11,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const body = await request.json();
     const data = validateQuestionBody(body);
     const question = createQuestion(data);
+    logAdminAction(admin.id, `${admin.firstName} ${admin.lastName}`, "quiz.create", question.text);
     return NextResponse.json({ question });
   } catch (err) {
     return handleApiError(err);

@@ -1,15 +1,25 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthShell } from "@/components/AuthShell";
 import { Field, Input, Button } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/lib/i18n/context";
 
 export default function SignUpPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpForm />
+    </Suspense>
+  );
+}
+
+function SignUpForm() {
   const { signUp } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const referralCode = searchParams.get("ref") ?? undefined;
   const t = useT();
 
   const [firstName, setFirstName] = useState("");
@@ -54,6 +64,7 @@ export default function SignUpPage() {
         birthDate,
         passportSeries: passportSeries.trim().toUpperCase(),
         phone: phone.trim(),
+        referralCode,
       });
       router.push("/test");
     } catch (err) {

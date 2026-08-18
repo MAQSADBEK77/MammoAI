@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, BellRing, CheckCircle2, Megaphone, Send } from "lucide-react";
+import { AlertTriangle, BellRing, CheckCircle2, Image as ImageIcon, Megaphone, Send } from "lucide-react";
 import { Button, Card, Field, Input, Textarea } from "@/components/ui";
 import {
   apiDisconnectAdminTelegramBot,
+  apiGetAdminGuideMedia,
   apiGetAdminHighRiskInfo,
   apiGetAdminTelegramSettings,
   apiGetReminderSettings,
+  apiSaveAdminGuideMedia,
   apiSaveAdminHighRiskInfo,
   apiSaveAdminTelegramBot,
   apiSaveReminderSettings,
@@ -163,7 +165,65 @@ export default function AdminSettingsPage() {
 
       <ReminderSettingsCard t={t} />
       <HighRiskInfoCard t={t} />
+      <GuideMediaCard t={t} />
     </div>
+  );
+}
+
+function GuideMediaCard({ t }: { t: ReturnType<typeof useT> }) {
+  const [imageUrls, setImageUrls] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiGetAdminGuideMedia().then((m) => {
+      setImageUrls(m.imageUrls);
+      setVideoUrl(m.videoUrl);
+    });
+  }, []);
+
+  async function handleSave() {
+    setError(null);
+    setSaving(true);
+    try {
+      await apiSaveAdminGuideMedia(imageUrls, videoUrl);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.auth.errorGeneric);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="max-w-xl p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <ImageIcon size={18} />
+        </span>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.guideMediaTitle}</h2>
+      </div>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.guideMediaSubtitle}</p>
+
+      <div className="mt-5 flex flex-col gap-3">
+        <Field label={t.adminSettings.guideMediaImagesLabel}>
+          <Textarea rows={4} value={imageUrls} onChange={(e) => setImageUrls(e.target.value)} placeholder={t.adminSettings.guideMediaImagesPlaceholder} />
+        </Field>
+        <Field label={t.adminSettings.guideMediaVideoLabel}>
+          <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder={t.adminSettings.guideMediaVideoPlaceholder} />
+        </Field>
+
+        {saved && <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{t.adminSettings.guideMediaSaved}</p>}
+        {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+        <Button onClick={handleSave} disabled={saving} className="self-start">
+          {saving ? t.adminSettings.guideMediaSavingButton : t.adminSettings.guideMediaSaveButton}
+        </Button>
+      </div>
+    </Card>
   );
 }
 

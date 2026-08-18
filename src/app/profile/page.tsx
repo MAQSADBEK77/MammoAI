@@ -1,7 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, CheckCircle2, KeyRound, MessageSquareText, Pencil, Save, Send, Sparkles, X } from "lucide-react";
+import {
+  BellRing,
+  Calendar,
+  CheckCircle2,
+  Copy,
+  KeyRound,
+  LogOut,
+  MessageSquareText,
+  Pencil,
+  Plus,
+  Save,
+  Send,
+  Sparkles,
+  Trash2,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Button, Card, Field, Input, LinkButton, Textarea } from "@/components/ui";
@@ -10,11 +27,20 @@ import { RiskHistoryChart } from "@/components/RiskHistoryChart";
 import { useAuth } from "@/lib/auth-context";
 import {
   apiChangePassword,
+  apiCreateFamilyMember,
+  apiDeleteFamilyMember,
+  apiGetFamilyMemberAttempts,
+  apiGetFamilyMembers,
   apiGetMyAttempts,
+  apiGetReferral,
+  apiGetSelfExamMonths,
   apiGetTelegramStatus,
   apiLinkTelegram,
+  apiLogoutEverywhere,
+  apiSetSelfExamDone,
   apiSubmitFeedback,
   apiUnlinkTelegram,
+  type FamilyMember,
   type TelegramStatus,
 } from "@/lib/store";
 import type { QuizAttempt } from "@/lib/types";
@@ -283,9 +309,24 @@ function ProfileContent() {
           </Card>
         )}
 
+        <FamilyMembersCard t={t} />
+
+        <Card className="mt-8 p-6">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+              <Calendar size={16} />
+            </span>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.selfExamTitle}</h3>
+          </div>
+          <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t.profile.selfExamSubtitle}</p>
+          <SelfExamCalendar />
+        </Card>
+
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <TelegramCard t={t} />
           <ChangePasswordCard t={t} />
+          <ReferralCard t={t} />
+          <SessionsCard t={t} />
           <FeedbackCard t={t} />
         </div>
       </main>
@@ -515,6 +556,256 @@ function FeedbackCard({ t }: { t: Dictionary }) {
         <Button variant="secondary" onClick={handleSubmit} disabled={sending || !message.trim()} className="self-start">
           {sending ? t.profile.feedbackSendingButton : t.profile.feedbackButton}
         </Button>
+      </div>
+    </Card>
+  );
+}
+
+function FamilyMembersCard({ t }: { t: Dictionary }) {
+  const { language } = useLanguage();
+  const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [attemptsByMember, setAttemptsByMember] = useState<Record<string, QuizAttempt[]>>({});
+  const [adding, setAdding] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [relation, setRelation] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  function reload() {
+    apiGetFamilyMembers().then(async (list) => {
+      setMembers(list);
+      const entries = await Promise.all(
+        list.map(async (m) => [m.id, await apiGetFamilyMemberAttempts(m.id)] as const)
+      );
+      setAttemptsByMember(Object.fromEntries(entries));
+    });
+  }
+
+  useEffect(reload, []);
+
+  async function handleAdd() {
+    if (!firstName.trim()) return;
+    setSaving(true);
+    try {
+      await apiCreateFamilyMember({ firstName: firstName.trim(), lastName: lastName.trim(), relation: relation.trim() });
+      setFirstName("");
+      setLastName("");
+      setRelation("");
+      setAdding(false);
+      reload();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!window.confirm(t.profile.familyDeleteConfirm)) return;
+    await apiDeleteFamilyMember(id);
+    reload();
+  }
+
+  return (
+    <Card className="mt-8 p-6">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+            <Users size={16} />
+          </span>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.familyTitle}</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.familySubtitle}</p>
+          </div>
+        </div>
+        {!adding && (
+          <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
+            <UserPlus size={14} />
+            {t.profile.familyAddButton}
+          </Button>
+        )}
+      </div>
+
+      {adding && (
+        <div className="mt-4 grid gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700 sm:grid-cols-3">
+          <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={t.profile.familyNamePlaceholder} />
+          <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder={t.profile.familyLastNamePlaceholder} />
+          <Input value={relation} onChange={(e) => setRelation(e.target.value)} placeholder={t.profile.familyRelationPlaceholder} />
+          <div className="flex gap-2 sm:col-span-3">
+            <Button size="sm" onClick={handleAdd} disabled={saving || !firstName.trim()}>
+              <Plus size={14} />
+              {t.common.save}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>
+              {t.common.cancel}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-col gap-2">
+        {members.map((m) => {
+          const attempts = attemptsByMember[m.id] ?? [];
+          const latest = attempts[0];
+          return (
+            <div
+              key={m.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-700"
+            >
+              <div>
+                <p className="text-sm font-medium text-slate-900 dark:text-white">
+                  {m.firstName} {m.lastName}
+                  {m.relation && <span className="ml-1.5 text-xs font-normal text-slate-400">({m.relation})</span>}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                  {latest ? (
+                    <>
+                      {t.profile.familyLatestResult}: {latest.percent}% ·{" "}
+                      {formatDate(latest.createdAt, language)}
+                    </>
+                  ) : (
+                    t.profile.familyNoAttempts
+                  )}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {latest && <RiskBadge level={latest.riskLevel} size="sm" />}
+                <LinkButton href="/test" variant="ghost" className="text-xs">
+                  {t.profile.familyTakeTest}
+                </LinkButton>
+                <button
+                  onClick={() => handleDelete(m.id)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {members.length === 0 && !adding && (
+          <p className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">{t.profile.familyEmpty}</p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+const SHORT_MONTHS = {
+  uz: ["Yan", "Fev", "Mar", "Apr", "May", "Iyun", "Iyul", "Avg", "Sen", "Okt", "Noy", "Dek"],
+  ru: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+} as const;
+
+function SelfExamCalendar() {
+  const { language } = useLanguage();
+  const [months, setMonths] = useState<string[]>([]);
+  const year = new Date().getFullYear();
+
+  useEffect(() => {
+    apiGetSelfExamMonths().then(setMonths);
+  }, []);
+
+  async function toggle(month: string) {
+    const done = !months.includes(month);
+    const next = await apiSetSelfExamDone(month, done);
+    setMonths(next);
+  }
+
+  const MONTH_LABELS = SHORT_MONTHS[language];
+
+  return (
+    <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6">
+      {MONTH_LABELS.map((label, i) => {
+        const month = `${year}-${String(i + 1).padStart(2, "0")}`;
+        const done = months.includes(month);
+        const isFuture = month > `${year}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+        return (
+          <button
+            key={month}
+            onClick={() => toggle(month)}
+            disabled={isFuture}
+            className={`rounded-xl border px-2 py-2.5 text-xs font-medium transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 ${
+              done
+                ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-500/10 dark:text-emerald-400"
+                : "border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600"
+            }`}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ReferralCard({ t }: { t: Dictionary }) {
+  const [referral, setReferral] = useState<{ code: string; count: number } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    apiGetReferral().then(setReferral);
+  }, []);
+
+  function copyLink() {
+    if (!referral) return;
+    const url = `${window.location.origin}/sign-up?ref=${referral.code}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <UserPlus size={16} />
+        </span>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.referralTitle}</h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.referralSubtitle}</p>
+        </div>
+      </div>
+      <div className="mt-4 flex items-center gap-2">
+        <Button variant="secondary" size="sm" onClick={copyLink} disabled={!referral}>
+          <Copy size={14} />
+          {copied ? t.profile.referralCopied : t.profile.referralCopyButton}
+        </Button>
+        {referral && (
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            {referral.count} {t.profile.referralCountLabel}
+          </span>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function SessionsCard({ t }: { t: Dictionary }) {
+  const [done, setDone] = useState(false);
+
+  async function handleLogoutEverywhere() {
+    if (!window.confirm(t.profile.logoutEverywhereConfirm)) return;
+    await apiLogoutEverywhere();
+    setDone(true);
+    setTimeout(() => setDone(false), 3000);
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <LogOut size={16} />
+        </span>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.sessionsTitle}</h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.sessionsSubtitle}</p>
+        </div>
+      </div>
+      <div className="mt-4">
+        <Button variant="secondary" size="sm" onClick={handleLogoutEverywhere}>
+          {t.profile.logoutEverywhereButton}
+        </Button>
+        {done && <p className="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">{t.profile.logoutEverywhereDone}</p>}
       </div>
     </Card>
   );

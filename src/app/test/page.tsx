@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ArrowLeft, ArrowRight, Printer, ShieldAlert, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RiskBadge, getRiskDescription } from "@/components/RiskBadge";
 import { Meter } from "@/components/Meter";
-import { Badge, Button, Card, LinkButton } from "@/components/ui";
+import { Badge, Button, Card, LinkButton, Select } from "@/components/ui";
 import { StatCounter } from "@/components/StatCounter";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
-import { apiGetHighRiskInfo, apiGetQuestions, apiSubmitAttempt } from "@/lib/store";
+import { apiGetFamilyMembers, apiGetHighRiskInfo, apiGetQuestions, apiSubmitAttempt, type FamilyMember } from "@/lib/store";
 import { formatDate } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n/context";
 import { localizedOptionText, localizedQuestionText } from "@/lib/quiz-i18n";
@@ -34,6 +35,8 @@ function TestContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [highRiskInfo, setHighRiskInfo] = useState("");
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [forWhom, setForWhom] = useState(""); // "" = self, else a family member id
 
   useEffect(() => {
     if (result?.riskLevel === "yuqori") {
@@ -45,6 +48,7 @@ function TestContent() {
     apiGetQuestions()
       .then(setQuestions)
       .catch((err) => setError(err instanceof Error ? err.message : t.test.loadError));
+    apiGetFamilyMembers().then(setFamilyMembers);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -73,7 +77,8 @@ function TestContent() {
     setError(null);
     try {
       const attempt = await apiSubmitAttempt(
-        Object.entries(answers).map(([questionId, a]) => ({ questionId, optionId: a.optionId }))
+        Object.entries(answers).map(([questionId, a]) => ({ questionId, optionId: a.optionId })),
+        forWhom || null
       );
       setResult(attempt);
     } catch (err) {
@@ -139,6 +144,13 @@ function TestContent() {
                   <p className="mt-1 whitespace-pre-line">{highRiskInfo}</p>
                 </div>
               )}
+              {result.riskLevel === "yuqori" && (
+                <p className="mt-3 text-left text-xs">
+                  <Link href="/klinikalar" className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                    {t.nav.clinics} →
+                  </Link>
+                </p>
+              )}
             </div>
 
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -176,6 +188,23 @@ function TestContent() {
           <Sparkles size={14} />
           {t.test.disclaimerBanner}
         </div>
+
+        {step === 0 && familyMembers.length > 0 && (
+          <div className="mb-6">
+            <label className="mb-1.5 block text-xs font-medium text-slate-500 dark:text-slate-400">
+              {t.test.forWhomLabel}
+            </label>
+            <Select value={forWhom} onChange={(e) => setForWhom(e.target.value)}>
+              <option value="">{t.test.forSelfOption}</option>
+              {familyMembers.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.firstName} {m.lastName}
+                  {m.relation ? ` (${m.relation})` : ""}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
 
         <div className="mb-2 flex items-center justify-between text-xs font-medium text-slate-400 dark:text-slate-500">
           <span>

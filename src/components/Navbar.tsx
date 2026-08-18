@@ -18,6 +18,9 @@ export function Navbar() {
   const LINKS = [
     { href: "/test", label: t.nav.test, public: false },
     { href: "/qollanma", label: t.nav.guide, public: true },
+    { href: "/faq", label: t.nav.faq, public: true },
+    { href: "/klinikalar", label: t.nav.clinics, public: true },
+    { href: "/maqolalar", label: t.nav.articles, public: true },
     { href: "/profile", label: t.nav.profile, public: false },
   ];
 

@@ -1,4 +1,4 @@
-export type Role = "user" | "admin";
+export type Role = "user" | "admin" | "moderator";
 
 export type RiskLevel = "past" | "orta" | "yuqori";
 
@@ -14,6 +14,7 @@ export interface User {
   passportSeries: string; // e.g. AA1234567
   phone?: string;
   createdAt: string;
+  referralCode: string;
 }
 
 export interface QuizOption {
@@ -50,6 +51,7 @@ export interface QuizAttempt {
   userId: string;
   userFirstName?: string;
   userLastName?: string;
+  familyMemberId?: string | null;
   answers: QuizAnswer[];
   totalScore: number;
   maxScore: number;

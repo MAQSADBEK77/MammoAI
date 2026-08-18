@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, ShieldCheck, Trash2 } from "lucide-react";
-import { Badge, Card, Input } from "@/components/ui";
+import { Download, Search, Shield, ShieldCheck, Trash2 } from "lucide-react";
+import { Badge, Button, Card, Input } from "@/components/ui";
 import { RiskBadge } from "@/components/RiskBadge";
-import { apiDeleteUser, apiGetAdminUsers, type AdminUser } from "@/lib/store";
+import { useAuth } from "@/lib/auth-context";
+import { apiDeleteUser, apiGetAdminUsers, apiSetUserRole, type AdminUser } from "@/lib/store";
 import { formatDate } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n/context";
+import { downloadCsv } from "@/lib/csv";
 
 export default function AdminUsersPage() {
   const { t, language } = useLanguage();
+  const { user: me } = useAuth();
+  const isFullAdmin = me?.role === "admin";
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +37,34 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function handleToggleModerator(u: AdminUser) {
+    const nextRole = u.role === "moderator" ? "user" : "moderator";
+    try {
+      await apiSetUserRole(u.id, nextRole);
+      reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.adminUsers.deleteError);
+    }
+  }
+
+  function handleExportCsv() {
+    downloadCsv(
+      "foydalanuvchilar.csv",
+      ["Ism", "Familiya", "Email", "Telefon", "Tug'ilgan sana", "Passport", "Ro'yxatdan o'tgan", "Rol", "So'nggi xavf"],
+      filtered.map((u) => [
+        u.firstName,
+        u.lastName,
+        u.email,
+        u.phone ?? "",
+        u.birthDate,
+        u.passportSeries,
+        u.createdAt,
+        u.role,
+        u.latestAttempt?.riskLevel ?? "",
+      ])
+    );
+  }
+
   const q = query.trim().toLowerCase();
   const filtered = users.filter((u) => {
     if (!q) return true;
@@ -51,14 +83,20 @@ export default function AdminUsersPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminUsers.title}</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminUsers.subtitle}</p>
         </div>
-        <div className="relative w-full max-w-xs">
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t.adminUsers.searchPlaceholder}
-            className="pl-9"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full max-w-xs">
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t.adminUsers.searchPlaceholder}
+              className="pl-9"
+            />
+          </div>
+          <Button variant="secondary" onClick={handleExportCsv}>
+            <Download size={15} />
+            {t.adminUsers.exportCsv}
+          </Button>
         </div>
       </div>
 
@@ -94,6 +132,12 @@ export default function AdminUsersPage() {
                           {t.adminUsers.adminBadge}
                         </Badge>
                       )}
+                      {u.role === "moderator" && (
+                        <Badge tone="yellow">
+                          <Shield size={11} className="mr-1 inline" />
+                          {t.adminUsers.moderatorBadge}
+                        </Badge>
+                      )}
                     </div>
                   </td>
                   <td className="px-5 py-3 text-slate-600 dark:text-slate-300">
@@ -111,14 +155,23 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="px-5 py-3 text-right">
-                    {u.role !== "admin" && (
-                      <button
-                        onClick={() => handleDelete(u.id)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-                        title={t.adminUsers.deleteTitle}
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                    {isFullAdmin && u.role !== "admin" && (
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleToggleModerator(u)}
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-amber-50 hover:text-amber-600 cursor-pointer dark:text-slate-500 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
+                          title={u.role === "moderator" ? t.adminUsers.demoteTitle : t.adminUsers.promoteTitle}
+                        >
+                          <Shield size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(u.id)}
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                          title={t.adminUsers.deleteTitle}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

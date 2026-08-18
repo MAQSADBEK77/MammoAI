@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/server/session";
+import { requireAdmin, requireAdminOrModerator } from "@/server/session";
 import {
   disconnectTelegramBot,
   getTelegramBotUsername,
   isTelegramConfigured,
   verifyAndSaveTelegramBot,
 } from "@/server/telegram";
+import { logAdminAction } from "@/server/db";
 import { ApiError, handleApiError } from "@/server/api-utils";
 
 export async function GET() {
   try {
-    await requireAdmin();
+    await requireAdminOrModerator();
     return NextResponse.json({
       configured: isTelegramConfigured(),
       botUsername: getTelegramBotUsername(),
@@ -22,7 +23,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const { token } = (await request.json()) ?? {};
     if (!token?.trim()) {
       throw new ApiError(400, "Bot tokenini kiriting.");
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
     } catch (verifyErr) {
       throw new ApiError(400, verifyErr instanceof Error ? verifyErr.message : "Token tekshirilmadi.");
     }
+    logAdminAction(admin.id, `${admin.firstName} ${admin.lastName}`, "telegram.connect", `@${botUsername}`);
     return NextResponse.json({ ok: true, botUsername });
   } catch (err) {
     return handleApiError(err);
@@ -41,8 +43,9 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     disconnectTelegramBot();
+    logAdminAction(admin.id, `${admin.firstName} ${admin.lastName}`, "telegram.disconnect", "");
     return NextResponse.json({ ok: true });
   } catch (err) {
     return handleApiError(err);

@@ -32,6 +32,7 @@ export interface SignUpInput {
   birthDate: string;
   passportSeries: string;
   phone?: string;
+  referralCode?: string;
 }
 
 export async function apiSignUp(input: SignUpInput): Promise<User> {
@@ -94,6 +95,12 @@ export async function apiTelegramCodeLogin(code: string): Promise<User> {
     method: "POST",
     body: JSON.stringify({ code }),
   });
+  return user;
+}
+
+/** Invalidates every other session for this account and re-issues a fresh one for this one. */
+export async function apiLogoutEverywhere(): Promise<User> {
+  const { user } = await apiFetch<{ user: User }>("/api/auth/logout-everywhere", { method: "POST" });
   return user;
 }
 
@@ -162,13 +169,131 @@ export async function apiReorderQuestions(ids: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function apiSubmitAttempt(
-  answers: { questionId: string; optionId: string }[]
+  answers: { questionId: string; optionId: string }[],
+  familyMemberId?: string | null
 ): Promise<QuizAttempt> {
   const { attempt } = await apiFetch<{ attempt: QuizAttempt }>("/api/quiz/attempts", {
     method: "POST",
-    body: JSON.stringify({ answers }),
+    body: JSON.stringify({ answers, familyMemberId }),
   });
   return attempt;
+}
+
+// ---------------------------------------------------------------------------
+// Family members
+// ---------------------------------------------------------------------------
+
+export interface FamilyMember {
+  id: string;
+  ownerUserId: string;
+  firstName: string;
+  lastName: string;
+  relation: string;
+  birthDate: string | null;
+  createdAt: string;
+}
+
+export async function apiGetFamilyMembers(): Promise<FamilyMember[]> {
+  const { members } = await apiFetch<{ members: FamilyMember[] }>("/api/family-members");
+  return members;
+}
+
+export async function apiCreateFamilyMember(input: {
+  firstName: string;
+  lastName?: string;
+  relation?: string;
+  birthDate?: string;
+}): Promise<FamilyMember> {
+  const { member } = await apiFetch<{ member: FamilyMember }>("/api/family-members", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return member;
+}
+
+export async function apiDeleteFamilyMember(id: string): Promise<void> {
+  await apiFetch(`/api/family-members/${id}`, { method: "DELETE" });
+}
+
+export async function apiGetFamilyMemberAttempts(id: string): Promise<QuizAttempt[]> {
+  const { attempts } = await apiFetch<{ attempts: QuizAttempt[] }>(`/api/family-members/${id}/attempts`);
+  return attempts;
+}
+
+// ---------------------------------------------------------------------------
+// Self-exam calendar
+// ---------------------------------------------------------------------------
+
+export async function apiGetSelfExamMonths(): Promise<string[]> {
+  const { months } = await apiFetch<{ months: string[] }>("/api/self-exam");
+  return months;
+}
+
+export async function apiSetSelfExamDone(month: string, done: boolean): Promise<string[]> {
+  const { months } = await apiFetch<{ months: string[] }>("/api/self-exam", {
+    method: "POST",
+    body: JSON.stringify({ month, done }),
+  });
+  return months;
+}
+
+// ---------------------------------------------------------------------------
+// Referral
+// ---------------------------------------------------------------------------
+
+export async function apiGetReferral(): Promise<{ code: string; count: number }> {
+  return apiFetch("/api/referral");
+}
+
+// ---------------------------------------------------------------------------
+// FAQ, clinics, articles — public reads
+// ---------------------------------------------------------------------------
+
+export interface FaqItem {
+  id: string;
+  order: number;
+  question: string;
+  answer: string;
+  translations?: Partial<Record<"ru" | "en", { question?: string; answer?: string }>>;
+}
+
+export async function apiGetFaq(): Promise<FaqItem[]> {
+  const { items } = await apiFetch<{ items: FaqItem[] }>("/api/faq");
+  return items;
+}
+
+export interface Clinic {
+  id: string;
+  order: number;
+  name: string;
+  address: string;
+  phone: string;
+  note: string;
+}
+
+export async function apiGetClinics(): Promise<Clinic[]> {
+  const { clinics } = await apiFetch<{ clinics: Clinic[] }>("/api/clinics");
+  return clinics;
+}
+
+export interface Article {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  published: boolean;
+  createdAt: string;
+}
+
+export async function apiGetArticles(): Promise<Article[]> {
+  const { articles } = await apiFetch<{ articles: Article[] }>("/api/articles");
+  return articles;
+}
+
+export async function apiGetArticle(slug: string): Promise<Article> {
+  const { article } = await apiFetch<{ article: Article }>(`/api/articles/${slug}`);
+  return article;
 }
 
 export async function apiGetMyAttempts(): Promise<QuizAttempt[]> {
@@ -184,6 +309,22 @@ export async function apiGetMyAttempts(): Promise<QuizAttempt[]> {
 export async function apiGetHighRiskInfo(): Promise<string> {
   const { text } = await apiFetch<{ text: string }>("/api/high-risk-info");
   return text;
+}
+
+// ---------------------------------------------------------------------------
+// Guide media (admin-configurable images/video shown on the qo'llanma page)
+// ---------------------------------------------------------------------------
+
+export async function apiGetGuideMedia(): Promise<{ imageUrls: string[]; videoUrl: string }> {
+  return apiFetch("/api/guide-media");
+}
+
+export async function apiGetAdminGuideMedia(): Promise<{ imageUrls: string; videoUrl: string }> {
+  return apiFetch("/api/admin/settings/guide-media");
+}
+
+export async function apiSaveAdminGuideMedia(imageUrls: string, videoUrl: string): Promise<void> {
+  await apiFetch("/api/admin/settings/guide-media", { method: "POST", body: JSON.stringify({ imageUrls, videoUrl }) });
 }
 
 // ---------------------------------------------------------------------------
@@ -229,6 +370,108 @@ export async function apiGetAdminUsers(): Promise<AdminUser[]> {
 
 export async function apiDeleteUser(id: string): Promise<void> {
   await apiFetch(`/api/admin/users/${id}`, { method: "DELETE" });
+}
+
+export async function apiSetUserRole(id: string, role: "user" | "moderator"): Promise<AdminUser> {
+  const { user } = await apiFetch<{ user: AdminUser }>(`/api/admin/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
+  return user;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  adminId: string | null;
+  adminName: string;
+  action: string;
+  target: string;
+  createdAt: string;
+}
+
+export async function apiGetAuditLog(): Promise<AuditLogEntry[]> {
+  const { entries } = await apiFetch<{ entries: AuditLogEntry[] }>("/api/admin/audit-log");
+  return entries;
+}
+
+// --- FAQ (admin) -----------------------------------------------------------
+
+export async function apiGetAdminFaq(): Promise<FaqItem[]> {
+  const { items } = await apiFetch<{ items: FaqItem[] }>("/api/admin/faq");
+  return items;
+}
+
+export async function apiCreateFaqItem(input: Omit<FaqItem, "id">): Promise<FaqItem> {
+  const { item } = await apiFetch<{ item: FaqItem }>("/api/admin/faq", { method: "POST", body: JSON.stringify(input) });
+  return item;
+}
+
+export async function apiUpdateFaqItem(id: string, input: Omit<FaqItem, "id">): Promise<FaqItem> {
+  const { item } = await apiFetch<{ item: FaqItem }>(`/api/admin/faq/${id}`, { method: "PUT", body: JSON.stringify(input) });
+  return item;
+}
+
+export async function apiDeleteFaqItem(id: string): Promise<void> {
+  await apiFetch(`/api/admin/faq/${id}`, { method: "DELETE" });
+}
+
+// --- Clinics (admin) ---------------------------------------------------------
+
+export async function apiGetAdminClinics(): Promise<Clinic[]> {
+  const { clinics } = await apiFetch<{ clinics: Clinic[] }>("/api/admin/clinics");
+  return clinics;
+}
+
+export async function apiCreateClinic(input: Omit<Clinic, "id">): Promise<Clinic> {
+  const { clinic } = await apiFetch<{ clinic: Clinic }>("/api/admin/clinics", { method: "POST", body: JSON.stringify(input) });
+  return clinic;
+}
+
+export async function apiUpdateClinic(id: string, input: Omit<Clinic, "id">): Promise<Clinic> {
+  const { clinic } = await apiFetch<{ clinic: Clinic }>(`/api/admin/clinics/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+  return clinic;
+}
+
+export async function apiDeleteClinic(id: string): Promise<void> {
+  await apiFetch(`/api/admin/clinics/${id}`, { method: "DELETE" });
+}
+
+// --- Articles (admin) --------------------------------------------------------
+
+export async function apiGetAdminArticles(): Promise<Article[]> {
+  const { articles } = await apiFetch<{ articles: Article[] }>("/api/admin/articles");
+  return articles;
+}
+
+export async function apiCreateArticle(input: {
+  title: string;
+  excerpt: string;
+  content: string;
+  published: boolean;
+}): Promise<Article> {
+  const { article } = await apiFetch<{ article: Article }>("/api/admin/articles", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return article;
+}
+
+export async function apiUpdateArticle(
+  id: string,
+  input: { title: string; excerpt: string; content: string; published: boolean }
+): Promise<Article> {
+  const { article } = await apiFetch<{ article: Article }>(`/api/admin/articles/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+  return article;
+}
+
+export async function apiDeleteArticle(id: string): Promise<void> {
+  await apiFetch(`/api/admin/articles/${id}`, { method: "DELETE" });
 }
 
 export async function apiGetAdminAttempts(): Promise<QuizAttempt[]> {

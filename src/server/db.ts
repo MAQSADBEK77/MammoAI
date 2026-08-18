@@ -11,6 +11,8 @@ import type { QuizAttempt, QuizQuestion, RiskLevel, User } from "@/lib/types";
 // layer must never send to the client.
 export interface UserRow extends User {
   passwordHash: string;
+  tokenVersion: number;
+  referredBy: string | null;
 }
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -130,6 +132,97 @@ ensureColumn("users", "last_self_exam_reminder_sent_at", "last_self_exam_reminde
 // Null/absent means "no translation entered yet", callers fall back to the
 // base (admin-authored) text/options.
 ensureColumn("quiz_questions", "translations", "translations TEXT");
+// Bumped by "log out of all devices" — see bumpTokenVersion(). Baked into
+// every JWT at sign time (see server/auth.ts); a mismatch means the token
+// predates the bump and is rejected.
+ensureColumn("users", "token_version", "token_version INTEGER NOT NULL DEFAULT 0");
+// Referral program: each user gets a stable short code (backfilled below for
+// pre-existing rows), and we remember who referred whom.
+ensureColumn("users", "referral_code", "referral_code TEXT");
+ensureColumn("users", "referred_by", "referred_by TEXT REFERENCES users(id) ON DELETE SET NULL");
+
+db.exec(`
+  -- Admin action history (who deleted/changed what, and when) — read-only
+  -- from the UI, useful once there's more than one admin/moderator account.
+  CREATE TABLE IF NOT EXISTS audit_log (
+    id TEXT PRIMARY KEY,
+    admin_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    admin_name TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
+
+  -- One row per (user, calendar month) a self-exam was marked done — the
+  -- site's equivalent of the bot's monthly self-exam reminder, but
+  -- self-reported instead of nudged.
+  CREATE TABLE IF NOT EXISTS self_exam_logs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    month TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE(user_id, month)
+  );
+
+  -- Lightweight tracked profiles (not full accounts) an account holder can
+  -- take the test "on behalf of" — e.g. a mother tracking her own mother's
+  -- or sister's risk alongside her own.
+  CREATE TABLE IF NOT EXISTS family_members (
+    id TEXT PRIMARY KEY,
+    owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL DEFAULT '',
+    relation TEXT NOT NULL DEFAULT '',
+    birth_date TEXT,
+    created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS faq_items (
+    id TEXT PRIMARY KEY,
+    "order" INTEGER NOT NULL,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    translations TEXT,
+    created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS clinics (
+    id TEXT PRIMARY KEY,
+    "order" INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    address TEXT NOT NULL DEFAULT '',
+    phone TEXT NOT NULL DEFAULT '',
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS articles (
+    id TEXT PRIMARY KEY,
+    slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    excerpt TEXT NOT NULL DEFAULT '',
+    content TEXT NOT NULL,
+    published INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL
+  );
+`);
+
+// Backfill a referral code for any user created before this feature existed.
+{
+  const missing = db.prepare("SELECT id FROM users WHERE referral_code IS NULL").all() as { id: string }[];
+  const setCode = db.prepare("UPDATE users SET referral_code = ? WHERE id = ?");
+  for (const { id } of missing) setCode.run(randomUUID().slice(0, 8), id);
+}
+
+// Which family member (if any) a quiz attempt was taken on behalf of — null
+// means "the account holder took it themselves", same as before this column
+// existed. Added after the family_members table above so the FK target exists.
+ensureColumn(
+  "quiz_attempts",
+  "family_member_id",
+  "family_member_id TEXT REFERENCES family_members(id) ON DELETE SET NULL"
+);
 
 // ---------------------------------------------------------------------------
 // Row <-> domain-type mapping
@@ -146,6 +239,9 @@ function rowToUser(row: {
   passport_series: string;
   phone: string | null;
   created_at: string;
+  token_version: number;
+  referral_code: string | null;
+  referred_by: string | null;
 }): UserRow {
   return {
     id: row.id,
@@ -158,6 +254,9 @@ function rowToUser(row: {
     passportSeries: row.passport_series,
     phone: row.phone ?? "",
     createdAt: row.created_at,
+    tokenVersion: row.token_version ?? 0,
+    referralCode: row.referral_code ?? "",
+    referredBy: row.referred_by,
   };
 }
 
@@ -172,6 +271,7 @@ export function toPublicUser(row: UserRow): User {
     passportSeries: row.passportSeries,
     phone: row.phone,
     createdAt: row.createdAt,
+    referralCode: row.referralCode,
   };
 }
 
@@ -208,11 +308,13 @@ export function createUser(input: {
   birthDate: string;
   passportSeries: string;
   phone?: string;
-  role?: "user" | "admin";
+  role?: "user" | "admin" | "moderator";
+  referredByCode?: string;
 }): UserRow {
   if (getUserByEmail(input.email)) {
     throw new ApiError(409, "Bu email allaqachon ro'yxatdan o'tgan.");
   }
+  const referrer = input.referredByCode ? getUserByReferralCode(input.referredByCode) : undefined;
   const row: UserRow = {
     id: randomUUID(),
     email: input.email,
@@ -224,12 +326,35 @@ export function createUser(input: {
     passportSeries: input.passportSeries,
     phone: input.phone ?? "",
     createdAt: new Date().toISOString(),
+    tokenVersion: 0,
+    referralCode: randomUUID().slice(0, 8),
+    referredBy: referrer?.id ?? null,
   };
   db.prepare(
-    `INSERT INTO users (id, email, password_hash, role, first_name, last_name, birth_date, passport_series, phone, created_at)
-     VALUES (@id, @email, @passwordHash, @role, @firstName, @lastName, @birthDate, @passportSeries, @phone, @createdAt)`
+    `INSERT INTO users (id, email, password_hash, role, first_name, last_name, birth_date, passport_series, phone, created_at, token_version, referral_code, referred_by)
+     VALUES (@id, @email, @passwordHash, @role, @firstName, @lastName, @birthDate, @passportSeries, @phone, @createdAt, @tokenVersion, @referralCode, @referredBy)`
   ).run(row);
   return row;
+}
+
+export function getUserByReferralCode(code: string): UserRow | undefined {
+  const row = db.prepare("SELECT * FROM users WHERE referral_code = ?").get(code) as
+    | Parameters<typeof rowToUser>[0]
+    | undefined;
+  return row ? rowToUser(row) : undefined;
+}
+
+/** Count of accounts referred by this user — shown on their profile. */
+export function getReferralCount(userId: string): number {
+  const { n } = db.prepare("SELECT COUNT(*) AS n FROM users WHERE referred_by = ?").get(userId) as { n: number };
+  return n;
+}
+
+/** "Log out of all devices": every previously issued token stops verifying. */
+export function bumpTokenVersion(userId: string): number {
+  db.prepare("UPDATE users SET token_version = token_version + 1 WHERE id = ?").run(userId);
+  return (db.prepare("SELECT token_version FROM users WHERE id = ?").get(userId) as { token_version: number })
+    .token_version;
 }
 
 export function updateUserProfile(
@@ -248,6 +373,11 @@ export function updateUserProfile(
 
 export function deleteUser(id: string) {
   db.prepare("DELETE FROM users WHERE id = ?").run(id);
+}
+
+export function setUserRole(id: string, role: "user" | "moderator"): UserRow {
+  db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, id);
+  return getUserById(id)!;
 }
 
 export function updateUserPasswordHash(id: string, passwordHash: string) {
@@ -392,12 +522,14 @@ function rowToAttempt(row: {
   created_at: string;
   first_name?: string;
   last_name?: string;
+  family_member_id?: string | null;
 }): QuizAttempt {
   return {
     id: row.id,
     userId: row.user_id,
     userFirstName: row.first_name,
     userLastName: row.last_name,
+    familyMemberId: row.family_member_id ?? null,
     answers: JSON.parse(row.answers),
     totalScore: row.total_score,
     maxScore: row.max_score,
@@ -428,7 +560,8 @@ export function getAllAttempts(): QuizAttempt[] {
 /** Recomputes the score server-side from the current questions — never trusts a client-supplied score. */
 export function submitAttempt(
   userId: string,
-  selections: { questionId: string; optionId: string }[]
+  selections: { questionId: string; optionId: string }[],
+  familyMemberId?: string | null
 ): QuizAttempt {
   const questions = getQuestions();
   const maxScore = questions.reduce(
@@ -451,6 +584,7 @@ export function submitAttempt(
   const attempt: QuizAttempt = {
     id: randomUUID(),
     userId,
+    familyMemberId: familyMemberId ?? null,
     answers,
     totalScore,
     maxScore,
@@ -460,8 +594,8 @@ export function submitAttempt(
   };
 
   db.prepare(
-    `INSERT INTO quiz_attempts (id, user_id, answers, total_score, max_score, percent, risk_level, created_at)
-     VALUES (@id, @userId, @answers, @totalScore, @maxScore, @percent, @riskLevel, @createdAt)`
+    `INSERT INTO quiz_attempts (id, user_id, answers, total_score, max_score, percent, risk_level, created_at, family_member_id)
+     VALUES (@id, @userId, @answers, @totalScore, @maxScore, @percent, @riskLevel, @createdAt, @familyMemberId)`
   ).run({ ...attempt, answers: JSON.stringify(attempt.answers) });
 
   return attempt;
@@ -856,6 +990,333 @@ export function setSetting(key: string, value: string | null) {
     `INSERT INTO settings (key, value) VALUES (?, ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`
   ).run(key, value);
+}
+
+// ---------------------------------------------------------------------------
+// Audit log — who (admin/moderator) did what, when. Read-only from the UI.
+// ---------------------------------------------------------------------------
+
+export interface AuditLogEntry {
+  id: string;
+  adminId: string | null;
+  adminName: string;
+  action: string;
+  target: string;
+  createdAt: string;
+}
+
+export function logAdminAction(adminId: string, adminName: string, action: string, target: string = "") {
+  db.prepare("INSERT INTO audit_log (id, admin_id, admin_name, action, target, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+    randomUUID(),
+    adminId,
+    adminName,
+    action,
+    target,
+    new Date().toISOString()
+  );
+}
+
+export function getAuditLog(limit = 200): AuditLogEntry[] {
+  const rows = db
+    .prepare("SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?")
+    .all(limit) as {
+    id: string;
+    admin_id: string | null;
+    admin_name: string;
+    action: string;
+    target: string;
+    created_at: string;
+  }[];
+  return rows.map((r) => ({
+    id: r.id,
+    adminId: r.admin_id,
+    adminName: r.admin_name,
+    action: r.action,
+    target: r.target,
+    createdAt: r.created_at,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Self-exam calendar (site-side, self-reported — separate from the bot's
+// nudge-based monthly reminder, though both point at the same habit)
+// ---------------------------------------------------------------------------
+
+export function markSelfExamDone(userId: string, month: string) {
+  db.prepare(
+    "INSERT INTO self_exam_logs (id, user_id, month, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, month) DO NOTHING"
+  ).run(randomUUID(), userId, month, new Date().toISOString());
+}
+
+export function unmarkSelfExamDone(userId: string, month: string) {
+  db.prepare("DELETE FROM self_exam_logs WHERE user_id = ? AND month = ?").run(userId, month);
+}
+
+export function getSelfExamMonths(userId: string): string[] {
+  const rows = db.prepare("SELECT month FROM self_exam_logs WHERE user_id = ?").all(userId) as { month: string }[];
+  return rows.map((r) => r.month);
+}
+
+// ---------------------------------------------------------------------------
+// Family members — lightweight tracked profiles, not full accounts.
+// ---------------------------------------------------------------------------
+
+export interface FamilyMember {
+  id: string;
+  ownerUserId: string;
+  firstName: string;
+  lastName: string;
+  relation: string;
+  birthDate: string | null;
+  createdAt: string;
+}
+
+function rowToFamilyMember(row: {
+  id: string;
+  owner_user_id: string;
+  first_name: string;
+  last_name: string;
+  relation: string;
+  birth_date: string | null;
+  created_at: string;
+}): FamilyMember {
+  return {
+    id: row.id,
+    ownerUserId: row.owner_user_id,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    relation: row.relation,
+    birthDate: row.birth_date,
+    createdAt: row.created_at,
+  };
+}
+
+export function createFamilyMember(input: {
+  ownerUserId: string;
+  firstName: string;
+  lastName?: string;
+  relation?: string;
+  birthDate?: string | null;
+}): FamilyMember {
+  const row = {
+    id: randomUUID(),
+    owner_user_id: input.ownerUserId,
+    first_name: input.firstName,
+    last_name: input.lastName ?? "",
+    relation: input.relation ?? "",
+    birth_date: input.birthDate ?? null,
+    created_at: new Date().toISOString(),
+  };
+  db.prepare(
+    `INSERT INTO family_members (id, owner_user_id, first_name, last_name, relation, birth_date, created_at)
+     VALUES (@id, @owner_user_id, @first_name, @last_name, @relation, @birth_date, @created_at)`
+  ).run(row);
+  return rowToFamilyMember(row);
+}
+
+export function getFamilyMembers(ownerUserId: string): FamilyMember[] {
+  const rows = db
+    .prepare("SELECT * FROM family_members WHERE owner_user_id = ? ORDER BY created_at ASC")
+    .all(ownerUserId) as Parameters<typeof rowToFamilyMember>[0][];
+  return rows.map(rowToFamilyMember);
+}
+
+export function getFamilyMemberById(id: string): FamilyMember | undefined {
+  const row = db.prepare("SELECT * FROM family_members WHERE id = ?").get(id) as
+    | Parameters<typeof rowToFamilyMember>[0]
+    | undefined;
+  return row ? rowToFamilyMember(row) : undefined;
+}
+
+export function deleteFamilyMember(id: string, ownerUserId: string) {
+  db.prepare("DELETE FROM family_members WHERE id = ? AND owner_user_id = ?").run(id, ownerUserId);
+}
+
+/** A family member's attempt history, newest first. */
+export function getAttemptsForFamilyMember(familyMemberId: string): QuizAttempt[] {
+  const rows = db
+    .prepare("SELECT * FROM quiz_attempts WHERE family_member_id = ? ORDER BY created_at DESC")
+    .all(familyMemberId) as Parameters<typeof rowToAttempt>[0][];
+  return rows.map(rowToAttempt);
+}
+
+// ---------------------------------------------------------------------------
+// FAQ, clinics, articles — small admin-authored content types, each with an
+// optional uz→ru/en translation overlay (FAQ only, same shape as quiz
+// question translations); clinics/articles are single-language since
+// addresses/phone numbers and long-form text don't machine-translate well
+// and are meant to be entered directly in whichever language the admin uses.
+// ---------------------------------------------------------------------------
+
+export interface FaqItem {
+  id: string;
+  order: number;
+  question: string;
+  answer: string;
+  translations?: Partial<Record<"ru" | "en", { question?: string; answer?: string }>>;
+}
+
+function rowToFaqItem(row: { id: string; order: number; question: string; answer: string; translations: string | null }): FaqItem {
+  return {
+    id: row.id,
+    order: row.order,
+    question: row.question,
+    answer: row.answer,
+    translations: row.translations ? JSON.parse(row.translations) : undefined,
+  };
+}
+
+export function getFaqItems(): FaqItem[] {
+  const rows = db.prepare('SELECT * FROM faq_items ORDER BY "order" ASC').all() as Parameters<typeof rowToFaqItem>[0][];
+  return rows.map(rowToFaqItem);
+}
+
+export function createFaqItem(input: Omit<FaqItem, "id">): FaqItem {
+  const item: FaqItem = { ...input, id: randomUUID() };
+  db.prepare(
+    `INSERT INTO faq_items (id, "order", question, answer, translations, created_at) VALUES (@id, @order, @question, @answer, @translations, @createdAt)`
+  ).run({
+    ...item,
+    translations: item.translations ? JSON.stringify(item.translations) : null,
+    createdAt: new Date().toISOString(),
+  });
+  return item;
+}
+
+export function updateFaqItem(id: string, input: Omit<FaqItem, "id">): FaqItem {
+  const item: FaqItem = { ...input, id };
+  db.prepare(
+    `UPDATE faq_items SET "order"=@order, question=@question, answer=@answer, translations=@translations WHERE id=@id`
+  ).run({ ...item, translations: item.translations ? JSON.stringify(item.translations) : null });
+  return item;
+}
+
+export function deleteFaqItem(id: string) {
+  db.prepare("DELETE FROM faq_items WHERE id = ?").run(id);
+}
+
+export interface Clinic {
+  id: string;
+  order: number;
+  name: string;
+  address: string;
+  phone: string;
+  note: string;
+}
+
+export function getClinics(): Clinic[] {
+  return db.prepare('SELECT id, "order", name, address, phone, note FROM clinics ORDER BY "order" ASC').all() as Clinic[];
+}
+
+export function createClinic(input: Omit<Clinic, "id">): Clinic {
+  const clinic: Clinic = { ...input, id: randomUUID() };
+  db.prepare(
+    `INSERT INTO clinics (id, "order", name, address, phone, note, created_at) VALUES (@id, @order, @name, @address, @phone, @note, @createdAt)`
+  ).run({ ...clinic, createdAt: new Date().toISOString() });
+  return clinic;
+}
+
+export function updateClinic(id: string, input: Omit<Clinic, "id">): Clinic {
+  const clinic: Clinic = { ...input, id };
+  db.prepare(`UPDATE clinics SET "order"=@order, name=@name, address=@address, phone=@phone, note=@note WHERE id=@id`).run(clinic);
+  return clinic;
+}
+
+export function deleteClinic(id: string) {
+  db.prepare("DELETE FROM clinics WHERE id = ?").run(id);
+}
+
+export interface Article {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  published: boolean;
+  createdAt: string;
+}
+
+function rowToArticle(row: {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  published: number;
+  created_at: string;
+}): Article {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    excerpt: row.excerpt,
+    content: row.content,
+    published: Boolean(row.published),
+    createdAt: row.created_at,
+  };
+}
+
+export function getPublishedArticles(): Article[] {
+  const rows = db.prepare("SELECT * FROM articles WHERE published = 1 ORDER BY created_at DESC").all() as Parameters<
+    typeof rowToArticle
+  >[0][];
+  return rows.map(rowToArticle);
+}
+
+export function getAllArticles(): Article[] {
+  const rows = db.prepare("SELECT * FROM articles ORDER BY created_at DESC").all() as Parameters<typeof rowToArticle>[0][];
+  return rows.map(rowToArticle);
+}
+
+export function getArticleBySlug(slug: string): Article | undefined {
+  const row = db.prepare("SELECT * FROM articles WHERE slug = ?").get(slug) as
+    | Parameters<typeof rowToArticle>[0]
+    | undefined;
+  return row ? rowToArticle(row) : undefined;
+}
+
+function slugify(title: string): string {
+  return (
+    title
+      .toLowerCase()
+      .trim()
+      .replace(/['"]/g, "")
+      .replace(/[^a-z0-9Ѐ-ӿ]+/g, "-")
+      .replace(/^-+|-+$/g, "") || randomUUID().slice(0, 8)
+  );
+}
+
+export function createArticle(input: { title: string; excerpt: string; content: string; published: boolean }): Article {
+  let slug = slugify(input.title);
+  if (getArticleBySlug(slug)) slug = `${slug}-${randomUUID().slice(0, 4)}`;
+  const article: Article = { id: randomUUID(), slug, ...input, createdAt: new Date().toISOString() };
+  db.prepare(
+    `INSERT INTO articles (id, slug, title, excerpt, content, published, created_at) VALUES (@id, @slug, @title, @excerpt, @content, @published, @createdAt)`
+  ).run({ ...article, published: article.published ? 1 : 0 });
+  return article;
+}
+
+export function updateArticle(
+  id: string,
+  input: { title: string; excerpt: string; content: string; published: boolean }
+): Article {
+  const article: Article = { id, slug: "", ...input, createdAt: "" };
+  const existing = db.prepare("SELECT slug, created_at FROM articles WHERE id = ?").get(id) as
+    | { slug: string; created_at: string }
+    | undefined;
+  if (!existing) throw new ApiError(404, "Maqola topilmadi.");
+  db.prepare(`UPDATE articles SET title=@title, excerpt=@excerpt, content=@content, published=@published WHERE id=@id`).run({
+    id,
+    title: input.title,
+    excerpt: input.excerpt,
+    content: input.content,
+    published: input.published ? 1 : 0,
+  });
+  return { ...article, slug: existing.slug, createdAt: existing.created_at };
+}
+
+export function deleteArticle(id: string) {
+  db.prepare("DELETE FROM articles WHERE id = ?").run(id);
 }
 
 export default db;

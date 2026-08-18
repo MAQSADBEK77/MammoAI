@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     clearAuthAttempts(ipKey);
     clearAuthAttempts(emailKey);
 
-    const token = signSession(user.id);
+    const token = signSession(user.id, user.tokenVersion);
     const store = await cookies();
     store.set(SESSION_COOKIE, token, sessionCookieOptions);
 

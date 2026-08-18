@@ -65,18 +65,25 @@ export function verifyPassword(password: string, stored: string): boolean {
 
 interface SessionPayload {
   sub: string; // user id
+  ver: number; // must match the user's current token_version — see bumpTokenVersion()
 }
 
-export function signSession(userId: string): string {
-  return jwt.sign({ sub: userId } satisfies SessionPayload, SECRET, {
+/**
+ * `tokenVersion` is the user's current `token_version` column value — baked
+ * into the token so a "log out of all devices" action (bumpTokenVersion)
+ * invalidates every previously issued token at once, without needing a
+ * server-side session table to individually revoke.
+ */
+export function signSession(userId: string, tokenVersion: number): string {
+  return jwt.sign({ sub: userId, ver: tokenVersion } satisfies SessionPayload, SECRET, {
     expiresIn: SESSION_MAX_AGE_SECONDS,
   });
 }
 
-export function verifySession(token: string): string | null {
+export function verifySession(token: string): { userId: string; tokenVersion: number } | null {
   try {
     const payload = jwt.verify(token, SECRET) as SessionPayload;
-    return payload.sub;
+    return { userId: payload.sub, tokenVersion: payload.ver ?? 0 };
   } catch {
     return null;
   }

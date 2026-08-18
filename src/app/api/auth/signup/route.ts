@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     recordAuthAttempt(ipKey);
 
     const body = await request.json();
-    const { firstName, lastName, email, password, birthDate, passportSeries, phone } = body ?? {};
+    const { firstName, lastName, email, password, birthDate, passportSeries, phone, referralCode } = body ?? {};
 
     if (!firstName?.trim() || !lastName?.trim()) {
       throw new ApiError(400, "Ism va familiyani kiriting.");
@@ -42,9 +42,10 @@ export async function POST(request: Request) {
       birthDate,
       passportSeries: passportSeries.trim().toUpperCase(),
       phone: phone?.trim() ?? "",
+      referredByCode: typeof referralCode === "string" ? referralCode.trim() : undefined,
     });
 
-    const token = signSession(user.id);
+    const token = signSession(user.id, user.tokenVersion);
     const store = await cookies();
     store.set(SESSION_COOKIE, token, sessionCookieOptions);
 

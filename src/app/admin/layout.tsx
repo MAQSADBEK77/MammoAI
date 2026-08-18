@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { LayoutDashboard, ListChecks, MessageSquareText, Settings, Users2 } from "lucide-react";
+import { FileText, History, LayoutDashboard, ListChecks, MessageSquareText, Settings, Users2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/RequireAuth";
+import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/lib/i18n/context";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const t = useT();
+  const { user } = useAuth();
+  const isFullAdmin = user?.role === "admin";
 
   const TABS = [
     { href: "/admin", label: t.adminNav.overview, icon: LayoutDashboard, exact: true },
@@ -18,6 +21,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/quiz", label: t.adminNav.quiz, icon: ListChecks, exact: false },
     { href: "/admin/results", label: t.adminNav.results, icon: ListChecks, exact: false },
     { href: "/admin/feedback", label: t.adminNav.feedback, icon: MessageSquareText, exact: false },
+    { href: "/admin/content", label: t.adminNav.content, icon: FileText, exact: false },
+    // Audit log leaks who-did-what across admins/moderators — full admins only
+    // (the API route enforces this too; hiding the tab just avoids a 403).
+    ...(isFullAdmin ? [{ href: "/admin/audit", label: t.adminNav.audit, icon: History, exact: false }] : []),
     { href: "/admin/settings", label: t.adminNav.settings, icon: Settings, exact: false },
   ];
 

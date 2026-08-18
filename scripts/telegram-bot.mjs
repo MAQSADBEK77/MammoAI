@@ -272,6 +272,16 @@ const MSG = {
   },
   feedbackEmpty: { uz: "Bo'sh bo'lishi mumkin emas. Qayta kiriting:", ru: "Поле не может быть пустым. Повторите:", en: "This can't be empty. Please try again:" },
 
+  weeklySummaryHeader: {
+    uz: "📈 Haftalik statistika (so'nggi 7 kun)",
+    ru: "📈 Еженедельная статистика (за последние 7 дней)",
+    en: "📈 Weekly stats (last 7 days)",
+  },
+  weeklySummaryBody: {
+    uz: "Yangi ro'yxatdan o'tganlar: {signups}\nTest topshirganlar: {attempts}\nYangi fikr-mulohazalar: {feedback}",
+    ru: "Новых регистраций: {signups}\nПройдено тестов: {attempts}\nНовых отзывов: {feedback}",
+    en: "New signups: {signups}\nTests taken: {attempts}\nNew feedback: {feedback}",
+  },
   loginCodeMessage: {
     uz: "🔑 Saytga kirish kodingiz: {code}\n\nBu kod 10 daqiqa amal qiladi. Kirish sahifasida \"Telegram orqali kirish\"ni tanlab, shu kodni kiriting.",
     ru: "🔑 Ваш код входа на сайт: {code}\n\nКод действителен 10 минут. На странице входа выберите \"Войти через Telegram\" и введите этот код.",
@@ -410,11 +420,16 @@ function hashPassword(password) {
   return `${salt}:${hash}`;
 }
 
-function createUserFromBot(data, chatId) {
+function getUserByReferralCode(code) {
+  return db.prepare("SELECT * FROM users WHERE referral_code = ?").get(code);
+}
+
+function createUserFromBot(data, chatId, referredByCode) {
   const id = randomUUID();
+  const referrer = referredByCode ? getUserByReferralCode(referredByCode) : null;
   db.prepare(
-    `INSERT INTO users (id, email, password_hash, role, first_name, last_name, birth_date, passport_series, phone, created_at, telegram_chat_id)
-     VALUES (@id, @email, @passwordHash, 'user', @firstName, @lastName, @birthDate, @passportSeries, @phone, @createdAt, @chatId)`
+    `INSERT INTO users (id, email, password_hash, role, first_name, last_name, birth_date, passport_series, phone, created_at, telegram_chat_id, referral_code, referred_by)
+     VALUES (@id, @email, @passwordHash, 'user', @firstName, @lastName, @birthDate, @passportSeries, @phone, @createdAt, @chatId, @referralCode, @referredBy)`
   ).run({
     id,
     email: data.email,
@@ -426,6 +441,8 @@ function createUserFromBot(data, chatId) {
     phone: data.phone ?? "",
     createdAt: new Date().toISOString(),
     chatId: String(chatId),
+    referralCode: randomUUID().slice(0, 8),
+    referredBy: referrer?.id ?? null,
   });
   return db.prepare("SELECT * FROM users WHERE id = ?").get(id);
 }
@@ -726,6 +743,11 @@ function resetSession(chatId) {
   sessions.delete(chatId);
 }
 
+// Referral code carried from a t.me/<bot>?start=ref_<code> deep link
+// through to whenever this chat finishes bot-native signup (see
+// handleSignupStep). Cleared once consumed or on cancel.
+const pendingReferrals = new Map();
+
 // --- Quiz -------------------------------------------------------------------
 
 async function sendQuestion(token, chatId, session, lang) {
@@ -870,7 +892,8 @@ async function handleSignupStep(token, chatId, session, text, lang) {
   session.step += 1;
 
   if (session.step >= SIGNUP_STEPS.length) {
-    const user = createUserFromBot(session.data, chatId);
+    const user = createUserFromBot(session.data, chatId, pendingReferrals.get(chatId));
+    pendingReferrals.delete(chatId);
     resetSession(chatId);
     await sendMessage(token, chatId, tr("signupSuccess", lang, { name: user.first_name }));
     await sendMainMenu(token, chatId, tr("nowWhat", lang), lang, true);
@@ -1128,7 +1151,13 @@ async function handleMessage(token, message) {
   }
 
   const startMatch = text.match(/^\/start(?:\s+(\S+))?/);
-  if (startMatch?.[1]) {
+  if (startMatch?.[1]?.startsWith("ref_")) {
+    // Shared referral link (t.me/<bot>?start=ref_<code>) — remember it for
+    // whenever this chat finishes bot-native signup, then fall through to
+    // the normal /start greeting below.
+    const code = startMatch[1].slice(4);
+    if (getUserByReferralCode(code)) pendingReferrals.set(chatId, code);
+  } else if (startMatch?.[1]) {
     // Linking flow from the website's profile page ("Connect Telegram" button).
     const linkToken = startMatch[1];
     const user = db.prepare("SELECT id, first_name FROM users WHERE telegram_link_token = ?").get(linkToken);
@@ -1231,6 +1260,43 @@ async function handleMessage(token, message) {
   }
 
   await sendMainMenu(token, chatId, tr("unknownCommand", lang), lang, Boolean(user));
+}
+
+// ---------------------------------------------------------------------------
+// Weekly admin summary — a Monday-morning-style digest sent to every admin
+// account that has linked Telegram, so they don't have to open the admin
+// panel just to see whether anything happened this week.
+// ---------------------------------------------------------------------------
+
+const WEEKLY_SUMMARY_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+
+async function checkWeeklySummary(token) {
+  const lastSent = getSetting("last_weekly_summary_sent_at");
+  if (lastSent && Date.now() - new Date(lastSent).getTime() < WEEKLY_SUMMARY_INTERVAL_MS) return;
+
+  const since = new Date(Date.now() - WEEKLY_SUMMARY_INTERVAL_MS).toISOString();
+  const signups = db.prepare("SELECT COUNT(*) n FROM users WHERE created_at > ?").get(since).n;
+  const attempts = db.prepare("SELECT COUNT(*) n FROM quiz_attempts WHERE created_at > ?").get(since).n;
+  const feedback = db.prepare("SELECT COUNT(*) n FROM feedback WHERE created_at > ?").get(since).n;
+
+  const admins = db
+    .prepare("SELECT telegram_chat_id FROM users WHERE role = 'admin' AND telegram_chat_id IS NOT NULL")
+    .all();
+
+  for (const a of admins) {
+    const lang = getChatLang(a.telegram_chat_id);
+    const text = `${tr("weeklySummaryHeader", lang)}\n\n${tr("weeklySummaryBody", lang, { signups, attempts, feedback })}`;
+    await sendMessage(token, a.telegram_chat_id, text);
+  }
+
+  setSetting("last_weekly_summary_sent_at", new Date().toISOString());
+  if (admins.length) console.log(`[${new Date().toISOString()}] weekly summary sent to ${admins.length} admin(s)`);
+}
+
+function setSetting(key, value) {
+  db.prepare(
+    "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  ).run(key, value);
 }
 
 // ---------------------------------------------------------------------------
@@ -1342,6 +1408,7 @@ async function main() {
     if (Date.now() - lastReminderCheck > REMINDER_CHECK_INTERVAL_MS) {
       lastReminderCheck = Date.now();
       checkReminders(token).catch((err) => console.error("reminder check error:", err.message));
+      checkWeeklySummary(token).catch((err) => console.error("weekly summary error:", err.message));
     }
   }
 }

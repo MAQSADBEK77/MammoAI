@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       throw new ApiError(401, "Kod noto'g'ri yoki muddati o'tgan. Botdan yangi kod oling.");
     }
 
-    const token = signSession(user.id);
+    const token = signSession(user.id, user.tokenVersion);
     const store = await cookies();
     store.set(SESSION_COOKIE, token, sessionCookieOptions);
 
