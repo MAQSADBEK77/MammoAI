@@ -47,7 +47,7 @@ function optionsToCell(options: { text: string; score: number }[]) {
 }
 
 const TRANSLATABLE_LANGS: Language[] = ["ru", "en"];
-const LANG_LABEL: Record<Language, string> = { uz: "O'zbekcha", ru: "Русский", en: "English" };
+const LANG_LABEL: Record<"uz" | "ru" | "en", string> = { uz: "O'zbekcha", ru: "Русский", en: "English" };
 
 function emptyDraft(order: number): QuizQuestion {
   return {
@@ -385,7 +385,7 @@ function QuestionEditor({
   onAddOption: () => void;
   onRemoveOption: (index: number) => void;
 }) {
-  const [activeLang, setActiveLang] = useState<Language>("uz");
+  const [activeLang, setActiveLang] = useState<"uz" | "ru" | "en">("uz");
 
   function setTranslatedText(value: string) {
     if (activeLang === "uz") {
@@ -430,7 +430,7 @@ function QuestionEditor({
       </div>
 
       <div className="mt-5 flex items-center gap-1 border-b border-slate-200 dark:border-slate-700">
-        {(["uz", ...TRANSLATABLE_LANGS] as Language[]).map((lang) => (
+        {(["uz", ...TRANSLATABLE_LANGS] as ("uz" | "ru" | "en")[]).map((lang) => (
           <button
             key={lang}
             type="button"

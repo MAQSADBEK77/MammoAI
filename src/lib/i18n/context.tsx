@@ -5,14 +5,19 @@ import uz from "./uz";
 import ru from "./ru";
 import en from "./en";
 import type { Dictionary, Language } from "./types";
+import { deepTransliterate } from "@/lib/transliterate";
 
 export type { Language, Dictionary };
 
 const STORAGE_KEY = "mammoai:lang";
-const DICTIONARIES: Record<Language, Dictionary> = { uz, ru, en };
+// "uz-cyrl" isn't a separate translation — it's the same Uzbek text as "uz",
+// mechanically converted to Cyrillic script (see lib/transliterate.ts), computed
+// once at module load rather than hand-maintaining a fourth parallel file.
+const DICTIONARIES: Record<Language, Dictionary> = { uz, "uz-cyrl": deepTransliterate(uz), ru, en };
 
 export const LANGUAGE_LABELS: Record<Language, string> = {
   uz: "O'zbek",
+  "uz-cyrl": "Ўзбек (кирилл)",
   ru: "Русский",
   en: "English",
 };
@@ -26,7 +31,7 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function isLanguage(value: string | null): value is Language {
-  return value === "uz" || value === "ru" || value === "en";
+  return value === "uz" || value === "uz-cyrl" || value === "ru" || value === "en";
 }
 
 // Server-rendered HTML and the client's first render both start on "uz" —

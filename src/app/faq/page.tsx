@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { Card } from "@/components/ui";
 import { apiGetFaq, type FaqItem } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n/context";
+import { latinToCyrillicUz } from "@/lib/transliterate";
 
 export default function FaqPage() {
   const { t, language } = useLanguage();
@@ -17,6 +18,9 @@ export default function FaqPage() {
 
   function localized(item: FaqItem) {
     if (language === "uz") return { question: item.question, answer: item.answer };
+    if (language === "uz-cyrl") {
+      return { question: latinToCyrillicUz(item.question), answer: latinToCyrillicUz(item.answer) };
+    }
     const tr = item.translations?.[language];
     return { question: tr?.question?.trim() || item.question, answer: tr?.answer?.trim() || item.answer };
   }

@@ -289,9 +289,16 @@ const MSG = {
   },
 };
 
+// "uz-cyrl" is never a stored key in these uz/ru/en dicts — it's derived by
+// transliterating the uz entry on the fly, everywhere a language is looked up.
+function pickLang(dict, lang) {
+  if (lang === "uz-cyrl") return latinToCyrillicUz(dict.uz);
+  return dict[lang] || dict.uz;
+}
+
 function tr(key, lang, vars) {
   const entry = MSG[key];
-  let s = (entry && (entry[lang] || entry.uz)) ?? key;
+  let s = entry ? pickLang(entry, lang) : key;
   if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
   return s;
 }
@@ -340,7 +347,7 @@ const BTN_DEFS = {
 };
 
 function btn(action, lang) {
-  return BTN_DEFS[action][lang] || BTN_DEFS[action].uz;
+  return pickLang(BTN_DEFS[action], lang);
 }
 
 function matchButtonAction(text) {
@@ -351,12 +358,106 @@ function matchButtonAction(text) {
 }
 
 // ---------------------------------------------------------------------------
+// Uzbek Latin -> Cyrillic transliteration (mirrors src/lib/transliterate.ts)
+// — "uz-cyrl" isn't a separate translation, it's the same uz text mechanically
+// converted to Cyrillic script, so every uz string in this file gets it for
+// free instead of needing a fourth copy of every message below.
+// ---------------------------------------------------------------------------
+
+const CYR_APOSTROPHE = "['’‘ʻ`]";
+const CYR_DIGRAPHS = [
+  [new RegExp(`o${CYR_APOSTROPHE}`, "i"), "ў", "Ў"],
+  [new RegExp(`g${CYR_APOSTROPHE}`, "i"), "ғ", "Ғ"],
+  [/sh/i, "ш", "Ш"],
+  [/ch/i, "ч", "Ч"],
+  [/yo/i, "ё", "Ё"],
+  [/yu/i, "ю", "Ю"],
+  [/ya/i, "я", "Я"],
+];
+const CYR_SINGLE = {
+  a: "а", b: "б", d: "д", e: "е", f: "ф", g: "г", h: "ҳ", i: "и", j: "ж", k: "к",
+  l: "л", m: "м", n: "н", o: "о", p: "п", q: "қ", r: "р", s: "с", t: "т", u: "у",
+  v: "в", x: "х", y: "й", z: "з",
+};
+const CYR_VOWELS = "aeiou";
+
+function isUpperChar(ch) {
+  return ch !== ch.toLowerCase() && ch === ch.toUpperCase();
+}
+
+function transliterateWord(word) {
+  let out = "";
+  let i = 0;
+  while (i < word.length) {
+    let matched = false;
+    for (const [re, lower, upper] of CYR_DIGRAPHS) {
+      const two = word.slice(i, i + 2);
+      if (two.length === 2 && /^[a-zA-Z'’‘ʻ`]{2}$/.test(two) && re.test(two)) {
+        out += isUpperChar(two[0]) ? upper : lower;
+        i += 2;
+        matched = true;
+        break;
+      }
+    }
+    if (matched) continue;
+
+    const ch = word[i];
+    const lowerCh = ch.toLowerCase();
+    if (new RegExp(`^${CYR_APOSTROPHE}$`).test(ch)) {
+      out += "ъ";
+      i += 1;
+      continue;
+    }
+    if (lowerCh === "e") {
+      const prev = i > 0 ? word[i - 1].toLowerCase() : "";
+      const e = i === 0 || CYR_VOWELS.includes(prev) ? "э" : "е";
+      out += isUpperChar(ch) ? e.toUpperCase() : e;
+      i += 1;
+      continue;
+    }
+    if (CYR_SINGLE[lowerCh]) {
+      out += isUpperChar(ch) ? CYR_SINGLE[lowerCh].toUpperCase() : CYR_SINGLE[lowerCh];
+    } else {
+      out += ch;
+    }
+    i += 1;
+  }
+  return out;
+}
+
+function isProtectedToken(word) {
+  if (word === "MammoAI") return true;
+  if (word.includes("@")) return true;
+  if (/https?:\/\//.test(word)) return true;
+  if (/^[A-Z0-9+\-./:]+$/.test(word) && /\d/.test(word) && /[A-Z]/.test(word)) return true;
+  if (/^[A-Z]{2,}$/.test(word)) return true;
+  return false;
+}
+
+function latinToCyrillicUz(text) {
+  return text
+    .split(/(\s+)/)
+    .map((chunk) => {
+      if (/^\s+$/.test(chunk)) return chunk;
+      // Punctuation glued to a word (e.g. "MammoAI?") must not hide it from
+      // the protection check — peel it off, test/convert the bare word, glue it back.
+      const match = chunk.match(/^(\W*)(.*?)(\W*)$/);
+      if (!match) return isProtectedToken(chunk) ? chunk : transliterateWord(chunk);
+      const [, lead, core, trail] = match;
+      if (!core) return chunk;
+      return lead + (isProtectedToken(core) ? core : transliterateWord(core)) + trail;
+    })
+    .join("");
+}
+
+// ---------------------------------------------------------------------------
 // Date formatting — hand-written month names (mirrors src/lib/format.ts;
 // Node's bundled ICU data doesn't carry full Uzbek month names).
 // ---------------------------------------------------------------------------
 
 const MONTHS = {
   uz: ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"],
+  "uz-cyrl": ["январ", "феврал", "март", "апрел", "май", "июн", "июл", "август", "сентабр", "октабр", "ноябр", "декабр"],
   ru: ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"],
   en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
 };
@@ -485,11 +586,13 @@ function getOrderedQuestions() {
 // the admin-authored (uz) text — same behaviour as the website.
 function localizedQuestionText(q, lang) {
   if (lang === "uz") return q.text;
+  if (lang === "uz-cyrl") return latinToCyrillicUz(q.text);
   return q.translations?.[lang]?.text?.trim() || q.text;
 }
 
 function localizedOptionText(q, optionId, baseText, lang) {
   if (lang === "uz") return baseText;
+  if (lang === "uz-cyrl") return latinToCyrillicUz(baseText);
   return q.translations?.[lang]?.options?.[optionId]?.trim() || baseText;
 }
 
@@ -636,9 +739,9 @@ function buildResultPdf(userName, result, lang) {
     doc.fontSize(10).fillColor("#666666").text(`${result.totalScore}/${result.maxScore} ${PDF_LABELS.riskScoreLabel[lang]}`);
     doc.moveDown(0.8);
 
-    doc.fontSize(15).fillColor(riskColor).text(RISK_LABEL[result.riskLevel][lang]);
+    doc.fontSize(15).fillColor(riskColor).text(pickLang(RISK_LABEL[result.riskLevel], lang));
     doc.moveDown(0.6);
-    doc.fontSize(11).fillColor("#333333").text(RISK_DESCRIPTION[result.riskLevel][lang], { width: 480 });
+    doc.fontSize(11).fillColor("#333333").text(pickLang(RISK_DESCRIPTION[result.riskLevel], lang), { width: 480 });
 
     const highRiskInfo = result.riskLevel === "yuqori" ? getHighRiskInfoText() : "";
     if (highRiskInfo) {
@@ -731,6 +834,7 @@ function languageKeyboard() {
   return {
     inline_keyboard: [
       [{ text: "🇺🇿 O'zbekcha", callback_data: "lang:uz" }],
+      [{ text: "🇺🇿 Ўзбекча (кирилл)", callback_data: "lang:uz-cyrl" }],
       [{ text: "🇷🇺 Русский", callback_data: "lang:ru" }],
       [{ text: "🇬🇧 English", callback_data: "lang:en" }],
     ],
@@ -781,9 +885,9 @@ async function startQuiz(token, chatId, user, lang) {
 function formatResult(result, lang) {
   const lines = [
     tr("resultLine", lang, { percent: result.percent, total: result.totalScore, max: result.maxScore }),
-    tr("riskLine", lang, { risk: RISK_LABEL[result.riskLevel][lang] }),
+    tr("riskLine", lang, { risk: pickLang(RISK_LABEL[result.riskLevel], lang) }),
     "",
-    RISK_DESCRIPTION[result.riskLevel][lang],
+    pickLang(RISK_DESCRIPTION[result.riskLevel], lang),
   ];
   if (result.riskLevel === "yuqori") {
     const info = getHighRiskInfoText();
@@ -1057,7 +1161,7 @@ async function handleConfirmCallback(token, chatId, data, callbackQueryId, lang)
 }
 
 async function handleLanguageCallback(token, chatId, data, callbackQueryId) {
-  const match = data.match(/^lang:(uz|ru|en)$/);
+  const match = data.match(/^lang:(uz-cyrl|uz|ru|en)$/);
   if (!match) {
     await answerCallback(token, callbackQueryId, "");
     return;

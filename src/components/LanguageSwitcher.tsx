@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Globe } from "lucide-react";
 import { LANGUAGE_LABELS, useLanguage, type Language } from "@/lib/i18n/context";
 
-const ORDER: Language[] = ["uz", "ru", "en"];
+const ORDER: Language[] = ["uz", "uz-cyrl", "ru", "en"];
+const SHORT_LABEL: Record<Language, string> = { uz: "UZ", "uz-cyrl": "ЎЗ", ru: "RU", en: "EN" };
 
 export function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
@@ -28,11 +29,11 @@ export function LanguageSwitcher() {
         className="inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
       >
         <Globe size={16} />
-        <span className="hidden sm:inline">{language.toUpperCase()}</span>
+        <span className="hidden sm:inline">{SHORT_LABEL[language]}</span>
       </button>
 
       {open && (
-        <div className="animate-fade-in-up absolute right-0 top-full z-50 mt-1.5 w-36 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+        <div className="animate-fade-in-up absolute right-0 top-full z-50 mt-1.5 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
           {ORDER.map((lang) => (
             <button
               key={lang}
