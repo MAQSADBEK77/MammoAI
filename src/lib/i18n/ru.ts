@@ -187,6 +187,7 @@ const ru: Dictionary = {
     users: "Пользователи",
     quiz: "Вопросы теста",
     results: "Результаты",
+    settings: "Настройки",
   },
   adminOverview: {
     title: "Обзор",
@@ -252,6 +253,22 @@ const ru: Dictionary = {
     colRisk: "Уровень риска",
     unknownUser: "Неизвестный пользователь",
     empty: "Результаты не найдены.",
+  },
+  adminSettings: {
+    title: "Настройки",
+    subtitle: "Управление интеграциями на уровне системы.",
+    telegramTitle: "Telegram-бот",
+    telegramSubtitle:
+      "Подключите бота, чтобы пользователи получали напоминание в Telegram, когда придёт время пройти тест повторно. Создайте бота через @BotFather и вставьте токен сюда.",
+    tokenLabel: "Токен бота",
+    tokenPlaceholder: "123456789:AAExampleTokenFromBotFather",
+    tokenHint: "Получается через @BotFather → /newbot.",
+    saveButton: "Подключить",
+    savingButton: "Подключение...",
+    connectedAs: "Подключённый бот:",
+    notConnected: "Бот пока не подключён.",
+    disconnectButton: "Отключить",
+    disconnectConfirm: "Отключить Telegram-бота? Пользователи перестанут получать напоминания.",
   },
   risk: {
     pastLabel: "Низкий риск",

@@ -38,6 +38,14 @@ const db = global.__mammoaiDb ?? openDb();
 if (process.env.NODE_ENV !== "production") global.__mammoaiDb = db;
 
 db.exec(`
+  -- Small key/value store for admin-configurable settings (Telegram bot
+  -- token, etc.) — lets the admin panel manage these instead of editing
+  -- env vars on the server.
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
+
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
@@ -622,9 +630,12 @@ const DEFAULT_QUESTIONS: Omit<QuizQuestion, "id">[] = [
 const seedTransaction = db.transaction(() => {
   const userCount = (db.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number }).n;
   if (userCount === 0) {
+    // ADMIN_EMAIL/ADMIN_PASSWORD (set in .env.local, never committed) let a
+    // real deployment seed with its own admin credentials instead of the
+    // generic default below.
     createUser({
-      email: "admin@mammoai.uz",
-      password: "admin123",
+      email: process.env.ADMIN_EMAIL ?? "admin@mammoai.uz",
+      password: process.env.ADMIN_PASSWORD ?? "admin123",
       role: "admin",
       firstName: "Admin",
       lastName: "MammoAI",
@@ -650,6 +661,24 @@ try {
   if (!(err instanceof Error) || !err.message.includes("UNIQUE constraint")) {
     throw err;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Settings (key/value)
+// ---------------------------------------------------------------------------
+
+export function getSetting(key: string): string | null {
+  const row = db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as
+    | { value: string | null }
+    | undefined;
+  return row?.value ?? null;
+}
+
+export function setSetting(key: string, value: string | null) {
+  db.prepare(
+    `INSERT INTO settings (key, value) VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+  ).run(key, value);
 }
 
 export default db;

@@ -189,3 +189,23 @@ export async function apiGetAdminAttempts(): Promise<QuizAttempt[]> {
   return attempts;
 }
 
+export interface AdminTelegramSettings {
+  configured: boolean;
+  botUsername: string | null;
+}
+
+export async function apiGetAdminTelegramSettings(): Promise<AdminTelegramSettings> {
+  return apiFetch<AdminTelegramSettings>("/api/admin/settings/telegram");
+}
+
+export async function apiSaveAdminTelegramBot(token: string): Promise<{ botUsername: string }> {
+  return apiFetch("/api/admin/settings/telegram", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function apiDisconnectAdminTelegramBot(): Promise<void> {
+  await apiFetch("/api/admin/settings/telegram", { method: "DELETE" });
+}
+

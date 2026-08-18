@@ -187,6 +187,7 @@ const uz = {
     users: "Foydalanuvchilar",
     quiz: "Test savollari",
     results: "Natijalar",
+    settings: "Sozlamalar",
   },
   adminOverview: {
     title: "Umumiy ko'rinish",
@@ -252,6 +253,22 @@ const uz = {
     colRisk: "Xavf darajasi",
     unknownUser: "Noma'lum foydalanuvchi",
     empty: "Natijalar topilmadi.",
+  },
+  adminSettings: {
+    title: "Sozlamalar",
+    subtitle: "Tizim darajasidagi integratsiyalarni boshqaring.",
+    telegramTitle: "Telegram bot",
+    telegramSubtitle:
+      "Foydalanuvchilar qayta test topshirish vaqti kelganda Telegram orqali eslatma olishlari uchun bot ulang. Botni @BotFather orqali yarating va tokenni shu yerga joylashtiring.",
+    tokenLabel: "Bot tokeni",
+    tokenPlaceholder: "123456789:AAExampleTokenFromBotFather",
+    tokenHint: "@BotFather → /newbot orqali olinadi.",
+    saveButton: "Ulash",
+    savingButton: "Ulanmoqda...",
+    connectedAs: "Ulangan bot:",
+    notConnected: "Hali hech qanday bot ulanmagan.",
+    disconnectButton: "Uzish",
+    disconnectConfirm: "Telegram botni uzmoqchimisiz? Foydalanuvchilarga eslatma yuborilmay qoladi.",
   },
   risk: {
     pastLabel: "Past xavf",

@@ -187,6 +187,7 @@ const en: Dictionary = {
     users: "Users",
     quiz: "Test questions",
     results: "Results",
+    settings: "Settings",
   },
   adminOverview: {
     title: "Overview",
@@ -252,6 +253,22 @@ const en: Dictionary = {
     colRisk: "Risk level",
     unknownUser: "Unknown user",
     empty: "No results found.",
+  },
+  adminSettings: {
+    title: "Settings",
+    subtitle: "Manage system-level integrations.",
+    telegramTitle: "Telegram bot",
+    telegramSubtitle:
+      "Connect a bot so users can get a Telegram reminder when it's time to retake the test. Create a bot via @BotFather and paste its token here.",
+    tokenLabel: "Bot token",
+    tokenPlaceholder: "123456789:AAExampleTokenFromBotFather",
+    tokenHint: "Get this from @BotFather → /newbot.",
+    saveButton: "Connect",
+    savingButton: "Connecting...",
+    connectedAs: "Connected bot:",
+    notConnected: "No bot connected yet.",
+    disconnectButton: "Disconnect",
+    disconnectConfirm: "Disconnect the Telegram bot? Users will stop receiving reminders.",
   },
   risk: {
     pastLabel: "Low risk",
