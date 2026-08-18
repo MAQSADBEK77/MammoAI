@@ -4,24 +4,31 @@ import { useEffect, useState } from "react";
 import { Search, ShieldCheck, Trash2 } from "lucide-react";
 import { Badge, Card, Input } from "@/components/ui";
 import { RiskBadge } from "@/components/RiskBadge";
-import { deleteUser, getLatestAttemptForUser, getUsers } from "@/lib/store";
-import type { User } from "@/lib/types";
+import { apiDeleteUser, apiGetAdminUsers, type AdminUser } from "@/lib/store";
 import { formatDate } from "@/lib/format";
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [query, setQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setUsers(getUsers());
-  }, []);
+  function reload() {
+    apiGetAdminUsers().then(setUsers);
+  }
 
-  function handleDelete(id: string) {
+  useEffect(reload, []);
+
+  async function handleDelete(id: string) {
     if (!window.confirm("Ushbu foydalanuvchini va uning test natijalarini o'chirmoqchimisiz?")) {
       return;
     }
-    deleteUser(id);
-    setUsers(getUsers());
+    setError(null);
+    try {
+      await apiDeleteUser(id);
+      reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "O'chirib bo'lmadi.");
+    }
   }
 
   const q = query.trim().toLowerCase();
@@ -39,8 +46,8 @@ export default function AdminUsersPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Foydalanuvchilar</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Foydalanuvchilar</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Ro&apos;yxatdan o&apos;tgan barcha foydalanuvchilarning shaxsiy ma&apos;lumotlari.
           </p>
         </div>
@@ -55,10 +62,16 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {error && (
+        <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
+          {error}
+        </p>
+      )}
+
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-400 dark:bg-slate-900 dark:text-slate-500">
               <tr>
                 <th className="px-5 py-3">F.I.O.</th>
                 <th className="px-5 py-3">Email / Telefon</th>
@@ -69,51 +82,50 @@ export default function AdminUsersPage() {
                 <th className="px-5 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.map((u) => {
-                const latest = getLatestAttemptForUser(u.id);
-                return (
-                  <tr key={u.id}>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2 font-medium text-slate-900">
-                        {u.firstName} {u.lastName}
-                        {u.role === "admin" && (
-                          <Badge tone="blue">
-                            <ShieldCheck size={11} className="mr-1 inline" />
-                            Admin
-                          </Badge>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-slate-600">
-                      <div>{u.email}</div>
-                      {u.phone && <div className="text-xs text-slate-400">{u.phone}</div>}
-                    </td>
-                    <td className="px-5 py-3 text-slate-600">{formatDate(u.birthDate)}</td>
-                    <td className="px-5 py-3 text-slate-600">{u.passportSeries}</td>
-                    <td className="px-5 py-3 text-slate-600">{formatDate(u.createdAt)}</td>
-                    <td className="px-5 py-3">
-                      {latest ? <RiskBadge level={latest.riskLevel} size="sm" /> : (
-                        <span className="text-xs text-slate-400">Topshirmagan</span>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {filtered.map((u) => (
+                <tr key={u.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2 font-medium text-slate-900 dark:text-white">
+                      {u.firstName} {u.lastName}
+                      {u.role === "admin" && (
+                        <Badge tone="blue">
+                          <ShieldCheck size={11} className="mr-1 inline" />
+                          Admin
+                        </Badge>
                       )}
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      {u.role !== "admin" && (
-                        <button
-                          onClick={() => handleDelete(u.id)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
-                          title="O'chirish"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3 text-slate-600 dark:text-slate-300">
+                    <div>{u.email}</div>
+                    {u.phone && <div className="text-xs text-slate-400 dark:text-slate-500">{u.phone}</div>}
+                  </td>
+                  <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{formatDate(u.birthDate)}</td>
+                  <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{u.passportSeries}</td>
+                  <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{formatDate(u.createdAt)}</td>
+                  <td className="px-5 py-3">
+                    {u.latestAttempt ? (
+                      <RiskBadge level={u.latestAttempt.riskLevel} size="sm" />
+                    ) : (
+                      <span className="text-xs text-slate-400 dark:text-slate-500">Topshirmagan</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    {u.role !== "admin" && (
+                      <button
+                        onClick={() => handleDelete(u.id)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                        title="O'chirish"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">
+                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400 dark:text-slate-500">
                     Hech narsa topilmadi.
                   </td>
                 </tr>

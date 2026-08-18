@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, ShieldAlert, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Printer, ShieldAlert, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RiskBadge } from "@/components/RiskBadge";
 import { Meter } from "@/components/Meter";
 import { Badge, Button, Card, LinkButton } from "@/components/ui";
+import { StatCounter } from "@/components/StatCounter";
+import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
-import { RISK_DESCRIPTIONS, getQuestions, submitAttempt } from "@/lib/store";
+import { RISK_DESCRIPTIONS, apiGetQuestions, apiSubmitAttempt } from "@/lib/store";
+import { formatDate } from "@/lib/format";
 import type { QuizAttempt, QuizQuestion } from "@/lib/types";
 
 export default function TestPage() {
@@ -25,9 +28,13 @@ function TestContent() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, { optionId: string; score: number }>>({});
   const [result, setResult] = useState<QuizAttempt | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setQuestions(getQuestions());
+    apiGetQuestions()
+      .then(setQuestions)
+      .catch((err) => setError(err instanceof Error ? err.message : "Savollarni yuklab bo'lmadi."));
   }, []);
 
   const question = questions[step];
@@ -44,15 +51,24 @@ function TestContent() {
     setAnswers((prev) => ({ ...prev, [question.id]: { optionId, score } }));
   }
 
-  function goNext() {
+  async function goNext() {
     if (step < questions.length - 1) {
       setStep((s) => s + 1);
-    } else if (user && allAnswered) {
-      const attempt = submitAttempt(
-        user.id,
-        Object.entries(answers).map(([questionId, a]) => ({ questionId, ...a }))
+      return;
+    }
+    if (!user || !allAnswered) return;
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      const attempt = await apiSubmitAttempt(
+        Object.entries(answers).map(([questionId, a]) => ({ questionId, optionId: a.optionId }))
       );
       setResult(attempt);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Natijani saqlab bo'lmadi.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -64,44 +80,59 @@ function TestContent() {
 
   if (result) {
     return (
-      <div className="flex min-h-full flex-col bg-slate-50">
+      <div className="flex min-h-full flex-col bg-slate-50 dark:bg-slate-950">
         <Navbar />
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-14 sm:px-6 lg:px-8">
-          <Card className="p-8 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Test natijasi
-            </p>
-            <p className="mt-3 text-6xl font-bold text-slate-900">{result.percent}%</p>
-            <p className="mt-1 text-sm text-slate-500">xavf ko&apos;rsatkichi</p>
-
-            <div className="mt-6 flex justify-center">
-              <RiskBadge level={result.riskLevel} />
-            </div>
-
-            <div className="mt-6">
-              <Meter percent={result.percent} level={result.riskLevel} />
-              <div className="mt-1.5 flex justify-between text-[11px] text-slate-400">
-                <span>Past</span>
-                <span>O&apos;rta</span>
-                <span>Yuqori</span>
+          <Card className="animate-pop-in p-8 text-center">
+            <div className="print-area">
+              <div className="mb-6 hidden text-left print:block">
+                <Logo size="sm" align="left" dark={false} withSubtitle={false} />
+                <p className="mt-3 text-sm text-slate-600">
+                  {user?.firstName} {user?.lastName} · {formatDate(result.createdAt)}
+                </p>
               </div>
-            </div>
 
-            <p className="mt-6 text-sm leading-relaxed text-slate-600">
-              {RISK_DESCRIPTIONS[result.riskLevel]}
-            </p>
-
-            <div className="mt-6 flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 text-left text-xs text-amber-800">
-              <ShieldAlert size={16} className="mt-0.5 shrink-0" />
-              <p>
-                Bu natija tibbiy tashxis emas, faqat dastlabki xabardorlik uchun
-                mo&apos;ljallangan. Xavotir bo&apos;lsa shifokorga murojaat qiling.
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Test natijasi
               </p>
+              <p className="mt-3 text-6xl font-bold text-slate-900 dark:text-white">
+                <StatCounter value={result.percent} suffix="%" duration={900} />
+              </p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">xavf ko&apos;rsatkichi</p>
+
+              <div className="mt-6 flex justify-center">
+                <RiskBadge level={result.riskLevel} pulse />
+              </div>
+
+              <div className="mt-6">
+                <Meter percent={result.percent} level={result.riskLevel} />
+                <div className="mt-1.5 flex justify-between text-[11px] text-slate-400 dark:text-slate-500">
+                  <span>Past</span>
+                  <span>O&apos;rta</span>
+                  <span>Yuqori</span>
+                </div>
+              </div>
+
+              <p className="mt-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                {RISK_DESCRIPTIONS[result.riskLevel]}
+              </p>
+
+              <div className="mt-6 flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 text-left text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                <ShieldAlert size={16} className="mt-0.5 shrink-0" />
+                <p>
+                  Bu natija tibbiy tashxis emas, faqat dastlabki xabardorlik uchun
+                  mo&apos;ljallangan. Xavotir bo&apos;lsa shifokorga murojaat qiling.
+                </p>
+              </div>
             </div>
 
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <Button variant="secondary" onClick={retake}>
                 Qayta topshirish
+              </Button>
+              <Button variant="secondary" onClick={() => window.print()}>
+                <Printer size={15} />
+                Chop etish
               </Button>
               <LinkButton href="/profile">Profilga qaytish</LinkButton>
             </div>
@@ -113,41 +144,41 @@ function TestContent() {
 
   if (!question) {
     return (
-      <div className="flex min-h-full flex-col bg-slate-50">
+      <div className="flex min-h-full flex-col bg-slate-50 dark:bg-slate-950">
         <Navbar />
-        <main className="flex flex-1 items-center justify-center text-sm text-slate-400">
-          Yuklanmoqda...
+        <main className="flex flex-1 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
+          {error ?? "Yuklanmoqda..."}
         </main>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-full flex-col bg-slate-50">
+    <div className="flex min-h-full flex-col bg-slate-50 dark:bg-slate-950">
       <Navbar />
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-xs text-blue-700">
+        <div className="mb-6 flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-xs text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
           <Sparkles size={14} />
           Bu test dastlabki xabardorlik uchun mo&apos;ljallangan, tibbiy tashxis
           o&apos;rnini bosmaydi.
         </div>
 
-        <div className="mb-2 flex items-center justify-between text-xs font-medium text-slate-400">
+        <div className="mb-2 flex items-center justify-between text-xs font-medium text-slate-400 dark:text-slate-500">
           <span>
             Savol {step + 1} / {questions.length}
           </span>
           <span>{progress}%</span>
         </div>
-        <div className="mb-6 h-2 w-full rounded-full bg-slate-200">
+        <div className="mb-6 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 transition-[width]"
+            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 transition-[width] duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
 
-        <Card className="p-6">
+        <Card key={question.id} className="animate-fade-in-up p-6">
           <Badge tone="blue">{question.category}</Badge>
-          <h2 className="mt-3 text-lg font-semibold text-slate-900">
+          <h2 className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">
             {question.text}
           </h2>
 
@@ -159,16 +190,18 @@ function TestContent() {
                   key={option.id}
                   type="button"
                   onClick={() => selectOption(option.id, option.score)}
-                  className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all cursor-pointer ${
                     selected
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-500/10 dark:text-blue-300"
+                      : "border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:-translate-y-0.5 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800/60"
                   }`}
                 >
                   {option.text}
                   <span
-                    className={`h-4 w-4 rounded-full border-2 ${
-                      selected ? "border-blue-600 bg-blue-600" : "border-slate-300"
+                    className={`flex h-4 w-4 items-center justify-center rounded-full border-2 transition-all ${
+                      selected
+                        ? "scale-110 border-blue-600 bg-blue-600 dark:border-blue-400 dark:bg-blue-400"
+                        : "border-slate-300 dark:border-slate-600"
                     }`}
                   />
                 </button>
@@ -176,6 +209,12 @@ function TestContent() {
             })}
           </div>
         </Card>
+
+        {error && (
+          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
+            {error}
+          </p>
+        )}
 
         <div className="mt-6 flex items-center justify-between">
           <Button
@@ -186,8 +225,8 @@ function TestContent() {
             <ArrowLeft size={15} />
             Orqaga
           </Button>
-          <Button onClick={goNext} disabled={!answered}>
-            {step === questions.length - 1 ? "Yakunlash" : "Keyingi"}
+          <Button onClick={goNext} disabled={!answered || submitting}>
+            {submitting ? "Yuborilmoqda..." : step === questions.length - 1 ? "Yakunlash" : "Keyingi"}
             <ArrowRight size={15} />
           </Button>
         </div>

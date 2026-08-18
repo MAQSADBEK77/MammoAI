@@ -2,10 +2,11 @@ export type Role = "user" | "admin";
 
 export type RiskLevel = "past" | "orta" | "yuqori";
 
+// The shape returned by the API — never includes a password/hash. The server
+// keeps password hashes in its own row type (see src/server/db.ts).
 export interface User {
   id: string;
   email: string;
-  password: string; // NOTE: plain text — prototype only, replace with real auth before launch
   role: Role;
   firstName: string;
   lastName: string;
@@ -14,8 +15,6 @@ export interface User {
   phone?: string;
   createdAt: string;
 }
-
-export type PublicUser = Omit<User, "password">;
 
 export interface QuizOption {
   id: string;
@@ -40,6 +39,8 @@ export interface QuizAnswer {
 export interface QuizAttempt {
   id: string;
   userId: string;
+  userFirstName?: string;
+  userLastName?: string;
   answers: QuizAnswer[];
   totalScore: number;
   maxScore: number;

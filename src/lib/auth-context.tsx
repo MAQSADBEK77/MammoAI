@@ -10,32 +10,24 @@ import {
 } from "react";
 import type { User } from "./types";
 import {
-  createUser,
-  getSessionUserId,
-  getUserByEmail,
-  getUserById,
-  setSessionUserId,
-  updateUser,
+  apiLogin,
+  apiLogout,
+  apiMe,
+  apiSignUp,
+  apiUpdateProfile,
+  type SignUpInput,
 } from "./store";
-
-interface SignUpInput {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  birthDate: string;
-  passportSeries: string;
-  phone?: string;
-}
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => User;
-  signUp: (input: SignUpInput) => User;
-  logout: () => void;
-  refresh: () => void;
-  updateProfile: (patch: Partial<User>) => void;
+  login: (email: string, password: string) => Promise<User>;
+  signUp: (input: SignUpInput) => Promise<User>;
+  logout: () => Promise<void>;
+  refresh: () => Promise<void>;
+  updateProfile: (
+    patch: Partial<Pick<User, "firstName" | "lastName" | "birthDate" | "passportSeries" | "phone">>
+  ) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -44,58 +36,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const refresh = useCallback(async () => {
+    const current = await apiMe();
+    setUser(current);
+  }, []);
+
   useEffect(() => {
-    const id = getSessionUserId();
-    if (id) {
-      const found = getUserById(id);
-      setUser(found ?? null);
-    }
-    setLoading(false);
+    apiMe()
+      .then(setUser)
+      .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback((email: string, password: string) => {
-    const found = getUserByEmail(email);
-    if (!found || found.password !== password) {
-      throw new Error("Email yoki parol noto'g'ri.");
-    }
-    setSessionUserId(found.id);
-    setUser(found);
-    return found;
+  const login = useCallback(async (email: string, password: string) => {
+    const loggedIn = await apiLogin(email, password);
+    setUser(loggedIn);
+    return loggedIn;
   }, []);
 
-  const signUp = useCallback((input: SignUpInput) => {
-    const created = createUser({
-      firstName: input.firstName,
-      lastName: input.lastName,
-      email: input.email,
-      password: input.password,
-      birthDate: input.birthDate,
-      passportSeries: input.passportSeries,
-      phone: input.phone ?? "",
-    });
-    setSessionUserId(created.id);
+  const signUp = useCallback(async (input: SignUpInput) => {
+    const created = await apiSignUp(input);
     setUser(created);
     return created;
   }, []);
 
-  const logout = useCallback(() => {
-    setSessionUserId(null);
+  const logout = useCallback(async () => {
+    await apiLogout();
     setUser(null);
   }, []);
 
-  const refresh = useCallback(() => {
-    const id = getSessionUserId();
-    setUser(id ? getUserById(id) ?? null : null);
+  const updateProfile = useCallback<AuthContextValue["updateProfile"]>(async (patch) => {
+    const updated = await apiUpdateProfile(patch);
+    setUser(updated);
   }, []);
-
-  const updateProfile = useCallback(
-    (patch: Partial<User>) => {
-      if (!user) return;
-      const updated = updateUser(user.id, patch);
-      if (updated) setUser(updated);
-    },
-    [user]
-  );
 
   const value = useMemo(
     () => ({ user, loading, login, signUp, logout, refresh, updateProfile }),

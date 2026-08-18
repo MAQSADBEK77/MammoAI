@@ -21,7 +21,7 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -44,7 +44,7 @@ export default function SignUpPage() {
 
     setSubmitting(true);
     try {
-      signUp({
+      await signUp({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),

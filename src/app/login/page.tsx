@@ -15,12 +15,12 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      const user = login(email.trim(), password);
+      const user = await login(email.trim(), password);
       router.push(user.role === "admin" ? "/admin" : "/test");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Xatolik yuz berdi.");

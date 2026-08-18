@@ -21,7 +21,7 @@ export function AuthShell({
             "radial-gradient(600px circle at 50% 0%, rgba(59,130,246,0.25), transparent 70%)",
         }}
       />
-      <div className="relative w-full max-w-md">
+      <div className="animate-fade-in-up relative w-full max-w-md">
         <div className="mb-8">
           <Logo size="md" />
         </div>

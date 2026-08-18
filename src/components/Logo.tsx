@@ -28,27 +28,30 @@ export function Logo({
         align === "center" ? "items-center text-center" : "items-start text-left"
       )}
     >
-      <div
-        className={clsx(
-          s.box,
-          "inline-flex items-center justify-center rounded-2xl shadow-2xl shadow-blue-900/30",
-          "bg-gradient-to-br from-blue-500 to-blue-700"
-        )}
-      >
-        <Activity size={s.icon} className="text-white" strokeWidth={2.25} />
+      <div className="relative">
+        <span className="animate-pulse-ring absolute inset-0 rounded-2xl bg-blue-500" />
+        <div
+          className={clsx(
+            s.box,
+            "relative inline-flex items-center justify-center rounded-2xl shadow-2xl shadow-blue-900/30",
+            "bg-gradient-to-br from-blue-500 to-blue-700"
+          )}
+        >
+          <Activity size={s.icon} className="text-white" strokeWidth={2.25} />
+        </div>
       </div>
       <div>
         <h1
           className={clsx(
             s.title,
             "font-bold tracking-tight",
-            dark ? "text-white" : "text-slate-900"
+            dark ? "text-white" : "text-slate-900 dark:text-white"
           )}
         >
           MammoAI
         </h1>
         {withSubtitle && (
-          <p className={clsx(s.sub, dark ? "text-blue-300" : "text-blue-600")}>
+          <p className={clsx(s.sub, dark ? "text-blue-300" : "text-blue-600 dark:text-blue-400")}>
             Ko&apos;krak saratonini erta aniqlash tizimi
           </p>
         )}

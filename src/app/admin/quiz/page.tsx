@@ -12,17 +12,18 @@ import {
 } from "lucide-react";
 import { Badge, Button, Card, Field, Input } from "@/components/ui";
 import {
-  deleteQuestion,
-  getQuestions,
-  reorderQuestions,
-  saveQuestion,
-  uid,
+  apiCreateQuestion,
+  apiDeleteQuestion,
+  apiGetQuestions,
+  apiReorderQuestions,
+  apiUpdateQuestion,
 } from "@/lib/store";
+import { uid } from "@/lib/id";
 import type { QuizQuestion } from "@/lib/types";
 
 function emptyDraft(order: number): QuizQuestion {
   return {
-    id: uid("q"),
+    id: "new",
     order,
     category: "",
     text: "",
@@ -38,18 +39,16 @@ export default function AdminQuizPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<QuizQuestion | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   function reload() {
-    setQuestions(getQuestions());
+    apiGetQuestions().then(setQuestions);
   }
 
-  useEffect(() => {
-    reload();
-  }, []);
+  useEffect(reload, []);
 
   function startNew() {
-    const d = emptyDraft(questions.length + 1);
-    setDraft(d);
+    setDraft(emptyDraft(questions.length + 1));
     setEditingId("new");
     setError(null);
   }
@@ -66,7 +65,7 @@ export default function AdminQuizPage() {
     setError(null);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!draft) return;
     if (!draft.text.trim()) {
       setError("Savol matnini kiriting.");
@@ -77,24 +76,48 @@ export default function AdminQuizPage() {
       setError("Kamida 2 ta javob varianti bo'lishi kerak.");
       return;
     }
-    saveQuestion({ ...draft, options: validOptions });
-    reload();
-    cancelEdit();
+
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = { category: draft.category, text: draft.text, order: draft.order, options: validOptions };
+      if (editingId === "new") {
+        await apiCreateQuestion(payload);
+      } else {
+        await apiUpdateQuestion(draft.id, payload);
+      }
+      reload();
+      cancelEdit();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Saqlab bo'lmadi.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     if (!window.confirm("Ushbu savolni o'chirmoqchimisiz?")) return;
-    deleteQuestion(id);
-    reload();
+    try {
+      await apiDeleteQuestion(id);
+      reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "O'chirib bo'lmadi.");
+    }
   }
 
-  function move(index: number, dir: -1 | 1) {
+  async function move(index: number, dir: -1 | 1) {
     const next = [...questions];
     const target = index + dir;
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
-    reorderQuestions(next);
-    reload();
+    setQuestions(next); // optimistic
+    try {
+      await apiReorderQuestions(next.map((q) => q.id));
+      reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Tartibni o'zgartirib bo'lmadi.");
+      reload();
+    }
   }
 
   function updateOption(index: number, patch: Partial<{ text: string; score: number }>) {
@@ -117,8 +140,8 @@ export default function AdminQuizPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Test savollari</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Test savollari</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Foydalanuvchilarga ko&apos;rsatiladigan test savollari va ularning
             xavf ballarini boshqaring.
           </p>
@@ -136,6 +159,7 @@ export default function AdminQuizPage() {
           draft={draft}
           setDraft={setDraft}
           error={error}
+          saving={saving}
           onCancel={cancelEdit}
           onSave={handleSave}
           onUpdateOption={updateOption}
@@ -152,6 +176,7 @@ export default function AdminQuizPage() {
               draft={draft}
               setDraft={setDraft}
               error={error}
+              saving={saving}
               onCancel={cancelEdit}
               onSave={handleSave}
               onUpdateOption={updateOption}
@@ -159,18 +184,18 @@ export default function AdminQuizPage() {
               onRemoveOption={removeOption}
             />
           ) : (
-            <Card key={q.id} className="p-5">
+            <Card key={q.id} className="animate-fade-in p-5 transition-shadow hover:shadow-md">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <Badge tone="blue">{q.category || "Kategoriyasiz"}</Badge>
-                  <h3 className="mt-2 font-semibold text-slate-900">
+                  <h3 className="mt-2 font-semibold text-slate-900 dark:text-white">
                     {index + 1}. {q.text}
                   </h3>
                   <ul className="mt-2 flex flex-col gap-1">
                     {q.options.map((o) => (
-                      <li key={o.id} className="text-sm text-slate-500">
+                      <li key={o.id} className="text-sm text-slate-500 dark:text-slate-400">
                         · {o.text}{" "}
-                        <span className="text-xs font-medium text-slate-400">
+                        <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
                           (ball: {o.score})
                         </span>
                       </li>
@@ -181,7 +206,7 @@ export default function AdminQuizPage() {
                   <button
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-30 cursor-pointer dark:text-slate-500 dark:hover:bg-slate-800"
                     title="Yuqoriga"
                   >
                     <ArrowUp size={15} />
@@ -189,21 +214,21 @@ export default function AdminQuizPage() {
                   <button
                     onClick={() => move(index, 1)}
                     disabled={index === questions.length - 1}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-30 cursor-pointer dark:text-slate-500 dark:hover:bg-slate-800"
                     title="Pastga"
                   >
                     <ArrowDown size={15} />
                   </button>
                   <button
                     onClick={() => startEdit(q)}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 cursor-pointer"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 cursor-pointer dark:text-slate-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-400"
                     title="Tahrirlash"
                   >
                     <Pencil size={15} />
                   </button>
                   <button
                     onClick={() => handleDelete(q.id)}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                     title="O'chirish"
                   >
                     <Trash2 size={15} />
@@ -215,7 +240,7 @@ export default function AdminQuizPage() {
         )}
 
         {questions.length === 0 && editingId === null && (
-          <Card className="p-10 text-center text-sm text-slate-400">
+          <Card className="p-10 text-center text-sm text-slate-400 dark:text-slate-500">
             Hali savollar qo&apos;shilmagan.
           </Card>
         )}
@@ -228,6 +253,7 @@ function QuestionEditor({
   draft,
   setDraft,
   error,
+  saving,
   onCancel,
   onSave,
   onUpdateOption,
@@ -237,6 +263,7 @@ function QuestionEditor({
   draft: QuizQuestion;
   setDraft: (q: QuizQuestion) => void;
   error: string | null;
+  saving: boolean;
   onCancel: () => void;
   onSave: () => void;
   onUpdateOption: (index: number, patch: Partial<{ text: string; score: number }>) => void;
@@ -244,7 +271,7 @@ function QuestionEditor({
   onRemoveOption: (index: number) => void;
 }) {
   return (
-    <Card className="border-blue-200 p-5 ring-2 ring-blue-100">
+    <Card className="animate-pop-in border-blue-200 p-5 ring-2 ring-blue-100 dark:border-blue-500/30 dark:ring-blue-500/10">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Kategoriya" hint="Masalan: Alomatlar, Oilaviy tarix">
           <Input
@@ -266,8 +293,8 @@ function QuestionEditor({
       </div>
 
       <div className="mt-5">
-        <p className="text-sm font-medium text-slate-700">Javob variantlari</p>
-        <p className="text-xs text-slate-400">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Javob variantlari</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">
           Har bir variant uchun xavf ballini belgilang (0 — xavfsiz, katta son — yuqori xavf).
         </p>
         <div className="mt-3 flex flex-col gap-2">
@@ -289,7 +316,7 @@ function QuestionEditor({
               <button
                 onClick={() => onRemoveOption(index)}
                 disabled={draft.options.length <= 2}
-                className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 cursor-pointer"
+                className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
               >
                 <X size={15} />
               </button>
@@ -298,7 +325,7 @@ function QuestionEditor({
         </div>
         <button
           onClick={onAddOption}
-          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
+          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer dark:text-blue-400 dark:hover:text-blue-300"
         >
           <Plus size={14} />
           Variant qo&apos;shish
@@ -306,16 +333,18 @@ function QuestionEditor({
       </div>
 
       {error && (
-        <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
+          {error}
+        </p>
       )}
 
       <div className="mt-6 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onCancel}>
+        <Button variant="ghost" onClick={onCancel} disabled={saving}>
           Bekor qilish
         </Button>
-        <Button onClick={onSave}>
+        <Button onClick={onSave} disabled={saving}>
           <Save size={15} />
-          Saqlash
+          {saving ? "Saqlanmoqda..." : "Saqlash"}
         </Button>
       </div>
     </Card>

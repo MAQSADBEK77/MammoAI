@@ -14,14 +14,16 @@ export function Button({
   return (
     <button
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
+        "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer",
         size === "md" ? "px-5 py-2.5 text-sm" : "px-3.5 py-1.5 text-sm",
         variant === "primary" &&
-          "bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/20 hover:from-blue-600 hover:to-blue-800",
+          "bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/20 hover:from-blue-600 hover:to-blue-800 hover:shadow-blue-900/30",
         variant === "secondary" &&
-          "bg-slate-100 text-slate-700 hover:bg-slate-200",
-        variant === "ghost" && "text-slate-600 hover:bg-slate-100",
-        variant === "danger" && "bg-red-50 text-red-600 hover:bg-red-100",
+          "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
+        variant === "ghost" &&
+          "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+        variant === "danger" &&
+          "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20",
         className
       )}
       {...props}
@@ -44,11 +46,13 @@ export function LinkButton({
     <Link
       href={href}
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors",
+        "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97]",
         variant === "primary" &&
-          "bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/20 hover:from-blue-600 hover:to-blue-800",
-        variant === "secondary" && "bg-slate-100 text-slate-700 hover:bg-slate-200",
-        variant === "ghost" && "text-slate-600 hover:bg-slate-100",
+          "bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/20 hover:from-blue-600 hover:to-blue-800 hover:shadow-blue-900/30",
+        variant === "secondary" &&
+          "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
+        variant === "ghost" &&
+          "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
         className
       )}
     >
@@ -61,7 +65,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return (
     <div
       className={clsx(
-        "rounded-2xl border border-slate-200 bg-white shadow-sm",
+        "rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900",
         className
       )}
       {...props}
@@ -88,14 +92,19 @@ export function Field({
         htmlFor={htmlFor}
         className={clsx(
           "text-sm font-medium",
-          dark ? "text-blue-100" : "text-slate-700"
+          dark ? "text-blue-100" : "text-slate-700 dark:text-slate-200"
         )}
       >
         {label}
       </label>
       {children}
       {hint && (
-        <p className={clsx("text-xs", dark ? "text-blue-300/60" : "text-slate-400")}>
+        <p
+          className={clsx(
+            "text-xs",
+            dark ? "text-blue-300/60" : "text-slate-400 dark:text-slate-500"
+          )}
+        >
           {hint}
         </p>
       )}
@@ -114,7 +123,7 @@ export function Input({
         "w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors",
         dark
           ? "border-white/10 bg-white/5 text-white placeholder:text-blue-300/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-          : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100",
+          : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800/60 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/20",
         className
       )}
       {...props}
@@ -133,7 +142,7 @@ export function Select({
         "w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors",
         dark
           ? "border-white/10 bg-white/5 text-white focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 [&>option]:text-slate-900"
-          : "border-slate-200 bg-white text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100",
+          : "border-slate-200 bg-white text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800/60 dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400/20 dark:[&>option]:text-slate-900",
         className
       )}
       {...props}
@@ -149,11 +158,11 @@ export function Badge({
   tone?: "slate" | "green" | "yellow" | "red" | "blue";
 }) {
   const tones: Record<string, string> = {
-    slate: "bg-slate-100 text-slate-600",
-    green: "bg-emerald-50 text-emerald-700",
-    yellow: "bg-amber-50 text-amber-700",
-    red: "bg-red-50 text-red-600",
-    blue: "bg-blue-50 text-blue-700",
+    slate: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+    green: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+    yellow: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+    red: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+    blue: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300",
   };
   return (
     <span

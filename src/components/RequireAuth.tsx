@@ -25,8 +25,9 @@ export function RequireAuth({
 
   if (loading || !user || (adminOnly && user.role !== "admin")) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-400">
-        Yuklanmoqda...
+      <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-400 dark:text-slate-500">
+        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        <span className="ml-2">Yuklanmoqda...</span>
       </div>
     );
   }
