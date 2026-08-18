@@ -19,12 +19,14 @@
 import Database from "better-sqlite3";
 import path from "node:path";
 import { randomUUID, randomBytes, scryptSync } from "node:crypto";
+import PDFDocument from "pdfkit";
 
 const DB_PATH = path.join(process.cwd(), "data", "mammoai.db");
-const RETEST_DAYS = 90;
+const DEFAULT_RETEST_DAYS = 90;
 const RETEST_COOLDOWN_DAYS = 30; // min gap between repeated retest nudges
-const SELF_EXAM_INTERVAL_DAYS = 30;
+const DEFAULT_SELF_EXAM_DAYS = 30;
 const REMINDER_CHECK_INTERVAL_MS = 60 * 60 * 1000; // hourly
+const LOGIN_CODE_TTL_MS = 10 * 60 * 1000; // matches src/server/db.ts's createTelegramLoginCode
 
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
@@ -255,6 +257,26 @@ const MSG = {
     ru: 'Здравствуйте, {name}! С момента последнего теста MammoAI прошло более {days} дней. Для регулярного контроля рекомендуем пройти тест повторно — нажмите кнопку "{testBtn}" ниже.',
     en: 'Hello, {name}! It\'s been more than {days} days since your last MammoAI test. For regular monitoring, we recommend retaking it — tap the "{testBtn}" button below.',
   },
+
+  highRiskInfoTitle: { uz: "Tavsiya", ru: "Рекомендация", en: "Recommendation" },
+
+  feedbackPrompt: {
+    uz: "Fikringiz yoki taklifingizni yozing — faqat administrator ko'radi. Bekor qilish uchun quyidagi tugmani bosing.",
+    ru: "Напишите ваш отзыв или предложение — увидит только администратор. Чтобы отменить, нажмите кнопку ниже.",
+    en: "Write your feedback or suggestion — only the administrator sees it. Tap the button below to cancel.",
+  },
+  feedbackSaved: {
+    uz: "✅ Rahmat! Fikringiz yuborildi.",
+    ru: "✅ Спасибо! Ваш отзыв отправлен.",
+    en: "✅ Thanks! Your feedback was sent.",
+  },
+  feedbackEmpty: { uz: "Bo'sh bo'lishi mumkin emas. Qayta kiriting:", ru: "Поле не может быть пустым. Повторите:", en: "This can't be empty. Please try again:" },
+
+  loginCodeMessage: {
+    uz: "🔑 Saytga kirish kodingiz: {code}\n\nBu kod 10 daqiqa amal qiladi. Kirish sahifasida \"Telegram orqali kirish\"ni tanlab, shu kodni kiriting.",
+    ru: "🔑 Ваш код входа на сайт: {code}\n\nКод действителен 10 минут. На странице входа выберите \"Войти через Telegram\" и введите этот код.",
+    en: '🔑 Your site login code: {code}\n\nThis code is valid for 10 minutes. On the login page, choose "Log in with Telegram" and enter this code.',
+  },
 };
 
 function tr(key, lang, vars) {
@@ -299,6 +321,8 @@ const BTN_DEFS = {
   test: { uz: "🧪 Test topshirish", ru: "🧪 Пройти тест", en: "🧪 Take the test" },
   profile: { uz: "👤 Profilim", ru: "👤 Профиль", en: "👤 Profile" },
   result: { uz: "📊 Natijam", ru: "📊 Мой результат", en: "📊 My result" },
+  feedback: { uz: "💬 Fikr bildirish", ru: "💬 Обратная связь", en: "💬 Feedback" },
+  loginCode: { uz: "🔑 Saytga kirish kodi", ru: "🔑 Код входа на сайт", en: "🔑 Site login code" },
   language: { uz: "🌐 Til", ru: "🌐 Язык", en: "🌐 Language" },
   help: { uz: "ℹ️ Yordam", ru: "ℹ️ Помощь", en: "ℹ️ Help" },
   cancel: { uz: "❌ Bekor qilish", ru: "❌ Отмена", en: "❌ Cancel" },
@@ -376,6 +400,10 @@ function getUserByEmail(email) {
   return db.prepare("SELECT * FROM users WHERE lower(email) = lower(?)").get(email);
 }
 
+function getUserById(id) {
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(id);
+}
+
 function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
@@ -429,7 +457,23 @@ function deleteAccount(userId) {
 
 function getOrderedQuestions() {
   const rows = db.prepare('SELECT * FROM quiz_questions ORDER BY "order" ASC').all();
-  return rows.map((r) => ({ ...r, options: JSON.parse(r.options) }));
+  return rows.map((r) => ({
+    ...r,
+    options: JSON.parse(r.options),
+    translations: r.translations ? JSON.parse(r.translations) : undefined,
+  }));
+}
+
+// Mirrors src/lib/quiz-i18n.ts: an optional ru/en override, falling back to
+// the admin-authored (uz) text — same behaviour as the website.
+function localizedQuestionText(q, lang) {
+  if (lang === "uz") return q.text;
+  return q.translations?.[lang]?.text?.trim() || q.text;
+}
+
+function localizedOptionText(q, optionId, baseText, lang) {
+  if (lang === "uz") return baseText;
+  return q.translations?.[lang]?.options?.[optionId]?.trim() || baseText;
 }
 
 function riskLevelFromPercent(percent) {
@@ -454,6 +498,42 @@ function getLatestAttempt(userId) {
   return db
     .prepare("SELECT * FROM quiz_attempts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1")
     .get(userId);
+}
+
+// Admin-configurable via /admin/settings → "Eslatma sozlamalari" — falls
+// back to the same defaults the app shipped with before that existed.
+function getRetestDays() {
+  return Number(getSetting("retest_days")) || DEFAULT_RETEST_DAYS;
+}
+function getSelfExamDays() {
+  return Number(getSetting("self_exam_days")) || DEFAULT_SELF_EXAM_DAYS;
+}
+
+function getHighRiskInfoText() {
+  return getSetting("high_risk_info_text") ?? "";
+}
+
+function createFeedbackFromBot(userId, message) {
+  db.prepare("INSERT INTO feedback (id, user_id, message, source, created_at) VALUES (?, ?, ?, 'bot', ?)").run(
+    randomUUID(),
+    userId,
+    message,
+    new Date().toISOString()
+  );
+}
+
+// Mirrors src/server/db.ts's createTelegramLoginCode — the site's
+// /api/auth/telegram-login route consumes whatever this writes.
+function createLoginCodeForUser(userId) {
+  db.prepare("DELETE FROM telegram_login_codes WHERE expires_at < ?").run(new Date().toISOString());
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const expiresAt = new Date(Date.now() + LOGIN_CODE_TTL_MS).toISOString();
+  db.prepare("INSERT OR REPLACE INTO telegram_login_codes (code, user_id, expires_at) VALUES (?, ?, ?)").run(
+    code,
+    userId,
+    expiresAt
+  );
+  return code;
 }
 
 // ---------------------------------------------------------------------------
@@ -487,12 +567,88 @@ async function answerCallback(token, callbackQueryId, text) {
   await api(token, "answerCallbackQuery", { callback_query_id: callbackQueryId, text }).catch(() => {});
 }
 
+async function sendPdfDocument(token, chatId, buffer, filename, caption) {
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  if (caption) form.append("caption", caption);
+  form.append("document", new Blob([buffer], { type: "application/pdf" }), filename);
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, { method: "POST", body: form });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PDF result export — a printable one-pager, the bot's equivalent of the
+// site's "Print / Save as PDF" button on the test result screen.
+// ---------------------------------------------------------------------------
+
+const PDF_LABELS = {
+  subtitle: {
+    uz: "Ko'krak saratoni xavf testi natijasi",
+    ru: "Результат теста на риск рака груди",
+    en: "Breast cancer risk test result",
+  },
+  riskScoreLabel: { uz: "xavf ko'rsatkichi", ru: "показатель риска", en: "risk score" },
+};
+
+function buildResultPdf(userName, result, lang) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 56 });
+    const chunks = [];
+    doc.on("data", (c) => chunks.push(c));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    const riskColor = { past: "#0ca30c", orta: "#fab219", yuqori: "#d03b3b" }[result.riskLevel];
+
+    doc.fontSize(22).fillColor("#2a78d6").text("MammoAI");
+    doc.fontSize(10).fillColor("#666666").text(PDF_LABELS.subtitle[lang]);
+    doc.moveDown(1.2);
+    doc.fontSize(11).fillColor("#111111").text(`${userName} · ${formatDate(new Date().toISOString().slice(0, 10), lang)}`);
+    doc.moveDown(1.2);
+
+    doc.fontSize(30).fillColor("#111111").text(`${result.percent}%`);
+    doc.fontSize(10).fillColor("#666666").text(`${result.totalScore}/${result.maxScore} ${PDF_LABELS.riskScoreLabel[lang]}`);
+    doc.moveDown(0.8);
+
+    doc.fontSize(15).fillColor(riskColor).text(RISK_LABEL[result.riskLevel][lang]);
+    doc.moveDown(0.6);
+    doc.fontSize(11).fillColor("#333333").text(RISK_DESCRIPTION[result.riskLevel][lang], { width: 480 });
+
+    const highRiskInfo = result.riskLevel === "yuqori" ? getHighRiskInfoText() : "";
+    if (highRiskInfo) {
+      doc.moveDown(0.8);
+      doc.fontSize(11).fillColor("#1d4ed8").text(tr("highRiskInfoTitle", lang) + ":", { continued: false });
+      doc.fontSize(10).fillColor("#333333").text(highRiskInfo, { width: 480 });
+    }
+
+    doc.moveDown(1);
+    doc.fontSize(9).fillColor("#888888").text(tr("resultDisclaimer", lang), { width: 480 });
+
+    doc.end();
+  });
+}
+
+async function sendResultPdf(token, chatId, userName, result, lang) {
+  try {
+    const buffer = await buildResultPdf(userName, result, lang);
+    await sendPdfDocument(token, chatId, buffer, "mammoai-natija.pdf");
+  } catch (err) {
+    console.error("PDF generation error:", err.message);
+  }
+}
+
 async function setMyCommands(token) {
   const base = [
     { command: "start", description: { uz: "Boshlash / bosh menyu", ru: "Начать / главное меню", en: "Start / main menu" } },
     { command: "test", description: { uz: "Xavf testini boshlash", ru: "Начать тест на риск", en: "Start the risk test" } },
     { command: "natija", description: { uz: "So'nggi natijangizni ko'rish", ru: "Посмотреть последний результат", en: "View your latest result" } },
     { command: "profil", description: { uz: "Profilingiz", ru: "Ваш профиль", en: "Your profile" } },
+    { command: "kod", description: { uz: "Saytga kirish kodi", ru: "Код входа на сайт", en: "Site login code" } },
+    { command: "fikr", description: { uz: "Fikr-mulohaza qoldirish", ru: "Оставить отзыв", en: "Leave feedback" } },
     { command: "til", description: { uz: "Tilni almashtirish", ru: "Сменить язык", en: "Switch language" } },
     { command: "yordam", description: { uz: "Yordam", ru: "Помощь", en: "Help" } },
   ];
@@ -531,7 +687,12 @@ async function setMyProfileTexts(token) {
 
 function mainMenu(lang, isLinked) {
   const rows = isLinked
-    ? [[btn("test", lang), btn("result", lang)], [btn("profile", lang)], [btn("language", lang), btn("help", lang)]]
+    ? [
+        [btn("test", lang), btn("result", lang)],
+        [btn("profile", lang), btn("feedback", lang)],
+        [btn("loginCode", lang)],
+        [btn("language", lang), btn("help", lang)],
+      ]
     : [[btn("signup", lang)], [btn("language", lang), btn("help", lang)]];
   return { keyboard: rows.map((r) => r.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
 }
@@ -569,9 +730,13 @@ function resetSession(chatId) {
 
 async function sendQuestion(token, chatId, session, lang) {
   const q = session.questions[session.index];
-  const keyboard = q.options.map((o, i) => [{ text: o.text, callback_data: `a:${session.index}:${i}` }]);
+  const keyboard = q.options.map((o, i) => [
+    { text: localizedOptionText(q, o.id, o.text, lang), callback_data: `a:${session.index}:${i}` },
+  ]);
   const header = `📋 ${tr("questionLabel", lang)} ${session.index + 1}/${session.questions.length}${q.category ? ` · ${q.category}` : ""}`;
-  session.lastMessageId = await sendMessage(token, chatId, `${header}\n\n${q.text}`, { inline_keyboard: keyboard });
+  session.lastMessageId = await sendMessage(token, chatId, `${header}\n\n${localizedQuestionText(q, lang)}`, {
+    inline_keyboard: keyboard,
+  });
 }
 
 async function startQuiz(token, chatId, user, lang) {
@@ -587,20 +752,26 @@ async function startQuiz(token, chatId, user, lang) {
 }
 
 function formatResult(result, lang) {
-  return [
+  const lines = [
     tr("resultLine", lang, { percent: result.percent, total: result.totalScore, max: result.maxScore }),
     tr("riskLine", lang, { risk: RISK_LABEL[result.riskLevel][lang] }),
     "",
     RISK_DESCRIPTION[result.riskLevel][lang],
-    "",
-    tr("resultDisclaimer", lang),
-  ].join("\n");
+  ];
+  if (result.riskLevel === "yuqori") {
+    const info = getHighRiskInfoText();
+    if (info) lines.push("", `${tr("highRiskInfoTitle", lang)}: ${info}`);
+  }
+  lines.push("", tr("resultDisclaimer", lang));
+  return lines.join("\n");
 }
 
 async function finishQuiz(token, chatId, session, lang) {
   const result = saveAttempt(session.userId, session.questions, session.answers);
   resetSession(chatId);
+  const user = getUserById(session.userId);
   await sendMessage(token, chatId, `${tr("quizFinished", lang)}\n\n${formatResult(result, lang)}`);
+  if (user) await sendResultPdf(token, chatId, `${user.first_name} ${user.last_name}`, result, lang);
   await sendMainMenu(token, chatId, tr("whatNext", lang), lang, true);
 }
 
@@ -623,7 +794,7 @@ async function handleQuizCallback(token, chatId, session, data, callbackQueryId,
     return;
   }
   session.answers.push({ questionId: question.id, optionId: option.id, score: option.score });
-  await answerCallback(token, callbackQueryId, `✓ ${option.text}`);
+  await answerCallback(token, callbackQueryId, `✓ ${localizedOptionText(question, option.id, option.text, lang)}`);
   await clearButtons(token, chatId, session.lastMessageId);
 
   session.index += 1;
@@ -944,6 +1115,17 @@ async function handleMessage(token, message) {
     await handleEditFieldStep(token, chatId, session, user, text, lang);
     return;
   }
+  if (session?.type === "feedback") {
+    const user = getUserByChatId(chatId);
+    if (!text.trim()) {
+      await sendMessage(token, chatId, tr("feedbackEmpty", lang));
+      return;
+    }
+    createFeedbackFromBot(user?.id ?? null, text.trim().slice(0, 2000));
+    resetSession(chatId);
+    await sendMainMenu(token, chatId, tr("feedbackSaved", lang), lang, Boolean(user));
+    return;
+  }
 
   const startMatch = text.match(/^\/start(?:\s+(\S+))?/);
   if (startMatch?.[1]) {
@@ -1007,14 +1189,14 @@ async function handleMessage(token, message) {
       await sendMainMenu(token, chatId, "", lang, true);
       return;
     }
-    await sendMessage(
-      token,
-      chatId,
-      `${tr("latestResultHeader", lang)}\n\n${formatResult(
-        { percent: latest.percent, riskLevel: latest.risk_level, totalScore: latest.total_score, maxScore: latest.max_score },
-        lang
-      )}`
-    );
+    const latestResult = {
+      percent: latest.percent,
+      riskLevel: latest.risk_level,
+      totalScore: latest.total_score,
+      maxScore: latest.max_score,
+    };
+    await sendMessage(token, chatId, `${tr("latestResultHeader", lang)}\n\n${formatResult(latestResult, lang)}`);
+    await sendResultPdf(token, chatId, `${user.first_name} ${user.last_name}`, latestResult, lang);
     return;
   }
 
@@ -1024,6 +1206,22 @@ async function handleMessage(token, message) {
       return;
     }
     await sendProfile(token, chatId, user, lang);
+    return;
+  }
+
+  if (action === "feedback" || text === "/fikr") {
+    sessions.set(chatId, { type: "feedback" });
+    await sendMessage(token, chatId, tr("feedbackPrompt", lang), cancelKeyboard(lang));
+    return;
+  }
+
+  if (action === "loginCode" || text === "/kod") {
+    if (!user) {
+      await sendMainMenu(token, chatId, tr("needAccountGeneric", lang), lang, false);
+      return;
+    }
+    const code = createLoginCodeForUser(user.id);
+    await sendMessage(token, chatId, tr("loginCodeMessage", lang, { code }));
     return;
   }
 
@@ -1043,9 +1241,10 @@ async function handleMessage(token, message) {
 
 async function checkReminders(token) {
   const now = Date.now();
-  const retestCutoff = new Date(now - RETEST_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const retestDays = getRetestDays();
+  const retestCutoff = new Date(now - retestDays * 24 * 60 * 60 * 1000).toISOString();
   const retestCooldownCutoff = new Date(now - RETEST_COOLDOWN_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const selfExamCutoff = new Date(now - SELF_EXAM_INTERVAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const selfExamCutoff = new Date(now - getSelfExamDays() * 24 * 60 * 60 * 1000).toISOString();
 
   const rows = db
     .prepare(
@@ -1071,7 +1270,7 @@ async function checkReminders(token) {
       await sendMessage(
         token,
         u.telegram_chat_id,
-        tr("retestReminder", lang, { name: u.first_name, days: RETEST_DAYS, testBtn: btn("test", lang) }),
+        tr("retestReminder", lang, { name: u.first_name, days: retestDays, testBtn: btn("test", lang) }),
         mainMenu(lang, true)
       );
       db.prepare("UPDATE users SET last_reminder_sent_at = ? WHERE id = ?").run(new Date().toISOString(), u.id);

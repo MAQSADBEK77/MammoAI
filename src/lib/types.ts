@@ -22,12 +22,21 @@ export interface QuizOption {
   score: number;
 }
 
+// Optional ru/en overrides for a question's text and each option's text,
+// keyed by option id. Absent language or absent option id both mean "no
+// translation entered" — renderers fall back to the base (uz) text.
+export interface QuizTranslation {
+  text?: string;
+  options?: Record<string, string>;
+}
+
 export interface QuizQuestion {
   id: string;
   order: number;
   text: string;
   category: string;
   options: QuizOption[];
+  translations?: Partial<Record<"ru" | "en", QuizTranslation>>;
 }
 
 export interface QuizAnswer {

@@ -5,7 +5,15 @@ import { ClipboardList, ListChecks, Users2 } from "lucide-react";
 import { Card } from "@/components/ui";
 import { RISK_STATUS_COLOR, getRiskLabel } from "@/components/RiskBadge";
 import { StatCounter } from "@/components/StatCounter";
-import { apiGetAdminAttempts, apiGetAdminUsers, apiGetQuestions, type AdminUser } from "@/lib/store";
+import { TrendChart } from "@/components/TrendChart";
+import {
+  apiGetAdminAttempts,
+  apiGetAdminTrend,
+  apiGetAdminUsers,
+  apiGetQuestions,
+  type AdminUser,
+  type DailyCounts,
+} from "@/lib/store";
 import { useT } from "@/lib/i18n/context";
 import type { RiskLevel } from "@/lib/types";
 
@@ -45,6 +53,11 @@ export default function AdminDashboardPage() {
     orta: 0,
     yuqori: 0,
   });
+  const [trend, setTrend] = useState<DailyCounts[]>([]);
+
+  useEffect(() => {
+    apiGetAdminTrend().then(setTrend);
+  }, []);
 
   useEffect(() => {
     Promise.all([apiGetAdminUsers(), apiGetAdminAttempts(), apiGetQuestions()]).then(
@@ -114,6 +127,14 @@ export default function AdminDashboardPage() {
               </div>
             );
           })}
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminOverview.trendTitle}</h2>
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{t.adminOverview.trendSubtitle}</p>
+        <div className="mt-6">
+          <TrendChart data={trend} />
         </div>
       </Card>
     </div>

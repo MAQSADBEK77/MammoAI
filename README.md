@@ -80,11 +80,18 @@ npm start   # portni PORT muhit o'zgaruvchisi orqali sozlash mumkin
   sana, passport seriya raqami, telefon
 - **Profil** — ma'lumotlarni tahrirlash, xavf tarixi grafigi, qayta test
   eslatmasi
-- **Test** — ko'p bosqichli savolnoma, natija chop etish/PDF imkoniyati
+- **Test** — ko'p bosqichli savolnoma (uz/ru/en tarjimasi bilan), natija
+  chop etish/PDF imkoniyati, yuqori xavfda admin-belgilagan tavsiya matni
 - **Qo'llanma** — o'z-o'zini tekshirish bo'yicha ochiq (login talab
   qilinmaydigan) sahifa
-- **Admin panel** — statistika, foydalanuvchilar (faqat admin o'chira
-  oladi), test savollari CRUD, barcha natijalar
+- **Telegram bot** — to'liq tugmali menyu: ro'yxatdan o'tish, test
+  topshirish, profilni ko'rish/tahrirlash, tilni almashtirish, saytga
+  parolsiz kirish kodi, fikr-mulohaza, PDF natija, 90 kunlik qayta-test va
+  oylik o'z-tekshiruv eslatmalari (`scripts/telegram-bot.mjs`, pm2 orqali
+  alohida jarayon sifatida ishlaydi)
+- **Admin panel** — statistika va trend grafigi, foydalanuvchilar (faqat
+  admin o'chira oladi), test savollari CRUD (tarjimalar bilan), barcha
+  natijalar, fikr-mulohazalar, eslatma kunlari va Telegram bot sozlamalari
 
 ## Texnologiyalar
 

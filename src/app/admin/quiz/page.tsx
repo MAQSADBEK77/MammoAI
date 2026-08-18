@@ -20,8 +20,11 @@ import {
 } from "@/lib/store";
 import { uid } from "@/lib/id";
 import { useT } from "@/lib/i18n/context";
-import type { Dictionary } from "@/lib/i18n/types";
+import type { Dictionary, Language } from "@/lib/i18n/types";
 import type { QuizQuestion } from "@/lib/types";
+
+const TRANSLATABLE_LANGS: Language[] = ["ru", "en"];
+const LANG_LABEL: Record<Language, string> = { uz: "O'zbekcha", ru: "Русский", en: "English" };
 
 function emptyDraft(order: number): QuizQuestion {
   return {
@@ -83,7 +86,13 @@ export default function AdminQuizPage() {
     setSaving(true);
     setError(null);
     try {
-      const payload = { category: draft.category, text: draft.text, order: draft.order, options: validOptions };
+      const payload = {
+        category: draft.category,
+        text: draft.text,
+        order: draft.order,
+        options: validOptions,
+        translations: draft.translations,
+      };
       if (editingId === "new") {
         await apiCreateQuestion(payload);
       } else {
@@ -274,6 +283,38 @@ function QuestionEditor({
   onAddOption: () => void;
   onRemoveOption: (index: number) => void;
 }) {
+  const [activeLang, setActiveLang] = useState<Language>("uz");
+
+  function setTranslatedText(value: string) {
+    if (activeLang === "uz") {
+      setDraft({ ...draft, text: value });
+      return;
+    }
+    setDraft({
+      ...draft,
+      translations: {
+        ...draft.translations,
+        [activeLang]: { ...draft.translations?.[activeLang], text: value },
+      },
+    });
+  }
+
+  function setTranslatedOptionText(optionId: string, value: string) {
+    if (activeLang === "uz") return; // base text is edited via onUpdateOption
+    setDraft({
+      ...draft,
+      translations: {
+        ...draft.translations,
+        [activeLang]: {
+          ...draft.translations?.[activeLang],
+          options: { ...draft.translations?.[activeLang]?.options, [optionId]: value },
+        },
+      },
+    });
+  }
+
+  const questionFieldValue = activeLang === "uz" ? draft.text : draft.translations?.[activeLang]?.text ?? "";
+
   return (
     <Card className="animate-pop-in border-blue-200 p-5 ring-2 ring-blue-100 dark:border-blue-500/30 dark:ring-blue-500/10">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -286,11 +327,29 @@ function QuestionEditor({
         </Field>
       </div>
 
+      <div className="mt-5 flex items-center gap-1 border-b border-slate-200 dark:border-slate-700">
+        {(["uz", ...TRANSLATABLE_LANGS] as Language[]).map((lang) => (
+          <button
+            key={lang}
+            type="button"
+            onClick={() => setActiveLang(lang)}
+            className={`border-b-2 px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${
+              activeLang === lang
+                ? "border-blue-600 text-blue-700 dark:border-blue-400 dark:text-blue-300"
+                : "border-transparent text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+            }`}
+          >
+            {lang === "uz" ? t.adminQuiz.baseLanguageLabel : LANG_LABEL[lang]}
+          </button>
+        ))}
+      </div>
+      {activeLang !== "uz" && <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">{t.adminQuiz.translationsHint}</p>}
+
       <div className="mt-4">
         <Field label={t.adminQuiz.questionLabel}>
           <Input
-            value={draft.text}
-            onChange={(e) => setDraft({ ...draft, text: e.target.value })}
+            value={questionFieldValue}
+            onChange={(e) => setTranslatedText(e.target.value)}
             placeholder={t.adminQuiz.questionPlaceholder}
           />
         </Field>
@@ -303,35 +362,43 @@ function QuestionEditor({
           {draft.options.map((option, index) => (
             <div key={option.id} className="flex items-center gap-2">
               <Input
-                value={option.text}
-                onChange={(e) => onUpdateOption(index, { text: e.target.value })}
+                value={activeLang === "uz" ? option.text : draft.translations?.[activeLang]?.options?.[option.id] ?? ""}
+                onChange={(e) =>
+                  activeLang === "uz" ? onUpdateOption(index, { text: e.target.value }) : setTranslatedOptionText(option.id, e.target.value)
+                }
                 placeholder={`${t.adminQuiz.optionPlaceholder} ${index + 1}`}
                 className="flex-1"
               />
-              <Input
-                type="number"
-                value={option.score}
-                onChange={(e) => onUpdateOption(index, { score: Number(e.target.value) })}
-                className="w-20"
-                aria-label={t.adminQuiz.scoreAriaLabel}
-              />
-              <button
-                onClick={() => onRemoveOption(index)}
-                disabled={draft.options.length <= 2}
-                className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-              >
-                <X size={15} />
-              </button>
+              {activeLang === "uz" && (
+                <Input
+                  type="number"
+                  value={option.score}
+                  onChange={(e) => onUpdateOption(index, { score: Number(e.target.value) })}
+                  className="w-20"
+                  aria-label={t.adminQuiz.scoreAriaLabel}
+                />
+              )}
+              {activeLang === "uz" && (
+                <button
+                  onClick={() => onRemoveOption(index)}
+                  disabled={draft.options.length <= 2}
+                  className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                >
+                  <X size={15} />
+                </button>
+              )}
             </div>
           ))}
         </div>
-        <button
-          onClick={onAddOption}
-          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          <Plus size={14} />
-          {t.adminQuiz.addOption}
-        </button>
+        {activeLang === "uz" && (
+          <button
+            onClick={onAddOption}
+            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            <Plus size={14} />
+            {t.adminQuiz.addOption}
+          </button>
+        )}
       </div>
 
       {error && (

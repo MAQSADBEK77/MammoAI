@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Megaphone, Send } from "lucide-react";
+import { AlertTriangle, BellRing, CheckCircle2, Megaphone, Send } from "lucide-react";
 import { Button, Card, Field, Input, Textarea } from "@/components/ui";
 import {
   apiDisconnectAdminTelegramBot,
+  apiGetAdminHighRiskInfo,
   apiGetAdminTelegramSettings,
+  apiGetReminderSettings,
+  apiSaveAdminHighRiskInfo,
   apiSaveAdminTelegramBot,
+  apiSaveReminderSettings,
   apiSendAdminTelegramBroadcast,
   type AdminTelegramSettings,
 } from "@/lib/store";
@@ -156,6 +160,114 @@ export default function AdminSettingsPage() {
           </div>
         </Card>
       )}
+
+      <ReminderSettingsCard t={t} />
+      <HighRiskInfoCard t={t} />
     </div>
+  );
+}
+
+function ReminderSettingsCard({ t }: { t: ReturnType<typeof useT> }) {
+  const [retestDays, setRetestDays] = useState("90");
+  const [selfExamDays, setSelfExamDays] = useState("30");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiGetReminderSettings().then((s) => {
+      setRetestDays(String(s.retestDays));
+      setSelfExamDays(String(s.selfExamDays));
+    });
+  }, []);
+
+  async function handleSave() {
+    setError(null);
+    setSaving(true);
+    try {
+      await apiSaveReminderSettings({ retestDays: Number(retestDays), selfExamDays: Number(selfExamDays) });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.auth.errorGeneric);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="max-w-xl p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <BellRing size={18} />
+        </span>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.remindersTitle}</h2>
+      </div>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.remindersSubtitle}</p>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <Field label={t.adminSettings.retestDaysLabel}>
+          <Input type="number" min={1} value={retestDays} onChange={(e) => setRetestDays(e.target.value)} />
+        </Field>
+        <Field label={t.adminSettings.selfExamDaysLabel}>
+          <Input type="number" min={1} value={selfExamDays} onChange={(e) => setSelfExamDays(e.target.value)} />
+        </Field>
+      </div>
+
+      {saved && <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">{t.adminSettings.remindersSaved}</p>}
+      {error && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+      <Button onClick={handleSave} disabled={saving} className="mt-4 self-start">
+        {saving ? t.adminSettings.remindersSavingButton : t.adminSettings.remindersSaveButton}
+      </Button>
+    </Card>
+  );
+}
+
+function HighRiskInfoCard({ t }: { t: ReturnType<typeof useT> }) {
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiGetAdminHighRiskInfo().then(setText);
+  }, []);
+
+  async function handleSave() {
+    setError(null);
+    setSaving(true);
+    try {
+      await apiSaveAdminHighRiskInfo(text);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.auth.errorGeneric);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="max-w-xl p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+          <AlertTriangle size={18} />
+        </span>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.highRiskTitle}</h2>
+      </div>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.highRiskSubtitle}</p>
+
+      <div className="mt-5 flex flex-col gap-3">
+        <Textarea rows={4} value={text} onChange={(e) => setText(e.target.value)} placeholder={t.adminSettings.highRiskPlaceholder} />
+
+        {saved && <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{t.adminSettings.highRiskSaved}</p>}
+        {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+        <Button onClick={handleSave} disabled={saving} className="self-start">
+          {saving ? t.adminSettings.highRiskSavingButton : t.adminSettings.highRiskSaveButton}
+        </Button>
+      </div>
+    </Card>
   );
 }

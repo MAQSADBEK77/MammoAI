@@ -14,6 +14,7 @@ import {
   apiLogout,
   apiMe,
   apiSignUp,
+  apiTelegramCodeLogin,
   apiUpdateProfile,
   type SignUpInput,
 } from "./store";
@@ -22,6 +23,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
+  loginWithTelegramCode: (code: string) => Promise<User>;
   signUp: (input: SignUpInput) => Promise<User>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -53,6 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return loggedIn;
   }, []);
 
+  const loginWithTelegramCode = useCallback(async (code: string) => {
+    const loggedIn = await apiTelegramCodeLogin(code);
+    setUser(loggedIn);
+    return loggedIn;
+  }, []);
+
   const signUp = useCallback(async (input: SignUpInput) => {
     const created = await apiSignUp(input);
     setUser(created);
@@ -70,8 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, signUp, logout, refresh, updateProfile }),
-    [user, loading, login, signUp, logout, refresh, updateProfile]
+    () => ({ user, loading, login, loginWithTelegramCode, signUp, logout, refresh, updateProfile }),
+    [user, loading, login, loginWithTelegramCode, signUp, logout, refresh, updateProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { LayoutDashboard, ListChecks, Settings, Users2 } from "lucide-react";
+import { LayoutDashboard, ListChecks, MessageSquareText, Settings, Users2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useT } from "@/lib/i18n/context";
@@ -17,6 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/users", label: t.adminNav.users, icon: Users2, exact: false },
     { href: "/admin/quiz", label: t.adminNav.quiz, icon: ListChecks, exact: false },
     { href: "/admin/results", label: t.adminNav.results, icon: ListChecks, exact: false },
+    { href: "/admin/feedback", label: t.adminNav.feedback, icon: MessageSquareText, exact: false },
     { href: "/admin/settings", label: t.adminNav.settings, icon: Settings, exact: false },
   ];
 

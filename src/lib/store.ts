@@ -88,6 +88,15 @@ export async function apiResetPassword(input: {
   });
 }
 
+/** Password-free login via a 6-digit code the user gets from the Telegram bot. */
+export async function apiTelegramCodeLogin(code: string): Promise<User> {
+  const { user } = await apiFetch<{ user: User }>("/api/auth/telegram-login", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+  return user;
+}
+
 // ---------------------------------------------------------------------------
 // Telegram reminders
 // ---------------------------------------------------------------------------
@@ -168,6 +177,44 @@ export async function apiGetMyAttempts(): Promise<QuizAttempt[]> {
 }
 
 // ---------------------------------------------------------------------------
+// High-risk safety info (admin-authored clinic/specialist pointer, shown to
+// a user whose result comes back "yuqori"/high)
+// ---------------------------------------------------------------------------
+
+export async function apiGetHighRiskInfo(): Promise<string> {
+  const { text } = await apiFetch<{ text: string }>("/api/high-risk-info");
+  return text;
+}
+
+// ---------------------------------------------------------------------------
+// Feedback
+// ---------------------------------------------------------------------------
+
+export async function apiSubmitFeedback(message: string): Promise<void> {
+  await apiFetch("/api/feedback", { method: "POST", body: JSON.stringify({ message }) });
+}
+
+export interface AdminFeedbackItem {
+  id: string;
+  userId: string | null;
+  userFirstName: string | null;
+  userLastName: string | null;
+  userEmail: string | null;
+  message: string;
+  source: string;
+  createdAt: string;
+}
+
+export async function apiGetAdminFeedback(): Promise<AdminFeedbackItem[]> {
+  const { feedback } = await apiFetch<{ feedback: AdminFeedbackItem[] }>("/api/admin/feedback");
+  return feedback;
+}
+
+export async function apiDeleteFeedback(id: string): Promise<void> {
+  await apiFetch(`/api/admin/feedback/${id}`, { method: "DELETE" });
+}
+
+// ---------------------------------------------------------------------------
 // Admin
 // ---------------------------------------------------------------------------
 
@@ -214,5 +261,38 @@ export async function apiSendAdminTelegramBroadcast(message: string): Promise<{ 
     method: "POST",
     body: JSON.stringify({ message }),
   });
+}
+
+export interface ReminderSettings {
+  retestDays: number;
+  selfExamDays: number;
+}
+
+export async function apiGetReminderSettings(): Promise<ReminderSettings> {
+  return apiFetch<ReminderSettings>("/api/admin/settings/reminders");
+}
+
+export async function apiSaveReminderSettings(settings: ReminderSettings): Promise<void> {
+  await apiFetch("/api/admin/settings/reminders", { method: "POST", body: JSON.stringify(settings) });
+}
+
+export async function apiGetAdminHighRiskInfo(): Promise<string> {
+  const { text } = await apiFetch<{ text: string }>("/api/admin/settings/high-risk");
+  return text;
+}
+
+export async function apiSaveAdminHighRiskInfo(text: string): Promise<void> {
+  await apiFetch("/api/admin/settings/high-risk", { method: "POST", body: JSON.stringify({ text }) });
+}
+
+export interface DailyCounts {
+  date: string;
+  signups: number;
+  attempts: number;
+}
+
+export async function apiGetAdminTrend(): Promise<DailyCounts[]> {
+  const { trend } = await apiFetch<{ trend: DailyCounts[] }>("/api/admin/trend");
+  return trend;
 }
 

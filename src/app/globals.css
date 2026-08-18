@@ -7,12 +7,16 @@
   --background: #ffffff;
   --foreground: #0f172a;
   --meter-track: #e1e0d9;
+  --trend-signups: #2a78d6;
+  --trend-attempts: #eb6834;
 }
 
 .dark {
   --background: #020617;
   --foreground: #f1f5f9;
   --meter-track: #2c2c2a;
+  --trend-signups: #3987e5;
+  --trend-attempts: #d95926;
 }
 
 @theme inline {

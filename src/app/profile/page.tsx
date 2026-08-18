@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, CheckCircle2, KeyRound, Pencil, Save, Send, Sparkles, X } from "lucide-react";
+import { BellRing, CheckCircle2, KeyRound, MessageSquareText, Pencil, Save, Send, Sparkles, X } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/RequireAuth";
-import { Button, Card, Field, Input, LinkButton } from "@/components/ui";
+import { Button, Card, Field, Input, LinkButton, Textarea } from "@/components/ui";
 import { RiskBadge, getRiskDescription } from "@/components/RiskBadge";
 import { RiskHistoryChart } from "@/components/RiskHistoryChart";
 import { useAuth } from "@/lib/auth-context";
@@ -13,6 +13,7 @@ import {
   apiGetMyAttempts,
   apiGetTelegramStatus,
   apiLinkTelegram,
+  apiSubmitFeedback,
   apiUnlinkTelegram,
   type TelegramStatus,
 } from "@/lib/store";
@@ -285,6 +286,7 @@ function ProfileContent() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <TelegramCard t={t} />
           <ChangePasswordCard t={t} />
+          <FeedbackCard t={t} />
         </div>
       </main>
     </div>
@@ -457,6 +459,61 @@ function ChangePasswordCard({ t }: { t: Dictionary }) {
           className="self-start"
         >
           {saving ? t.profile.changingPasswordButton : t.profile.changePasswordButton}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function FeedbackCard({ t }: { t: Dictionary }) {
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    if (!message.trim()) return;
+    setError(null);
+    setSending(true);
+    try {
+      await apiSubmitFeedback(message.trim());
+      setMessage("");
+      setSent(true);
+      setTimeout(() => setSent(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.profile.feedbackError);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <MessageSquareText size={16} />
+        </span>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.feedbackTitle}</h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.feedbackSubtitle}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3">
+        <Textarea
+          rows={3}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder={t.profile.feedbackPlaceholder}
+        />
+
+        {sent && (
+          <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{t.profile.feedbackSuccess}</p>
+        )}
+        {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+        <Button variant="secondary" onClick={handleSubmit} disabled={sending || !message.trim()} className="self-start">
+          {sending ? t.profile.feedbackSendingButton : t.profile.feedbackButton}
         </Button>
       </div>
     </Card>

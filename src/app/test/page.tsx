@@ -10,9 +10,10 @@ import { Badge, Button, Card, LinkButton } from "@/components/ui";
 import { StatCounter } from "@/components/StatCounter";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
-import { apiGetQuestions, apiSubmitAttempt } from "@/lib/store";
+import { apiGetHighRiskInfo, apiGetQuestions, apiSubmitAttempt } from "@/lib/store";
 import { formatDate } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n/context";
+import { localizedOptionText, localizedQuestionText } from "@/lib/quiz-i18n";
 import type { QuizAttempt, QuizQuestion } from "@/lib/types";
 
 export default function TestPage() {
@@ -32,6 +33,13 @@ function TestContent() {
   const [result, setResult] = useState<QuizAttempt | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [highRiskInfo, setHighRiskInfo] = useState("");
+
+  useEffect(() => {
+    if (result?.riskLevel === "yuqori") {
+      apiGetHighRiskInfo().then(setHighRiskInfo);
+    }
+  }, [result?.riskLevel]);
 
   useEffect(() => {
     apiGetQuestions()
@@ -124,6 +132,13 @@ function TestContent() {
                 <ShieldAlert size={16} className="mt-0.5 shrink-0" />
                 <p>{t.test.resultDisclaimer}</p>
               </div>
+
+              {result.riskLevel === "yuqori" && highRiskInfo && (
+                <div className="mt-3 rounded-xl bg-blue-50 px-4 py-3 text-left text-xs text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
+                  <p className="font-semibold">{t.test.highRiskInfoTitle}</p>
+                  <p className="mt-1 whitespace-pre-line">{highRiskInfo}</p>
+                </div>
+              )}
             </div>
 
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -178,7 +193,7 @@ function TestContent() {
         <Card key={question.id} className="animate-fade-in-up p-6">
           <Badge tone="blue">{question.category}</Badge>
           <h2 className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">
-            {question.text}
+            {localizedQuestionText(question, language)}
           </h2>
 
           <div className="mt-5 flex flex-col gap-2.5">
@@ -195,7 +210,7 @@ function TestContent() {
                       : "border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:-translate-y-0.5 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800/60"
                   }`}
                 >
-                  {option.text}
+                  {localizedOptionText(question, option.id, option.text, language)}
                   <span
                     className={`flex h-4 w-4 items-center justify-center rounded-full border-2 transition-all ${
                       selected
