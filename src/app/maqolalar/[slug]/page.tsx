@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { Card, LinkButton } from "@/components/ui";
 import { apiGetArticle, type Article } from "@/lib/store";
 import { formatDate } from "@/lib/format";
+import { youtubeEmbedUrl } from "@/lib/youtube";
 import { useLanguage } from "@/lib/i18n/context";
 
 export default function ArticleDetailPage() {
@@ -32,6 +33,19 @@ export default function ArticleDetailPage() {
               {formatDate(article.createdAt, language)}
             </p>
             <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{article.title}</h1>
+            {article.videoUrl &&
+              (() => {
+                const embed = youtubeEmbedUrl(article.videoUrl);
+                return embed ? (
+                  <div className="mt-5 aspect-video w-full overflow-hidden rounded-2xl shadow-sm">
+                    <iframe src={embed} className="h-full w-full" allowFullScreen title={article.title} />
+                  </div>
+                ) : (
+                  <a href={article.videoUrl} target="_blank" rel="noopener noreferrer" className="mt-5 block text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                    {article.videoUrl}
+                  </a>
+                );
+              })()}
             <div className="mt-5 whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">
               {article.content}
             </div>

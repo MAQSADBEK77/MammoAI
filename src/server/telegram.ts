@@ -1,4 +1,4 @@
-import { getAllLinkedTelegramChatIds, getSetting, setSetting } from "./db";
+import { getAllLinkedTelegramChatIds, getLinkedAdminTelegramChatIds, getSetting, setSetting } from "./db";
 
 // Talks to the Telegram Bot API. The bot's own long-poll loop lives in
 // scripts/telegram-bot.mjs (a separate pm2-managed process, run
@@ -64,4 +64,20 @@ export async function broadcastTelegramMessage(text: string): Promise<{ sent: nu
     else failed += 1;
   }
   return { sent, failed };
+}
+
+/**
+ * Notifies every admin who has linked Telegram — used for "something needs
+ * your attention" events (new feedback, an unexpected server error). Never
+ * throws: a failed/unconfigured bot should never break the caller's own
+ * request, so every failure is swallowed here.
+ */
+export async function notifyAdmins(text: string): Promise<void> {
+  if (!isTelegramConfigured()) return;
+  try {
+    const chatIds = getLinkedAdminTelegramChatIds();
+    for (const chatId of chatIds) await sendTelegramMessage(chatId, text);
+  } catch {
+    // best-effort — see comment above
+  }
 }

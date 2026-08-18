@@ -1,25 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, BellRing, CheckCircle2, Image as ImageIcon, Megaphone, Send } from "lucide-react";
+import { AlertTriangle, Archive, BellRing, CheckCircle2, Cpu, Image as ImageIcon, Megaphone, Send } from "lucide-react";
 import { Button, Card, Field, Input, Textarea } from "@/components/ui";
+import { useAuth } from "@/lib/auth-context";
 import {
   apiDisconnectAdminTelegramBot,
   apiGetAdminGuideMedia,
   apiGetAdminHighRiskInfo,
   apiGetAdminTelegramSettings,
+  apiGetBackups,
   apiGetReminderSettings,
+  apiGetSystemStatus,
+  apiRestoreBackup,
   apiSaveAdminGuideMedia,
   apiSaveAdminHighRiskInfo,
   apiSaveAdminTelegramBot,
   apiSaveReminderSettings,
   apiSendAdminTelegramBroadcast,
   type AdminTelegramSettings,
+  type BackupFile,
+  type SystemStatus,
 } from "@/lib/store";
-import { useT } from "@/lib/i18n/context";
+import { formatDateTime } from "@/lib/format";
+import { useLanguage, useT } from "@/lib/i18n/context";
 
 export default function AdminSettingsPage() {
   const t = useT();
+  const { user: me } = useAuth();
+  const isFullAdmin = me?.role === "admin";
   const [settings, setSettings] = useState<AdminTelegramSettings | null>(null);
   const [token, setToken] = useState("");
   const [saving, setSaving] = useState(false);
@@ -166,7 +175,155 @@ export default function AdminSettingsPage() {
       <ReminderSettingsCard t={t} />
       <HighRiskInfoCard t={t} />
       <GuideMediaCard t={t} />
+      {isFullAdmin && <SystemStatusCard t={t} />}
+      {isFullAdmin && <BackupsCard t={t} />}
     </div>
+  );
+}
+
+function SystemStatusCard({ t }: { t: ReturnType<typeof useT> }) {
+  const [status, setStatus] = useState<SystemStatus | null>(null);
+
+  useEffect(() => {
+    apiGetSystemStatus().then(setStatus);
+  }, []);
+
+  function formatUptime(seconds: number) {
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
+
+  function formatBytes(bytes: number) {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  return (
+    <Card className="max-w-xl p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <Cpu size={18} />
+        </span>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.systemStatusTitle}</h2>
+      </div>
+
+      {status && (
+        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div>
+            <p className="text-lg font-bold text-slate-900 dark:text-white">{formatUptime(status.appUptimeSeconds)}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t.adminSettings.uptimeLabel}</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-slate-900 dark:text-white">{formatBytes(status.dbSizeBytes)}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t.adminSettings.dbSizeLabel}</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-slate-900 dark:text-white">{status.backupCount}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t.adminSettings.backupCountLabel}</p>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-900 dark:text-white">
+              {status.lastBackupAt ? new Date(status.lastBackupAt).toLocaleString() : t.adminSettings.neverLabel}
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t.adminSettings.lastBackupLabel}</p>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function BackupsCard({ t }: { t: ReturnType<typeof useT> }) {
+  const { language } = useLanguage();
+  const [backups, setBackups] = useState<BackupFile[]>([]);
+  const [target, setTarget] = useState<BackupFile | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [restoring, setRestoring] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiGetBackups().then(setBackups);
+  }, []);
+
+  function formatBytes(bytes: number) {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  async function handleRestore() {
+    if (!target || confirmText !== target.filename) return;
+    setRestoring(true);
+    setError(null);
+    try {
+      await apiRestoreBackup(target.filename);
+      // The server process exits right after responding (pm2 restarts it) —
+      // nothing more to do here but wait it out.
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.adminContent.errorSave);
+      setRestoring(false);
+    }
+  }
+
+  return (
+    <Card className="max-w-xl p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
+          <Archive size={18} />
+        </span>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.backupsTitle}</h2>
+      </div>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.backupsSubtitle}</p>
+
+      {restoring ? (
+        <p className="mt-5 text-sm font-medium text-amber-600 dark:text-amber-400">{t.adminSettings.restoreInProgress}</p>
+      ) : (
+        <div className="mt-5 flex flex-col gap-2">
+          {backups.map((b) => (
+            <div key={b.filename} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">{formatDateTime(b.createdAt, language)}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">
+                    {b.filename} · {formatBytes(b.sizeBytes)}
+                  </p>
+                </div>
+                {target?.filename !== b.filename && (
+                  <Button variant="ghost" size="sm" onClick={() => { setTarget(b); setConfirmText(""); setError(null); }}>
+                    {t.adminSettings.restoreButton}
+                  </Button>
+                )}
+              </div>
+              {target?.filename === b.filename && (
+                <div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    {t.adminSettings.restoreConfirmPrompt.replace("{filename}", b.filename)}
+                  </p>
+                  <Input
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder={t.adminSettings.restoreConfirmPlaceholder}
+                  />
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setTarget(null)}>
+                      {t.adminSettings.restoreCancel}
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={handleRestore} disabled={confirmText !== b.filename}>
+                      {t.adminSettings.restoreConfirmButton}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          {backups.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">{t.adminSettings.backupsEmpty}</p>}
+          {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+        </div>
+      )}
+    </Card>
   );
 }
 

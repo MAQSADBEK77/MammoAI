@@ -322,7 +322,13 @@ function ClinicsTab({ t }: { t: ReturnType<typeof useT> }) {
 function ArticlesTab({ t }: { t: ReturnType<typeof useT> }) {
   const [items, setItems] = useState<Article[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ title: string; excerpt: string; content: string; published: boolean } | null>(null);
+  const [draft, setDraft] = useState<{
+    title: string;
+    excerpt: string;
+    content: string;
+    published: boolean;
+    videoUrl: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -332,12 +338,18 @@ function ArticlesTab({ t }: { t: ReturnType<typeof useT> }) {
   useEffect(reload, []);
 
   function startNew() {
-    setDraft({ title: "", excerpt: "", content: "", published: true });
+    setDraft({ title: "", excerpt: "", content: "", published: true, videoUrl: "" });
     setEditingId("new");
     setError(null);
   }
   function startEdit(item: Article) {
-    setDraft({ title: item.title, excerpt: item.excerpt, content: item.content, published: item.published });
+    setDraft({
+      title: item.title,
+      excerpt: item.excerpt,
+      content: item.content,
+      published: item.published,
+      videoUrl: item.videoUrl,
+    });
     setEditingId(item.id);
     setError(null);
   }
@@ -393,6 +405,9 @@ function ArticlesTab({ t }: { t: ReturnType<typeof useT> }) {
             <Field label={t.adminContent.articleContentLabel}>
               <Textarea rows={8} value={draft.content} onChange={(e) => setDraft({ ...draft, content: e.target.value })} placeholder={t.adminContent.articleContentPlaceholder} />
             </Field>
+            <Field label={t.adminContent.articleVideoLabel} hint={t.adminContent.articleVideoHint}>
+              <Input value={draft.videoUrl} onChange={(e) => setDraft({ ...draft, videoUrl: e.target.value })} placeholder={t.adminContent.articleVideoPlaceholder} />
+            </Field>
             <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input type="checkbox" checked={draft.published} onChange={(e) => setDraft({ ...draft, published: e.target.checked })} />
               {t.adminContent.articlePublishedLabel}
@@ -419,6 +434,7 @@ function ArticlesTab({ t }: { t: ReturnType<typeof useT> }) {
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-slate-900 dark:text-white">{item.title}</p>
                   {!item.published && <Badge tone="yellow">{t.adminContent.draftBadge}</Badge>}
+                  {item.videoUrl && <Badge tone="blue">{t.adminContent.videoBadge}</Badge>}
                 </div>
                 {item.excerpt && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.excerpt}</p>}
               </div>

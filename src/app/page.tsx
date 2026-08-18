@@ -1,15 +1,22 @@
 "use client";
 
-import { Activity, ClipboardList, LineChart, ShieldCheck, Sparkles, UserPlus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Activity, ClipboardList, LineChart, ShieldCheck, Sparkles, UserPlus, Users2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Logo } from "@/components/Logo";
-import { LinkButton } from "@/components/ui";
+import { Card, LinkButton } from "@/components/ui";
 import { Reveal } from "@/components/Reveal";
 import { StatCounter } from "@/components/StatCounter";
+import { apiGetPublicStats } from "@/lib/store";
 import { useT } from "@/lib/i18n/context";
 
 export default function HomePage() {
   const t = useT();
+  const [communityStats, setCommunityStats] = useState({ totalUsers: 0, totalAttempts: 0 });
+
+  useEffect(() => {
+    apiGetPublicStats().then(setCommunityStats);
+  }, []);
 
   const STEPS = [
     { icon: UserPlus, title: t.landing.step1Title, text: t.landing.step1Text },
@@ -155,6 +162,33 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Community stats (live) */}
+      <section className="px-4 py-16 sm:px-6 lg:px-8">
+        <Reveal className="mx-auto max-w-3xl">
+          <Card className="p-8 text-center sm:p-10">
+            <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+              <Users2 size={16} />
+              {t.landing.communityTitle}
+            </div>
+            <p className="mx-auto mt-1 max-w-md text-xs text-slate-400 dark:text-slate-500">{t.landing.communitySubtitle}</p>
+            <div className="mt-6 grid grid-cols-2 gap-6">
+              <div>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                  <StatCounter value={communityStats.totalUsers} duration={900} />
+                </p>
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{t.landing.communityUsersLabel}</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                  <StatCounter value={communityStats.totalAttempts} duration={900} />
+                </p>
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{t.landing.communityAttemptsLabel}</p>
+              </div>
+            </div>
+          </Card>
+        </Reveal>
       </section>
 
       {/* CTA */}

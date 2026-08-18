@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  Download,
   Pencil,
   Plus,
   Save,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import { Badge, Button, Card, Field, Input } from "@/components/ui";
@@ -19,9 +21,30 @@ import {
   apiUpdateQuestion,
 } from "@/lib/store";
 import { uid } from "@/lib/id";
+import { downloadCsv, parseCsv } from "@/lib/csv";
 import { useT } from "@/lib/i18n/context";
 import type { Dictionary, Language } from "@/lib/i18n/types";
 import type { QuizQuestion } from "@/lib/types";
+
+// CSV import/export format: order,category,text,options — options packs
+// "text:score" pairs separated by "|" so an arbitrary number of answer
+// options fits in one cell (e.g. "Yo'q:0|Ha:2").
+function parseOptionsCell(cell: string) {
+  return cell
+    .split("|")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const idx = part.lastIndexOf(":");
+      const text = (idx === -1 ? part : part.slice(0, idx)).trim();
+      const score = idx === -1 ? 0 : Number(part.slice(idx + 1).trim()) || 0;
+      return { id: uid("o"), text, score };
+    });
+}
+
+function optionsToCell(options: { text: string; score: number }[]) {
+  return options.map((o) => `${o.text}:${o.score}`).join("|");
+}
 
 const TRANSLATABLE_LANGS: Language[] = ["ru", "en"];
 const LANG_LABEL: Record<Language, string> = { uz: "O'zbekcha", ru: "Русский", en: "English" };
@@ -46,12 +69,70 @@ export default function AdminQuizPage() {
   const [draft, setDraft] = useState<QuizQuestion | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function reload() {
     apiGetQuestions().then(setQuestions);
   }
 
   useEffect(reload, []);
+
+  function exportQuestionsCsv() {
+    downloadCsv(
+      "savollar.csv",
+      ["order", "category", "text", "options"],
+      questions.map((q) => [q.order, q.category, q.text, optionsToCell(q.options)])
+    );
+  }
+
+  function downloadTemplate() {
+    downloadCsv(
+      "savollar-namunasi.csv",
+      ["order", "category", "text", "options"],
+      [
+        [1, "Umumiy ma'lumot", "Yoshingiz nechida?", "30 yoshgacha:0|30-39 yosh:1|40 yosh va undan katta:2"],
+        [2, "Oilaviy tarix", "Oilangizda ko'krak saratoni tarixi bormi?", "Yo'q:0|Bor:3"],
+      ]
+    );
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    setImportMessage(null);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      // Skip a header row if present (first cell isn't a number).
+      const dataRows = rows.length && Number.isNaN(Number(rows[0][0])) ? rows.slice(1) : rows;
+
+      let created = 0;
+      let base = questions.length;
+      for (const row of dataRows) {
+        const [orderCell, category, text, optionsCell] = row;
+        const options = parseOptionsCell(optionsCell ?? "");
+        if (!text?.trim() || options.length < 2) continue;
+        base += 1;
+        await apiCreateQuestion({
+          order: Number(orderCell) || base,
+          category: category?.trim() ?? "",
+          text: text.trim(),
+          options,
+        });
+        created += 1;
+      }
+      setImportMessage(t.adminQuiz.importSuccess.replace("{count}", String(created)));
+      reload();
+    } catch {
+      setImportMessage(t.adminQuiz.importError);
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function startNew() {
     setDraft(emptyDraft(questions.length + 1));
@@ -156,12 +237,33 @@ export default function AdminQuizPage() {
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminQuiz.subtitle}</p>
         </div>
         {editingId === null && (
-          <Button onClick={startNew}>
-            <Plus size={15} />
-            {t.adminQuiz.addButton}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="ghost" onClick={exportQuestionsCsv}>
+              <Download size={15} />
+              {t.adminUsers.exportCsv}
+            </Button>
+            <Button variant="ghost" onClick={downloadTemplate}>
+              <Download size={15} />
+              {t.adminQuiz.downloadTemplateButton}
+            </Button>
+            <input ref={fileInputRef} type="file" accept=".csv" hidden onChange={handleImportFile} />
+            <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+              <Upload size={15} />
+              {importing ? t.common.saving : t.adminQuiz.importCsvButton}
+            </Button>
+            <Button onClick={startNew}>
+              <Plus size={15} />
+              {t.adminQuiz.addButton}
+            </Button>
+          </div>
         )}
       </div>
+
+      {importMessage && (
+        <p className="rounded-lg bg-blue-50 px-3.5 py-2.5 text-sm text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+          {importMessage}
+        </p>
+      )}
 
       {editingId === "new" && draft && (
         <QuestionEditor

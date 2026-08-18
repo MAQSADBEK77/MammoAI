@@ -530,6 +530,11 @@ function getHighRiskInfoText() {
   return getSetting("high_risk_info_text") ?? "";
 }
 
+async function notifyAdmins(token, text) {
+  const admins = db.prepare("SELECT telegram_chat_id FROM users WHERE role = 'admin' AND telegram_chat_id IS NOT NULL").all();
+  for (const a of admins) await sendMessage(token, a.telegram_chat_id, text).catch(() => {});
+}
+
 function createFeedbackFromBot(userId, message) {
   db.prepare("INSERT INTO feedback (id, user_id, message, source, created_at) VALUES (?, ?, ?, 'bot', ?)").run(
     randomUUID(),
@@ -1144,9 +1149,14 @@ async function handleMessage(token, message) {
       await sendMessage(token, chatId, tr("feedbackEmpty", lang));
       return;
     }
-    createFeedbackFromBot(user?.id ?? null, text.trim().slice(0, 2000));
+    const feedbackText = text.trim().slice(0, 2000);
+    createFeedbackFromBot(user?.id ?? null, feedbackText);
     resetSession(chatId);
     await sendMainMenu(token, chatId, tr("feedbackSaved", lang), lang, Boolean(user));
+    await notifyAdmins(
+      token,
+      `💬 Yangi fikr-mulohaza (bot)\n\n${user ? `${user.first_name} ${user.last_name}` : "Noma'lum"}:\n${feedbackText}`
+    );
     return;
   }
 

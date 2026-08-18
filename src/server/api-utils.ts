@@ -17,10 +17,30 @@ export function getClientIp(request: Request): string {
   return "unknown";
 }
 
+// Every unexpected (non-ApiError) failure is the same shape of "something's
+// broken" signal — worth pinging an admin about without them having to tail
+// logs. Deduped per error message so a hot-looping bug sends one alert, not
+// hundreds; dynamic import avoids a circular dependency (telegram.ts -> db.ts
+// -> api-utils.ts).
+const recentlyAlerted = new Map<string, number>();
+const ALERT_COOLDOWN_MS = 10 * 60 * 1000;
+
+function alertAdminsOfServerError(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  const last = recentlyAlerted.get(message);
+  if (last && Date.now() - last < ALERT_COOLDOWN_MS) return;
+  recentlyAlerted.set(message, Date.now());
+
+  import("./telegram")
+    .then(({ notifyAdmins }) => notifyAdmins(`🚨 Kutilmagan server xatoligi:\n${message}`))
+    .catch(() => {});
+}
+
 export function handleApiError(err: unknown) {
   if (err instanceof ApiError) {
     return NextResponse.json({ error: err.message }, { status: err.status });
   }
   console.error(err);
+  alertAdminsOfServerError(err);
   return NextResponse.json({ error: "Kutilmagan xatolik yuz berdi." }, { status: 500 });
 }

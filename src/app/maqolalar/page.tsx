@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Newspaper } from "lucide-react";
+import { Newspaper, PlayCircle } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
-import { Card } from "@/components/ui";
+import { Badge, Card } from "@/components/ui";
 import { apiGetArticles, type Article } from "@/lib/store";
 import { formatDate } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n/context";
@@ -33,9 +33,17 @@ export default function ArticlesPage() {
           {articles.map((a) => (
             <Link key={a.id} href={`/maqolalar/${a.slug}`}>
               <Card className="p-5 transition-shadow hover:shadow-md">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                  {formatDate(a.createdAt, language)}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                    {formatDate(a.createdAt, language)}
+                  </p>
+                  {a.videoUrl && (
+                    <Badge tone="blue">
+                      <PlayCircle size={11} className="mr-1 inline" />
+                      {t.articlesPage.videoBadge}
+                    </Badge>
+                  )}
+                </div>
                 <h2 className="mt-1 font-semibold text-slate-900 dark:text-white">{a.title}</h2>
                 {a.excerpt && <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{a.excerpt}</p>}
               </Card>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createFeedback, isRateLimited, recordAuthAttempt } from "@/server/db";
 import { requireUser } from "@/server/session";
+import { notifyAdmins } from "@/server/telegram";
 import { ApiError, getClientIp, handleApiError } from "@/server/api-utils";
 
 const MAX_PER_HOUR = 10;
@@ -18,7 +19,9 @@ export async function POST(request: Request) {
       throw new ApiError(400, "Xabar matnini kiriting.");
     }
     recordAuthAttempt(`feedback-ip:${ip}`);
-    createFeedback(user.id, message.trim().slice(0, 2000), "site");
+    const text = message.trim().slice(0, 2000);
+    createFeedback(user.id, text, "site");
+    notifyAdmins(`💬 Yangi fikr-mulohaza (sayt)\n\n${user.firstName} ${user.lastName}:\n${text}`).catch(() => {});
     return NextResponse.json({ ok: true });
   } catch (err) {
     return handleApiError(err);

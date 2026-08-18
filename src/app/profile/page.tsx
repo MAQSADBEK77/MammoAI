@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
+  Bell,
   BellRing,
   Calendar,
   CheckCircle2,
   Copy,
+  Download,
   KeyRound,
   LogOut,
   MessageSquareText,
@@ -35,14 +37,18 @@ import {
   apiGetReferral,
   apiGetSelfExamMonths,
   apiGetTelegramStatus,
+  apiGetVapidPublicKey,
   apiLinkTelegram,
   apiLogoutEverywhere,
   apiSetSelfExamDone,
+  apiSubscribePush,
   apiSubmitFeedback,
   apiUnlinkTelegram,
+  apiUnsubscribePush,
   type FamilyMember,
   type TelegramStatus,
 } from "@/lib/store";
+import { urlBase64ToUint8Array } from "@/lib/push";
 import type { QuizAttempt } from "@/lib/types";
 import type { Dictionary } from "@/lib/i18n/types";
 import { formatDate } from "@/lib/format";
@@ -324,6 +330,7 @@ function ProfileContent() {
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <TelegramCard t={t} />
+          <BrowserPushCard t={t} />
           <ChangePasswordCard t={t} />
           <ReferralCard t={t} />
           <SessionsCard t={t} />
@@ -412,6 +419,95 @@ function TelegramCard({ t }: { t: Dictionary }) {
         )}
       </div>
       {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
+    </Card>
+  );
+}
+
+function BrowserPushCard({ t }: { t: Dictionary }) {
+  const [supported, setSupported] = useState(true);
+  const [subscribed, setSubscribed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setSupported(false);
+      return;
+    }
+    navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription()).then((sub) => setSubscribed(Boolean(sub)));
+  }, []);
+
+  async function enable() {
+    setError(null);
+    setBusy(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setError(t.profile.pushPermissionDenied);
+        return;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      const publicKey = await apiGetVapidPublicKey();
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
+      });
+      await apiSubscribePush(sub.toJSON());
+      setSubscribed(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.auth.errorGeneric);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disable() {
+    setBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await apiUnsubscribePush(sub.endpoint);
+        await sub.unsubscribe();
+      }
+      setSubscribed(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!supported) return null;
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <Bell size={16} />
+        </span>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.pushTitle}</h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.pushSubtitle}</p>
+        </div>
+      </div>
+      <div className="mt-4">
+        {subscribed ? (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+              <CheckCircle2 size={12} />
+              {t.profile.pushEnabled}
+            </span>
+            <Button variant="ghost" size="sm" onClick={disable} disabled={busy}>
+              {t.profile.pushDisableButton}
+            </Button>
+          </div>
+        ) : (
+          <Button variant="secondary" size="sm" onClick={enable} disabled={busy}>
+            <Bell size={14} />
+            {t.profile.pushEnableButton}
+          </Button>
+        )}
+        {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
+      </div>
     </Card>
   );
 }
@@ -801,11 +897,17 @@ function SessionsCard({ t }: { t: Dictionary }) {
           <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.sessionsSubtitle}</p>
         </div>
       </div>
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap gap-2">
         <Button variant="secondary" size="sm" onClick={handleLogoutEverywhere}>
           {t.profile.logoutEverywhereButton}
         </Button>
-        {done && <p className="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">{t.profile.logoutEverywhereDone}</p>}
+        <a href="/api/profile/export" download>
+          <Button variant="ghost" size="sm">
+            <Download size={14} />
+            {t.profile.exportDataButton}
+          </Button>
+        </a>
+        {done && <p className="mt-2 w-full text-xs font-medium text-emerald-600 dark:text-emerald-400">{t.profile.logoutEverywhereDone}</p>}
       </div>
     </Card>
   );

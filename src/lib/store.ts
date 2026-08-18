@@ -284,6 +284,7 @@ export interface Article {
   content: string;
   published: boolean;
   createdAt: string;
+  videoUrl: string;
 }
 
 export async function apiGetArticles(): Promise<Article[]> {
@@ -305,6 +306,27 @@ export async function apiGetMyAttempts(): Promise<QuizAttempt[]> {
 // High-risk safety info (admin-authored clinic/specialist pointer, shown to
 // a user whose result comes back "yuqori"/high)
 // ---------------------------------------------------------------------------
+
+export async function apiGetPublicStats(): Promise<{ totalUsers: number; totalAttempts: number }> {
+  return apiFetch("/api/public-stats");
+}
+
+// ---------------------------------------------------------------------------
+// Browser push notifications
+// ---------------------------------------------------------------------------
+
+export async function apiGetVapidPublicKey(): Promise<string> {
+  const { publicKey } = await apiFetch<{ publicKey: string }>("/api/push/vapid-public-key");
+  return publicKey;
+}
+
+export async function apiSubscribePush(subscription: PushSubscriptionJSON): Promise<void> {
+  await apiFetch("/api/push/subscribe", { method: "POST", body: JSON.stringify(subscription) });
+}
+
+export async function apiUnsubscribePush(endpoint: string): Promise<void> {
+  await apiFetch("/api/push/unsubscribe", { method: "POST", body: JSON.stringify({ endpoint }) });
+}
 
 export async function apiGetHighRiskInfo(): Promise<string> {
   const { text } = await apiFetch<{ text: string }>("/api/high-risk-info");
@@ -451,6 +473,7 @@ export async function apiCreateArticle(input: {
   excerpt: string;
   content: string;
   published: boolean;
+  videoUrl?: string;
 }): Promise<Article> {
   const { article } = await apiFetch<{ article: Article }>("/api/admin/articles", {
     method: "POST",
@@ -461,7 +484,7 @@ export async function apiCreateArticle(input: {
 
 export async function apiUpdateArticle(
   id: string,
-  input: { title: string; excerpt: string; content: string; published: boolean }
+  input: { title: string; excerpt: string; content: string; published: boolean; videoUrl?: string }
 ): Promise<Article> {
   const { article } = await apiFetch<{ article: Article }>(`/api/admin/articles/${id}`, {
     method: "PUT",
@@ -537,5 +560,35 @@ export interface DailyCounts {
 export async function apiGetAdminTrend(): Promise<DailyCounts[]> {
   const { trend } = await apiFetch<{ trend: DailyCounts[] }>("/api/admin/trend");
   return trend;
+}
+
+export interface SystemStatus {
+  appUptimeSeconds: number;
+  nodeVersion: string;
+  dbSizeBytes: number;
+  lastBackupAt: string | null;
+  backupCount: number;
+}
+
+export async function apiGetSystemStatus(): Promise<SystemStatus> {
+  return apiFetch("/api/admin/system-status");
+}
+
+export interface BackupFile {
+  filename: string;
+  sizeBytes: number;
+  createdAt: string;
+}
+
+export async function apiGetBackups(): Promise<BackupFile[]> {
+  const { backups } = await apiFetch<{ backups: BackupFile[] }>("/api/admin/backups");
+  return backups;
+}
+
+export async function apiRestoreBackup(filename: string): Promise<void> {
+  await apiFetch("/api/admin/backups/restore", {
+    method: "POST",
+    body: JSON.stringify({ filename, confirmFilename: filename }),
+  });
 }
 

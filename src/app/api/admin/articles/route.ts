@@ -24,6 +24,7 @@ export async function POST(request: Request) {
       excerpt: body.excerpt?.trim() ?? "",
       content: body.content.trim(),
       published: body.published !== false,
+      videoUrl: body.videoUrl?.trim() ?? "",
     });
     logAdminAction(admin.id, `${admin.firstName} ${admin.lastName}`, "article.create", article.title);
     return NextResponse.json({ article });

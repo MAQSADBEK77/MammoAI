@@ -52,6 +52,30 @@ function TestContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Resume-in-progress: restore a saved answer set on mount, save on every
+  // change, clear once the attempt is submitted (or the user retakes).
+  const progressKey = user ? `mammoai-test-progress:${user.id}` : null;
+
+  useEffect(() => {
+    if (!progressKey) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(progressKey) ?? "null");
+      if (saved && typeof saved === "object") {
+        setAnswers(saved.answers ?? {});
+        setStep(saved.step ?? 0);
+        setForWhom(saved.forWhom ?? "");
+      }
+    } catch {
+      // corrupt/old-shape data — ignore, start fresh
+    }
+  }, [progressKey]);
+
+  useEffect(() => {
+    if (!progressKey || result) return;
+    if (Object.keys(answers).length === 0 && step === 0) return; // nothing to save yet
+    localStorage.setItem(progressKey, JSON.stringify({ answers, step, forWhom }));
+  }, [progressKey, answers, step, forWhom, result]);
+
   const question = questions[step];
   const progress = questions.length ? Math.round(((step + 1) / questions.length) * 100) : 0;
   const answered = question ? answers[question.id] : undefined;
@@ -60,6 +84,16 @@ function TestContent() {
     () => questions.length > 0 && questions.every((q) => answers[q.id]),
     [questions, answers]
   );
+
+  const categories = useMemo(() => {
+    const seen: string[] = [];
+    for (const q of questions) if (q.category && !seen.includes(q.category)) seen.push(q.category);
+    return seen;
+  }, [questions]);
+
+  function categoryDone(category: string) {
+    return questions.filter((q) => q.category === category).every((q) => answers[q.id]);
+  }
 
   function selectOption(optionId: string, score: number) {
     if (!question) return;
@@ -81,6 +115,7 @@ function TestContent() {
         forWhom || null
       );
       setResult(attempt);
+      if (progressKey) localStorage.removeItem(progressKey);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.test.submitError);
     } finally {
@@ -92,6 +127,7 @@ function TestContent() {
     setAnswers({});
     setStep(0);
     setResult(null);
+    if (progressKey) localStorage.removeItem(progressKey);
   }
 
   if (result) {
@@ -203,6 +239,30 @@ function TestContent() {
                 </option>
               ))}
             </Select>
+          </div>
+        )}
+
+        {categories.length > 1 && (
+          <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1">
+            {categories.map((cat) => {
+              const isCurrent = cat === question.category;
+              const done = categoryDone(cat);
+              return (
+                <span
+                  key={cat}
+                  className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    isCurrent
+                      ? "bg-blue-600 text-white"
+                      : done
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                        : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+                  }`}
+                >
+                  {done && !isCurrent ? "✓ " : ""}
+                  {cat}
+                </span>
+              );
+            })}
           </div>
         )}
 
