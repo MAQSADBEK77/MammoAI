@@ -1,12 +1,10 @@
-// Standalone process (run under pm2, see README) that turns the Telegram
-// bot into a real alternative to the website for the parts that matter
-// most day-to-day:
-//   - /start <token>  links the account (token comes from the profile page)
-//   - /test           takes the whole risk quiz right inside the chat,
-//                      buttons for each answer, same scoring as the site
-//   - /natija         shows the latest saved result without retaking it
-//   - /yordam         lists the commands
-//   - a reminder DM once a user is 90+ days past their last attempt
+// Standalone process (run under pm2, see README) that makes the Telegram
+// bot a full alternative to the website, not just a reminder pinger:
+//   - sign up, right in the chat, if you don't have an account yet
+//   - view/edit your profile
+//   - take the whole risk quiz, one question per message with buttons
+//   - see your latest result
+//   - a reminder DM once you're 90+ days past your last attempt
 //
 // Reads the bot token from the same SQLite database the Next.js app uses
 // (set via the admin panel → Settings, not an env var) — so it can pick up
@@ -14,7 +12,7 @@
 
 import Database from "better-sqlite3";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, randomBytes, scryptSync } from "node:crypto";
 
 const DB_PATH = path.join(process.cwd(), "data", "mammoai.db");
 const RETEST_DAYS = 90;
@@ -28,9 +26,24 @@ const RISK_DESCRIPTIONS = {
   yuqori: "Bir nechta muhim xavf omili aniqlandi. Iloji boricha tezroq onkolog-mammolog shifokorga murojaat qiling.",
 };
 
+const BTN = {
+  signup: "📝 Ro'yxatdan o'tish",
+  test: "🧪 Test topshirish",
+  profile: "👤 Profilim",
+  result: "📊 Natijam",
+  help: "ℹ️ Yordam",
+  cancel: "❌ Bekor qilish",
+  skipPhone: "Telefon kiritmayman",
+};
+
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
 db.pragma("busy_timeout = 5000");
+
+// ---------------------------------------------------------------------------
+// DB helpers (raw SQL — this script is standalone, doesn't share the TS
+// server/ modules, so the handful of queries it needs are duplicated here)
+// ---------------------------------------------------------------------------
 
 function getSetting(key) {
   const row = db.prepare("SELECT value FROM settings WHERE key = ?").get(key);
@@ -39,6 +52,49 @@ function getSetting(key) {
 
 function getUserByChatId(chatId) {
   return db.prepare("SELECT * FROM users WHERE telegram_chat_id = ?").get(String(chatId));
+}
+
+function getUserByEmail(email) {
+  return db.prepare("SELECT * FROM users WHERE lower(email) = lower(?)").get(email);
+}
+
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function createUserFromBot(data, chatId) {
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO users (id, email, password_hash, role, first_name, last_name, birth_date, passport_series, phone, created_at, telegram_chat_id)
+     VALUES (@id, @email, @passwordHash, 'user', @firstName, @lastName, @birthDate, @passportSeries, @phone, @createdAt, @chatId)`
+  ).run({
+    id,
+    email: data.email,
+    passwordHash: hashPassword(data.password),
+    firstName: data.firstName,
+    lastName: data.lastName,
+    birthDate: data.birthDate,
+    passportSeries: data.passportSeries,
+    phone: data.phone ?? "",
+    createdAt: new Date().toISOString(),
+    chatId: String(chatId),
+  });
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(id);
+}
+
+const PROFILE_FIELD_COLUMN = {
+  firstName: "first_name",
+  lastName: "last_name",
+  phone: "phone",
+  birthDate: "birth_date",
+  passportSeries: "passport_series",
+};
+
+function updateProfileField(userId, field, value) {
+  const column = PROFILE_FIELD_COLUMN[field];
+  db.prepare(`UPDATE users SET ${column} = ? WHERE id = ?`).run(value, userId);
 }
 
 function getOrderedQuestions() {
@@ -70,6 +126,25 @@ function getLatestAttempt(userId) {
     .get(userId);
 }
 
+// yyyy-mm-dd -> d-month-yyyy (uz month names, matching the site's format.ts)
+const UZ_MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
+function formatDateUz(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d}-${UZ_MONTHS[m - 1]}, ${y}`;
+}
+
+// "12.05.1990" -> "1990-05-12", or null if invalid
+function parseBirthDate(text) {
+  const match = text.trim().match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})$/);
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  if (year < 1920 || year > new Date().getFullYear()) return null;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 // ---------------------------------------------------------------------------
 // Telegram API helpers
 // ---------------------------------------------------------------------------
@@ -84,11 +159,7 @@ async function api(token, method, body) {
 }
 
 async function sendMessage(token, chatId, text, replyMarkup) {
-  const data = await api(token, "sendMessage", {
-    chat_id: chatId,
-    text,
-    reply_markup: replyMarkup,
-  });
+  const data = await api(token, "sendMessage", { chat_id: chatId, text, reply_markup: replyMarkup });
   return data?.result?.message_id;
 }
 
@@ -108,27 +179,48 @@ async function answerCallback(token, callbackQueryId, text) {
 async function setMyCommands(token) {
   await api(token, "setMyCommands", {
     commands: [
+      { command: "start", description: "Boshlash / bosh menyu" },
       { command: "test", description: "Xavf testini boshlash" },
       { command: "natija", description: "So'nggi natijangizni ko'rish" },
+      { command: "profil", description: "Profilingiz" },
       { command: "yordam", description: "Yordam" },
     ],
   }).catch(() => {});
 }
 
+function mainMenu(isLinked) {
+  const rows = isLinked
+    ? [[BTN.test, BTN.result], [BTN.profile], [BTN.help]]
+    : [[BTN.signup], [BTN.help]];
+  return { keyboard: rows.map((r) => r.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
+}
+
+function cancelKeyboard() {
+  return { keyboard: [[{ text: BTN.cancel }]], resize_keyboard: true };
+}
+
+async function sendMainMenu(token, chatId, text, isLinked) {
+  await sendMessage(token, chatId, text, mainMenu(isLinked));
+}
+
 // ---------------------------------------------------------------------------
-// Quiz-in-chat session state (in memory — a bot restart mid-quiz just means
-// the user types /test again, no persistence needed for this)
+// Per-chat conversation state (in memory — a bot restart mid-flow just means
+// the user taps the menu button again; nothing destructive is ever half-done)
 // ---------------------------------------------------------------------------
 
-const sessions = new Map(); // chatId -> { userId, questions, index, answers }
+const sessions = new Map();
+
+function resetSession(chatId) {
+  sessions.delete(chatId);
+}
+
+// --- Quiz -------------------------------------------------------------------
 
 async function sendQuestion(token, chatId, session) {
   const q = session.questions[session.index];
   const keyboard = q.options.map((o, i) => [{ text: o.text, callback_data: `a:${session.index}:${i}` }]);
   const header = `📋 Savol ${session.index + 1}/${session.questions.length}${q.category ? ` · ${q.category}` : ""}`;
-  session.lastMessageId = await sendMessage(token, chatId, `${header}\n\n${q.text}`, {
-    inline_keyboard: keyboard,
-  });
+  session.lastMessageId = await sendMessage(token, chatId, `${header}\n\n${q.text}`, { inline_keyboard: keyboard });
 }
 
 async function startQuiz(token, chatId, user) {
@@ -137,152 +229,371 @@ async function startQuiz(token, chatId, user) {
     await sendMessage(token, chatId, "Hozircha test savollari mavjud emas.");
     return;
   }
-  const session = { userId: user.id, questions, index: 0, answers: [] };
+  const session = { type: "quiz", userId: user.id, questions, index: 0, answers: [] };
   sessions.set(chatId, session);
-  await sendMessage(
-    token,
-    chatId,
-    "🩺 MammoAI xavf testi boshlandi. Har bir savolga eng mos javobni tanlang."
-  );
+  await sendMessage(token, chatId, "🩺 MammoAI xavf testi boshlandi. Har bir savolga eng mos javobni tanlang.");
   await sendQuestion(token, chatId, session);
 }
 
-async function sendResult(token, chatId, result) {
-  const lines = [
-    "✅ Test yakunlandi!",
-    "",
+function formatResult(result) {
+  return [
     `Natija: ${result.percent}% (${result.totalScore}/${result.maxScore})`,
     `Xavf darajasi: ${RISK_LABELS[result.riskLevel]}`,
     "",
     RISK_DESCRIPTIONS[result.riskLevel],
     "",
     "⚠️ Bu natija tibbiy tashxis emas, faqat dastlabki xabardorlik uchun mo'ljallangan. Xavotir bo'lsa shifokorga murojaat qiling.",
-  ];
-  await sendMessage(token, chatId, lines.join("\n"));
+  ].join("\n");
 }
 
-async function handleCallback(token, callbackQuery) {
-  const chatId = callbackQuery.message?.chat?.id;
-  const data = callbackQuery.data ?? "";
-  const match = data.match(/^a:(\d+):(\d+)$/);
+async function finishQuiz(token, chatId, session) {
+  const result = saveAttempt(session.userId, session.questions, session.answers);
+  resetSession(chatId);
+  await sendMessage(token, chatId, `✅ Test yakunlandi!\n\n${formatResult(result)}`);
+  await sendMainMenu(token, chatId, "Yana nima qilamiz?", true);
+}
 
-  if (!match || !chatId) {
-    await answerCallback(token, callbackQuery.id, "");
+async function handleQuizCallback(token, chatId, session, data, callbackQueryId) {
+  const match = data.match(/^a:(\d+):(\d+)$/);
+  if (!match) {
+    await answerCallback(token, callbackQueryId, "");
     return;
   }
-
-  const session = sessions.get(chatId);
   const qIndex = Number(match[1]);
   const oIndex = Number(match[2]);
-
-  if (!session || session.index !== qIndex) {
-    await answerCallback(token, callbackQuery.id, "Bu savol eskirgan.");
+  if (session.index !== qIndex) {
+    await answerCallback(token, callbackQueryId, "Bu savol eskirgan.");
     return;
   }
-
   const question = session.questions[qIndex];
   const option = question.options[oIndex];
   if (!option) {
-    await answerCallback(token, callbackQuery.id, "Noto'g'ri javob.");
+    await answerCallback(token, callbackQueryId, "Noto'g'ri javob.");
     return;
   }
-
   session.answers.push({ questionId: question.id, optionId: option.id, score: option.score });
-  await answerCallback(token, callbackQuery.id, `✓ ${option.text}`);
+  await answerCallback(token, callbackQueryId, `✓ ${option.text}`);
   await clearButtons(token, chatId, session.lastMessageId);
 
   session.index += 1;
   if (session.index < session.questions.length) {
     await sendQuestion(token, chatId, session);
+  } else {
+    await finishQuiz(token, chatId, session);
+  }
+}
+
+// --- Sign up ------------------------------------------------------------
+
+const SIGNUP_STEPS = ["firstName", "lastName", "email", "password", "birthDate", "passportSeries", "phone"];
+
+const SIGNUP_PROMPTS = {
+  firstName: "Ismingizni kiriting:",
+  lastName: "Familiyangizni kiriting:",
+  email: "Email manzilingizni kiriting:",
+  password: "Parol o'ylab toping (kamida 6 ta belgi):",
+  birthDate: "Tug'ilgan sanangizni kiriting (masalan: 12.05.1990):",
+  passportSeries: "Passport seriya raqamingizni kiriting (masalan: AB1234567):",
+  phone: "Telefon raqamingizni kiriting (ixtiyoriy):",
+};
+
+async function startSignup(token, chatId) {
+  sessions.set(chatId, { type: "signup", step: 0, data: {} });
+  await sendMessage(
+    token,
+    chatId,
+    "Ro'yxatdan o'tish uchun bir nechta savolga javob bering. Istalgan vaqtda \"❌ Bekor qilish\" tugmasini bosing.",
+    cancelKeyboard()
+  );
+  await sendMessage(token, chatId, SIGNUP_PROMPTS[SIGNUP_STEPS[0]]);
+}
+
+async function handleSignupStep(token, chatId, session, text) {
+  const field = SIGNUP_STEPS[session.step];
+  const value = text.trim();
+
+  if (field === "firstName" || field === "lastName") {
+    if (!value) {
+      await sendMessage(token, chatId, "Bo'sh bo'lishi mumkin emas. Qayta kiriting:");
+      return;
+    }
+    session.data[field] = value;
+  } else if (field === "email") {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      await sendMessage(token, chatId, "Email noto'g'ri ko'rinadi. Qayta kiriting:");
+      return;
+    }
+    if (getUserByEmail(value)) {
+      await sendMessage(
+        token,
+        chatId,
+        "Bu email allaqachon ro'yxatdan o'tgan. Agar bu sizning hisobingiz bo'lsa, saytdagi profilingizdan \"Telegram orqali ulash\" tugmasidan foydalaning. Boshqa email kiriting:"
+      );
+      return;
+    }
+    session.data.email = value.toLowerCase();
+  } else if (field === "password") {
+    if (value.length < 6) {
+      await sendMessage(token, chatId, "Parol kamida 6 ta belgidan iborat bo'lishi kerak. Qayta kiriting:");
+      return;
+    }
+    session.data.password = value;
+  } else if (field === "birthDate") {
+    const iso = parseBirthDate(value);
+    if (!iso) {
+      await sendMessage(token, chatId, "Sana formati noto'g'ri. Masalan: 12.05.1990 shaklida kiriting:");
+      return;
+    }
+    session.data.birthDate = iso;
+  } else if (field === "passportSeries") {
+    if (value.length < 5) {
+      await sendMessage(token, chatId, "Passport seriya raqami noto'g'ri. Masalan: AB1234567. Qayta kiriting:");
+      return;
+    }
+    session.data.passportSeries = value.toUpperCase();
+  } else if (field === "phone") {
+    session.data.phone = value === BTN.skipPhone ? "" : value;
+  }
+
+  session.step += 1;
+
+  if (session.step >= SIGNUP_STEPS.length) {
+    const user = createUserFromBot(session.data, chatId);
+    resetSession(chatId);
+    await sendMessage(
+      token,
+      chatId,
+      `Tabriklaymiz, ${user.first_name}! Hisobingiz yaratildi va ulandi.`
+    );
+    await sendMainMenu(token, chatId, "Endi nima qilamiz?", true);
     return;
   }
 
-  const result = saveAttempt(session.userId, session.questions, session.answers);
-  sessions.delete(chatId);
-  await sendResult(token, chatId, result);
+  const nextField = SIGNUP_STEPS[session.step];
+  const replyMarkup =
+    nextField === "phone" ? { keyboard: [[{ text: BTN.skipPhone }], [{ text: BTN.cancel }]], resize_keyboard: true } : cancelKeyboard();
+  await sendMessage(token, chatId, SIGNUP_PROMPTS[nextField], replyMarkup);
+}
+
+// --- Profile --------------------------------------------------------------
+
+function profileEditKeyboard() {
+  return {
+    inline_keyboard: [
+      [{ text: "Ism", callback_data: "ef:firstName" }, { text: "Familiya", callback_data: "ef:lastName" }],
+      [{ text: "Telefon", callback_data: "ef:phone" }, { text: "Tug'ilgan sana", callback_data: "ef:birthDate" }],
+      [{ text: "Passport seriya", callback_data: "ef:passportSeries" }],
+    ],
+  };
+}
+
+async function sendProfile(token, chatId, user) {
+  const lines = [
+    "👤 Profilingiz",
+    "",
+    `Ism: ${user.first_name}`,
+    `Familiya: ${user.last_name}`,
+    `Email: ${user.email}`,
+    `Telefon: ${user.phone || "—"}`,
+    `Tug'ilgan sana: ${formatDateUz(user.birth_date)}`,
+    `Passport seriya: ${user.passport_series}`,
+    "",
+    "O'zgartirish uchun quyidagidan tanlang:",
+  ];
+  await sendMessage(token, chatId, lines.join("\n"), profileEditKeyboard());
+}
+
+const EDIT_FIELD_PROMPTS = {
+  firstName: "Yangi ismingizni kiriting:",
+  lastName: "Yangi familiyangizni kiriting:",
+  phone: "Yangi telefon raqamingizni kiriting:",
+  birthDate: "Yangi tug'ilgan sanangizni kiriting (masalan: 12.05.1990):",
+  passportSeries: "Yangi passport seriya raqamingizni kiriting:",
+};
+
+async function handleEditFieldCallback(token, chatId, data, callbackQueryId) {
+  const field = data.slice(3); // "ef:firstName" -> "firstName"
+  if (!EDIT_FIELD_PROMPTS[field]) {
+    await answerCallback(token, callbackQueryId, "");
+    return;
+  }
+  await answerCallback(token, callbackQueryId, "");
+  sessions.set(chatId, { type: "editField", field });
+  await sendMessage(token, chatId, EDIT_FIELD_PROMPTS[field], cancelKeyboard());
+}
+
+async function handleEditFieldStep(token, chatId, session, user, text) {
+  const { field } = session;
+  const value = text.trim();
+
+  if (field === "firstName" || field === "lastName") {
+    if (!value) {
+      await sendMessage(token, chatId, "Bo'sh bo'lishi mumkin emas. Qayta kiriting:");
+      return;
+    }
+    updateProfileField(user.id, field, value);
+  } else if (field === "phone") {
+    updateProfileField(user.id, field, value);
+  } else if (field === "birthDate") {
+    const iso = parseBirthDate(value);
+    if (!iso) {
+      await sendMessage(token, chatId, "Sana formati noto'g'ri. Masalan: 12.05.1990 shaklida kiriting:");
+      return;
+    }
+    updateProfileField(user.id, field, iso);
+  } else if (field === "passportSeries") {
+    if (value.length < 5) {
+      await sendMessage(token, chatId, "Passport seriya raqami noto'g'ri. Qayta kiriting:");
+      return;
+    }
+    updateProfileField(user.id, field, value.toUpperCase());
+  }
+
+  resetSession(chatId);
+  await sendMessage(token, chatId, "✅ Saqlandi.");
+  await sendProfile(token, chatId, getUserByChatId(chatId));
+}
+
+// ---------------------------------------------------------------------------
+// Update routing
+// ---------------------------------------------------------------------------
+
+async function handleCallback(token, callbackQuery) {
+  const chatId = callbackQuery.message?.chat?.id;
+  const data = callbackQuery.data ?? "";
+  if (!chatId) return;
+
+  const session = sessions.get(chatId);
+
+  if (data.startsWith("a:")) {
+    if (session?.type === "quiz") {
+      await handleQuizCallback(token, chatId, session, data, callbackQuery.id);
+    } else {
+      await answerCallback(token, callbackQuery.id, "Bu test sessiyasi eskirgan. /test bilan qayta boshlang.");
+    }
+    return;
+  }
+
+  if (data.startsWith("ef:")) {
+    await handleEditFieldCallback(token, chatId, data, callbackQuery.id);
+    return;
+  }
+
+  await answerCallback(token, callbackQuery.id, "");
 }
 
 async function handleMessage(token, message) {
   const chatId = message.chat.id;
   const text = (message.text ?? "").trim();
+  const session = sessions.get(chatId);
 
-  const startMatch = text.match(/^\/start(?:\s+(\S+))?/);
-  if (startMatch) {
-    const linkToken = startMatch[1];
-    if (!linkToken) {
-      const existing = getUserByChatId(chatId);
-      await sendMessage(
-        token,
-        chatId,
-        existing
-          ? `Salom, ${existing.first_name}! /test — testni boshlash, /natija — so'nggi natijangiz, /yordam — yordam.`
-          : "Salom! Hisobingizni ulash uchun MammoAI saytidagi profilingizdan \"Telegram orqali ulash\" tugmasini bosing."
-      );
+  // Cancel always works, from anywhere.
+  if (text === BTN.cancel || text === "/bekor") {
+    resetSession(chatId);
+    const user = getUserByChatId(chatId);
+    await sendMainMenu(token, chatId, "Bekor qilindi.", Boolean(user));
+    return;
+  }
+
+  // Mid-flow input takes priority over menu/commands.
+  if (session?.type === "signup") {
+    await handleSignupStep(token, chatId, session, text);
+    return;
+  }
+  if (session?.type === "editField") {
+    const user = getUserByChatId(chatId);
+    if (!user) {
+      resetSession(chatId);
       return;
     }
+    await handleEditFieldStep(token, chatId, session, user, text);
+    return;
+  }
+
+  const startMatch = text.match(/^\/start(?:\s+(\S+))?/);
+  if (startMatch?.[1]) {
+    // Linking flow from the website's profile page ("Connect Telegram" button).
+    const linkToken = startMatch[1];
     const user = db.prepare("SELECT id, first_name FROM users WHERE telegram_link_token = ?").get(linkToken);
     if (!user) {
       await sendMessage(token, chatId, "Havola eskirgan yoki noto'g'ri. Profilingizdan qayta urinib ko'ring.");
       return;
     }
-    db.prepare("UPDATE users SET telegram_chat_id = ?, telegram_link_token = NULL WHERE id = ?").run(
-      String(chatId),
-      user.id
-    );
-    await sendMessage(
-      token,
-      chatId,
-      `Salom, ${user.first_name}! Hisobingiz ulandi. Endi shu yerdan:\n\n/test — xavf testini topshirish\n/natija — so'nggi natijangizni ko'rish\n\nQayta test topshirish vaqti kelganda ham shu yerga eslataman.`
-    );
+    db.prepare("UPDATE users SET telegram_chat_id = ?, telegram_link_token = NULL WHERE id = ?").run(String(chatId), user.id);
+    await sendMainMenu(token, chatId, `Salom, ${user.first_name}! Hisobingiz ulandi.`, true);
     return;
   }
 
   const user = getUserByChatId(chatId);
 
-  if (text === "/test") {
+  if (startMatch || text === "/menu") {
+    await sendMainMenu(token, chatId, user ? `Salom, ${user.first_name}!` : "Salom! MammoAI botiga xush kelibsiz.", Boolean(user));
+    return;
+  }
+
+  if (text === BTN.signup || text === "/royxatdan_otish") {
+    if (user) {
+      await sendMainMenu(token, chatId, "Siz allaqachon ro'yxatdan o'tgansiz.", true);
+      return;
+    }
+    await startSignup(token, chatId);
+    return;
+  }
+
+  if (text === BTN.test || text === "/test") {
     if (!user) {
-      await sendMessage(
-        token,
-        chatId,
-        "Avval MammoAI saytida ro'yxatdan o'ting va profilingizdan Telegram hisobingizni ulang."
-      );
+      await sendMessage(token, chatId, "Avval ro'yxatdan o'ting yoki saytdagi profilingizdan hisobingizni ulang.");
+      await sendMainMenu(token, chatId, "", false);
       return;
     }
     await startQuiz(token, chatId, user);
     return;
   }
 
-  if (text === "/natija" || text === "/natijam") {
+  if (text === BTN.result || text === "/natija" || text === "/natijam") {
     if (!user) {
-      await sendMessage(token, chatId, "Avval hisobingizni ulang: saytdagi profilingizdan \"Telegram orqali ulash\".");
+      await sendMainMenu(token, chatId, "Avval ro'yxatdan o'ting yoki hisobingizni ulang.", false);
       return;
     }
     const latest = getLatestAttempt(user.id);
     if (!latest) {
-      await sendMessage(token, chatId, "Siz hali test topshirmagansiz. /test yozib boshlang.");
+      await sendMessage(token, chatId, "Siz hali test topshirmagansiz.");
+      await sendMainMenu(token, chatId, "", true);
       return;
     }
-    await sendResult(token, chatId, {
-      percent: latest.percent,
-      riskLevel: latest.risk_level,
-      totalScore: latest.total_score,
-      maxScore: latest.max_score,
-    });
-    return;
-  }
-
-  if (text === "/yordam" || text === "/help") {
     await sendMessage(
       token,
       chatId,
-      "/test — xavf testini topshirish\n/natija — so'nggi natijangizni ko'rish\n/yordam — shu xabar"
+      `📊 So'nggi natijangiz\n\n${formatResult({
+        percent: latest.percent,
+        riskLevel: latest.risk_level,
+        totalScore: latest.total_score,
+        maxScore: latest.max_score,
+      })}`
     );
     return;
   }
 
-  if (!sessions.has(chatId)) {
-    await sendMessage(token, chatId, "Buyruqni tushunmadim. /yordam yozing.");
+  if (text === BTN.profile || text === "/profil") {
+    if (!user) {
+      await sendMainMenu(token, chatId, "Avval ro'yxatdan o'ting yoki hisobingizni ulang.", false);
+      return;
+    }
+    await sendProfile(token, chatId, user);
+    return;
   }
+
+  if (text === BTN.help || text === "/yordam" || text === "/help") {
+    await sendMainMenu(
+      token,
+      chatId,
+      "MammoAI boti orqali ro'yxatdan o'tishingiz, testdan o'tishingiz va profilingizni boshqarishingiz mumkin. Quyidagi menyudan tanlang:",
+      Boolean(user)
+    );
+    return;
+  }
+
+  await sendMainMenu(token, chatId, "Buyruqni tushunmadim. Quyidagi menyudan tanlang:", Boolean(user));
 }
 
 // ---------------------------------------------------------------------------
@@ -309,7 +620,8 @@ async function checkReminders(token) {
     await sendMessage(
       token,
       u.telegram_chat_id,
-      `Salom, ${u.first_name}! Oxirgi MammoAI testingizdan ${RETEST_DAYS} kundan ko'proq vaqt o'tdi. Muntazam nazorat uchun qayta test topshirishni tavsiya qilamiz — shu yerga /test deb yozing.`
+      `Salom, ${u.first_name}! Oxirgi MammoAI testingizdan ${RETEST_DAYS} kundan ko'proq vaqt o'tdi. Muntazam nazorat uchun qayta test topshirishni tavsiya qilamiz — pastdagi "${BTN.test}" tugmasini bosing.`,
+      mainMenu(true)
     );
     db.prepare("UPDATE users SET last_reminder_sent_at = ? WHERE id = ?").run(new Date().toISOString(), u.id);
   }
