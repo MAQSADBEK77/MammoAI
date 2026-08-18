@@ -49,7 +49,7 @@ export default function AdminResultsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminResults.title}</h1>
+          <h1 className="text-2xl font-bold text-pink-900 dark:text-white">{t.adminResults.title}</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminResults.subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -89,7 +89,7 @@ export default function AdminResultsPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filtered.map((a) => (
                 <tr key={a.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <td className="px-5 py-3 font-medium text-slate-900 dark:text-white">
+                  <td className="px-5 py-3 font-medium text-pink-900 dark:text-white">
                     {a.userFirstName ? `${a.userFirstName} ${a.userLastName}` : t.adminResults.unknownUser}
                   </td>
                   <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{formatDateTime(a.createdAt, language)}</td>

@@ -233,7 +233,7 @@ export default function AdminQuizPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminQuiz.title}</h1>
+          <h1 className="text-2xl font-bold text-pink-900 dark:text-white">{t.adminQuiz.title}</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminQuiz.subtitle}</p>
         </div>
         {editingId === null && (
@@ -260,7 +260,7 @@ export default function AdminQuizPage() {
       </div>
 
       {importMessage && (
-        <p className="rounded-lg bg-blue-50 px-3.5 py-2.5 text-sm text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+        <p className="rounded-lg bg-pink-50 px-3.5 py-2.5 text-sm text-pink-700 dark:bg-pink-500/10 dark:text-pink-300">
           {importMessage}
         </p>
       )}
@@ -300,8 +300,8 @@ export default function AdminQuizPage() {
             <Card key={q.id} className="animate-fade-in p-5 transition-shadow hover:shadow-md">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <Badge tone="blue">{q.category || t.adminQuiz.noCategory}</Badge>
-                  <h3 className="mt-2 font-semibold text-slate-900 dark:text-white">
+                  <Badge tone="pink">{q.category || t.adminQuiz.noCategory}</Badge>
+                  <h3 className="mt-2 font-semibold text-pink-900 dark:text-white">
                     {index + 1}. {q.text}
                   </h3>
                   <ul className="mt-2 flex flex-col gap-1">
@@ -334,7 +334,7 @@ export default function AdminQuizPage() {
                   </button>
                   <button
                     onClick={() => startEdit(q)}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 cursor-pointer dark:text-slate-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-400"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-pink-50 hover:text-pink-600 cursor-pointer dark:text-slate-500 dark:hover:bg-pink-500/10 dark:hover:text-pink-400"
                     title={t.adminQuiz.editTitle}
                   >
                     <Pencil size={15} />
@@ -418,7 +418,7 @@ function QuestionEditor({
   const questionFieldValue = activeLang === "uz" ? draft.text : draft.translations?.[activeLang]?.text ?? "";
 
   return (
-    <Card className="animate-pop-in border-blue-200 p-5 ring-2 ring-blue-100 dark:border-blue-500/30 dark:ring-blue-500/10">
+    <Card className="animate-pop-in border-pink-200 p-5 ring-2 ring-pink-100 dark:border-pink-500/30 dark:ring-pink-500/10">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t.adminQuiz.categoryLabel} hint={t.adminQuiz.categoryHint}>
           <Input
@@ -437,7 +437,7 @@ function QuestionEditor({
             onClick={() => setActiveLang(lang)}
             className={`border-b-2 px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${
               activeLang === lang
-                ? "border-blue-600 text-blue-700 dark:border-blue-400 dark:text-blue-300"
+                ? "border-pink-600 text-pink-700 dark:border-pink-400 dark:text-pink-300"
                 : "border-transparent text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
             }`}
           >
@@ -495,7 +495,7 @@ function QuestionEditor({
         {activeLang === "uz" && (
           <button
             onClick={onAddOption}
-            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer dark:text-blue-400 dark:hover:text-blue-300"
+            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-pink-600 hover:text-pink-700 cursor-pointer dark:text-pink-400 dark:hover:text-pink-300"
           >
             <Plus size={14} />
             {t.adminQuiz.addOption}

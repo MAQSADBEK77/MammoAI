@@ -6,10 +6,11 @@ import type { Dictionary } from "@/lib/i18n/types";
 import type { RiskLevel } from "@/lib/types";
 
 // Fixed status palette — never themed, never reused for categorical series.
+// Brand Green/Red (see the pink/emerald/red overrides in globals.css); amber stays Tailwind's default.
 export const RISK_STATUS_COLOR: Record<RiskLevel, string> = {
-  past: "#0ca30c", // good
+  past: "#3a8f72", // good
   orta: "#fab219", // warning
-  yuqori: "#d03b3b", // critical
+  yuqori: "#c94a4a", // critical
 };
 
 const RISK_ICON: Record<RiskLevel, typeof CheckCircle2> = {

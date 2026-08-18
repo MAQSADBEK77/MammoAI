@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   className={clsx(
                     "flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3.5 py-3.5 text-sm font-medium transition-colors",
                     active
-                      ? "border-blue-600 text-blue-700 dark:border-blue-400 dark:text-blue-300"
+                      ? "border-pink-600 text-pink-700 dark:border-pink-400 dark:text-pink-300"
                       : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                   )}
                 >

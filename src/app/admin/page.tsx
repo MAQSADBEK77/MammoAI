@@ -29,11 +29,11 @@ function StatTile({
   return (
     <Card className="p-5 transition-shadow hover:shadow-md">
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <Icon size={18} />
         </span>
         <div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
+          <p className="text-2xl font-bold text-pink-900 dark:text-white">
             <StatCounter value={value} duration={800} />
           </p>
           <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{label}</p>
@@ -82,7 +82,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminOverview.title}</h1>
+        <h1 className="text-2xl font-bold text-pink-900 dark:text-white">{t.adminOverview.title}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminOverview.subtitle}</p>
       </div>
 
@@ -93,7 +93,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <Card className="p-6">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+        <h2 className="text-base font-semibold text-pink-900 dark:text-white">
           {t.adminOverview.distributionTitle}
         </h2>
         <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminOverview.trendTitle}</h2>
+        <h2 className="text-base font-semibold text-pink-900 dark:text-white">{t.adminOverview.trendTitle}</h2>
         <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{t.adminOverview.trendSubtitle}</p>
         <div className="mt-6">
           <TrendChart data={trend} />

@@ -17,7 +17,7 @@ export default function AdminAuditPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminAudit.title}</h1>
+        <h1 className="text-2xl font-bold text-pink-900 dark:text-white">{t.adminAudit.title}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminAudit.subtitle}</p>
       </div>
 
@@ -38,7 +38,7 @@ export default function AdminAuditPage() {
                   <td className="px-5 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300">
                     {formatDateTime(e.createdAt, language)}
                   </td>
-                  <td className="px-5 py-3 font-medium text-slate-900 dark:text-white">{e.adminName}</td>
+                  <td className="px-5 py-3 font-medium text-pink-900 dark:text-white">{e.adminName}</td>
                   <td className="px-5 py-3 text-slate-600 dark:text-slate-300">
                     <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">{e.action}</code>
                   </td>

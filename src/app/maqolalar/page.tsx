@@ -22,10 +22,10 @@ export default function ArticlesPage() {
       <Navbar />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-14 sm:px-6 lg:px-8">
         <div className="text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
             <Newspaper size={22} />
           </span>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">{t.articlesPage.title}</h1>
+          <h1 className="mt-4 text-2xl font-bold text-pink-900 dark:text-white sm:text-3xl">{t.articlesPage.title}</h1>
           <p className="mt-2 text-slate-500 dark:text-slate-400">{t.articlesPage.subtitle}</p>
         </div>
 
@@ -38,13 +38,13 @@ export default function ArticlesPage() {
                     {formatDate(a.createdAt, language)}
                   </p>
                   {a.videoUrl && (
-                    <Badge tone="blue">
+                    <Badge tone="pink">
                       <PlayCircle size={11} className="mr-1 inline" />
                       {t.articlesPage.videoBadge}
                     </Badge>
                   )}
                 </div>
-                <h2 className="mt-1 font-semibold text-slate-900 dark:text-white">{a.title}</h2>
+                <h2 className="mt-1 font-semibold text-pink-900 dark:text-white">{a.title}</h2>
                 {a.excerpt && <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{a.excerpt}</p>}
               </Card>
             </Link>

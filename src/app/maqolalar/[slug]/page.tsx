@@ -32,7 +32,7 @@ export default function ArticleDetailPage() {
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
               {formatDate(article.createdAt, language)}
             </p>
-            <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{article.title}</h1>
+            <h1 className="mt-2 text-2xl font-bold text-pink-900 dark:text-white">{article.title}</h1>
             {article.videoUrl &&
               (() => {
                 const embed = youtubeEmbedUrl(article.videoUrl);
@@ -41,7 +41,7 @@ export default function ArticleDetailPage() {
                     <iframe src={embed} className="h-full w-full" allowFullScreen title={article.title} />
                   </div>
                 ) : (
-                  <a href={article.videoUrl} target="_blank" rel="noopener noreferrer" className="mt-5 block text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                  <a href={article.videoUrl} target="_blank" rel="noopener noreferrer" className="mt-5 block text-sm font-medium text-pink-600 hover:underline dark:text-pink-400">
                     {article.videoUrl}
                   </a>
                 );

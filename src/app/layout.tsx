@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#2563eb",
+  themeColor: "#d94f87",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -44,7 +44,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className="min-h-full flex flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      {/* Base/body text color is the brand's "Asosiy text" (Dark Gray) — the
+          few components that don't set an explicit text color inherit this. */}
+      <body className="min-h-full flex flex-col bg-white text-[#333333] dark:bg-slate-950 dark:text-slate-100">
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>

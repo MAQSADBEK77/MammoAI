@@ -128,7 +128,7 @@ function ProfileContent() {
       <main className="animate-fade-in mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.profile.title}</h1>
+            <h1 className="text-2xl font-bold text-pink-900 dark:text-white">{t.profile.title}</h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.profile.subtitle}</p>
           </div>
           {!editing ? (
@@ -151,8 +151,8 @@ function ProfileContent() {
         </div>
 
         {dueForRetest && (
-          <div className="animate-fade-in-up mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 dark:border-blue-500/20 dark:bg-blue-500/10">
-            <div className="flex items-center gap-2.5 text-sm text-blue-800 dark:text-blue-200">
+          <div className="animate-fade-in-up mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-pink-100 bg-pink-50 px-4 py-3 dark:border-pink-500/20 dark:bg-pink-500/10">
+            <div className="flex items-center gap-2.5 text-sm text-pink-800 dark:text-pink-200">
               <BellRing size={16} className="shrink-0" />
               <span>{t.profile.retestBanner.replace("{days}", String(daysSinceLatest))}</span>
             </div>
@@ -183,7 +183,7 @@ function ProfileContent() {
                   onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
                 />
               ) : (
-                <p className="text-sm font-medium text-slate-900 dark:text-white">{user.firstName}</p>
+                <p className="text-sm font-medium text-pink-900 dark:text-white">{user.firstName}</p>
               )}
             </Field>
             <Field label={t.auth.lastName}>
@@ -193,7 +193,7 @@ function ProfileContent() {
                   onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
                 />
               ) : (
-                <p className="text-sm font-medium text-slate-900 dark:text-white">{user.lastName}</p>
+                <p className="text-sm font-medium text-pink-900 dark:text-white">{user.lastName}</p>
               )}
             </Field>
             <Field label={t.auth.email} hint={t.profile.emailHint}>
@@ -207,7 +207,7 @@ function ProfileContent() {
                   placeholder="+998 90 123 45 67"
                 />
               ) : (
-                <p className="text-sm font-medium text-slate-900 dark:text-white">
+                <p className="text-sm font-medium text-pink-900 dark:text-white">
                   {user.phone || "—"}
                 </p>
               )}
@@ -220,7 +220,7 @@ function ProfileContent() {
                   onChange={(e) => setForm((f) => ({ ...f, birthDate: e.target.value }))}
                 />
               ) : (
-                <p className="text-sm font-medium text-slate-900 dark:text-white">
+                <p className="text-sm font-medium text-pink-900 dark:text-white">
                   {formatDate(user.birthDate, language)}
                 </p>
               )}
@@ -234,14 +234,14 @@ function ProfileContent() {
                   }
                 />
               ) : (
-                <p className="text-sm font-medium text-slate-900 dark:text-white">{user.passportSeries}</p>
+                <p className="text-sm font-medium text-pink-900 dark:text-white">{user.passportSeries}</p>
               )}
             </Field>
           </div>
         </Card>
 
         <div className="mt-8 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t.profile.testResultsTitle}</h2>
+          <h2 className="text-lg font-bold text-pink-900 dark:text-white">{t.profile.testResultsTitle}</h2>
           <LinkButton href="/test" variant="secondary">
             <Sparkles size={15} />
             {t.profile.newTestButton}
@@ -308,7 +308,7 @@ function ProfileContent() {
         {attempts.length === 0 && (
           <Card className="mt-4 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
             {t.profile.noAttempts}{" "}
-            <a href="/test" className="font-semibold text-blue-600 dark:text-blue-400">
+            <a href="/test" className="font-semibold text-pink-600 dark:text-pink-400">
               {t.profile.startNow}
             </a>
             .
@@ -319,10 +319,10 @@ function ProfileContent() {
 
         <Card className="mt-8 p-6">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
               <Calendar size={16} />
             </span>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.selfExamTitle}</h3>
+            <h3 className="text-sm font-semibold text-pink-900 dark:text-white">{t.profile.selfExamTitle}</h3>
           </div>
           <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t.profile.selfExamSubtitle}</p>
           <SelfExamCalendar />
@@ -391,11 +391,11 @@ function TelegramCard({ t }: { t: Dictionary }) {
   return (
     <Card className="p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <Send size={16} />
         </span>
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.telegramTitle}</h3>
+          <h3 className="text-sm font-semibold text-pink-900 dark:text-white">{t.profile.telegramTitle}</h3>
           <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.telegramSubtitle}</p>
         </div>
       </div>
@@ -481,11 +481,11 @@ function BrowserPushCard({ t }: { t: Dictionary }) {
   return (
     <Card className="p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <Bell size={16} />
         </span>
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.pushTitle}</h3>
+          <h3 className="text-sm font-semibold text-pink-900 dark:text-white">{t.profile.pushTitle}</h3>
           <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.pushSubtitle}</p>
         </div>
       </div>
@@ -548,10 +548,10 @@ function ChangePasswordCard({ t }: { t: Dictionary }) {
   return (
     <Card className="p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <KeyRound size={16} />
         </span>
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.changePasswordTitle}</h3>
+        <h3 className="text-sm font-semibold text-pink-900 dark:text-white">{t.profile.changePasswordTitle}</h3>
       </div>
 
       <div className="mt-4 flex flex-col gap-3">
@@ -627,11 +627,11 @@ function FeedbackCard({ t }: { t: Dictionary }) {
   return (
     <Card className="p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <MessageSquareText size={16} />
         </span>
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.feedbackTitle}</h3>
+          <h3 className="text-sm font-semibold text-pink-900 dark:text-white">{t.profile.feedbackTitle}</h3>
           <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.feedbackSubtitle}</p>
         </div>
       </div>
@@ -704,11 +704,11 @@ function FamilyMembersCard({ t }: { t: Dictionary }) {
     <Card className="mt-8 p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
             <Users size={16} />
           </span>
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.familyTitle}</h3>
+            <h3 className="text-sm font-semibold text-pink-900 dark:text-white">{t.profile.familyTitle}</h3>
             <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.familySubtitle}</p>
           </div>
         </div>
@@ -747,7 +747,7 @@ function FamilyMembersCard({ t }: { t: Dictionary }) {
               className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-700"
             >
               <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-white">
+                <p className="text-sm font-medium text-pink-900 dark:text-white">
                   {m.firstName} {m.lastName}
                   {m.relation && <span className="ml-1.5 text-xs font-normal text-slate-400">({m.relation})</span>}
                 </p>
@@ -853,11 +853,11 @@ function ReferralCard({ t }: { t: Dictionary }) {
   return (
     <Card className="p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <UserPlus size={16} />
         </span>
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.referralTitle}</h3>
+          <h3 className="text-sm font-semibold text-pink-900 dark:text-white">{t.profile.referralTitle}</h3>
           <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.referralSubtitle}</p>
         </div>
       </div>
@@ -889,11 +889,11 @@ function SessionsCard({ t }: { t: Dictionary }) {
   return (
     <Card className="p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <LogOut size={16} />
         </span>
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.sessionsTitle}</h3>
+          <h3 className="text-sm font-semibold text-pink-900 dark:text-white">{t.profile.sessionsTitle}</h3>
           <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.sessionsSubtitle}</p>
         </div>
       </div>

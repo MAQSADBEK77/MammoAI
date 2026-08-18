@@ -30,7 +30,7 @@ export default function AdminFeedbackPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminFeedback.title}</h1>
+        <h1 className="text-2xl font-bold text-pink-900 dark:text-white">{t.adminFeedback.title}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminFeedback.subtitle}</p>
       </div>
 
@@ -49,7 +49,7 @@ export default function AdminFeedbackPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {items.map((f) => (
                 <tr key={f.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <td className="px-5 py-3 font-medium text-slate-900 dark:text-white">
+                  <td className="px-5 py-3 font-medium text-pink-900 dark:text-white">
                     {f.userFirstName ? (
                       <>
                         {f.userFirstName} {f.userLastName}
@@ -63,7 +63,7 @@ export default function AdminFeedbackPage() {
                     {f.message}
                   </td>
                   <td className="px-5 py-3">
-                    <Badge tone={f.source === "bot" ? "blue" : "slate"}>
+                    <Badge tone={f.source === "bot" ? "pink" : "slate"}>
                       {f.source === "bot" ? t.adminFeedback.sourceBot : t.adminFeedback.sourceSite}
                     </Badge>
                   </td>

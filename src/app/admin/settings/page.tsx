@@ -92,16 +92,16 @@ export default function AdminSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminSettings.title}</h1>
+        <h1 className="text-2xl font-bold text-pink-900 dark:text-white">{t.adminSettings.title}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.subtitle}</p>
       </div>
 
       <Card className="max-w-xl p-6">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
             <Send size={18} />
           </span>
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.telegramTitle}</h2>
+          <h2 className="text-base font-semibold text-pink-900 dark:text-white">{t.adminSettings.telegramTitle}</h2>
         </div>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.telegramSubtitle}</p>
 
@@ -145,10 +145,10 @@ export default function AdminSettingsPage() {
       {settings?.configured && (
         <Card className="max-w-xl p-6">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
               <Megaphone size={18} />
             </span>
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.broadcastTitle}</h2>
+            <h2 className="text-base font-semibold text-pink-900 dark:text-white">{t.adminSettings.broadcastTitle}</h2>
           </div>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.broadcastSubtitle}</p>
 
@@ -205,28 +205,28 @@ function SystemStatusCard({ t }: { t: ReturnType<typeof useT> }) {
   return (
     <Card className="max-w-xl p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <Cpu size={18} />
         </span>
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.systemStatusTitle}</h2>
+        <h2 className="text-base font-semibold text-pink-900 dark:text-white">{t.adminSettings.systemStatusTitle}</h2>
       </div>
 
       {status && (
         <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
-            <p className="text-lg font-bold text-slate-900 dark:text-white">{formatUptime(status.appUptimeSeconds)}</p>
+            <p className="text-lg font-bold text-pink-900 dark:text-white">{formatUptime(status.appUptimeSeconds)}</p>
             <p className="text-xs text-slate-400 dark:text-slate-500">{t.adminSettings.uptimeLabel}</p>
           </div>
           <div>
-            <p className="text-lg font-bold text-slate-900 dark:text-white">{formatBytes(status.dbSizeBytes)}</p>
+            <p className="text-lg font-bold text-pink-900 dark:text-white">{formatBytes(status.dbSizeBytes)}</p>
             <p className="text-xs text-slate-400 dark:text-slate-500">{t.adminSettings.dbSizeLabel}</p>
           </div>
           <div>
-            <p className="text-lg font-bold text-slate-900 dark:text-white">{status.backupCount}</p>
+            <p className="text-lg font-bold text-pink-900 dark:text-white">{status.backupCount}</p>
             <p className="text-xs text-slate-400 dark:text-slate-500">{t.adminSettings.backupCountLabel}</p>
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-900 dark:text-white">
+            <p className="text-sm font-bold text-pink-900 dark:text-white">
               {status.lastBackupAt ? new Date(status.lastBackupAt).toLocaleString() : t.adminSettings.neverLabel}
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500">{t.adminSettings.lastBackupLabel}</p>
@@ -274,7 +274,7 @@ function BackupsCard({ t }: { t: ReturnType<typeof useT> }) {
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
           <Archive size={18} />
         </span>
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.backupsTitle}</h2>
+        <h2 className="text-base font-semibold text-pink-900 dark:text-white">{t.adminSettings.backupsTitle}</h2>
       </div>
       <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.backupsSubtitle}</p>
 
@@ -286,7 +286,7 @@ function BackupsCard({ t }: { t: ReturnType<typeof useT> }) {
             <div key={b.filename} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">{formatDateTime(b.createdAt, language)}</p>
+                  <p className="text-sm font-medium text-pink-900 dark:text-white">{formatDateTime(b.createdAt, language)}</p>
                   <p className="text-xs text-slate-400 dark:text-slate-500">
                     {b.filename} · {formatBytes(b.sizeBytes)}
                   </p>
@@ -358,10 +358,10 @@ function GuideMediaCard({ t }: { t: ReturnType<typeof useT> }) {
   return (
     <Card className="max-w-xl p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <ImageIcon size={18} />
         </span>
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.guideMediaTitle}</h2>
+        <h2 className="text-base font-semibold text-pink-900 dark:text-white">{t.adminSettings.guideMediaTitle}</h2>
       </div>
       <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.guideMediaSubtitle}</p>
 
@@ -415,10 +415,10 @@ function ReminderSettingsCard({ t }: { t: ReturnType<typeof useT> }) {
   return (
     <Card className="max-w-xl p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-400">
           <BellRing size={18} />
         </span>
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.remindersTitle}</h2>
+        <h2 className="text-base font-semibold text-pink-900 dark:text-white">{t.adminSettings.remindersTitle}</h2>
       </div>
       <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.remindersSubtitle}</p>
 
@@ -471,7 +471,7 @@ function HighRiskInfoCard({ t }: { t: ReturnType<typeof useT> }) {
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
           <AlertTriangle size={18} />
         </span>
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.highRiskTitle}</h2>
+        <h2 className="text-base font-semibold text-pink-900 dark:text-white">{t.adminSettings.highRiskTitle}</h2>
       </div>
       <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.highRiskSubtitle}</p>
 

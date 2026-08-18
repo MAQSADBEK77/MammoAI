@@ -48,7 +48,7 @@ export default function LoginPage() {
       <h2 className="text-xl font-bold text-white">
         {mode === "password" ? t.auth.loginTitle : t.auth.telegramLoginTitle}
       </h2>
-      <p className="mt-1 text-sm text-blue-200/70">
+      <p className="mt-1 text-sm text-pink-200/70">
         {mode === "password" ? t.auth.loginSubtitle : t.auth.telegramLoginHint}
       </p>
 
@@ -81,7 +81,7 @@ export default function LoginPage() {
 
             <Link
               href="/forgot-password"
-              className="-mt-2 self-end text-xs font-medium text-blue-300 hover:text-blue-200"
+              className="-mt-2 self-end text-xs font-medium text-pink-300 hover:text-pink-200"
             >
               {t.auth.forgotPasswordLink}
             </Link>
@@ -124,13 +124,13 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={toggleMode}
-          className="self-center text-xs font-medium text-blue-300 hover:text-blue-200 cursor-pointer"
+          className="self-center text-xs font-medium text-pink-300 hover:text-pink-200 cursor-pointer"
         >
           {mode === "password" ? t.auth.telegramLoginToggle : t.auth.backToPasswordLogin}
         </button>
       </form>
 
-      <p className="mt-5 rounded-lg bg-blue-500/10 px-3 py-2 text-xs text-blue-200/70">
+      <p className="mt-5 rounded-lg bg-pink-500/10 px-3 py-2 text-xs text-pink-200/70">
         {t.auth.adminHint} <b>admin@mammoai.uz</b> / <b>admin123</b>
       </p>
     </AuthShell>

@@ -33,12 +33,12 @@ export function Logo({
       )}
     >
       <div className="relative">
-        <span className="animate-pulse-ring absolute inset-0 rounded-2xl bg-blue-500" />
+        <span className="animate-pulse-ring absolute inset-0 rounded-2xl bg-pink-500" />
         <div
           className={clsx(
             s.box,
-            "relative inline-flex items-center justify-center rounded-2xl shadow-2xl shadow-blue-900/30",
-            "bg-gradient-to-br from-blue-500 to-blue-700"
+            "relative inline-flex items-center justify-center rounded-2xl shadow-2xl shadow-pink-900/30",
+            "bg-gradient-to-br from-pink-500 to-pink-700"
           )}
         >
           <Activity size={s.icon} className="text-white" strokeWidth={2.25} />
@@ -49,13 +49,13 @@ export function Logo({
           className={clsx(
             s.title,
             "font-bold tracking-tight",
-            dark ? "text-white" : "text-slate-900 dark:text-white"
+            dark ? "text-white" : "text-pink-900 dark:text-white"
           )}
         >
           MammoAI
         </h1>
         {withSubtitle && (
-          <p className={clsx(s.sub, dark ? "text-blue-300" : "text-blue-600 dark:text-blue-400")}>
+          <p className={clsx(s.sub, dark ? "text-pink-300" : "text-pink-600 dark:text-pink-400")}>
             {t.logo.subtitle}
           </p>
         )}

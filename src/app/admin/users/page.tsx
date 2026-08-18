@@ -80,7 +80,7 @@ export default function AdminUsersPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminUsers.title}</h1>
+          <h1 className="text-2xl font-bold text-pink-900 dark:text-white">{t.adminUsers.title}</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminUsers.subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -124,10 +124,10 @@ export default function AdminUsersPage() {
               {filtered.map((u) => (
                 <tr key={u.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
                   <td className="px-5 py-3">
-                    <div className="flex items-center gap-2 font-medium text-slate-900 dark:text-white">
+                    <div className="flex items-center gap-2 font-medium text-pink-900 dark:text-white">
                       {u.firstName} {u.lastName}
                       {u.role === "admin" && (
-                        <Badge tone="blue">
+                        <Badge tone="pink">
                           <ShieldCheck size={11} className="mr-1 inline" />
                           {t.adminUsers.adminBadge}
                         </Badge>

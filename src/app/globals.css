@@ -23,6 +23,46 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
+
+  /* Brand palette — overrides Tailwind's built-in `pink` scale with the
+     app's actual brand colors, so every existing `bg-pink-500`,
+     `text-pink-600`, `from-pink-500 to-pink-700`, etc. utility already used
+     throughout the app (renamed from a blue palette) resolves to these.
+     Anchors: 100 = Soft Pink, 500 = Primary Pink, 900 = Deep Plum. */
+  --color-pink-50: #fef2f7;
+  --color-pink-100: #fce7f0;
+  --color-pink-200: #f8cbe0;
+  --color-pink-300: #f2a6c9;
+  --color-pink-400: #e97dad;
+  --color-pink-500: #d94f87;
+  --color-pink-600: #c13d73;
+  --color-pink-700: #a02f5f;
+  --color-pink-800: #7e294d;
+  --color-pink-900: #6b3155;
+
+  /* "Umumiy fon" (general page background) — just the one shade used for
+     page wrappers (bg-slate-50); every other slate step is untouched. */
+  --color-slate-50: #fff5f8;
+
+  /* Positive/negative states (risk result, success/error text) — same
+     override trick applied to Tailwind's built-in emerald/red scales. */
+  --color-emerald-50: #e9f6f1;
+  --color-emerald-100: #d3eee3;
+  --color-emerald-200: #a8ddc8;
+  --color-emerald-300: #7bcbac;
+  --color-emerald-400: #5cb897;
+  --color-emerald-500: #479e80;
+  --color-emerald-600: #3a8f72;
+  --color-emerald-700: #2c6f58;
+
+  --color-red-50: #fbebeb;
+  --color-red-100: #f6d5d5;
+  --color-red-200: #ebabab;
+  --color-red-300: #e08282;
+  --color-red-400: #d66e6e;
+  --color-red-500: #d05c5c;
+  --color-red-600: #c94a4a;
+  --color-red-700: #a23b3b;
 }
 
 body {

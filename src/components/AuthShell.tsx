@@ -18,7 +18,7 @@ export function AuthShell({
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{
           background:
-            "radial-gradient(600px circle at 50% 0%, rgba(59,130,246,0.25), transparent 70%)",
+            "radial-gradient(600px circle at 50% 0%, rgba(217,79,135,0.25), transparent 70%)",
         }}
       />
       <div className="animate-fade-in-up relative w-full max-w-md">
@@ -28,9 +28,9 @@ export function AuthShell({
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-7 shadow-2xl backdrop-blur">
           {children}
         </div>
-        <p className="mt-6 text-center text-sm text-blue-200/70">
+        <p className="mt-6 text-center text-sm text-pink-200/70">
           {footerText}{" "}
-          <Link href={footerHref} className="font-semibold text-blue-300 hover:text-blue-200">
+          <Link href={footerHref} className="font-semibold text-pink-300 hover:text-pink-200">
             {footerLinkText}
           </Link>
         </p>

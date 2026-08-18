@@ -50,7 +50,7 @@ export default function GuidePage() {
             <span aria-hidden>🎗️</span>
             {t.guide.badge}
           </div>
-          <h1 className="mt-4 text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white">
+          <h1 className="mt-4 text-3xl font-bold text-pink-900 sm:text-4xl dark:text-white">
             {t.guide.title}
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-slate-500 dark:text-slate-400">
@@ -67,11 +67,11 @@ export default function GuidePage() {
           {STEPS.map((step, i) => (
             <Reveal key={step.title} delay={i * 90}>
               <div className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-md shadow-blue-900/20">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 shadow-md shadow-pink-900/20">
                   <step.icon size={20} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white">{step.title}</h3>
+                  <h3 className="font-semibold text-pink-900 dark:text-white">{step.title}</h3>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{step.text}</p>
                 </div>
               </div>
@@ -89,7 +89,7 @@ export default function GuidePage() {
                     <iframe src={embed} className="h-full w-full" allowFullScreen title="guide-video" />
                   </div>
                 ) : (
-                  <a href={media.videoUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                  <a href={media.videoUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-pink-600 hover:underline dark:text-pink-400">
                     {media.videoUrl}
                   </a>
                 );
@@ -107,7 +107,7 @@ export default function GuidePage() {
         )}
 
         <Reveal delay={120} className="mt-12">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-pink-900 dark:text-white">
             <AlertTriangle size={18} className="text-amber-500" />
             {t.guide.warningTitle}
           </h2>
@@ -124,11 +124,11 @@ export default function GuidePage() {
           </ul>
         </Reveal>
 
-        <Reveal delay={160} className="mt-12 flex flex-col items-center gap-3 rounded-3xl bg-gradient-to-br from-blue-600 to-blue-800 px-6 py-10 text-center shadow-xl shadow-blue-900/20">
-          <Sparkles size={22} className="text-blue-200" />
+        <Reveal delay={160} className="mt-12 flex flex-col items-center gap-3 rounded-3xl bg-gradient-to-br from-pink-600 to-pink-800 px-6 py-10 text-center shadow-xl shadow-pink-900/20">
+          <Sparkles size={22} className="text-pink-200" />
           <h3 className="text-xl font-bold text-white">{t.guide.ctaTitle}</h3>
-          <p className="max-w-md text-sm text-blue-100">{t.guide.ctaText}</p>
-          <LinkButton href="/test" className="mt-1 bg-white text-blue-700 hover:bg-blue-50">
+          <p className="max-w-md text-sm text-pink-100">{t.guide.ctaText}</p>
+          <LinkButton href="/test" className="mt-1 bg-white text-pink-700 hover:bg-pink-50">
             {t.guide.ctaButton}
           </LinkButton>
         </Reveal>

@@ -43,7 +43,7 @@ export function LanguageSwitcher() {
               className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer dark:text-slate-200 dark:hover:bg-slate-700/60"
             >
               {LANGUAGE_LABELS[lang]}
-              {language === lang && <Check size={14} className="text-blue-600 dark:text-blue-400" />}
+              {language === lang && <Check size={14} className="text-pink-600 dark:text-pink-400" />}
             </button>
           ))}
         </div>

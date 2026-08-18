@@ -80,7 +80,7 @@ function SignUpForm() {
       footerHref="/login"
     >
       <h2 className="text-xl font-bold text-white">{t.auth.signupTitle}</h2>
-      <p className="mt-1 text-sm text-blue-200/70">{t.auth.signupSubtitle}</p>
+      <p className="mt-1 text-sm text-pink-200/70">{t.auth.signupSubtitle}</p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">

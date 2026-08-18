@@ -147,7 +147,7 @@ function TestContent() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                 {t.test.resultLabel}
               </p>
-              <p className="mt-3 text-6xl font-bold text-slate-900 dark:text-white">
+              <p className="mt-3 text-6xl font-bold text-pink-900 dark:text-white">
                 <StatCounter value={result.percent} suffix="%" duration={900} />
               </p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.test.riskPercentLabel}</p>
@@ -175,14 +175,14 @@ function TestContent() {
               </div>
 
               {result.riskLevel === "yuqori" && highRiskInfo && (
-                <div className="mt-3 rounded-xl bg-blue-50 px-4 py-3 text-left text-xs text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
+                <div className="mt-3 rounded-xl bg-pink-50 px-4 py-3 text-left text-xs text-pink-800 dark:bg-pink-500/10 dark:text-pink-300">
                   <p className="font-semibold">{t.test.highRiskInfoTitle}</p>
                   <p className="mt-1 whitespace-pre-line">{highRiskInfo}</p>
                 </div>
               )}
               {result.riskLevel === "yuqori" && (
                 <p className="mt-3 text-left text-xs">
-                  <Link href="/klinikalar" className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                  <Link href="/klinikalar" className="font-semibold text-pink-600 hover:underline dark:text-pink-400">
                     {t.nav.clinics} →
                   </Link>
                 </p>
@@ -220,7 +220,7 @@ function TestContent() {
     <div className="flex min-h-full flex-col bg-slate-50 dark:bg-slate-950">
       <Navbar />
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-xs text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+        <div className="mb-6 flex items-center gap-2 rounded-xl bg-pink-50 px-4 py-3 text-xs text-pink-700 dark:bg-pink-500/10 dark:text-pink-300">
           <Sparkles size={14} />
           {t.test.disclaimerBanner}
         </div>
@@ -252,7 +252,7 @@ function TestContent() {
                   key={cat}
                   className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
                     isCurrent
-                      ? "bg-blue-600 text-white"
+                      ? "bg-pink-600 text-white"
                       : done
                         ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
                         : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
@@ -274,14 +274,14 @@ function TestContent() {
         </div>
         <div className="mb-6 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 transition-[width] duration-500 ease-out"
+            className="h-full rounded-full bg-gradient-to-r from-pink-500 to-pink-700 transition-[width] duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
 
         <Card key={question.id} className="animate-fade-in-up p-6">
-          <Badge tone="blue">{question.category}</Badge>
-          <h2 className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">
+          <Badge tone="pink">{question.category}</Badge>
+          <h2 className="mt-3 text-lg font-semibold text-pink-900 dark:text-white">
             {localizedQuestionText(question, language)}
           </h2>
 
@@ -295,7 +295,7 @@ function TestContent() {
                   onClick={() => selectOption(option.id, option.score)}
                   className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all cursor-pointer ${
                     selected
-                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-500/10 dark:text-blue-300"
+                      ? "border-pink-500 bg-pink-50 text-pink-700 dark:border-pink-400 dark:bg-pink-500/10 dark:text-pink-300"
                       : "border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:-translate-y-0.5 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800/60"
                   }`}
                 >
@@ -303,7 +303,7 @@ function TestContent() {
                   <span
                     className={`flex h-4 w-4 items-center justify-center rounded-full border-2 transition-all ${
                       selected
-                        ? "scale-110 border-blue-600 bg-blue-600 dark:border-blue-400 dark:bg-blue-400"
+                        ? "scale-110 border-pink-600 bg-pink-600 dark:border-pink-400 dark:bg-pink-400"
                         : "border-slate-300 dark:border-slate-600"
                     }`}
                   />

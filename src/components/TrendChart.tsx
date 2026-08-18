@@ -120,7 +120,7 @@ export function TrendChart({ data }: { data: DailyCounts[] }) {
                 top: 0,
               }}
             >
-              <p className="font-semibold text-slate-900 dark:text-white">{formatDateShort(activeDatum.date, language)}</p>
+              <p className="font-semibold text-pink-900 dark:text-white">{formatDateShort(activeDatum.date, language)}</p>
               <p style={{ color: "var(--trend-signups)" }}>
                 {t.adminOverview.trendSignups}: {activeDatum.signups}
               </p>

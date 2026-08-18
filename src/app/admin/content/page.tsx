@@ -37,7 +37,7 @@ export default function AdminContentPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminContent.title}</h1>
+        <h1 className="text-2xl font-bold text-pink-900 dark:text-white">{t.adminContent.title}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminContent.subtitle}</p>
       </div>
 
@@ -48,7 +48,7 @@ export default function AdminContentPage() {
             onClick={() => setTab(tb.id)}
             className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
               tab === tb.id
-                ? "border-blue-600 text-blue-700 dark:border-blue-400 dark:text-blue-300"
+                ? "border-pink-600 text-pink-700 dark:border-pink-400 dark:text-pink-300"
                 : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
@@ -168,11 +168,11 @@ function FaqTab({ t }: { t: ReturnType<typeof useT> }) {
           <Card key={item.id} className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white">{item.question}</p>
+                <p className="font-semibold text-pink-900 dark:text-white">{item.question}</p>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.answer}</p>
               </div>
               <div className="flex shrink-0 gap-1">
-                <button onClick={() => startEdit(item)} className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 cursor-pointer dark:text-slate-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-400">
+                <button onClick={() => startEdit(item)} className="rounded-lg p-1.5 text-slate-400 hover:bg-pink-50 hover:text-pink-600 cursor-pointer dark:text-slate-500 dark:hover:bg-pink-500/10 dark:hover:text-pink-400">
                   <Pencil size={15} />
                 </button>
                 <button onClick={() => remove(item.id)} className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400">
@@ -291,13 +291,13 @@ function ClinicsTab({ t }: { t: ReturnType<typeof useT> }) {
           <Card key={item.id} className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white">{item.name}</p>
+                <p className="font-semibold text-pink-900 dark:text-white">{item.name}</p>
                 {item.address && <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{item.address}</p>}
                 {item.phone && <p className="text-sm text-slate-500 dark:text-slate-400">{item.phone}</p>}
                 {item.note && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{item.note}</p>}
               </div>
               <div className="flex shrink-0 gap-1">
-                <button onClick={() => startEdit(item)} className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 cursor-pointer dark:text-slate-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-400">
+                <button onClick={() => startEdit(item)} className="rounded-lg p-1.5 text-slate-400 hover:bg-pink-50 hover:text-pink-600 cursor-pointer dark:text-slate-500 dark:hover:bg-pink-500/10 dark:hover:text-pink-400">
                   <Pencil size={15} />
                 </button>
                 <button onClick={() => remove(item.id)} className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400">
@@ -432,14 +432,14 @@ function ArticlesTab({ t }: { t: ReturnType<typeof useT> }) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                  <p className="font-semibold text-pink-900 dark:text-white">{item.title}</p>
                   {!item.published && <Badge tone="yellow">{t.adminContent.draftBadge}</Badge>}
-                  {item.videoUrl && <Badge tone="blue">{t.adminContent.videoBadge}</Badge>}
+                  {item.videoUrl && <Badge tone="pink">{t.adminContent.videoBadge}</Badge>}
                 </div>
                 {item.excerpt && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.excerpt}</p>}
               </div>
               <div className="flex shrink-0 gap-1">
-                <button onClick={() => startEdit(item)} className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 cursor-pointer dark:text-slate-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-400">
+                <button onClick={() => startEdit(item)} className="rounded-lg p-1.5 text-slate-400 hover:bg-pink-50 hover:text-pink-600 cursor-pointer dark:text-slate-500 dark:hover:bg-pink-500/10 dark:hover:text-pink-400">
                   <Pencil size={15} />
                 </button>
                 <button onClick={() => remove(item.id)} className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-400">

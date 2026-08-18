@@ -129,7 +129,7 @@ export function RiskHistoryChart({ attempts }: { attempts: QuizAttempt[] }) {
             key={p.attempt.id}
             type="button"
             aria-label={`${formatDate(p.attempt.createdAt, language)}: ${p.attempt.percent}%, ${getRiskLabel(t, p.attempt.riskLevel)}`}
-            className="absolute h-7 w-7 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            className="absolute h-7 w-7 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-pink-400"
             style={{ left: `${(p.x / WIDTH) * 100}%`, top: `${(p.y / HEIGHT) * 100}%` }}
             onMouseEnter={() => setActive(i)}
             onMouseLeave={() => setActive((cur) => (cur === i ? null : cur))}
@@ -148,7 +148,7 @@ export function RiskHistoryChart({ attempts }: { attempts: QuizAttempt[] }) {
             marginTop: "-10px",
           }}
         >
-          <p className="font-semibold text-slate-900 dark:text-white">
+          <p className="font-semibold text-pink-900 dark:text-white">
             {activePoint.attempt.percent}% · {getRiskLabel(t, activePoint.attempt.riskLevel)}
           </p>
           <p className="text-slate-400 dark:text-slate-500">{formatDate(activePoint.attempt.createdAt, language)}</p>

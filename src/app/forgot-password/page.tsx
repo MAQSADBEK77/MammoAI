@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
       footerHref="/login"
     >
       <h2 className="text-xl font-bold text-white">{t.forgotPassword.title}</h2>
-      <p className="mt-1 text-sm text-blue-200/70">{t.forgotPassword.subtitle}</p>
+      <p className="mt-1 text-sm text-pink-200/70">{t.forgotPassword.subtitle}</p>
 
       {done ? (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-xl bg-emerald-500/10 px-4 py-6 text-center">
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
             </Field>
           </div>
 
-          <p className="text-xs text-blue-300/60">{t.forgotPassword.hint}</p>
+          <p className="text-xs text-pink-300/60">{t.forgotPassword.hint}</p>
 
           <div className="grid grid-cols-2 gap-3">
             <Field label={t.forgotPassword.newPassword} htmlFor="newPassword" dark>
