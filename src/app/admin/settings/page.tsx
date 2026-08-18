@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Send } from "lucide-react";
-import { Button, Card, Field, Input } from "@/components/ui";
+import { CheckCircle2, Megaphone, Send } from "lucide-react";
+import { Button, Card, Field, Input, Textarea } from "@/components/ui";
 import {
   apiDisconnectAdminTelegramBot,
   apiGetAdminTelegramSettings,
   apiSaveAdminTelegramBot,
+  apiSendAdminTelegramBroadcast,
   type AdminTelegramSettings,
 } from "@/lib/store";
 import { useT } from "@/lib/i18n/context";
@@ -18,6 +19,11 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  const [broadcastText, setBroadcastText] = useState("");
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [broadcastError, setBroadcastError] = useState<string | null>(null);
+  const [broadcastResult, setBroadcastResult] = useState<string | null>(null);
 
   function reload() {
     apiGetAdminTelegramSettings().then(setSettings);
@@ -45,6 +51,27 @@ export default function AdminSettingsPage() {
     if (!window.confirm(t.adminSettings.disconnectConfirm)) return;
     await apiDisconnectAdminTelegramBot();
     reload();
+  }
+
+  async function handleBroadcast() {
+    if (!broadcastText.trim()) return;
+    if (!window.confirm(t.adminSettings.broadcastConfirm)) return;
+    setBroadcastError(null);
+    setBroadcastResult(null);
+    setBroadcasting(true);
+    try {
+      const { sent, failed } = await apiSendAdminTelegramBroadcast(broadcastText.trim());
+      setBroadcastResult(
+        failed > 0
+          ? t.adminSettings.broadcastPartial.replace("{sent}", String(sent)).replace("{failed}", String(failed))
+          : t.adminSettings.broadcastSuccess.replace("{sent}", String(sent))
+      );
+      setBroadcastText("");
+    } catch (err) {
+      setBroadcastError(err instanceof Error ? err.message : t.adminSettings.broadcastError);
+    } finally {
+      setBroadcasting(false);
+    }
   }
 
   return (
@@ -99,6 +126,36 @@ export default function AdminSettingsPage() {
           </Button>
         </div>
       </Card>
+
+      {settings?.configured && (
+        <Card className="max-w-xl p-6">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+              <Megaphone size={18} />
+            </span>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t.adminSettings.broadcastTitle}</h2>
+          </div>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t.adminSettings.broadcastSubtitle}</p>
+
+          <div className="mt-5 flex flex-col gap-3">
+            <Textarea
+              rows={4}
+              value={broadcastText}
+              onChange={(e) => setBroadcastText(e.target.value)}
+              placeholder={t.adminSettings.broadcastPlaceholder}
+            />
+
+            {broadcastResult && (
+              <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{broadcastResult}</p>
+            )}
+            {broadcastError && <p className="text-xs text-red-600 dark:text-red-400">{broadcastError}</p>}
+
+            <Button onClick={handleBroadcast} disabled={broadcasting || !broadcastText.trim()} className="self-start">
+              {broadcasting ? t.adminSettings.broadcastSendingButton : t.adminSettings.broadcastButton}
+            </Button>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

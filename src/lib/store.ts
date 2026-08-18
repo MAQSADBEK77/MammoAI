@@ -209,3 +209,10 @@ export async function apiDisconnectAdminTelegramBot(): Promise<void> {
   await apiFetch("/api/admin/settings/telegram", { method: "DELETE" });
 }
 
+export async function apiSendAdminTelegramBroadcast(message: string): Promise<{ sent: number; failed: number }> {
+  return apiFetch("/api/admin/settings/telegram/broadcast", {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}
+

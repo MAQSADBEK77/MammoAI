@@ -102,6 +102,10 @@ function ensureColumn(table: string, column: string, ddl: string) {
 ensureColumn("users", "telegram_chat_id", "telegram_chat_id TEXT");
 ensureColumn("users", "telegram_link_token", "telegram_link_token TEXT");
 ensureColumn("users", "last_reminder_sent_at", "last_reminder_sent_at TEXT");
+// Tracks the site-independent monthly self-exam nudge the Telegram bot sends
+// (separate cadence from the 90-day retest reminder above) — see
+// scripts/telegram-bot.mjs, the only writer/reader of this column.
+ensureColumn("users", "last_self_exam_reminder_sent_at", "last_self_exam_reminder_sent_at TEXT");
 
 // ---------------------------------------------------------------------------
 // Row <-> domain-type mapping
@@ -517,6 +521,14 @@ export function markTelegramReminderSent(userId: string) {
     new Date().toISOString(),
     userId
   );
+}
+
+/** Chat IDs of every user who has ever linked the Telegram bot — used by the admin broadcast. */
+export function getAllLinkedTelegramChatIds(): string[] {
+  const rows = db
+    .prepare("SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL")
+    .all() as { telegram_chat_id: string }[];
+  return rows.map((r) => r.telegram_chat_id);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,11 @@
 import clsx from "clsx";
 import Link from "next/link";
-import type { ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes } from "react";
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 
 export function Button({
   className,
@@ -119,6 +124,25 @@ export function Input({
 }: InputHTMLAttributes<HTMLInputElement> & { dark?: boolean }) {
   return (
     <input
+      className={clsx(
+        "w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors",
+        dark
+          ? "border-white/10 bg-white/5 text-white placeholder:text-blue-300/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+          : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800/60 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/20",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function Textarea({
+  className,
+  dark = false,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { dark?: boolean }) {
+  return (
+    <textarea
       className={clsx(
         "w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors",
         dark

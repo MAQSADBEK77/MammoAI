@@ -1,4 +1,4 @@
-import { getSetting, setSetting } from "./db";
+import { getAllLinkedTelegramChatIds, getSetting, setSetting } from "./db";
 
 // Talks to the Telegram Bot API. The bot's own long-poll loop lives in
 // scripts/telegram-bot.mjs (a separate pm2-managed process, run
@@ -51,4 +51,17 @@ export async function sendTelegramMessage(chatId: string, text: string): Promise
   } catch {
     return false;
   }
+}
+
+/** Sends the same text to every user who has ever linked the Telegram bot. Used by the admin "broadcast" tool. */
+export async function broadcastTelegramMessage(text: string): Promise<{ sent: number; failed: number }> {
+  const chatIds = getAllLinkedTelegramChatIds();
+  let sent = 0;
+  let failed = 0;
+  for (const chatId of chatIds) {
+    const ok = await sendTelegramMessage(chatId, text);
+    if (ok) sent += 1;
+    else failed += 1;
+  }
+  return { sent, failed };
 }
