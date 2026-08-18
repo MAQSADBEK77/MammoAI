@@ -504,6 +504,31 @@ async function setMyCommands(token) {
   }
 }
 
+// The bot's profile-page copy — set through the Bot API (not by hand in
+// BotFather) so all three languages stay in sync with everything else here.
+//   - short description (≤120 chars): shown on the bot's profile page AND
+//     sent along with the bot's link whenever someone shares it.
+//   - description (≤512 chars): shown on the profile page and on the empty
+//     chat screen before a user taps "Start".
+const SHORT_DESCRIPTION = {
+  uz: "🎗️ MammoAI — ko'krak saratonini erta aniqlash boti. Xavf testidan o'ting, natijangizni biling, eslatma oling.",
+  ru: "🎗️ MammoAI — бот раннего выявления риска рака груди. Пройдите тест, узнайте результат и получайте напоминания.",
+  en: "🎗️ MammoAI — an early breast cancer risk-detection bot. Take the test, see your result, get reminders.",
+};
+const DESCRIPTION = {
+  uz: "MammoAI — ko'krak bezi saratonini erta aniqlash uchun bepul onlayn tizim. Shu yerda bir necha daqiqada ro'yxatdan o'ting, qisqa xavf testidan o'ting va natijangizni bilib oling. Profilingizni boshqaring, natijalar tarixini ko'ring va muntazam eslatmalar oling — barchasi shu botning ichida, saytga chiqmasdan.\n\n⚠️ Bu tizim tibbiy tashxis o'rnini bosmaydi, faqat dastlabki xabardorlik uchun mo'ljallangan.",
+  ru: "MammoAI — бесплатная онлайн-система раннего выявления риска рака груди. Прямо здесь, за пару минут, зарегистрируйтесь, пройдите короткий тест на риск и узнайте результат. Управляйте профилем, смотрите историю результатов и получайте регулярные напоминания — всё внутри бота, без сайта.\n\n⚠️ Система не заменяет медицинский диагноз и предназначена только для первичного информирования.",
+  en: "MammoAI is a free online system for early breast cancer risk detection. Right here, in a couple of minutes, sign up, take a short risk test, and see your result. Manage your profile, view your result history, and get regular reminders — all inside the bot, no website needed.\n\n⚠️ This system does not replace a medical diagnosis and is intended for early awareness only.",
+};
+
+async function setMyProfileTexts(token) {
+  for (const lang of ["uz", "ru", "en"]) {
+    const language_code = lang === "uz" ? undefined : lang;
+    await api(token, "setMyShortDescription", { language_code, short_description: SHORT_DESCRIPTION[lang] }).catch(() => {});
+    await api(token, "setMyDescription", { language_code, description: DESCRIPTION[lang] }).catch(() => {});
+  }
+}
+
 function mainMenu(lang, isLinked) {
   const rows = isLinked
     ? [[btn("test", lang), btn("result", lang)], [btn("profile", lang)], [btn("language", lang), btn("help", lang)]]
@@ -1100,6 +1125,7 @@ async function main() {
       console.log("Telegram bot token found — starting long-poll loop.");
       wasConfigured = true;
       setMyCommands(token);
+      setMyProfileTexts(token);
     }
 
     try {
