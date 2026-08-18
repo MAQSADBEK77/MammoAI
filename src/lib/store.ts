@@ -148,4 +148,3 @@ export async function apiGetAdminAttempts(): Promise<QuizAttempt[]> {
   return attempts;
 }
 
-export { RISK_LABELS, RISK_DESCRIPTIONS, riskLevelFromPercent } from "./risk";

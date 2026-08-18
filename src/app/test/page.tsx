@@ -4,14 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Printer, ShieldAlert, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/RequireAuth";
-import { RiskBadge } from "@/components/RiskBadge";
+import { RiskBadge, getRiskDescription } from "@/components/RiskBadge";
 import { Meter } from "@/components/Meter";
 import { Badge, Button, Card, LinkButton } from "@/components/ui";
 import { StatCounter } from "@/components/StatCounter";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
-import { RISK_DESCRIPTIONS, apiGetQuestions, apiSubmitAttempt } from "@/lib/store";
+import { apiGetQuestions, apiSubmitAttempt } from "@/lib/store";
 import { formatDate } from "@/lib/format";
+import { useLanguage } from "@/lib/i18n/context";
 import type { QuizAttempt, QuizQuestion } from "@/lib/types";
 
 export default function TestPage() {
@@ -24,6 +25,7 @@ export default function TestPage() {
 
 function TestContent() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, { optionId: string; score: number }>>({});
@@ -34,7 +36,8 @@ function TestContent() {
   useEffect(() => {
     apiGetQuestions()
       .then(setQuestions)
-      .catch((err) => setError(err instanceof Error ? err.message : "Savollarni yuklab bo'lmadi."));
+      .catch((err) => setError(err instanceof Error ? err.message : t.test.loadError));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const question = questions[step];
@@ -66,7 +69,7 @@ function TestContent() {
       );
       setResult(attempt);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Natijani saqlab bo'lmadi.");
+      setError(err instanceof Error ? err.message : t.test.submitError);
     } finally {
       setSubmitting(false);
     }
@@ -88,17 +91,17 @@ function TestContent() {
               <div className="mb-6 hidden text-left print:block">
                 <Logo size="sm" align="left" dark={false} withSubtitle={false} />
                 <p className="mt-3 text-sm text-slate-600">
-                  {user?.firstName} {user?.lastName} · {formatDate(result.createdAt)}
+                  {user?.firstName} {user?.lastName} · {formatDate(result.createdAt, language)}
                 </p>
               </div>
 
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                Test natijasi
+                {t.test.resultLabel}
               </p>
               <p className="mt-3 text-6xl font-bold text-slate-900 dark:text-white">
                 <StatCounter value={result.percent} suffix="%" duration={900} />
               </p>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">xavf ko&apos;rsatkichi</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.test.riskPercentLabel}</p>
 
               <div className="mt-6 flex justify-center">
                 <RiskBadge level={result.riskLevel} pulse />
@@ -107,34 +110,31 @@ function TestContent() {
               <div className="mt-6">
                 <Meter percent={result.percent} level={result.riskLevel} />
                 <div className="mt-1.5 flex justify-between text-[11px] text-slate-400 dark:text-slate-500">
-                  <span>Past</span>
-                  <span>O&apos;rta</span>
-                  <span>Yuqori</span>
+                  <span>{t.test.low}</span>
+                  <span>{t.test.medium}</span>
+                  <span>{t.test.high}</span>
                 </div>
               </div>
 
               <p className="mt-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                {RISK_DESCRIPTIONS[result.riskLevel]}
+                {getRiskDescription(t, result.riskLevel)}
               </p>
 
               <div className="mt-6 flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 text-left text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
                 <ShieldAlert size={16} className="mt-0.5 shrink-0" />
-                <p>
-                  Bu natija tibbiy tashxis emas, faqat dastlabki xabardorlik uchun
-                  mo&apos;ljallangan. Xavotir bo&apos;lsa shifokorga murojaat qiling.
-                </p>
+                <p>{t.test.resultDisclaimer}</p>
               </div>
             </div>
 
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <Button variant="secondary" onClick={retake}>
-                Qayta topshirish
+                {t.test.retakeButton}
               </Button>
               <Button variant="secondary" onClick={() => window.print()}>
                 <Printer size={15} />
-                Chop etish
+                {t.test.printButton}
               </Button>
-              <LinkButton href="/profile">Profilga qaytish</LinkButton>
+              <LinkButton href="/profile">{t.test.backToProfile}</LinkButton>
             </div>
           </Card>
         </main>
@@ -147,7 +147,7 @@ function TestContent() {
       <div className="flex min-h-full flex-col bg-slate-50 dark:bg-slate-950">
         <Navbar />
         <main className="flex flex-1 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
-          {error ?? "Yuklanmoqda..."}
+          {error ?? t.common.loading}
         </main>
       </div>
     );
@@ -159,13 +159,12 @@ function TestContent() {
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-xs text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
           <Sparkles size={14} />
-          Bu test dastlabki xabardorlik uchun mo&apos;ljallangan, tibbiy tashxis
-          o&apos;rnini bosmaydi.
+          {t.test.disclaimerBanner}
         </div>
 
         <div className="mb-2 flex items-center justify-between text-xs font-medium text-slate-400 dark:text-slate-500">
           <span>
-            Savol {step + 1} / {questions.length}
+            {t.test.questionLabel} {step + 1} / {questions.length}
           </span>
           <span>{progress}%</span>
         </div>
@@ -223,10 +222,10 @@ function TestContent() {
             disabled={step === 0}
           >
             <ArrowLeft size={15} />
-            Orqaga
+            {t.test.backButton}
           </Button>
           <Button onClick={goNext} disabled={!answered || submitting}>
-            {submitting ? "Yuborilmoqda..." : step === questions.length - 1 ? "Yakunlash" : "Keyingi"}
+            {submitting ? t.test.submittingButton : step === questions.length - 1 ? t.test.finishButton : t.test.nextButton}
             <ArrowRight size={15} />
           </Button>
         </div>

@@ -6,17 +6,20 @@ import clsx from "clsx";
 import { Activity, LayoutDashboard, LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
-
-const LINKS = [
-  { href: "/test", label: "Test topshirish", public: false },
-  { href: "/qollanma", label: "Qo'llanma", public: true },
-  { href: "/profile", label: "Profil", public: false },
-];
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useT } from "@/lib/i18n/context";
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const t = useT();
+
+  const LINKS = [
+    { href: "/test", label: t.nav.test, public: false },
+    { href: "/qollanma", label: t.nav.guide, public: true },
+    { href: "/profile", label: t.nav.profile, public: false },
+  ];
 
   return (
     <header className="print:hidden sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
@@ -56,12 +59,13 @@ export function Navbar() {
               )}
             >
               <ShieldCheck size={15} />
-              Admin panel
+              {t.nav.admin}
             </Link>
           )}
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <LanguageSwitcher />
           <ThemeToggle />
           {user ? (
             <>
@@ -80,7 +84,7 @@ export function Navbar() {
                 className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-red-600 cursor-pointer dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-red-400"
               >
                 <LogOut size={15} />
-                <span className="hidden sm:inline">Chiqish</span>
+                <span className="hidden sm:inline">{t.nav.logout}</span>
               </button>
             </>
           ) : (
@@ -89,14 +93,14 @@ export function Navbar() {
                 href="/login"
                 className="whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 sm:px-3.5 dark:text-slate-300 dark:hover:bg-slate-800"
               >
-                Kirish
+                {t.nav.login}
               </Link>
               <Link
                 href="/sign-up"
                 className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-blue-900/20 hover:from-blue-600 hover:to-blue-800 sm:px-4"
               >
                 <LayoutDashboard size={15} className="hidden sm:inline" />
-                Ro&apos;yxatdan o&apos;tish
+                {t.nav.signup}
               </Link>
             </>
           )}

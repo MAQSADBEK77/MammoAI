@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
+import { LanguageProvider } from "@/lib/i18n/context";
 
 // Stamps the .dark class before React hydrates, so there's no flash of the
 // wrong theme on load. Keep this in sync with lib/theme-context.tsx.
@@ -35,7 +36,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <LanguageProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

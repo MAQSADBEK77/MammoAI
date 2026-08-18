@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { RISK_STATUS_COLOR } from "@/components/RiskBadge";
-import { RISK_LABELS } from "@/lib/store";
-import { formatDate } from "@/lib/format";
+import { RISK_STATUS_COLOR, getRiskLabel } from "@/components/RiskBadge";
+import { useLanguage } from "@/lib/i18n/context";
+import { formatDate, formatDateShort } from "@/lib/format";
 import type { QuizAttempt } from "@/lib/types";
 
 const WIDTH = 640;
@@ -25,6 +25,7 @@ function yFor(percent: number) {
 
 /** A single-series line chart of risk % over successive attempts, oldest → newest. */
 export function RiskHistoryChart({ attempts }: { attempts: QuizAttempt[] }) {
+  const { t, language } = useLanguage();
   const ordered = [...attempts].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const [active, setActive] = useState<number | null>(null);
 
@@ -46,7 +47,7 @@ export function RiskHistoryChart({ attempts }: { attempts: QuizAttempt[] }) {
         className="w-full"
         style={{ height: "auto" }}
         role="img"
-        aria-label="Xavf darajasi vaqt bo'yicha o'zgarishi grafigi"
+        aria-label={t.profile.historyTitle}
       >
         {/* Zone bands for context (same thresholds as the result meter) */}
         {ZONES.map((z) => (
@@ -116,7 +117,7 @@ export function RiskHistoryChart({ attempts }: { attempts: QuizAttempt[] }) {
             fontSize={11}
             className="fill-slate-400 dark:fill-slate-500"
           >
-            {formatDate(p.attempt.createdAt).replace(/, \d{4}$/, "")}
+            {formatDateShort(p.attempt.createdAt, language)}
           </text>
         ))}
       </svg>
@@ -127,7 +128,7 @@ export function RiskHistoryChart({ attempts }: { attempts: QuizAttempt[] }) {
           <button
             key={p.attempt.id}
             type="button"
-            aria-label={`${formatDate(p.attempt.createdAt)}: ${p.attempt.percent}%, ${RISK_LABELS[p.attempt.riskLevel]}`}
+            aria-label={`${formatDate(p.attempt.createdAt, language)}: ${p.attempt.percent}%, ${getRiskLabel(t, p.attempt.riskLevel)}`}
             className="absolute h-7 w-7 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
             style={{ left: `${(p.x / WIDTH) * 100}%`, top: `${(p.y / HEIGHT) * 100}%` }}
             onMouseEnter={() => setActive(i)}
@@ -148,9 +149,9 @@ export function RiskHistoryChart({ attempts }: { attempts: QuizAttempt[] }) {
           }}
         >
           <p className="font-semibold text-slate-900 dark:text-white">
-            {activePoint.attempt.percent}% · {RISK_LABELS[activePoint.attempt.riskLevel]}
+            {activePoint.attempt.percent}% · {getRiskLabel(t, activePoint.attempt.riskLevel)}
           </p>
-          <p className="text-slate-400 dark:text-slate-500">{formatDate(activePoint.attempt.createdAt)}</p>
+          <p className="text-slate-400 dark:text-slate-500">{formatDate(activePoint.attempt.createdAt, language)}</p>
         </div>
       )}
     </div>

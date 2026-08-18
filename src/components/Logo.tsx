@@ -1,5 +1,8 @@
+"use client";
+
 import { Activity } from "lucide-react";
 import clsx from "clsx";
+import { useT } from "@/lib/i18n/context";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg";
@@ -21,6 +24,7 @@ export function Logo({
   dark = true,
 }: LogoProps) {
   const s = SIZES[size];
+  const t = useT();
   return (
     <div
       className={clsx(
@@ -52,7 +56,7 @@ export function Logo({
         </h1>
         {withSubtitle && (
           <p className={clsx(s.sub, dark ? "text-blue-300" : "text-blue-600 dark:text-blue-400")}>
-            Ko&apos;krak saratonini erta aniqlash tizimi
+            {t.logo.subtitle}
           </p>
         )}
       </div>

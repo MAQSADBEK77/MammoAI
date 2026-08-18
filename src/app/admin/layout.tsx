@@ -6,16 +6,18 @@ import clsx from "clsx";
 import { LayoutDashboard, ListChecks, Users2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/RequireAuth";
-
-const TABS = [
-  { href: "/admin", label: "Umumiy ko'rinish", icon: LayoutDashboard, exact: true },
-  { href: "/admin/users", label: "Foydalanuvchilar", icon: Users2, exact: false },
-  { href: "/admin/quiz", label: "Test savollari", icon: ListChecks, exact: false },
-  { href: "/admin/results", label: "Natijalar", icon: ListChecks, exact: false },
-];
+import { useT } from "@/lib/i18n/context";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const t = useT();
+
+  const TABS = [
+    { href: "/admin", label: t.adminNav.overview, icon: LayoutDashboard, exact: true },
+    { href: "/admin/users", label: t.adminNav.users, icon: Users2, exact: false },
+    { href: "/admin/quiz", label: t.adminNav.quiz, icon: ListChecks, exact: false },
+    { href: "/admin/results", label: t.adminNav.results, icon: ListChecks, exact: false },
+  ];
 
   return (
     <RequireAuth adminOnly>

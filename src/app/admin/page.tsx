@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { ClipboardList, ListChecks, Users2 } from "lucide-react";
 import { Card } from "@/components/ui";
-import { RISK_STATUS_COLOR } from "@/components/RiskBadge";
+import { RISK_STATUS_COLOR, getRiskLabel } from "@/components/RiskBadge";
 import { StatCounter } from "@/components/StatCounter";
-import { RISK_LABELS, apiGetAdminAttempts, apiGetAdminUsers, apiGetQuestions, type AdminUser } from "@/lib/store";
+import { apiGetAdminAttempts, apiGetAdminUsers, apiGetQuestions, type AdminUser } from "@/lib/store";
+import { useT } from "@/lib/i18n/context";
 import type { RiskLevel } from "@/lib/types";
 
 function StatTile({
@@ -35,6 +36,7 @@ function StatTile({
 }
 
 export default function AdminDashboardPage() {
+  const t = useT();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [attemptsCount, setAttemptsCount] = useState(0);
   const [questionsCount, setQuestionsCount] = useState(0);
@@ -67,24 +69,22 @@ export default function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Umumiy ko&apos;rinish</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Tizimdagi foydalanuvchilar va test natijalari bo&apos;yicha statistika.
-        </p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.adminOverview.title}</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.adminOverview.subtitle}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatTile icon={Users2} label="Jami foydalanuvchilar" value={users.length} />
-        <StatTile icon={ClipboardList} label="Jami test urinishlari" value={attemptsCount} />
-        <StatTile icon={ListChecks} label="Test savollari soni" value={questionsCount} />
+        <StatTile icon={Users2} label={t.adminOverview.totalUsers} value={users.length} />
+        <StatTile icon={ClipboardList} label={t.adminOverview.totalAttempts} value={attemptsCount} />
+        <StatTile icon={ListChecks} label={t.adminOverview.totalQuestions} value={questionsCount} />
       </div>
 
       <Card className="p-6">
         <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-          Foydalanuvchilarning joriy xavf darajasi
+          {t.adminOverview.distributionTitle}
         </h2>
         <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-          Har bir foydalanuvchining eng so&apos;nggi test natijasiga asoslangan ({testedCount} kishi test topshirgan)
+          {t.adminOverview.distributionSubtitle.replace("{count}", String(testedCount))}
         </p>
 
         <div className="mt-6 flex flex-col gap-4">
@@ -94,7 +94,7 @@ export default function AdminDashboardPage() {
             return (
               <div key={level} className="flex items-center gap-3">
                 <span className="w-20 shrink-0 text-sm font-medium text-slate-600 dark:text-slate-300">
-                  {RISK_LABELS[level]}
+                  {getRiskLabel(t, level)}
                 </span>
                 <div
                   className="h-3 flex-1 rounded-full transition-colors"

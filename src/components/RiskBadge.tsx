@@ -1,5 +1,8 @@
+"use client";
+
 import { AlertOctagon, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { RISK_LABELS } from "@/lib/store";
+import { useT } from "@/lib/i18n/context";
+import type { Dictionary } from "@/lib/i18n/types";
 import type { RiskLevel } from "@/lib/types";
 
 // Fixed status palette — never themed, never reused for categorical series.
@@ -15,6 +18,14 @@ const RISK_ICON: Record<RiskLevel, typeof CheckCircle2> = {
   yuqori: AlertOctagon,
 };
 
+export function getRiskLabel(t: Dictionary, level: RiskLevel): string {
+  return { past: t.risk.pastLabel, orta: t.risk.ortaLabel, yuqori: t.risk.yuqoriLabel }[level];
+}
+
+export function getRiskDescription(t: Dictionary, level: RiskLevel): string {
+  return { past: t.risk.pastDescription, orta: t.risk.ortaDescription, yuqori: t.risk.yuqoriDescription }[level];
+}
+
 export function RiskBadge({
   level,
   size = "md",
@@ -25,6 +36,7 @@ export function RiskBadge({
   /** Subtle attention ring for a standalone "yuqori" result — never used in lists/tables. */
   pulse?: boolean;
 }) {
+  const t = useT();
   const color = RISK_STATUS_COLOR[level];
   const Icon = RISK_ICON[level];
   return (
@@ -45,7 +57,7 @@ export function RiskBadge({
         )}
         <Icon size={size === "md" ? 14 : 12} style={{ color }} strokeWidth={2.5} className="relative" />
       </span>
-      {RISK_LABELS[level]}
+      {getRiskLabel(t, level)}
     </span>
   );
 }

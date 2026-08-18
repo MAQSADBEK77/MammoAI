@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { AuthShell } from "@/components/AuthShell";
 import { Field, Input, Button } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
+import { useT } from "@/lib/i18n/context";
 
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
+  const t = useT();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,24 +25,22 @@ export default function LoginPage() {
       const user = await login(email.trim(), password);
       router.push(user.role === "admin" ? "/admin" : "/test");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Xatolik yuz berdi.");
+      setError(err instanceof Error ? err.message : t.auth.errorGeneric);
       setSubmitting(false);
     }
   }
 
   return (
     <AuthShell
-      footerText="Akkountingiz yo'qmi?"
-      footerLinkText="Ro'yxatdan o'tish"
+      footerText={t.auth.noAccount}
+      footerLinkText={t.auth.signupLink}
       footerHref="/sign-up"
     >
-      <h2 className="text-xl font-bold text-white">Kirish</h2>
-      <p className="mt-1 text-sm text-blue-200/70">
-        Shaxsiy kabinetingizga kiring.
-      </p>
+      <h2 className="text-xl font-bold text-white">{t.auth.loginTitle}</h2>
+      <p className="mt-1 text-sm text-blue-200/70">{t.auth.loginSubtitle}</p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-        <Field label="Email" htmlFor="email" dark>
+        <Field label={t.auth.email} htmlFor="email" dark>
           <Input
             id="email"
             type="email"
@@ -48,11 +48,11 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="siz@example.com"
+            placeholder="you@example.com"
           />
         </Field>
 
-        <Field label="Parol" htmlFor="password" dark>
+        <Field label={t.auth.password} htmlFor="password" dark>
           <Input
             id="password"
             type="password"
@@ -71,12 +71,12 @@ export default function LoginPage() {
         )}
 
         <Button type="submit" disabled={submitting} className="mt-1 w-full">
-          {submitting ? "Kirilmoqda..." : "Kirish"}
+          {submitting ? t.auth.submittingLogin : t.auth.submitLogin}
         </Button>
       </form>
 
       <p className="mt-5 rounded-lg bg-blue-500/10 px-3 py-2 text-xs text-blue-200/70">
-        Admin sifatida kirish uchun: <b>admin@mammoai.uz</b> / <b>admin123</b>
+        {t.auth.adminHint} <b>admin@mammoai.uz</b> / <b>admin123</b>
       </p>
     </AuthShell>
   );

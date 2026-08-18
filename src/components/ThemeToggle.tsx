@@ -2,14 +2,17 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
+import { useT } from "@/lib/i18n/context";
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, toggleTheme } = useTheme();
+  const t = useT();
+  const label = theme === "dark" ? t.theme.light : t.theme.dark;
   return (
     <button
       onClick={toggleTheme}
-      aria-label={theme === "dark" ? "Yorug' rejimga o'tish" : "Qorong'i rejimga o'tish"}
-      title={theme === "dark" ? "Yorug' rejim" : "Qorong'i rejim"}
+      aria-label={label}
+      title={label}
       className={`relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer ${className}`}
     >
       <Sun

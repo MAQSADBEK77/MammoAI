@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { AuthShell } from "@/components/AuthShell";
 import { Field, Input, Button } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
+import { useT } from "@/lib/i18n/context";
 
 export default function SignUpPage() {
   const { signUp } = useAuth();
   const router = useRouter();
+  const t = useT();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -26,19 +28,19 @@ export default function SignUpPage() {
     setError(null);
 
     if (password.length < 6) {
-      setError("Parol kamida 6 ta belgidan iborat bo'lishi kerak.");
+      setError(t.auth.errorPasswordLength);
       return;
     }
     if (password !== confirmPassword) {
-      setError("Parollar mos kelmadi.");
+      setError(t.auth.errorPasswordMismatch);
       return;
     }
     if (!birthDate) {
-      setError("Tug'ilgan sanangizni kiriting.");
+      setError(t.auth.errorBirthDateRequired);
       return;
     }
     if (passportSeries.trim().length < 5) {
-      setError("Passport seriya raqamini to'g'ri kiriting.");
+      setError(t.auth.errorPassportInvalid);
       return;
     }
 
@@ -55,25 +57,23 @@ export default function SignUpPage() {
       });
       router.push("/test");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Xatolik yuz berdi.");
+      setError(err instanceof Error ? err.message : t.auth.errorGeneric);
       setSubmitting(false);
     }
   }
 
   return (
     <AuthShell
-      footerText="Akkountingiz bormi?"
-      footerLinkText="Kirish"
+      footerText={t.auth.haveAccount}
+      footerLinkText={t.auth.loginLink}
       footerHref="/login"
     >
-      <h2 className="text-xl font-bold text-white">Ro&apos;yxatdan o&apos;tish</h2>
-      <p className="mt-1 text-sm text-blue-200/70">
-        Shaxsiy kabinet yaratish uchun ma&apos;lumotlaringizni kiriting.
-      </p>
+      <h2 className="text-xl font-bold text-white">{t.auth.signupTitle}</h2>
+      <p className="mt-1 text-sm text-blue-200/70">{t.auth.signupSubtitle}</p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Ism" htmlFor="firstName" dark>
+          <Field label={t.auth.firstName} htmlFor="firstName" dark>
             <Input
               id="firstName"
               dark
@@ -83,7 +83,7 @@ export default function SignUpPage() {
               placeholder="Malika"
             />
           </Field>
-          <Field label="Familiya" htmlFor="lastName" dark>
+          <Field label={t.auth.lastName} htmlFor="lastName" dark>
             <Input
               id="lastName"
               dark
@@ -95,7 +95,7 @@ export default function SignUpPage() {
           </Field>
         </div>
 
-        <Field label="Email" htmlFor="email" dark>
+        <Field label={t.auth.email} htmlFor="email" dark>
           <Input
             id="email"
             type="email"
@@ -103,12 +103,12 @@ export default function SignUpPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="siz@example.com"
+            placeholder="you@example.com"
           />
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Parol" htmlFor="password" dark>
+          <Field label={t.auth.password} htmlFor="password" dark>
             <Input
               id="password"
               type="password"
@@ -119,7 +119,7 @@ export default function SignUpPage() {
               placeholder="••••••••"
             />
           </Field>
-          <Field label="Parolni tasdiqlang" htmlFor="confirmPassword" dark>
+          <Field label={t.auth.confirmPassword} htmlFor="confirmPassword" dark>
             <Input
               id="confirmPassword"
               type="password"
@@ -133,7 +133,7 @@ export default function SignUpPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Tug'ilgan sana" htmlFor="birthDate" dark>
+          <Field label={t.auth.birthDate} htmlFor="birthDate" dark>
             <Input
               id="birthDate"
               type="date"
@@ -143,7 +143,7 @@ export default function SignUpPage() {
               onChange={(e) => setBirthDate(e.target.value)}
             />
           </Field>
-          <Field label="Passport seriya" htmlFor="passportSeries" dark hint="Masalan: AB1234567">
+          <Field label={t.auth.passportSeries} htmlFor="passportSeries" dark hint={t.auth.passportHint}>
             <Input
               id="passportSeries"
               dark
@@ -155,7 +155,7 @@ export default function SignUpPage() {
           </Field>
         </div>
 
-        <Field label="Telefon raqam (ixtiyoriy)" htmlFor="phone" dark>
+        <Field label={t.auth.phone} htmlFor="phone" dark>
           <Input
             id="phone"
             dark
@@ -172,7 +172,7 @@ export default function SignUpPage() {
         )}
 
         <Button type="submit" disabled={submitting} className="mt-1 w-full">
-          {submitting ? "Yuborilmoqda..." : "Ro'yxatdan o'tish"}
+          {submitting ? t.auth.submittingSignup : t.auth.submitSignup}
         </Button>
       </form>
     </AuthShell>
