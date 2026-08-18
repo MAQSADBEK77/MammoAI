@@ -130,7 +130,7 @@ const ru: Dictionary = {
     changingPasswordButton: "Обновление...",
     passwordChanged: "Пароль успешно обновлён.",
     telegramTitle: "Напоминания в Telegram",
-    telegramSubtitle: "Получайте напоминание в Telegram, когда придёт время пройти тест повторно.",
+    telegramSubtitle: "Напишите боту /test, чтобы пройти тест прямо в Telegram — а также получайте напоминание, когда придёт время пройти его снова.",
     telegramConnected: "Подключено",
     telegramNotConnected: "Не подключено",
     telegramConnectButton: "Подключить Telegram",

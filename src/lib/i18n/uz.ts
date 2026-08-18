@@ -130,7 +130,7 @@ const uz = {
     changingPasswordButton: "Yangilanmoqda...",
     passwordChanged: "Parolingiz muvaffaqiyatli yangilandi.",
     telegramTitle: "Telegram orqali eslatma",
-    telegramSubtitle: "Qayta test topshirish vaqti kelganda Telegram orqali eslatma oling.",
+    telegramSubtitle: "Botga /test deb yozib, testni to'g'ridan-to'g'ri Telegram orqali topshiring — va qayta topshirish vaqti kelganda eslatma oling.",
     telegramConnected: "Ulangan",
     telegramNotConnected: "Ulanmagan",
     telegramConnectButton: "Telegram orqali ulash",

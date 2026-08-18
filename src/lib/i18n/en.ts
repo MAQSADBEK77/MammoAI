@@ -130,7 +130,7 @@ const en: Dictionary = {
     changingPasswordButton: "Updating...",
     passwordChanged: "Your password was updated successfully.",
     telegramTitle: "Telegram reminders",
-    telegramSubtitle: "Get a Telegram reminder when it's time to retake the test.",
+    telegramSubtitle: "Message the bot /test to take the test right inside Telegram — and get a reminder when it's time to retake it.",
     telegramConnected: "Connected",
     telegramNotConnected: "Not connected",
     telegramConnectButton: "Connect Telegram",
