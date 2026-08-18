@@ -69,6 +69,47 @@ export async function apiUpdateProfile(
   return user;
 }
 
+export async function apiChangePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiFetch("/api/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
+export async function apiResetPassword(input: {
+  email: string;
+  passportSeries: string;
+  birthDate: string;
+  newPassword: string;
+}): Promise<void> {
+  await apiFetch("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Telegram reminders
+// ---------------------------------------------------------------------------
+
+export interface TelegramStatus {
+  configured: boolean;
+  connected: boolean;
+  botUsername: string | null;
+}
+
+export async function apiGetTelegramStatus(): Promise<TelegramStatus> {
+  return apiFetch<TelegramStatus>("/api/telegram/status");
+}
+
+export async function apiLinkTelegram(): Promise<{ token: string; botUsername: string | null }> {
+  return apiFetch("/api/telegram/link", { method: "POST" });
+}
+
+export async function apiUnlinkTelegram(): Promise<void> {
+  await apiFetch("/api/telegram/unlink", { method: "POST" });
+}
+
 // ---------------------------------------------------------------------------
 // Quiz questions
 // ---------------------------------------------------------------------------

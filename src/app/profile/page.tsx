@@ -1,15 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, CheckCircle2, Pencil, Save, Sparkles, X } from "lucide-react";
+import { BellRing, CheckCircle2, KeyRound, Pencil, Save, Send, Sparkles, X } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Button, Card, Field, Input, LinkButton } from "@/components/ui";
 import { RiskBadge, getRiskDescription } from "@/components/RiskBadge";
 import { RiskHistoryChart } from "@/components/RiskHistoryChart";
 import { useAuth } from "@/lib/auth-context";
-import { apiGetMyAttempts } from "@/lib/store";
+import {
+  apiChangePassword,
+  apiGetMyAttempts,
+  apiGetTelegramStatus,
+  apiLinkTelegram,
+  apiUnlinkTelegram,
+  type TelegramStatus,
+} from "@/lib/store";
 import type { QuizAttempt } from "@/lib/types";
+import type { Dictionary } from "@/lib/i18n/types";
 import { formatDate } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n/context";
 
@@ -273,7 +281,184 @@ function ProfileContent() {
             .
           </Card>
         )}
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <TelegramCard t={t} />
+          <ChangePasswordCard t={t} />
+        </div>
       </main>
     </div>
+  );
+}
+
+function TelegramCard({ t }: { t: Dictionary }) {
+  const [status, setStatus] = useState<TelegramStatus | null>(null);
+  const [linking, setLinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function reload() {
+    apiGetTelegramStatus().then(setStatus);
+  }
+
+  useEffect(reload, []);
+
+  // While waiting for the user to press /start in Telegram, poll for the
+  // connection to land instead of making them manually refresh.
+  useEffect(() => {
+    if (!linking) return;
+    const interval = setInterval(reload, 3000);
+    const timeout = setTimeout(() => setLinking(false), 60_000);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [linking]);
+
+  useEffect(() => {
+    if (status?.connected) setLinking(false);
+  }, [status?.connected]);
+
+  async function connect() {
+    setError(null);
+    try {
+      const { token, botUsername } = await apiLinkTelegram();
+      if (botUsername) {
+        window.open(`https://t.me/${botUsername}?start=${token}`, "_blank", "noopener");
+      }
+      setLinking(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.auth.errorGeneric);
+    }
+  }
+
+  async function disconnect() {
+    await apiUnlinkTelegram();
+    reload();
+  }
+
+  if (!status?.configured) return null;
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <Send size={16} />
+        </span>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.telegramTitle}</h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t.profile.telegramSubtitle}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-2">
+        {status.connected ? (
+          <>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+              <CheckCircle2 size={12} />
+              {t.profile.telegramConnected}
+            </span>
+            <Button variant="ghost" size="sm" onClick={disconnect}>
+              {t.profile.telegramDisconnectButton}
+            </Button>
+          </>
+        ) : (
+          <Button variant="secondary" size="sm" onClick={connect} disabled={linking}>
+            <Send size={14} />
+            {linking ? "..." : t.profile.telegramConnectButton}
+          </Button>
+        )}
+      </div>
+      {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
+    </Card>
+  );
+}
+
+function ChangePasswordCard({ t }: { t: Dictionary }) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    setError(null);
+    if (newPassword.length < 6) {
+      setError(t.auth.errorPasswordLength);
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setError(t.auth.errorPasswordMismatch);
+      return;
+    }
+    setSaving(true);
+    try {
+      await apiChangePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.auth.errorGeneric);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <KeyRound size={16} />
+        </span>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t.profile.changePasswordTitle}</h3>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3">
+        <Field label={t.profile.currentPassword}>
+          <Input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={t.profile.newPassword}>
+            <Input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </Field>
+          <Field label={t.profile.confirmNewPassword}>
+            <Input
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </Field>
+        </div>
+
+        {saved && (
+          <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            {t.profile.passwordChanged}
+          </p>
+        )}
+        {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+        <Button
+          variant="secondary"
+          onClick={handleSubmit}
+          disabled={saving || !currentPassword || !newPassword}
+          className="self-start"
+        >
+          {saving ? t.profile.changingPasswordButton : t.profile.changePasswordButton}
+        </Button>
+      </div>
+    </Card>
   );
 }

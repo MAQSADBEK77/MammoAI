@@ -71,7 +71,29 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_attempts_user ON quiz_attempts(user_id);
+
+  -- Failed/attempted auth actions, keyed by an arbitrary identifier
+  -- (ip:1.2.3.4, email:someone@x.com, ...) for simple sliding-window rate
+  -- limiting — see isRateLimited() below.
+  CREATE TABLE IF NOT EXISTS auth_attempts (
+    id TEXT PRIMARY KEY,
+    identifier TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_auth_attempts_identifier ON auth_attempts(identifier, created_at);
 `);
+
+// Small forward-compatible migration: add columns that didn't exist in
+// earlier versions of this schema, without disturbing existing data.
+function ensureColumn(table: string, column: string, ddl: string) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+  }
+}
+ensureColumn("users", "telegram_chat_id", "telegram_chat_id TEXT");
+ensureColumn("users", "telegram_link_token", "telegram_link_token TEXT");
+ensureColumn("users", "last_reminder_sent_at", "last_reminder_sent_at TEXT");
 
 // ---------------------------------------------------------------------------
 // Row <-> domain-type mapping
@@ -190,6 +212,29 @@ export function updateUserProfile(
 
 export function deleteUser(id: string) {
   db.prepare("DELETE FROM users WHERE id = ?").run(id);
+}
+
+export function updateUserPasswordHash(id: string, passwordHash: string) {
+  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(passwordHash, id);
+}
+
+/**
+ * Identity-based password reset: since there's no outbound email set up,
+ * "forgot password" verifies the same passport series + birth date collected
+ * at signup instead of an emailed link. Returns the matching user or
+ * undefined — callers should give a generic error either way, to avoid
+ * leaking which field (if any) was wrong.
+ */
+export function findUserForReset(
+  email: string,
+  passportSeries: string,
+  birthDate: string
+): UserRow | undefined {
+  const user = getUserByEmail(email);
+  if (!user) return undefined;
+  if (user.passportSeries.toUpperCase() !== passportSeries.toUpperCase()) return undefined;
+  if (user.birthDate !== birthDate) return undefined;
+  return user;
 }
 
 export interface UserWithLatestAttempt extends User {
@@ -374,6 +419,96 @@ export function submitAttempt(
   ).run({ ...attempt, answers: JSON.stringify(attempt.answers) });
 
   return attempt;
+}
+
+// ---------------------------------------------------------------------------
+// Rate limiting — simple sliding-window counter over auth_attempts.
+// ---------------------------------------------------------------------------
+
+export function recordAuthAttempt(identifier: string) {
+  db.prepare("INSERT INTO auth_attempts (id, identifier, created_at) VALUES (?, ?, ?)").run(
+    randomUUID(),
+    identifier,
+    new Date().toISOString()
+  );
+}
+
+export function isRateLimited(identifier: string, maxAttempts: number, windowMs: number): boolean {
+  const since = new Date(Date.now() - windowMs).toISOString();
+  const { n } = db
+    .prepare("SELECT COUNT(*) AS n FROM auth_attempts WHERE identifier = ? AND created_at > ?")
+    .get(identifier, since) as { n: number };
+  return n >= maxAttempts;
+}
+
+export function clearAuthAttempts(identifier: string) {
+  db.prepare("DELETE FROM auth_attempts WHERE identifier = ?").run(identifier);
+}
+
+// Keeps the table from growing forever on a long-lived server — attempts
+// older than a day are never useful for any window we use.
+export function pruneOldAuthAttempts() {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  db.prepare("DELETE FROM auth_attempts WHERE created_at < ?").run(cutoff);
+}
+
+// ---------------------------------------------------------------------------
+// Telegram linking (used by scripts/telegram-bot.mjs, run as its own
+// process — see that file for the bot/reminder loop itself)
+// ---------------------------------------------------------------------------
+
+export function setTelegramLinkToken(userId: string, token: string) {
+  db.prepare("UPDATE users SET telegram_link_token = ? WHERE id = ?").run(token, userId);
+}
+
+export function getUserByTelegramLinkToken(token: string): UserRow | undefined {
+  const row = db.prepare("SELECT * FROM users WHERE telegram_link_token = ?").get(token) as
+    | Parameters<typeof rowToUser>[0]
+    | undefined;
+  return row ? rowToUser(row) : undefined;
+}
+
+export function setTelegramChatId(userId: string, chatId: string | null) {
+  db.prepare("UPDATE users SET telegram_chat_id = ?, telegram_link_token = NULL WHERE id = ?").run(
+    chatId,
+    userId
+  );
+}
+
+export function getTelegramChatId(userId: string): string | null {
+  const row = db.prepare("SELECT telegram_chat_id FROM users WHERE id = ?").get(userId) as
+    | { telegram_chat_id: string | null }
+    | undefined;
+  return row?.telegram_chat_id ?? null;
+}
+
+/** Users linked to Telegram whose latest attempt is old enough for a reminder, and who haven't been nudged recently. */
+export function getUsersDueForTelegramReminder(retestDays: number, reminderCooldownDays: number) {
+  const retestCutoff = new Date(Date.now() - retestDays * 24 * 60 * 60 * 1000).toISOString();
+  const cooldownCutoff = new Date(Date.now() - reminderCooldownDays * 24 * 60 * 60 * 1000).toISOString();
+  const rows = db
+    .prepare(
+      `SELECT u.id, u.first_name, u.telegram_chat_id,
+        (SELECT created_at FROM quiz_attempts a WHERE a.user_id = u.id ORDER BY a.created_at DESC LIMIT 1) AS latest_at
+       FROM users u
+       WHERE u.telegram_chat_id IS NOT NULL
+         AND (u.last_reminder_sent_at IS NULL OR u.last_reminder_sent_at < ?)`
+    )
+    .all(cooldownCutoff) as {
+    id: string;
+    first_name: string;
+    telegram_chat_id: string;
+    latest_at: string | null;
+  }[];
+
+  return rows.filter((r) => r.latest_at && r.latest_at < retestCutoff);
+}
+
+export function markTelegramReminderSent(userId: string) {
+  db.prepare("UPDATE users SET last_reminder_sent_at = ? WHERE id = ?").run(
+    new Date().toISOString(),
+    userId
+  );
 }
 
 // ---------------------------------------------------------------------------

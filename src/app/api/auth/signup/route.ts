@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createUser, toPublicUser } from "@/server/db";
+import { createUser, isRateLimited, recordAuthAttempt, toPublicUser } from "@/server/db";
 import { signSession, sessionCookieOptions, SESSION_COOKIE } from "@/server/auth";
-import { ApiError, handleApiError } from "@/server/api-utils";
+import { ApiError, getClientIp, handleApiError } from "@/server/api-utils";
+
+const MAX_SIGNUPS = 8;
+const WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 export async function POST(request: Request) {
   try {
+    const ipKey = `signup-ip:${getClientIp(request)}`;
+    if (isRateLimited(ipKey, MAX_SIGNUPS, WINDOW_MS)) {
+      throw new ApiError(429, "Juda ko'p urinish. Iltimos, birozdan so'ng qayta urinib ko'ring.");
+    }
+    recordAuthAttempt(ipKey);
+
     const body = await request.json();
     const { firstName, lastName, email, password, birthDate, passportSeries, phone } = body ?? {};
 

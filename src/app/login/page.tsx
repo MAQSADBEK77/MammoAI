@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AuthShell } from "@/components/AuthShell";
 import { Field, Input, Button } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
@@ -63,6 +64,13 @@ export default function LoginPage() {
             placeholder="••••••••"
           />
         </Field>
+
+        <Link
+          href="/forgot-password"
+          className="-mt-2 self-end text-xs font-medium text-blue-300 hover:text-blue-200"
+        >
+          {t.auth.forgotPasswordLink}
+        </Link>
 
         {error && (
           <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">
