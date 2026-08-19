@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Activity, LayoutDashboard, LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -27,13 +27,8 @@ export function Navbar() {
   return (
     <header className="print:hidden sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 shadow-md shadow-pink-900/20">
-            <Activity size={18} className="text-white" strokeWidth={2.25} />
-          </span>
-          <span className="text-lg font-bold tracking-tight text-pink-900 dark:text-white">
-            MammoAI
-          </span>
+        <Link href="/" className="flex items-center">
+          <img src="/logo-full.svg" alt="MammoAI" className="h-9 w-auto rounded-md shadow-md shadow-pink-900/20" />
         </Link>
 
         <nav className="hidden items-center gap-1 sm:flex">
