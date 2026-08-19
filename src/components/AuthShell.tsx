@@ -18,7 +18,7 @@ export function AuthShell({
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{
           background:
-            "radial-gradient(600px circle at 50% 0%, rgba(217,79,135,0.25), transparent 70%)",
+            "radial-gradient(600px circle at 50% 0%, rgba(244,137,152,0.25), transparent 70%)",
         }}
       />
       <div className="animate-fade-in-up relative w-full max-w-md">

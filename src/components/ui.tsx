@@ -22,7 +22,7 @@ export function Button({
         "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer",
         size === "md" ? "px-5 py-2.5 text-sm" : "px-3.5 py-1.5 text-sm",
         variant === "primary" &&
-          "bg-gradient-to-br from-pink-500 to-pink-700 text-white shadow-lg shadow-pink-900/20 hover:from-pink-600 hover:to-pink-800 hover:shadow-pink-900/30",
+          "bg-gradient-to-br from-pink-600 to-pink-800 text-white shadow-lg shadow-pink-900/20 hover:from-pink-700 hover:to-pink-900 hover:shadow-pink-900/30",
         variant === "secondary" &&
           "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
         variant === "ghost" &&
@@ -53,7 +53,7 @@ export function LinkButton({
       className={clsx(
         "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97]",
         variant === "primary" &&
-          "bg-gradient-to-br from-pink-500 to-pink-700 text-white shadow-lg shadow-pink-900/20 hover:from-pink-600 hover:to-pink-800 hover:shadow-pink-900/30",
+          "bg-gradient-to-br from-pink-600 to-pink-800 text-white shadow-lg shadow-pink-900/20 hover:from-pink-700 hover:to-pink-900 hover:shadow-pink-900/30",
         variant === "secondary" &&
           "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
         variant === "ghost" &&

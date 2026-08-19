@@ -67,7 +67,7 @@ export default function GuidePage() {
           {STEPS.map((step, i) => (
             <Reveal key={step.title} delay={i * 90}>
               <div className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 shadow-md shadow-pink-900/20">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-600 to-pink-800 shadow-md shadow-pink-900/20">
                   <step.icon size={20} className="text-white" />
                 </div>
                 <div>

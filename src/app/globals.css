@@ -28,16 +28,17 @@
      app's actual brand colors, so every existing `bg-pink-500`,
      `text-pink-600`, `from-pink-500 to-pink-700`, etc. utility already used
      throughout the app (renamed from a blue palette) resolves to these.
-     Anchors: 100 = Soft Pink, 500 = Primary Pink, 900 = Deep Plum. */
-  --color-pink-50: #fef2f7;
+     Anchors: 100 = Soft Pink, 500 = Primary Pink (matches the logo's
+     #F48998 background exactly), 900 = Deep Plum. */
+  --color-pink-50: #fcf1f6;
   --color-pink-100: #fce7f0;
-  --color-pink-200: #f8cbe0;
-  --color-pink-300: #f2a6c9;
-  --color-pink-400: #e97dad;
-  --color-pink-500: #d94f87;
-  --color-pink-600: #c13d73;
-  --color-pink-700: #a02f5f;
-  --color-pink-800: #7e294d;
+  --color-pink-200: #f9cddd;
+  --color-pink-300: #f7b4c6;
+  --color-pink-400: #f59cae;
+  --color-pink-500: #f48998;
+  --color-pink-600: #e25c81;
+  --color-pink-700: #ca3873;
+  --color-pink-800: #933667;
   --color-pink-900: #6b3155;
 
   /* "Umumiy fon" (general page background) — just the one shade used for

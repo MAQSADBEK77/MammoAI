@@ -46,7 +46,7 @@ export default function HomePage() {
           className="pointer-events-none absolute inset-0 opacity-40"
           style={{
             background:
-              "radial-gradient(600px circle at 50% 0%, rgba(217,79,135,0.25), transparent 70%)",
+              "radial-gradient(600px circle at 50% 0%, rgba(244,137,152,0.25), transparent 70%)",
           }}
         />
         <div className="relative mx-auto flex max-w-5xl flex-col items-center text-center">
@@ -98,7 +98,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-8 sm:grid-cols-3">
           {STATS.map((stat, i) => (
             <Reveal key={stat.label} delay={i * 120} className="text-center">
-              <p className="bg-gradient-to-br from-pink-500 to-pink-600 bg-clip-text text-4xl font-bold text-transparent sm:text-5xl">
+              <p className="bg-gradient-to-br from-pink-600 to-pink-700 bg-clip-text text-4xl font-bold text-transparent sm:text-5xl">
                 <StatCounter value={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
               </p>
               <p className="mx-auto mt-2 max-w-[22rem] text-sm text-slate-500 dark:text-slate-400">
@@ -123,7 +123,7 @@ export default function HomePage() {
           {STEPS.map((step, i) => (
             <Reveal key={step.title} delay={i * 120}>
               <div className="group h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg lg:p-8 dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 shadow-md shadow-pink-900/20 transition-transform group-hover:scale-110">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-pink-600 to-pink-800 shadow-md shadow-pink-900/20 transition-transform group-hover:scale-110">
                   <step.icon size={20} className="text-white" />
                 </div>
                 <h4 className="mt-4 font-semibold text-pink-900 lg:text-lg dark:text-white">

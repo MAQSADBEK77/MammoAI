@@ -95,7 +95,7 @@ export function Navbar() {
               </Link>
               <Link
                 href="/sign-up"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-pink-900/20 hover:from-pink-600 hover:to-pink-800 sm:px-4"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-br from-pink-600 to-pink-800 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-pink-900/20 hover:from-pink-700 hover:to-pink-900 sm:px-4"
               >
                 <LayoutDashboard size={15} className="hidden sm:inline" />
                 {t.nav.signup}
