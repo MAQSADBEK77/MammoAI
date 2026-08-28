@@ -41,7 +41,19 @@ bering. `EAS_NO_VCS=1` shart — loyiha papkasi nomida bo'sh joy bo'lgani uchun
 yiqiladi; bu bayroq git'ni chetlab o'tib, fayllarni to'g'ridan-to'g'ri `.gitignore`
 qoidalariga rioya qilgan holda yuklaydi — natija bir xil.)
 
-Yig'ish Expo serverlarida ~10-15 daqiqa davom etadi, tugagach terminalda va
+Yig'ish Expo serverlarida davom etadi (bepul tarifda 20-60+ daqiqa bo'lishi mumkin —
+navbat va native kompilyatsiya tezligiga bog'liq), tugagach terminalda va
 [expo.dev](https://expo.dev) hisobingizdagi "Builds" bo'limida yuklab olish havolasi
 chiqadi. `.apk`ni telefonga o'tkazib, "noma'lum manbalardan o'rnatish"ga ruxsat berib
 o'rnatasiz.
+
+## Eslatma — faqat arm64 arxitekturasi
+
+Build vaqtini qisqartirish uchun `app.json`da `expo-build-properties` orqali faqat
+`arm64-v8a` arxitekturasi uchun quriladi (2019-yildan keyingi deyarli barcha Android
+telefonlar shu arxitektura — hozirgi qurilmalarning 90%+ qismini qamrab oladi). Agar
+juda eski qurilma yoki x86 emulyator uchun ham kerak bo'lsa, `app.json`dagi
+`buildArchs` ro'yxatiga `"armeabi-v7a"`, `"x86"`, `"x86_64"`ni qo'shing — build vaqti
+mutanosib ravishda uzayadi (har bir qo'shimcha arxitektura uchun native C++ kod
+qayta kompilyatsiya qilinadi). Play Store'ga rasmiy chiqarishda barcha arxitekturalarni
+qo'shish tavsiya etiladi.
