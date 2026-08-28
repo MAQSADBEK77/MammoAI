@@ -50,7 +50,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "build:apk": "eas build --platform android --profile preview"
+    "build:apk": "EAS_NO_VCS=1 eas build --platform android --profile preview"
   },
   "private": true
 }

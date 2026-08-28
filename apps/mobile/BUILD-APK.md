@@ -34,8 +34,12 @@ Ikki variant:
 npm run build:apk
 ```
 
-(`apps/mobile/package.json` ichidagi `eas build --platform android --profile preview`
-buyrug'i — birinchi marta EAS loyihasini yaratishni so'raydi, "ha" deb javob bering.)
+(`apps/mobile/package.json` ichidagi `EAS_NO_VCS=1 eas build --platform android --profile
+preview` buyrug'i — birinchi marta EAS loyihasini yaratishni so'raydi, "ha" deb javob
+bering. `EAS_NO_VCS=1` shart — loyiha papkasi nomida bo'sh joy bo'lgani uchun
+(`MammoAI app and web`) EAS'ning standart git-orqali yuklash usuli ichki xatolik bilan
+yiqiladi; bu bayroq git'ni chetlab o'tib, fayllarni to'g'ridan-to'g'ri `.gitignore`
+qoidalariga rioya qilgan holda yuklaydi — natija bir xil.)
 
 Yig'ish Expo serverlarida ~10-15 daqiqa davom etadi, tugagach terminalda va
 [expo.dev](https://expo.dev) hisobingizdagi "Builds" bo'limida yuklab olish havolasi
