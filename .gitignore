@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+
+# next.js
+apps/web/.next/
+apps/web/next-env.d.ts
+apps/web/*.tsbuildinfo
+
+# expo
+apps/mobile/.expo/
+apps/mobile/dist/
+
+# local SQLite database — all app data lives here, never commit real data
+data/
+apps/web/data/
+
+# env files (opt-in per-file if ever needed)
+.env*
+!.env.example
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*

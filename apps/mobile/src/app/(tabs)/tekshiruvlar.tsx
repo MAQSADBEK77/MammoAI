@@ -1,0 +1,69 @@
+import { useEffect, useState } from "react";
+import { ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import type { ChecklistItem } from "@mammoai/shared";
+import { useI18n } from "@/lib/i18n";
+import { api } from "@/lib/api";
+import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
+
+export default function ChecklistScreen() {
+  const { dict } = useI18n();
+  const [items, setItems] = useState<ChecklistItem[] | null>(null);
+
+  useEffect(() => {
+    api.checklist.list().then(setItems);
+  }, []);
+
+  if (!items) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-background">
+        <Text className="text-text-secondary">{dict.common.loading}</Text>
+      </SafeAreaView>
+    );
+  }
+
+  async function complete(id: string) {
+    setItems(await api.checklist.complete(id));
+  }
+
+  const statusTone = { pending: "muted", done: "success", overdue: "danger" } as const;
+  const statusLabel = {
+    pending: dict.checklist.statusPending,
+    done: dict.checklist.statusDone,
+    overdue: dict.checklist.statusOverdue,
+  } as const;
+
+  return (
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-8">
+        <ScreenHeader title={dict.checklist.title} />
+        {items.map((item) => {
+          const info = dict.checklist.items[item.type];
+          return (
+            <Card key={item.id} className="gap-2">
+              <View className="flex-row items-start justify-between gap-3">
+                <Text className="flex-1 font-semibold text-text-primary">{info.title}</Text>
+                <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
+              </View>
+              <Text className="text-sm text-text-secondary">{info.why}</Text>
+              {item.status !== "done" && (
+                <View className="flex-row gap-2 pt-1">
+                  <Button variant="secondary" onPress={() => complete(item.id)}>
+                    {dict.checklist.markDoneButton}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onPress={() => router.push({ pathname: "/(tabs)/klinikalar", params: { checklistItemId: item.id } })}
+                  >
+                    {dict.checklist.findClinicButton}
+                  </Button>
+                </View>
+              )}
+            </Card>
+          );
+        })}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}

@@ -1,0 +1,185 @@
+import type { Dictionary } from "./types";
+
+// Русский язык — тон тёплый и профессиональный, без шуток (см. mobile-ui-brief.md §2).
+const ru: Dictionary = {
+  common: {
+    appName: "Здоровье женщины",
+    next: "Далее",
+    back: "Назад",
+    skip: "Пропустить",
+    save: "Сохранить",
+    cancel: "Отмена",
+    loading: "Загрузка...",
+    done: "Готово",
+    edit: "Изменить",
+    delete: "Удалить",
+    add: "Добавить",
+    yes: "Да",
+    no: "Нет",
+    dontKnow: "Не знаю",
+  },
+
+  nav: {
+    cycle: "Цикл",
+    pregnancy: "Беременность",
+    checklist: "Обследования",
+    clinics: "Клиники",
+    profile: "Профиль",
+  },
+
+  onboarding: {
+    welcomeTitle: "Добро пожаловать",
+    welcomeSubtitle: "Следите за своим здоровьем легко и спокойно",
+    startButton: "Начать",
+    languageTitle: "На каком языке продолжим?",
+    surveyTitle: "Давайте познакомимся",
+    surveyIntro: "Несколько вопросов — всего 1-2 минуты",
+    ageLabel: "Ваш возраст",
+    pregnantQuestion: "Вы сейчас беременны?",
+    cycleRegularityQuestion: "Ваш менструальный цикл регулярный?",
+    cycleRegular: "Да, регулярный",
+    cycleIrregular: "Нет, нерегулярный",
+    familyHistoryQuestion: "Есть ли в семье случаи онкологических или гинекологических заболеваний?",
+    lastCheckupQuestion: "Когда был последний гинекологический осмотр?",
+    checkupRecent: "В течение последнего года",
+    checkupOverYear: "Более года назад",
+    checkupNever: "Никогда",
+    finishButton: "Начнём",
+  },
+
+  cycle: {
+    title: "Менструальный цикл",
+    logDayButton: "Отметить сегодняшний день",
+    flowLabel: "Интенсивность выделений",
+    moodLabel: "Настроение",
+    symptomsLabel: "Симптомы",
+    nextPeriodIn: (days: number) =>
+      days <= 0 ? "Менструация ожидается сегодня" : `Следующая менструация через ${days} дн.`,
+    fertileWindowLabel: "Окно фертильности",
+    irregularBannerTitle: "Обнаружена нерегулярность цикла 3+ месяца",
+    irregularBannerAction: "Рассмотрите визит к врачу",
+    flowLevels: {
+      spotting: "Мажущие",
+      light: "Лёгкие",
+      medium: "Умеренные",
+      heavy: "Обильные",
+    },
+    moods: {
+      happy: "Радостная",
+      calm: "Спокойная",
+      tired: "Уставшая",
+      sad: "Грустная",
+      irritable: "Раздражённая",
+      anxious: "Тревожная",
+    },
+    symptoms: {
+      cramps: "Спазмы внизу живота",
+      headache: "Головная боль",
+      bloating: "Вздутие",
+      acne: "Высыпания",
+      back_pain: "Боль в пояснице",
+      nausea: "Тошнота",
+      breast_tenderness: "Чувствительность груди",
+      insomnia: "Бессонница",
+    },
+  },
+
+  pregnancy: {
+    title: "Беременность",
+    weekLabel: (week: number) => `${week}-я неделя`,
+    daysRemaining: (days: number) => `До родов осталось ${days} дн.`,
+    trimester: (t: number) => `${t}-й триместр`,
+    sizeComparison: (size: string) => `Ваш малыш сейчас размером с ${size}`,
+    visitsTitle: "Визиты и напоминания",
+    addVisitButton: "Добавить визит",
+    kickCounterTitle: "Счётчик шевелений",
+    kickCounterButton: "Отметить шевеление",
+    kickCounterCount: (n: number) => `Сегодня: ${n}`,
+    sizes: {
+      poppySeed: "маковое зёрнышко",
+      raspberry: "малину",
+      lime: "лайм",
+      lemon: "лимон",
+      avocado: "авокадо",
+      corn: "початок кукурузы",
+      eggplant: "баклажан",
+      coconut: "кокос",
+      pineapple: "ананас",
+      watermelon: "арбуз",
+    },
+  },
+
+  checklist: {
+    title: "Список обследований",
+    statusPending: "Ожидается",
+    statusDone: "Выполнено",
+    statusOverdue: "Просрочено",
+    markDoneButton: "Выполнено",
+    findClinicButton: "Найти клинику",
+    items: {
+      gyn_annual_checkup: {
+        title: "Ежегодный гинекологический осмотр",
+        why: "Регулярный осмотр помогает выявить проблемы на ранней стадии.",
+      },
+      pap_test: {
+        title: "Пап-тест (раз в 3 года)",
+        why: "Основное обследование для раннего выявления рака шейки матки.",
+      },
+      mammography_screening: {
+        title: "Маммографический скрининг",
+        why: "Самый эффективный способ ранней диагностики рака груди.",
+      },
+      free_mammography_45: {
+        title: "Бесплатный маммографический скрининг (гос. программа)",
+        why: "Предоставляется бесплатно женщинам старше 45 лет.",
+      },
+      cycle_irregularity_followup: {
+        title: "Осмотр по нерегулярности цикла",
+        why: "Нерегулярность более 3 месяцев требует внимания гинеколога.",
+      },
+      pregnancy_first_visit: {
+        title: "Первый визит по беременности",
+        why: "Важен для подтверждения беременности и первичных обследований.",
+      },
+      pregnancy_trimester_checkup: {
+        title: "Осмотр по триместру",
+        why: "Рекомендуется контролировать развитие плода в каждом триместре.",
+      },
+    },
+  },
+
+  clinics: {
+    title: "Клиники",
+    listView: "Список",
+    mapView: "Карта",
+    filterAll: "Все",
+    specialties: {
+      gynecology: "Гинекология",
+      oncology: "Онкология",
+      radiology: "Радиология",
+      general: "Общая практика",
+    },
+    freeScreeningBadge: "Бесплатный скрининг",
+    callButton: "Позвонить",
+    directionsButton: "Маршрут",
+    seedDataNotice: "Демонстрационные данные — реальная база клиник ещё пополняется.",
+    distanceKm: (km: number) => `${km.toFixed(1)} км`,
+  },
+
+  profile: {
+    title: "Профиль",
+    languageLabel: "Язык",
+    nameLabel: "Имя",
+    phoneLabel: "Номер телефона",
+    phonePlaceholder: "Необязательно — чтобы сохранить аккаунт",
+    accessibilityTitle: "Удобство просмотра",
+    fontSizeLabel: "Размер шрифта",
+    fontSizeNormal: "Обычный",
+    fontSizeLarge: "Крупный",
+    highContrastLabel: "Высокий контраст",
+    exportButton: "Экспортировать данные",
+    savedMessage: "Сохранено",
+  },
+};
+
+export default ru;
