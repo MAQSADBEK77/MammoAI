@@ -8,9 +8,11 @@
     "scheme": "mammoai",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "uz.mammoai.app"
     },
     "android": {
+      "package": "uz.mammoai.app",
       "adaptiveIcon": {
         "backgroundColor": "#F48998",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
