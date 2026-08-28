@@ -1,7 +1,0 @@
-/** The Push API wants the VAPID key as a Uint8Array, but the server hands it over as a base64url string. */
-export function urlBase64ToUint8Array(base64Url: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
-  const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(base64);
-  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
-}
