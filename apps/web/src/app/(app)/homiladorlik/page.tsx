@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CalendarClock, ChevronRight, Hourglass, Stethoscope } from "lucide-react";
 import type { PregnancyResponse } from "@mammoai/shared";
 import { getMilestoneForWeek } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card, ScreenHeader, ProgressBar } from "@/components/ui";
+import { Button, Card, FloatingTag, ScreenHeader } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
 
 export default function PregnancyPage() {
@@ -65,22 +66,36 @@ export default function PregnancyPage() {
   const milestone = getMilestoneForWeek(status.currentWeek);
   const sizeLabel = dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
   const progressPct = (status.currentWeek / 40) * 100;
+  const weeksRemaining = Math.max(0, 40 - status.currentWeek);
   const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
 
   return (
     <div className="space-y-5 pb-6">
       <ScreenHeader title={greeting} subtitle={dict.pregnancy.trimester(status.trimester)} />
 
-      <Card
-        className="space-y-4 text-center animate-fade-in-up"
-        style={{ background: "linear-gradient(135deg, #e8f5e9 0%, #e3f2fd 100%)" }}
-      >
-        <SizeIllustration icon={milestone.icon} />
-        <h2 className="text-2xl font-extrabold text-text-primary">{dict.pregnancy.weekLabel(status.currentWeek)}</h2>
-        <p className="text-text-secondary">{dict.pregnancy.sizeComparison(sizeLabel)}</p>
-        <ProgressBar value={progressPct} />
-        <p className="text-sm font-semibold text-primary-dark">{dict.pregnancy.daysRemaining(status.daysRemaining)}</p>
-      </Card>
+      {/* Homiladorlik "sayohati" kartasi — binafsha gradient fon, markazda
+          o'lcham-illyustratsiya, ustida suzuvchi statistik yorliqlar. */}
+      <div className="bg-aurora-pregnancy animate-fade-in-up space-y-5 rounded-[32px] p-6 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="rounded-full bg-white/20 p-3">
+            <SizeIllustration icon={milestone.icon} />
+          </div>
+          <h2 className="text-2xl font-extrabold text-white">{dict.pregnancy.weekLabel(status.currentWeek)}</h2>
+          <p className="max-w-[280px] text-white/85">{dict.pregnancy.sizeComparison(sizeLabel)}</p>
+        </div>
+
+        <div className="flex justify-center gap-3">
+          <FloatingTag icon={<CalendarClock size={18} className="text-secondary" />} value={String(status.currentWeek)} label={dict.pregnancy.completedWeekLabel} />
+          <FloatingTag icon={<Hourglass size={18} className="text-secondary" />} value={String(weeksRemaining)} label={dict.pregnancy.remainingWeekLabel} />
+        </div>
+
+        <div className="space-y-2">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-white/25">
+            <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }} />
+          </div>
+          <p className="text-sm font-semibold text-white">{dict.pregnancy.daysRemaining(status.daysRemaining)}</p>
+        </div>
+      </div>
 
       {status.trimester === 3 && (
         <Card className="flex items-center justify-between">
@@ -161,12 +176,18 @@ export default function PregnancyPage() {
 
         <div className="space-y-2">
           {data.visits.map((v) => (
-            <Card key={v.id} className="py-3">
-              <p className="font-medium text-text-primary">{v.label}</p>
-              <p className="text-sm text-text-secondary">
-                {v.date}
-                {v.clinicName ? ` · ${v.clinicName}` : ""}
-              </p>
+            <Card key={v.id} className="flex items-center gap-3 py-3">
+              <span className="bg-aurora-pregnancy flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
+                <Stethoscope size={20} className="text-white" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-text-primary">{v.label}</p>
+                <p className="text-sm text-text-secondary">
+                  {v.date}
+                  {v.clinicName ? ` · ${v.clinicName}` : ""}
+                </p>
+              </div>
+              <ChevronRight size={18} className="text-text-muted" />
             </Card>
           ))}
         </div>

@@ -221,6 +221,8 @@ const uz = {
     kickCounterButton: "Tepki qayd etish",
     kickCounterCount: (n: number) => `Bugun: ${n} ta tepki`,
     articlesCardTitle: "Qiziqarli maqolalar",
+    completedWeekLabel: "O'tgan hafta",
+    remainingWeekLabel: "Qolgan hafta",
     sizes: {
       poppySeed: "moshdona",
       raspberry: "malina",

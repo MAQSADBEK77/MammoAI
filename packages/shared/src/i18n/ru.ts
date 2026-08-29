@@ -216,6 +216,8 @@ const ru: Dictionary = {
     kickCounterButton: "Отметить шевеление",
     kickCounterCount: (n: number) => `Сегодня: ${n}`,
     articlesCardTitle: "Интересные статьи",
+    completedWeekLabel: "Прошло недель",
+    remainingWeekLabel: "Осталось недель",
     sizes: {
       poppySeed: "маковое зёрнышко",
       raspberry: "малину",
