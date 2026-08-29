@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import clsx from "clsx";
+import { Smile, Droplet, Stethoscope } from "lucide-react";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -112,7 +114,7 @@ export default function CyclePage() {
         </Card>
       )}
 
-      <Card>
+      <Card variant="glass" className="flex flex-col items-center">
         <button onClick={() => !dayInCycle && setLogging(true)} className="w-full">
           <CycleRing
             dayInCycle={dayInCycle ?? 1}
@@ -139,19 +141,25 @@ export default function CyclePage() {
 
       {/* Kunlik nazorat — App.pdf §20: 3 ta tezkor karta */}
       <div>
-        <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.dailyCheckinTitle}</p>
-        <div className="grid grid-cols-3 gap-2">
+        <p className="mb-2 text-base font-bold text-text-primary">{dict.cycle.dailyCheckinTitle}</p>
+        <div className="grid grid-cols-3 gap-2.5">
           <QuickCard
+            icon={<Smile size={20} />}
+            tone="secondary"
             label={dict.cycle.moodCardLabel}
             value={todayLog?.mood ? `${MOOD_EMOJI[todayLog.mood]} ${dict.cycle.moods[todayLog.mood]}` : undefined}
             onClick={() => setLogging(true)}
           />
           <QuickCard
+            icon={<Droplet size={20} />}
+            tone="primary"
             label={dict.cycle.flowCardLabel}
             value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
             onClick={() => setLogging(true)}
           />
           <QuickCard
+            icon={<Stethoscope size={20} />}
+            tone="accent"
             label={dict.cycle.symptomsCardLabel}
             value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}
             onClick={() => setLogging(true)}
@@ -250,12 +258,29 @@ export default function CyclePage() {
   );
 }
 
-function QuickCard({ label, value, onClick }: { label: string; value?: string; onClick: () => void }) {
+function QuickCard({
+  icon,
+  label,
+  value,
+  tone,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value?: string;
+  tone: "primary" | "secondary" | "accent";
+  onClick: () => void;
+}) {
+  const filled = !!value;
+  const toneBg = tone === "primary" ? "bg-primary" : tone === "secondary" ? "bg-secondary" : "bg-accent";
   return (
     <button onClick={onClick} className="text-left">
-      <Card className="flex h-full flex-col items-center justify-center gap-1 py-4 text-center">
-        <span className="text-xs font-semibold text-text-secondary">{label}</span>
-        <span className="text-sm text-text-muted">{value ?? "—"}</span>
+      <Card className={clsx("flex h-full flex-col items-center justify-center gap-2 py-4 text-center", filled && `${toneBg} text-white`)}>
+        <span className={clsx("flex h-10 w-10 items-center justify-center rounded-2xl", filled ? "bg-white/20" : "bg-surface-muted text-text-secondary")}>
+          {icon}
+        </span>
+        <span className={clsx("text-xs font-semibold", filled ? "text-white" : "text-text-secondary")}>{label}</span>
+        <span className={clsx("truncate text-xs", filled ? "text-white/80" : "text-text-muted")}>{value ?? "—"}</span>
       </Card>
     </button>
   );

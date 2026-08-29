@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { Smile, Droplet, Stethoscope } from "lucide-react-native";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -102,7 +103,7 @@ export default function CycleScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
         <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
 
         {data.isIrregular && (
@@ -112,7 +113,7 @@ export default function CycleScreen() {
           </Card>
         )}
 
-        <Card>
+        <Card variant="glass" className="items-center">
           <Pressable onPress={() => !dayInCycle && setLogging(true)}>
             <CycleRing
               dayInCycle={dayInCycle ?? 1}
@@ -135,19 +136,25 @@ export default function CycleScreen() {
         </Card>
 
         <View>
-          <Text className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.dailyCheckinTitle}</Text>
-          <View className="flex-row gap-2">
+          <Text className="mb-2 text-base font-bold text-text-primary">{dict.cycle.dailyCheckinTitle}</Text>
+          <View className="flex-row gap-2.5">
             <QuickCard
+              icon={<Smile size={20} color={todayLog?.mood ? "#FFFFFF" : "#7C3AED"} />}
+              tone="secondary"
               label={dict.cycle.moodCardLabel}
               value={todayLog?.mood ? `${MOOD_EMOJI[todayLog.mood]} ${dict.cycle.moods[todayLog.mood]}` : undefined}
               onPress={() => setLogging(true)}
             />
             <QuickCard
+              icon={<Droplet size={20} color={todayLog?.flow ? "#FFFFFF" : "#F43F7F"} />}
+              tone="primary"
               label={dict.cycle.flowCardLabel}
               value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
               onPress={() => setLogging(true)}
             />
             <QuickCard
+              icon={<Stethoscope size={20} color={todayLog?.symptoms.length ? "#FFFFFF" : "#0D9488"} />}
+              tone="accent"
               label={dict.cycle.symptomsCardLabel}
               value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}
               onPress={() => setLogging(true)}
@@ -243,12 +250,29 @@ export default function CycleScreen() {
   );
 }
 
-function QuickCard({ label, value, onPress }: { label: string; value?: string; onPress: () => void }) {
+function QuickCard({
+  icon,
+  label,
+  value,
+  tone,
+  onPress,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value?: string;
+  tone: "primary" | "secondary" | "accent";
+  onPress: () => void;
+}) {
+  const filled = !!value;
+  const bgClass = !filled ? "bg-surface" : tone === "primary" ? "bg-primary" : tone === "secondary" ? "bg-secondary" : "bg-accent";
   return (
-    <Pressable className="flex-1" onPress={onPress}>
-      <Card className="items-center gap-1 py-4">
-        <Text className="text-xs font-semibold text-text-secondary">{label}</Text>
-        <Text className="text-sm text-text-muted">{value ?? "—"}</Text>
+    <Pressable className="flex-1 active:scale-95" onPress={onPress}>
+      <Card className={`items-center gap-2 py-4 ${bgClass}`}>
+        <View className={`h-10 w-10 items-center justify-center rounded-2xl ${filled ? "bg-white/20" : "bg-surface-muted"}`}>{icon}</View>
+        <Text className={`text-xs font-semibold ${filled ? "text-white" : "text-text-secondary"}`}>{label}</Text>
+        <Text className={`text-xs ${filled ? "text-white/80" : "text-text-muted"}`} numberOfLines={1}>
+          {value ?? "—"}
+        </Text>
       </Card>
     </Pressable>
   );
