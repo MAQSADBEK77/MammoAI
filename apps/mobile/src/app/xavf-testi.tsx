@@ -6,7 +6,7 @@ import { RISK_QUIZ_QUESTIONS } from "@mammoai/shared";
 import type { RiskQuizAnswers, RiskQuizResult } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, ProgressBar, ScreenHeader } from "@/components/ui";
 
 export default function RiskQuizScreen() {
   const { dict } = useI18n();
@@ -81,9 +81,12 @@ export default function RiskQuizScreen() {
           </Card>
         ) : (
           <Card className="gap-4">
-            <Text className="text-sm text-text-muted">
-              {stepIndex + 1} / {RISK_QUIZ_QUESTIONS.length}
-            </Text>
+            <View className="gap-2">
+              <ProgressBar value={((stepIndex + 1) / RISK_QUIZ_QUESTIONS.length) * 100} />
+              <Text className="text-sm text-text-muted">
+                {stepIndex + 1} / {RISK_QUIZ_QUESTIONS.length}
+              </Text>
+            </View>
             <Text className="text-lg font-semibold text-text-primary">{dict.riskQuiz.questions[question.id]}</Text>
             <View className="flex-row gap-2">
               <Button variant="secondary" className="flex-1" onPress={() => answer(true)} disabled={submitting}>
