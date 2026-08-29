@@ -17,6 +17,10 @@ const ru: Dictionary = {
     yes: "Да",
     no: "Нет",
     dontKnow: "Не знаю",
+    other: "Другое",
+    free: "Бесплатно",
+    paid: "Платно",
+    continueButton: "Продолжить",
   },
 
   nav: {
@@ -27,14 +31,61 @@ const ru: Dictionary = {
     profile: "Профиль",
   },
 
+  auth: {
+    createAccount: "Создать аккаунт",
+    haveAccount: "У меня уже есть аккаунт",
+    identifierLabel: "Номер телефона или email",
+    identifierPlaceholder: "+998901234567 или email@example.com",
+    invalidIdentifier: "Введите корректный номер телефона или email",
+    welcomeBackMessage: "С возвращением! Ваш аккаунт найден.",
+  },
+
+  privacy: {
+    title: "Политика конфиденциальности",
+    body: "Ваши данные (записи о здоровье, данные профиля) используются только для персональных рекомендаций и не передаются третьим лицам. Полный текст всегда доступен в разделе «Профиль».",
+    agreeButton: "Согласна и продолжаю",
+    linkLabel: "Читать полный текст",
+    dataCollected:
+      "Мы собираем: данные профиля (возраст, цель), записи менструального цикла и беременности, статус обследований, события интереса к клиникам (реферал). Эти данные используются только для персональных рекомендаций, напоминаний и улучшения приложения.",
+    noSelling:
+      "Ваши данные не продаются третьим лицам. В любой момент вы можете экспортировать все свои данные в разделе «Профиль».",
+    accountSecurity:
+      "Ваш аккаунт создаётся по номеру телефона или email без кода подтверждения — поэтому рекомендуем не делиться своим идентификатором (телефон/email) с другими.",
+  },
+
   onboarding: {
     welcomeTitle: "Добро пожаловать",
     welcomeSubtitle: "Следите за своим здоровьем легко и спокойно",
-    startButton: "Начать",
+    startButton: "Начнём!",
     languageTitle: "На каком языке продолжим?",
     surveyTitle: "Давайте познакомимся",
     surveyIntro: "Несколько вопросов — всего 1-2 минуты",
+
+    heardAboutUsTitle: "Откуда вы узнали о нас?",
+    heardAboutUs: {
+      social_media: "Из соцсетей",
+      friend: "От подруги",
+      doctor: "Рекомендация врача",
+      app_store: "Нашла в магазине приложений",
+      other: "Другое",
+    },
+
+    nameQuestion: "Как вас зовут?",
+    namePlaceholder: "Ваше имя",
+
     ageLabel: "Ваш возраст",
+
+    goalTitle: "Какова ваша основная цель в приложении?",
+    goals: {
+      cycle: "Отслеживать менструальный цикл",
+      pregnancy: "Отслеживать беременность",
+      planning_pregnancy: "Планирую беременность",
+      wellbeing: "Заботиться о своём здоровье",
+      checkups: "Отслеживать обследования",
+      understand_body: "Лучше понимать своё тело",
+      skin: "Улучшить состояние кожи",
+    },
+
     pregnantQuestion: "Вы сейчас беременны?",
     cycleRegularityQuestion: "Ваш менструальный цикл регулярный?",
     cycleRegular: "Да, регулярный",
@@ -44,12 +95,54 @@ const ru: Dictionary = {
     checkupRecent: "В течение последнего года",
     checkupOverYear: "Более года назад",
     checkupNever: "Никогда",
+
+    averageCycleLengthQuestion: "Сколько дней обычно длится ваш цикл?",
+    averagePeriodLengthQuestion: "Сколько дней обычно длится менструация?",
+    lastPeriodQuestion: "Когда была последняя менструация?",
+
+    typicalSymptomsQuestion: "Какие симптомы вы обычно ощущаете?",
+
+    periodAttitudeQuestion: "Как вы относитесь к своей менструации?",
+    periodAttitude: {
+      uncomfortable: "Испытываю дискомфорт",
+      dislike: "Не люблю этот период",
+      want_to_learn: "Хочу лучше в этом разобраться",
+      comfortable: "Спокойно отношусь, привыкла",
+    },
+
+    healthConditionsQuestion: "Сталкивались ли вы с одним из этих состояний?",
+    healthConditions: {
+      yeast_infection: "Грибковая инфекция",
+      uti: "Инфекция мочевыводящих путей",
+      bacterial_vaginosis: "Бактериальный вагиноз",
+      pcos: "Синдром поликистозных яичников (СПКЯ)",
+      endometriosis: "Эндометриоз",
+      fibroids: "Миома",
+      unknown: "Не знаю",
+      none: "Ничего из перечисленного (напишу сама)",
+    },
+    healthConditionsOtherPlaceholder: "При желании опишите подробнее",
+
+    heightWeightTitle: "Ваш рост и вес",
+    heightLabel: "Рост (см)",
+    weightLabel: "Вес (кг)",
+
+    notificationsQuestion: "Согласны получать важные напоминания и информацию?",
+
+    analyzingTitle: "Анализируем ваши данные...",
+    analyzingSubtitle: "Готовим программу специально для вас",
+
     finishButton: "Начнём",
   },
 
   cycle: {
     title: "Менструальный цикл",
     logDayButton: "Отметить сегодняшний день",
+    dailyCheckinTitle: "Ежедневный контроль",
+    moodCardLabel: "Настроение",
+    flowCardLabel: "Выделения",
+    symptomsCardLabel: "Симптомы",
+    periodDayBadge: (day: number) => `${day}-й день менструации`,
     flowLabel: "Интенсивность выделений",
     moodLabel: "Настроение",
     symptomsLabel: "Симптомы",
@@ -58,6 +151,9 @@ const ru: Dictionary = {
     fertileWindowLabel: "Окно фертильности",
     irregularBannerTitle: "Обнаружена нерегулярность цикла 3+ месяца",
     irregularBannerAction: "Рассмотрите визит к врачу",
+    articlesCardTitle: "Интересные статьи",
+    riskQuizCardTitle: "Тест самопроверки",
+    riskQuizCardSubtitle: "Узнайте уровень риска за 2 минуты",
     flowLevels: {
       spotting: "Мажущие",
       light: "Лёгкие",
@@ -81,6 +177,9 @@ const ru: Dictionary = {
       nausea: "Тошнота",
       breast_tenderness: "Чувствительность груди",
       insomnia: "Бессонница",
+      fatigue: "Усталость",
+      irritability: "Раздражительность",
+      difficulty_concentrating: "Трудности с концентрацией",
     },
   },
 
@@ -95,6 +194,7 @@ const ru: Dictionary = {
     kickCounterTitle: "Счётчик шевелений",
     kickCounterButton: "Отметить шевеление",
     kickCounterCount: (n: number) => `Сегодня: ${n}`,
+    articlesCardTitle: "Интересные статьи",
     sizes: {
       poppySeed: "маковое зёрнышко",
       raspberry: "малину",
@@ -116,6 +216,7 @@ const ru: Dictionary = {
     statusOverdue: "Просрочено",
     markDoneButton: "Выполнено",
     findClinicButton: "Найти клинику",
+    riskQuizCardTitle: "Тест самопроверки",
     items: {
       gyn_annual_checkup: {
         title: "Ежегодный гинекологический осмотр",
@@ -166,6 +267,41 @@ const ru: Dictionary = {
     distanceKm: (km: number) => `${km.toFixed(1)} км`,
   },
 
+  riskQuiz: {
+    title: "Тест самопроверки",
+    disclaimer:
+      "Это не медицинский диагноз — только ориентировочный тест на основе общих факторов риска. Для точной оценки обратитесь к врачу.",
+    startButton: "Начать тест",
+    submitButton: "Посмотреть результат",
+    questions: {
+      age: "Вам больше 40 лет?",
+      family_history: "Были ли в семье случаи рака груди или яичников?",
+      personal_history: "Были ли у вас лично заболевания груди/гинекологические заболевания?",
+      early_period: "Началась ли первая менструация до 12 лет?",
+      no_children_or_late_pregnancy: "У вас нет детей или первая беременность была после 30 лет?",
+      hormone_therapy: "Принимали ли вы длительно гормональную терапию (или гормональную контрацепцию)?",
+      smoking_alcohol: "Курите ли вы или регулярно употребляете алкоголь?",
+    },
+    resultTitle: "Ваш результат",
+    levels: {
+      low: { label: "Низкий риск", description: "Особых факторов риска пока не выявлено. Продолжайте регулярные обследования." },
+      medium: { label: "Средний риск", description: "Есть некоторые факторы риска — рекомендуется в ближайшие месяцы проконсультироваться с гинекологом." },
+      high: { label: "Высокий риск", description: "Выявлено несколько факторов риска — обратитесь к врачу как можно скорее." },
+    },
+    findClinicButton: "Найти ближайшую клинику",
+  },
+
+  articles: {
+    title: "Статьи",
+    readMore: "Читать далее",
+    seedDataNotice: "Демонстрационный образовательный контент — полноценный источник будет подключён позже.",
+    categories: {
+      cycle: "Менструальный цикл",
+      pregnancy: "Беременность",
+      checkups: "Обследования",
+    },
+  },
+
   profile: {
     title: "Профиль",
     languageLabel: "Язык",
@@ -179,6 +315,17 @@ const ru: Dictionary = {
     highContrastLabel: "Высокий контраст",
     exportButton: "Экспортировать данные",
     savedMessage: "Сохранено",
+    notificationsLabel: "Уведомления",
+    statsTitle: "Моя статистика",
+    statsLogsCount: (n: number) => `${n} записей`,
+    statsStreak: (n: number) => `${n} дней подряд`,
+    securityTitle: "Безопасность и конфиденциальность",
+    privacyPolicyLink: "Читать политику конфиденциальности",
+    helpTitle: "Помощь",
+    helpPhoneLabel: "Свяжитесь с нами",
+    helpPhoneValue: "[Ваш контактный номер — будет указан здесь]",
+    premiumTitle: "Premium",
+    premiumSubtitle: "Скоро с дополнительными возможностями",
   },
 };
 

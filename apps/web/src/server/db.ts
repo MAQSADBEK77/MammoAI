@@ -26,23 +26,50 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     phone TEXT UNIQUE,
+    email TEXT UNIQUE,
     name TEXT,
     region TEXT,
     language TEXT NOT NULL DEFAULT 'uz',
     font_scale TEXT NOT NULL DEFAULT 'normal',
     high_contrast INTEGER NOT NULL DEFAULT 0,
+    notifications_enabled INTEGER NOT NULL DEFAULT 1,
     token_version INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS onboarding_profiles (
     user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT,
     age INTEGER NOT NULL,
     is_pregnant INTEGER NOT NULL,
     cycle_regularity TEXT NOT NULL,
     family_history INTEGER NOT NULL,
     last_checkup TEXT NOT NULL,
-    primary_goal TEXT NOT NULL
+    primary_goal TEXT NOT NULL,
+    heard_about_us TEXT,
+    typical_symptoms TEXT NOT NULL DEFAULT '[]',
+    period_attitude TEXT,
+    health_conditions TEXT NOT NULL DEFAULT '[]',
+    health_conditions_other TEXT,
+    height_cm REAL,
+    weight_kg REAL
+  );
+
+  CREATE TABLE IF NOT EXISTS risk_quiz_results (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    answers TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    level TEXT NOT NULL,
+    completed_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS articles (
+    id TEXT PRIMARY KEY,
+    slug TEXT UNIQUE NOT NULL,
+    category TEXT NOT NULL,
+    title TEXT NOT NULL,
+    excerpt TEXT NOT NULL,
+    body TEXT NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS cycle_settings (
@@ -121,3 +148,24 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id);
   CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id);
 `);
+
+// Yengil migratsiya — App.pdf spesifikatsiyasi bilan qo'shilgan ustunlar. Loyiha allaqachon
+// ishlab turgan (tunnel orqali) bo'lishi mumkin bo'lgani uchun bazani o'chirib qayta
+// yaratish o'rniga mavjud jadvalga yetishmagan ustunlarni qo'shamiz.
+function addColumnIfMissing(table: string, column: string, definition: string) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!columns.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+addColumnIfMissing("users", "email", "TEXT");
+addColumnIfMissing("users", "notifications_enabled", "INTEGER NOT NULL DEFAULT 1");
+addColumnIfMissing("onboarding_profiles", "name", "TEXT");
+addColumnIfMissing("onboarding_profiles", "heard_about_us", "TEXT");
+addColumnIfMissing("onboarding_profiles", "typical_symptoms", "TEXT NOT NULL DEFAULT '[]'");
+addColumnIfMissing("onboarding_profiles", "period_attitude", "TEXT");
+addColumnIfMissing("onboarding_profiles", "health_conditions", "TEXT NOT NULL DEFAULT '[]'");
+addColumnIfMissing("onboarding_profiles", "health_conditions_other", "TEXT");
+addColumnIfMissing("onboarding_profiles", "height_cm", "REAL");
+addColumnIfMissing("onboarding_profiles", "weight_kg", "REAL");

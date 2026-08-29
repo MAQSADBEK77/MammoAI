@@ -3,16 +3,23 @@
 // Backend — apps/web/src/app/api ichida, ikkalasiga ham xizmat qiladi (spec §8).
 
 import type {
+  Article,
   ChecklistItem,
   Clinic,
   CycleLog,
   CycleSettings,
   Goal,
+  HealthCondition,
+  HeardAboutUs,
   Language,
   OnboardingProfile,
+  PeriodAttitude,
   PregnancyProfile,
   PregnancyVisitLog,
   ReferralAction,
+  RiskQuizAnswers,
+  RiskQuizResult,
+  Symptom,
   User,
 } from "./types";
 import type { CyclePrediction } from "./logic/cycle";
@@ -40,6 +47,17 @@ export interface MeResponse {
   onboardingProfile: OnboardingProfile | null;
 }
 
+export interface AuthStartPayload {
+  identifier: string; // telefon yoki email (App.pdf §2)
+  language: Language;
+}
+
+export interface AuthStartResponse extends MeResponse {
+  token?: string;
+  /** false — bu identifikator bo'yicha mavjud akkaunt topildi va shunga kirildi. */
+  isNewAccount: boolean;
+}
+
 export interface CycleResponse {
   settings: CycleSettings;
   logs: CycleLog[];
@@ -54,14 +72,24 @@ export interface PregnancyResponse {
   kicksToday: number;
 }
 
+// App.pdf §5-10 — onboarding so'rovnomasi endi akkaunt yaratilgandan KEYIN, sessiya
+// ustida to'ldiriladi (auth.start allaqachon userni yaratgan/topgan bo'ladi).
 export interface OnboardingPayload {
+  name: string;
   age: number;
   isPregnant: boolean;
   cycleRegularity: OnboardingProfile["cycleRegularity"];
   familyHistory: boolean;
   lastCheckup: OnboardingProfile["lastCheckup"];
   primaryGoal: Goal;
-  language: Language;
+  heardAboutUs: HeardAboutUs;
+  typicalSymptoms: Symptom[];
+  periodAttitude: PeriodAttitude | null;
+  healthConditions: HealthCondition[];
+  healthConditionsOther: string | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  notificationsEnabled: boolean;
 }
 
 function createRequest(config: ApiClientConfig) {
@@ -97,17 +125,23 @@ export function createApiClient(config: ApiClientConfig) {
   const request = createRequest(config);
 
   return {
+    auth: {
+      /** App.pdf §2 — telefon/email bilan akkaunt yaratish yoki mavjudiga kirish. */
+      start: (payload: AuthStartPayload) =>
+        request<AuthStartResponse>("/api/auth/start", { method: "POST", body: JSON.stringify(payload) }),
+    },
     onboarding: {
       submit: (payload: OnboardingPayload) =>
-        request<MeResponse & { token?: string }>("/api/onboarding", {
+        request<MeResponse>("/api/onboarding", {
           method: "POST",
           body: JSON.stringify(payload),
         }),
     },
     me: {
       get: () => request<MeResponse>("/api/me"),
-      update: (patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast">>) =>
-        request<MeResponse>("/api/me", { method: "PATCH", body: JSON.stringify(patch) }),
+      update: (
+        patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled">>
+      ) => request<MeResponse>("/api/me", { method: "PATCH", body: JSON.stringify(patch) }),
       exportData: () => request<Record<string, unknown>>("/api/me/export"),
     },
     cycle: {
@@ -135,6 +169,15 @@ export function createApiClient(config: ApiClientConfig) {
     referrals: {
       log: (payload: { clinicId: string; checklistItemId?: string | null; action: ReferralAction }) =>
         request<{ ok: true }>("/api/referrals", { method: "POST", body: JSON.stringify(payload) }),
+    },
+    riskQuiz: {
+      get: () => request<RiskQuizResult | null>("/api/risk-quiz"),
+      submit: (answers: RiskQuizAnswers) =>
+        request<RiskQuizResult>("/api/risk-quiz", { method: "POST", body: JSON.stringify({ answers }) }),
+    },
+    articles: {
+      list: () => request<Article[]>("/api/articles"),
+      get: (slug: string) => request<Article>(`/api/articles/${slug}`),
     },
   };
 }

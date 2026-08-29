@@ -1,22 +1,30 @@
 import { randomUUID } from "node:crypto";
 import { db } from "./db";
 import type {
+  Article,
+  ArticleCategory,
   ChecklistItem,
   ChecklistItemType,
   Clinic,
   CycleLog,
   CycleSettings,
   FlowLevel,
+  HealthCondition,
+  HeardAboutUs,
   Language,
   Mood,
   OnboardingProfile,
+  PeriodAttitude,
   PregnancyProfile,
   PregnancyVisitLog,
   ReferralAction,
+  RiskQuizAnswers,
+  RiskQuizResult,
+  RiskLevel,
   Symptom,
   User,
 } from "@mammoai/shared";
-import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from "@mammoai/shared";
+import { CHECKLIST_ITEM_IS_FREE, DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from "@mammoai/shared";
 
 const now = () => new Date().toISOString();
 const today = () => now().slice(0, 10);
@@ -28,11 +36,13 @@ const today = () => now().slice(0, 10);
 interface UserRow {
   id: string;
   phone: string | null;
+  email: string | null;
   name: string | null;
   region: string | null;
   language: Language;
   font_scale: "normal" | "large";
   high_contrast: number;
+  notifications_enabled: number;
   token_version: number;
   created_at: string;
 }
@@ -41,11 +51,13 @@ function userFromRow(row: UserRow): User {
   return {
     id: row.id,
     phone: row.phone,
+    email: row.email,
     name: row.name,
     region: row.region,
     language: row.language,
     fontScale: row.font_scale,
     highContrast: !!row.high_contrast,
+    notificationsEnabled: !!row.notifications_enabled,
     createdAt: row.created_at,
   };
 }
@@ -60,11 +72,56 @@ export function createAnonymousUser(language: Language): { user: User; tokenVers
     user: {
       id,
       phone: null,
+      email: null,
       name: null,
       region: null,
       language,
       fontScale: "normal",
       highContrast: false,
+      notificationsEnabled: true,
+      createdAt,
+    },
+    tokenVersion: 0,
+  };
+}
+
+/** Telefon raqammi yoki emailmi — oddiy tekshirish (App.pdf §2). */
+export function isEmailIdentifier(identifier: string): boolean {
+  return identifier.includes("@");
+}
+
+export function findUserByIdentifier(identifier: string): (User & { tokenVersion: number }) | null {
+  const column = isEmailIdentifier(identifier) ? "email" : "phone";
+  const row = db.prepare(`SELECT * FROM users WHERE ${column} = ?`).get(identifier) as UserRow | undefined;
+  return row ? { ...userFromRow(row), tokenVersion: row.token_version } : null;
+}
+
+/**
+ * Yangi akkaunt — telefon/email bilan, SMS/parolsiz (App.pdf §2: "SMS kelishi shart
+ * emas"). Xavfsizlik pasayadi (identifikator bilishning o'zi kirish uchun yetarli),
+ * lekin bu ongli tanlangan tezkor-ro'yxatdan o'tish yechimi.
+ */
+export function createUserWithIdentifier(
+  identifier: string,
+  language: Language
+): { user: User; tokenVersion: number } {
+  const id = randomUUID();
+  const createdAt = now();
+  const isEmail = isEmailIdentifier(identifier);
+  db.prepare(
+    `INSERT INTO users (id, phone, email, language, created_at) VALUES (?, ?, ?, ?, ?)`
+  ).run(id, isEmail ? null : identifier, isEmail ? identifier : null, language, createdAt);
+  return {
+    user: {
+      id,
+      phone: isEmail ? null : identifier,
+      email: isEmail ? identifier : null,
+      name: null,
+      region: null,
+      language,
+      fontScale: "normal",
+      highContrast: false,
+      notificationsEnabled: true,
       createdAt,
     },
     tokenVersion: 0,
@@ -79,14 +136,22 @@ export function getUserById(id: string): (User & { tokenVersion: number }) | nul
 
 export function updateUser(
   id: string,
-  patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast">>
+  patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled">>
 ): User {
   const current = getUserById(id);
   if (!current) throw new Error("Foydalanuvchi topilmadi");
   const merged = { ...current, ...patch };
   db.prepare(
-    `UPDATE users SET name = ?, phone = ?, language = ?, font_scale = ?, high_contrast = ? WHERE id = ?`
-  ).run(merged.name, merged.phone, merged.language, merged.fontScale, merged.highContrast ? 1 : 0, id);
+    `UPDATE users SET name = ?, phone = ?, language = ?, font_scale = ?, high_contrast = ?, notifications_enabled = ? WHERE id = ?`
+  ).run(
+    merged.name,
+    merged.phone,
+    merged.language,
+    merged.fontScale,
+    merged.highContrast ? 1 : 0,
+    merged.notificationsEnabled ? 1 : 0,
+    id
+  );
   return merged;
 }
 
@@ -96,41 +161,76 @@ export function updateUser(
 
 interface OnboardingRow {
   user_id: string;
+  name: string | null;
   age: number;
   is_pregnant: number;
   cycle_regularity: OnboardingProfile["cycleRegularity"];
   family_history: number;
   last_checkup: OnboardingProfile["lastCheckup"];
   primary_goal: OnboardingProfile["primaryGoal"];
+  heard_about_us: HeardAboutUs | null;
+  typical_symptoms: string;
+  period_attitude: PeriodAttitude | null;
+  health_conditions: string;
+  health_conditions_other: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
 }
 
 function onboardingFromRow(row: OnboardingRow): OnboardingProfile {
   return {
     userId: row.user_id,
+    name: row.name,
     age: row.age,
     isPregnant: !!row.is_pregnant,
     cycleRegularity: row.cycle_regularity,
     familyHistory: !!row.family_history,
     lastCheckup: row.last_checkup,
     primaryGoal: row.primary_goal,
+    heardAboutUs: row.heard_about_us,
+    typicalSymptoms: JSON.parse(row.typical_symptoms) as Symptom[],
+    periodAttitude: row.period_attitude,
+    healthConditions: JSON.parse(row.health_conditions) as HealthCondition[],
+    healthConditionsOther: row.health_conditions_other,
+    heightCm: row.height_cm,
+    weightKg: row.weight_kg,
   };
 }
 
 export function saveOnboardingProfile(profile: OnboardingProfile): void {
   db.prepare(
-    `INSERT INTO onboarding_profiles (user_id, age, is_pregnant, cycle_regularity, family_history, last_checkup, primary_goal)
-     VALUES (@userId, @age, @isPregnant, @cycleRegularity, @familyHistory, @lastCheckup, @primaryGoal)
+    `INSERT INTO onboarding_profiles (
+       user_id, name, age, is_pregnant, cycle_regularity, family_history, last_checkup, primary_goal,
+       heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg
+     )
+     VALUES (
+       @userId, @name, @age, @isPregnant, @cycleRegularity, @familyHistory, @lastCheckup, @primaryGoal,
+       @heardAboutUs, @typicalSymptoms, @periodAttitude, @healthConditions, @healthConditionsOther, @heightCm, @weightKg
+     )
      ON CONFLICT(user_id) DO UPDATE SET
-       age = excluded.age, is_pregnant = excluded.is_pregnant, cycle_regularity = excluded.cycle_regularity,
-       family_history = excluded.family_history, last_checkup = excluded.last_checkup, primary_goal = excluded.primary_goal`
+       name = excluded.name, age = excluded.age, is_pregnant = excluded.is_pregnant,
+       cycle_regularity = excluded.cycle_regularity, family_history = excluded.family_history,
+       last_checkup = excluded.last_checkup, primary_goal = excluded.primary_goal,
+       heard_about_us = excluded.heard_about_us, typical_symptoms = excluded.typical_symptoms,
+       period_attitude = excluded.period_attitude,
+       health_conditions = excluded.health_conditions, health_conditions_other = excluded.health_conditions_other,
+       height_cm = excluded.height_cm, weight_kg = excluded.weight_kg`
   ).run({
     userId: profile.userId,
+    name: profile.name,
     age: profile.age,
     isPregnant: profile.isPregnant ? 1 : 0,
     cycleRegularity: profile.cycleRegularity,
     familyHistory: profile.familyHistory ? 1 : 0,
     lastCheckup: profile.lastCheckup,
     primaryGoal: profile.primaryGoal,
+    heardAboutUs: profile.heardAboutUs,
+    typicalSymptoms: JSON.stringify(profile.typicalSymptoms ?? []),
+    periodAttitude: profile.periodAttitude,
+    healthConditions: JSON.stringify(profile.healthConditions ?? []),
+    healthConditionsOther: profile.healthConditionsOther,
+    heightCm: profile.heightCm,
+    weightKg: profile.weightKg,
   });
 }
 
@@ -365,6 +465,7 @@ function checklistFromRow(row: ChecklistRow): ChecklistItem {
     dueDate: row.due_date,
     completedAt: row.completed_at,
     createdAt: row.created_at,
+    isFree: CHECKLIST_ITEM_IS_FREE[row.type],
   };
 }
 
@@ -449,4 +550,84 @@ export function logReferralEvent(
   db.prepare(
     `INSERT INTO referral_events (id, user_id, clinic_id, checklist_item_id, action, created_at) VALUES (?, ?, ?, ?, ?, ?)`
   ).run(randomUUID(), userId, payload.clinicId, payload.checklistItemId, payload.action, now());
+}
+
+// ---------------------------------------------------------------------------
+// Xavf-testi (App.pdf §19)
+// ---------------------------------------------------------------------------
+
+interface RiskQuizRow {
+  user_id: string;
+  answers: string;
+  score: number;
+  level: RiskLevel;
+  completed_at: string;
+}
+
+function riskQuizFromRow(row: RiskQuizRow): RiskQuizResult {
+  return {
+    userId: row.user_id,
+    answers: JSON.parse(row.answers) as RiskQuizAnswers,
+    score: row.score,
+    level: row.level,
+    completedAt: row.completed_at,
+  };
+}
+
+export function getRiskQuizResult(userId: string): RiskQuizResult | null {
+  const row = db.prepare(`SELECT * FROM risk_quiz_results WHERE user_id = ?`).get(userId) as
+    | RiskQuizRow
+    | undefined;
+  return row ? riskQuizFromRow(row) : null;
+}
+
+export function saveRiskQuizResult(
+  userId: string,
+  answers: RiskQuizAnswers,
+  score: number,
+  level: RiskLevel
+): RiskQuizResult {
+  const completedAt = now();
+  db.prepare(
+    `INSERT INTO risk_quiz_results (user_id, answers, score, level, completed_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       answers = excluded.answers, score = excluded.score, level = excluded.level, completed_at = excluded.completed_at`
+  ).run(userId, JSON.stringify(answers), score, level, completedAt);
+  return { userId, answers, score, level, completedAt };
+}
+
+// ---------------------------------------------------------------------------
+// Maqolalar (App.pdf §20)
+// ---------------------------------------------------------------------------
+
+interface ArticleRow {
+  id: string;
+  slug: string;
+  category: ArticleCategory;
+  title: string;
+  excerpt: string;
+  body: string;
+}
+
+function articleFromRow(row: ArticleRow): Article {
+  return {
+    id: row.id,
+    slug: row.slug,
+    category: row.category,
+    title: row.title,
+    excerpt: row.excerpt,
+    body: row.body,
+    isSeedData: true,
+  };
+}
+
+export function listArticles(): Article[] {
+  const rows = db.prepare(`SELECT * FROM articles ORDER BY title ASC`).all() as ArticleRow[];
+  return rows.map(articleFromRow);
+}
+
+export function getArticleBySlug(slug: string): Article | null {
+  const row = db.prepare(`SELECT * FROM articles WHERE slug = ?`).get(slug) as ArticleRow | undefined;
+  return row ? articleFromRow(row) : null;
 }

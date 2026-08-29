@@ -48,7 +48,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [applyMeResponse]);
 
+  // `refresh` mount'da va boshqa componentlar (masalan Profil, save qilgandan keyin)
+  // tomonidan qayta chaqiriladi — shuning uchun hoisted holicha qoldi.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

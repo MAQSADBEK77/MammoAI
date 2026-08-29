@@ -1,21 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import clsx from "clsx";
 import type { Language } from "@mammoai/shared";
+import { goalToLandingTab } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card, ScreenHeader, TextField } from "@/components/ui";
+import { Badge, Button, Card, ScreenHeader, TextField } from "@/components/ui";
 
 export default function ProfileScreen() {
   const { dict, language, setLanguage } = useI18n();
-  const { user, refresh } = useSession();
+  const { user, onboardingProfile, refresh } = useSession();
   const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [saving, setSaving] = useState(false);
+  const [logsCount, setLogsCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    api.cycle.get().then((res) => setLogsCount(res.logs.length));
+  }, []);
 
   if (!user) return null;
 
@@ -29,10 +36,23 @@ export default function ProfileScreen() {
     }
   }
 
+  const modeIcon = onboardingProfile
+    ? goalToLandingTab(onboardingProfile.primaryGoal) === "pregnancy"
+      ? "🤰"
+      : goalToLandingTab(onboardingProfile.primaryGoal) === "checkups"
+        ? "🩺"
+        : "🩸"
+    : null;
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
-        <ScreenHeader title={dict.profile.title} />
+        <View className="flex-row items-center justify-between">
+          <ScreenHeader title={dict.profile.title} />
+          {modeIcon && onboardingProfile && (
+            <Badge tone="primary">{`${modeIcon} ${dict.onboarding.goals[onboardingProfile.primaryGoal]}`}</Badge>
+          )}
+        </View>
 
         <Card className="gap-3">
           <Text className="text-sm font-semibold text-text-secondary">{dict.profile.languageLabel}</Text>
@@ -94,13 +114,36 @@ export default function ProfileScreen() {
 
           <View className="flex-row items-center justify-between">
             <Text className="text-text-primary">{dict.profile.highContrastLabel}</Text>
-            <Pressable
-              onPress={() => save({ highContrast: !user.highContrast })}
-              className={clsx("h-8 w-14 rounded-full p-1", user.highContrast ? "bg-primary" : "bg-surface-muted")}
-            >
-              <View className={clsx("h-6 w-6 rounded-full bg-white", user.highContrast && "ml-6")} />
-            </Pressable>
+            <Toggle checked={user.highContrast} onPress={() => save({ highContrast: !user.highContrast })} />
           </View>
+
+          <View className="flex-row items-center justify-between">
+            <Text className="text-text-primary">{dict.profile.notificationsLabel}</Text>
+            <Toggle checked={user.notificationsEnabled} onPress={() => save({ notificationsEnabled: !user.notificationsEnabled })} />
+          </View>
+        </Card>
+
+        <Card className="gap-1">
+          <Text className="text-sm font-semibold text-text-secondary">{dict.profile.statsTitle}</Text>
+          <Text className="text-text-primary">{dict.profile.statsLogsCount(logsCount ?? 0)}</Text>
+        </Card>
+
+        <Pressable onPress={() => router.push("/maxfiylik")}>
+          <Card className="gap-1">
+            <Text className="text-sm font-semibold text-text-secondary">{dict.profile.securityTitle}</Text>
+            <Text className="text-primary-dark underline">{dict.profile.privacyPolicyLink}</Text>
+          </Card>
+        </Pressable>
+
+        <Card className="gap-1">
+          <Text className="text-sm font-semibold text-text-secondary">{dict.profile.helpTitle}</Text>
+          <Text className="text-text-primary">{dict.profile.helpPhoneLabel}</Text>
+          <Text className="text-text-secondary">{dict.profile.helpPhoneValue}</Text>
+        </Card>
+
+        <Card className="border border-secondary/40 bg-secondary-light/30">
+          <Text className="font-semibold text-text-primary">{dict.profile.premiumTitle}</Text>
+          <Text className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</Text>
         </Card>
 
         <Button
@@ -118,5 +161,13 @@ export default function ProfileScreen() {
         </Button>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function Toggle({ checked, onPress }: { checked: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} className={clsx("h-8 w-14 rounded-full p-1", checked ? "bg-primary" : "bg-surface-muted")}>
+      <View className={clsx("h-6 w-6 rounded-full bg-white", checked && "ml-6")} />
+    </Pressable>
   );
 }

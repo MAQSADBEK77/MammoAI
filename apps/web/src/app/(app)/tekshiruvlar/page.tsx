@@ -33,6 +33,12 @@ export default function ChecklistPage() {
     <div className="space-y-4 pb-6">
       <ScreenHeader title={dict.checklist.title} />
 
+      <button onClick={() => router.push("/xavf-testi")} className="block w-full text-left">
+        <Card>
+          <p className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</p>
+        </Card>
+      </button>
+
       {items.length === 0 && <p className="text-text-secondary">—</p>}
 
       {items.map((item) => {
@@ -41,7 +47,10 @@ export default function ChecklistPage() {
           <Card key={item.id} className="space-y-2">
             <div className="flex items-start justify-between gap-3">
               <p className="font-semibold text-text-primary">{info.title}</p>
-              <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
+              <div className="flex flex-col items-end gap-1">
+                <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
+                <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>
+              </div>
             </div>
             <p className="text-sm text-text-secondary">{info.why}</p>
             {item.dueDate && item.status !== "done" && (

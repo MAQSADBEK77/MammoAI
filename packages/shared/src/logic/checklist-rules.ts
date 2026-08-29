@@ -53,3 +53,16 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
 
   return items;
 }
+
+// App.pdf §16 — har bir tekshiruv turi bepulmi (davlat dasturi/oddiy poliklinika)
+// yoki pullikmi (xususiy/qo'shimcha tekshiruv). Statik jadval — ChecklistItem'ni
+// o'qishda shu yerdan qo'shiladi (repo.ts), alohida DB ustuni kerak emas.
+export const CHECKLIST_ITEM_IS_FREE: Record<ChecklistItemType, boolean> = {
+  gyn_annual_checkup: true, // davlat poliklinikasida standart ko'rik
+  pap_test: true,
+  mammography_screening: false, // 40-45 yosh oralig'ida davlat dasturi qamramaydi
+  free_mammography_45: true, // spec: alohida "bepul" deb ta'kidlangan
+  cycle_irregularity_followup: true,
+  pregnancy_first_visit: true,
+  pregnancy_trimester_checkup: true,
+};

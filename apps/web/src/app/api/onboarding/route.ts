@@ -1,55 +1,32 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { OnboardingProfile } from "@mammoai/shared";
-import { jsonError } from "@/server/api-utils";
-import { createAnonymousUser, saveOnboardingProfile, getUserById } from "@/server/repo";
-import { signSession, SESSION_COOKIE, sessionCookieOptions } from "@/server/session";
+import { jsonError, requireUser } from "@/server/api-utils";
+import { getOnboardingProfile, saveOnboardingProfile, updateUser } from "@/server/repo";
 import { syncChecklistForUser } from "@/server/checklist-sync";
 
-interface OnboardingBody {
-  age: number;
-  isPregnant: boolean;
-  cycleRegularity: OnboardingProfile["cycleRegularity"];
-  familyHistory: boolean;
-  lastCheckup: OnboardingProfile["lastCheckup"];
-  primaryGoal: OnboardingProfile["primaryGoal"];
-  language: "uz" | "ru";
-}
+type OnboardingBody = Omit<OnboardingProfile, "userId"> & { notificationsEnabled: boolean };
 
 /**
- * Onboarding so'rovnomasi tugagach chaqiriladi — anonim foydalanuvchi va sessiya shu
- * yerda yaratiladi (spec: "User anonim bo'lishi mumkin", onboarding parolsiz, ~2 daqiqa).
+ * Onboarding so'rovnomasini yakunlaydi — App.pdf §2 bo'yicha akkaunt allaqachon
+ * `/api/auth/start`da yaratilgan/topilgan, bu route faqat profilni to'ldiradi.
  */
 export async function POST(request: NextRequest) {
   try {
+    const user = requireUser(request);
     const body = (await request.json()) as OnboardingBody;
-    if (!body.age || body.age < 10 || body.age > 100) {
-      return NextResponse.json({ error: "Yosh noto'g'ri kiritildi" }, { status: 400 });
+    if (!body.age || body.age < 13 || body.age > 100) {
+      return NextResponse.json({ error: "Yosh noto'g'ri kiritildi (kamida 13 bo'lishi kerak)" }, { status: 400 });
     }
 
-    const { user, tokenVersion } = createAnonymousUser(body.language ?? "uz");
-
-    const profile: OnboardingProfile = {
-      userId: user.id,
-      age: body.age,
-      isPregnant: !!body.isPregnant,
-      cycleRegularity: body.cycleRegularity,
-      familyHistory: !!body.familyHistory,
-      lastCheckup: body.lastCheckup,
-      primaryGoal: body.primaryGoal,
-    };
+    const profile: OnboardingProfile = { userId: user.id, ...body };
     saveOnboardingProfile(profile);
+    updateUser(user.id, { name: body.name, notificationsEnabled: body.notificationsEnabled });
     syncChecklistForUser(user.id);
 
-    const token = signSession({ sub: user.id, tokenVersion });
-    const freshUser = getUserById(user.id)!;
-
-    const res = NextResponse.json({
-      user: freshUser,
-      onboardingProfile: profile,
-      token, // mobil shu tokenni SecureStore'ga saqlaydi
+    return NextResponse.json({
+      user: { ...user, name: body.name, notificationsEnabled: body.notificationsEnabled },
+      onboardingProfile: getOnboardingProfile(user.id),
     });
-    res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
-    return res;
   } catch (error) {
     return jsonError(error);
   }

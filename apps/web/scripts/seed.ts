@@ -4,7 +4,7 @@
 
 import { randomUUID } from "node:crypto";
 import { db } from "../src/server/db";
-import type { ClinicSpecialty } from "@mammoai/shared";
+import type { ArticleCategory, ClinicSpecialty } from "@mammoai/shared";
 
 interface SeedClinic {
   name: string;
@@ -140,32 +140,101 @@ const SEED_CLINICS: SeedClinic[] = [
   },
 ];
 
-const existing = db.prepare("SELECT COUNT(*) as count FROM clinics").get() as { count: number };
-if (existing.count > 0) {
-  console.log(`Klinikalar jadvalida allaqachon ${existing.count} ta yozuv bor — seed o'tkazib yuborildi.`);
-  process.exit(0);
+const clinicsCount = db.prepare("SELECT COUNT(*) as count FROM clinics").get() as { count: number };
+if (clinicsCount.count > 0) {
+  console.log(`Klinikalar jadvalida allaqachon ${clinicsCount.count} ta yozuv bor — seed o'tkazib yuborildi.`);
+} else {
+  const insertClinic = db.prepare(
+    `INSERT INTO clinics (id, name, address, region, lat, lng, phone, specialties, free_screening)
+     VALUES (@id, @name, @address, @region, @lat, @lng, @phone, @specialties, @freeScreening)`
+  );
+  const insertClinics = db.transaction((clinics: SeedClinic[]) => {
+    for (const c of clinics) {
+      insertClinic.run({
+        id: randomUUID(),
+        name: c.name,
+        address: c.address,
+        region: c.region,
+        lat: c.lat,
+        lng: c.lng,
+        phone: c.phone,
+        specialties: JSON.stringify(c.specialties),
+        freeScreening: c.freeScreening ? 1 : 0,
+      });
+    }
+  });
+  insertClinics(SEED_CLINICS);
+  console.log(`${SEED_CLINICS.length} ta namunaviy klinika qo'shildi.`);
 }
 
-const insert = db.prepare(
-  `INSERT INTO clinics (id, name, address, region, lat, lng, phone, specialties, free_screening)
-   VALUES (@id, @name, @address, @region, @lat, @lng, @phone, @specialties, @freeScreening)`
-);
+// ---------------------------------------------------------------------------
+// Maqolalar — App.pdf §20. Umumiy ta'limiy matn, haqiqiy tibbiy kontent manbai
+// EMAS — jamoa buni keyinroq professional tibbiy kontent bilan almashtirishi kerak.
+// ---------------------------------------------------------------------------
 
-const insertMany = db.transaction((clinics: SeedClinic[]) => {
-  for (const c of clinics) {
-    insert.run({
-      id: randomUUID(),
-      name: c.name,
-      address: c.address,
-      region: c.region,
-      lat: c.lat,
-      lng: c.lng,
-      phone: c.phone,
-      specialties: JSON.stringify(c.specialties),
-      freeScreening: c.freeScreening ? 1 : 0,
-    });
-  }
-});
+interface SeedArticle {
+  slug: string;
+  category: ArticleCategory;
+  title: string;
+  excerpt: string;
+  body: string;
+}
 
-insertMany(SEED_CLINICS);
-console.log(`${SEED_CLINICS.length} ta namunaviy klinika qo'shildi.`);
+const SEED_ARTICLES: SeedArticle[] = [
+  {
+    slug: "hayz-sikli-fazalari",
+    category: "cycle",
+    title: "Hayz sikli fazalari haqida oddiy tushuncha",
+    excerpt: "Sikl nima uchun har oy o'zgaradi va bu nimani anglatadi?",
+    body: "Hayz sikli to'rtta asosiy fazadan iborat: hayz, follikulyar faza, ovulyatsiya va lyuteal faza. Har bir faza gormonlar ta'sirida davom etadi va tananing turli o'zgarishlariga sabab bo'ladi. Sikl uzunligi ayoldan ayolga farq qiladi — 21 kundan 35 kungacha bo'lishi normal hisoblanadi. Agar sikllingiz doimiy ravishda 3 oydan ortiq tartibsiz bo'lsa, ginekolog bilan maslahatlashish tavsiya etiladi.",
+  },
+  {
+    slug: "unumdor-kunlar-nima",
+    category: "cycle",
+    title: "Unumdor kunlar oynasi qanday hisoblanadi?",
+    excerpt: "Homilador bo'lish ehtimoli eng yuqori bo'lgan kunlar haqida.",
+    body: "Unumdor oyna — ovulyatsiyadan besh kun oldin va bir kun keyingi davrni o'z ichiga oladi, chunki erkak hujayralari ayol tanasida bir necha kun yashashi mumkin. Bu davrni aniq bilish homiladorlikni rejalashtirishda yoki, aksincha, undan saqlanishda foydali bo'lishi mumkin — lekin yagona ishonchli usul emas.",
+  },
+  {
+    slug: "birinchi-trimestr",
+    category: "pregnancy",
+    title: "Birinchi trimestrda nimalarga e'tibor berish kerak",
+    excerpt: "Homiladorlikning dastlabki 12 haftasida tana qanday o'zgaradi.",
+    body: "Birinchi trimestr — homila uchun eng muhim rivojlanish davri. Bu davrda ko'ngil aynishi, charchoq va kayfiyat o'zgarishlari odatiy hol. Folat kislotasi qabul qilish, zararli odatlardan voz kechish va birinchi ko'rikka o'z vaqtida borish tavsiya etiladi. Har qanday og'riq yoki qon ketish alomati bo'lsa, darhol shifokorga murojaat qiling.",
+  },
+  {
+    slug: "homiladorlikda-ovqatlanish",
+    category: "pregnancy",
+    title: "Homiladorlikda muvozanatli ovqatlanish",
+    excerpt: "Ona va bola salomatligi uchun asosiy tamoyillar.",
+    body: "Homiladorlik davrida ovqatlanish sifatiga e'tibor berish miqdoridan ko'ra muhimroq. Temir, kaltsiy va folat kislotasiga boy oziq-ovqatlar tavsiya etiladi. Xom baliq, pasterizatsiya qilinmagan mahsulotlar va ortiqcha kofeindan saqlanish kerak. Aniq dietani shifokoringiz bilan kelishib oling.",
+  },
+  {
+    slug: "mammografiya-nima-uchun-kerak",
+    category: "checkups",
+    title: "Mammografiya skrining nima uchun muhim?",
+    excerpt: "Ko'krak saratonini erta aniqlash hayot saqlab qoladi.",
+    body: "Mammografiya — ko'krak to'qimasini rentgen nurlari yordamida tekshirish usuli bo'lib, saratonni klinik alomatlar paydo bo'lishidan ancha oldin aniqlashga yordam beradi. 40 yoshdan katta ayollarga muntazam skrining tavsiya etiladi, 45 yoshdan katta ayollar uchun ko'plab davlatlarda bu bepul dastur orqali taqdim etiladi.",
+  },
+  {
+    slug: "ginekolog-korikka-tayyorgarlik",
+    category: "checkups",
+    title: "Ginekolog ko'rigiga qanday tayyorlanish kerak",
+    excerpt: "Birinchi marta boradiganlar uchun oddiy maslahatlar.",
+    body: "Ko'rikdan oldin qamish/dush ishlatmaslik, so'nggi hayz sanasini eslab qolish va savollaringizni oldindan yozib qo'yish foydali. Ko'rik odatda tez va og'riqsiz o'tadi. Har qanday noqulaylik yoki savolingiz bo'lsa, shifokoringizga ochiq gapirishdan tortinmang — bu ularning kundalik ishi.",
+  },
+];
+
+const articlesCount = db.prepare("SELECT COUNT(*) as count FROM articles").get() as { count: number };
+if (articlesCount.count > 0) {
+  console.log(`Maqolalar jadvalida allaqachon ${articlesCount.count} ta yozuv bor — seed o'tkazib yuborildi.`);
+} else {
+  const insertArticle = db.prepare(
+    `INSERT INTO articles (id, slug, category, title, excerpt, body) VALUES (@id, @slug, @category, @title, @excerpt, @body)`
+  );
+  const insertArticles = db.transaction((articles: SeedArticle[]) => {
+    for (const a of articles) insertArticle.run({ id: randomUUID(), ...a });
+  });
+  insertArticles(SEED_ARTICLES);
+  console.log(`${SEED_ARTICLES.length} ta namunaviy maqola qo'shildi.`);
+}

@@ -42,6 +42,7 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "eas-cli": "^23.0.0",
+    "eslint-config-expo": "~57.0.2",
     "react-native-svg-transformer": "^1.5.0",
     "typescript": "~6.0.3"
   },

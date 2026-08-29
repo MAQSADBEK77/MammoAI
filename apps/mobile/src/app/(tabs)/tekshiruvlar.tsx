@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import type { ChecklistItem } from "@mammoai/shared";
@@ -38,13 +38,23 @@ export default function ChecklistScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-8">
         <ScreenHeader title={dict.checklist.title} />
+
+        <Pressable onPress={() => router.push("/xavf-testi")}>
+          <Card>
+            <Text className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</Text>
+          </Card>
+        </Pressable>
+
         {items.map((item) => {
           const info = dict.checklist.items[item.type];
           return (
             <Card key={item.id} className="gap-2">
               <View className="flex-row items-start justify-between gap-3">
                 <Text className="flex-1 font-semibold text-text-primary">{info.title}</Text>
-                <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
+                <View className="items-end gap-1">
+                  <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
+                  <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>
+                </View>
               </View>
               <Text className="text-sm text-text-secondary">{info.why}</Text>
               {item.status !== "done" && (

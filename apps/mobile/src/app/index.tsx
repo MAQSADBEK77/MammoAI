@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { View, Text } from "react-native";
 import { router } from "expo-router";
+import { goalToLandingTab } from "@mammoai/shared";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 
@@ -10,11 +11,12 @@ export default function IndexScreen() {
 
   useEffect(() => {
     if (status === "loading") return;
-    if (status === "anonymous") {
+    if (status === "anonymous" || !onboardingProfile) {
       router.replace("/onboarding");
       return;
     }
-    router.replace(onboardingProfile?.isPregnant ? "/(tabs)/homiladorlik" : "/(tabs)/tsikl");
+    const tab = goalToLandingTab(onboardingProfile.primaryGoal);
+    router.replace(tab === "cycle" ? "/(tabs)/tsikl" : tab === "pregnancy" ? "/(tabs)/homiladorlik" : "/(tabs)/tekshiruvlar");
   }, [status, onboardingProfile]);
 
   return (

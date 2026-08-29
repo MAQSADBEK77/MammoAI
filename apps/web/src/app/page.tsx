@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { goalToLandingTab } from "@mammoai/shared";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 
@@ -12,11 +13,12 @@ export default function RootPage() {
 
   useEffect(() => {
     if (status === "loading") return;
-    if (status === "anonymous") {
+    if (status === "anonymous" || !onboardingProfile) {
       router.replace("/onboarding");
       return;
     }
-    router.replace(onboardingProfile?.isPregnant ? "/homiladorlik" : "/tsikl");
+    const tab = goalToLandingTab(onboardingProfile.primaryGoal);
+    router.replace(tab === "cycle" ? "/tsikl" : tab === "pregnancy" ? "/homiladorlik" : "/tekshiruvlar");
   }, [status, onboardingProfile, router]);
 
   return (
