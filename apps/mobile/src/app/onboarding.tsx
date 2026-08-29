@@ -324,7 +324,7 @@ export default function OnboardingScreen() {
   return (
     <View style={{ flex: 1 }}>
       {step === "welcome" && (
-        <LinearGradient colors={gradients.cycle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={gradients.cycle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       )}
       <SafeAreaView className={clsx("flex-1", step !== "welcome" && "bg-background")}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 px-6 py-4">
