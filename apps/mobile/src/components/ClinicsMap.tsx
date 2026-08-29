@@ -36,7 +36,7 @@ export function ClinicsMap({ clinics }: { clinics: Clinic[] }) {
     <WebView
       originWhitelist={["*"]}
       source={{ html: buildHtml(clinics) }}
-      style={{ height: 320, borderRadius: 16, overflow: "hidden" }}
+      style={{ height: 320, borderRadius: 28, overflow: "hidden" }}
     />
   );
 }

@@ -39,7 +39,7 @@ export function ClinicsMap({
   const center: [number, number] = clinics[0] ? [clinics[0].lat, clinics[0].lng] : [41.2995, 69.2401]; // Toshkent
 
   return (
-    <div className="h-80 w-full overflow-hidden rounded-2xl border border-border">
+    <div className="h-80 w-full overflow-hidden rounded-[28px] border border-border">
       <MapContainer center={center} zoom={12} scrollWheelZoom={false} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
