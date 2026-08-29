@@ -5,7 +5,7 @@ import { router } from "expo-router";
 import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, ScreenHeader, StatTile } from "@/components/ui";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react-native";
 import HealthyLifestyleIllustration from "../../../assets/illustrations/healthy-lifestyle.svg";
 
@@ -39,13 +39,41 @@ export default function ChecklistScreen() {
     overdue: dict.checklist.statusOverdue,
   } as const;
 
+  const doneCount = items.filter((i) => i.status === "done").length;
+  const pendingCount = items.filter((i) => i.status === "pending").length;
+  const overdueCount = items.filter((i) => i.status === "overdue").length;
+
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-8">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-32">
         <ScreenHeader title={dict.checklist.title} />
 
         <View className="items-center">
           <HealthyLifestyleIllustration width={170} height={110} />
+        </View>
+
+        <View className="flex-row gap-2.5">
+          <StatTile
+            icon={<CheckCircle2 size={16} color="#FFFFFF" />}
+            label={statusLabel.done}
+            value={String(doneCount)}
+            tone="accent"
+            active
+          />
+          <StatTile
+            icon={<Clock size={16} color="#FFFFFF" />}
+            label={statusLabel.pending}
+            value={String(pendingCount)}
+            tone="secondary"
+            active
+          />
+          <StatTile
+            icon={<AlertCircle size={16} color="#FFFFFF" />}
+            label={statusLabel.overdue}
+            value={String(overdueCount)}
+            tone="primary"
+            active
+          />
         </View>
 
         <Pressable onPress={() => router.push("/xavf-testi")}>
@@ -60,9 +88,14 @@ export default function ChecklistScreen() {
           return (
             <Card key={item.id} className="gap-2">
               <View className="flex-row items-start justify-between gap-3">
-                <View className="flex-1 flex-row items-start gap-2">
-                  <StatusIcon size={18} color={STATUS_ICON_COLOR[item.status]} style={{ marginTop: 2 }} />
-                  <Text className="flex-1 font-semibold text-text-primary">{info.title}</Text>
+                <View className="flex-1 flex-row items-start gap-2.5">
+                  <View
+                    className="h-8 w-8 items-center justify-center rounded-full"
+                    style={{ backgroundColor: `${STATUS_ICON_COLOR[item.status]}1A` }}
+                  >
+                    <StatusIcon size={16} color={STATUS_ICON_COLOR[item.status]} />
+                  </View>
+                  <Text className="flex-1 pt-1 font-semibold text-text-primary">{info.title}</Text>
                 </View>
                 <View className="items-end gap-1">
                   <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>

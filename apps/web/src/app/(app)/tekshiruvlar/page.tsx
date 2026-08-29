@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, ScreenHeader, StatTile } from "@/components/ui";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 const STATUS_ICON = { pending: Clock, done: CheckCircle2, overdue: AlertCircle } as const;
@@ -33,6 +33,10 @@ export default function ChecklistPage() {
     overdue: dict.checklist.statusOverdue,
   } as const;
 
+  const doneCount = items.filter((i) => i.status === "done").length;
+  const pendingCount = items.filter((i) => i.status === "pending").length;
+  const overdueCount = items.filter((i) => i.status === "overdue").length;
+
   return (
     <div className="space-y-4 pb-6">
       <ScreenHeader title={dict.checklist.title} />
@@ -40,6 +44,12 @@ export default function ChecklistPage() {
       <div className="flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
         <img src="/illustrations/healthy-lifestyle.svg" alt="" className="h-32 w-auto" />
+      </div>
+
+      <div className="flex gap-2.5">
+        <StatTile icon={<CheckCircle2 size={16} />} label={statusLabel.done} value={String(doneCount)} tone="accent" active />
+        <StatTile icon={<Clock size={16} />} label={statusLabel.pending} value={String(pendingCount)} tone="secondary" active />
+        <StatTile icon={<AlertCircle size={16} />} label={statusLabel.overdue} value={String(overdueCount)} tone="primary" active />
       </div>
 
       <button onClick={() => router.push("/xavf-testi")} className="block w-full text-left">
@@ -56,9 +66,11 @@ export default function ChecklistPage() {
         return (
           <Card key={item.id} className="space-y-2">
             <div className="flex items-start justify-between gap-3">
-              <p className="flex items-start gap-2 font-semibold text-text-primary">
-                <StatusIcon size={18} className={`mt-0.5 shrink-0 ${STATUS_ICON_COLOR[item.status]}`} />
-                {info.title}
+              <p className="flex items-start gap-2.5 font-semibold text-text-primary">
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-current/10 ${STATUS_ICON_COLOR[item.status]}`}>
+                  <StatusIcon size={16} />
+                </span>
+                <span className="pt-1">{info.title}</span>
               </p>
               <div className="flex flex-col items-end gap-1">
                 <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
