@@ -12,11 +12,12 @@ import type {
   PeriodAttitude,
   Symptom,
 } from "@mammoai/shared";
-import { ADULT_GOALS, MINOR_GOALS, goalToLandingTab, needsCycleInfo, needsHeightWeight } from "@mammoai/shared";
+import { ADULT_GOALS, MINOR_GOALS, goalToLandingTab, needsCycleInfo, needsHeightWeight, cssGradient, colors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar } from "@/components/ui";
+import { Lock } from "lucide-react";
 import clsx from "clsx";
 
 type Step =
@@ -83,6 +84,51 @@ const INITIAL_SURVEY: SurveyState = {
   heightCm: "",
   weightKg: "",
   notificationsEnabled: null,
+};
+
+// Har bir savol bosqichi uchun emoji ikona + rang — "registratsiya juda quruq
+// ko'rinadi" degan fikrdan keyin har bir ekranga bittadan vizual urg'u qo'shish
+// uchun (welcome/analyzing o'zining maxsus ko'rinishiga ega, shu yerda kerak emas).
+const STEP_ICON: Partial<Record<Step, string>> = {
+  language: "🌐",
+  account_choice: "👤",
+  account_identifier: "🔐",
+  privacy: "🛡️",
+  heard_about_us: "💬",
+  name: "✍️",
+  age: "🎂",
+  goal: "🎯",
+  cycle_regularity: "🔄",
+  cycle_lengths: "📏",
+  last_period: "🩸",
+  typical_symptoms: "🤒",
+  period_attitude: "💭",
+  health_conditions: "🩺",
+  family_history: "🧬",
+  last_checkup: "🗓️",
+  height_weight: "⚖️",
+  notifications: "🔔",
+};
+
+const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
+  language: colors.secondary,
+  account_choice: colors.secondary,
+  account_identifier: colors.secondary,
+  privacy: colors.secondary,
+  heard_about_us: colors.secondary,
+  name: colors.secondary,
+  age: colors.secondary,
+  goal: colors.primary,
+  cycle_regularity: colors.primary,
+  cycle_lengths: colors.primary,
+  last_period: colors.primary,
+  typical_symptoms: colors.primary,
+  period_attitude: colors.primary,
+  health_conditions: colors.accent,
+  family_history: colors.accent,
+  last_checkup: colors.accent,
+  height_weight: colors.accent,
+  notifications: colors.primary,
 };
 
 function landingPath(goal: Goal): string {
@@ -274,7 +320,17 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      <div className="flex-1">
+      <div key={step} className="flex-1 animate-fade-in-up">
+        {STEP_ICON[step] && (
+          <div className="mb-5 flex justify-center">
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-full text-3xl shadow-lg"
+              style={{ background: cssGradient(STEP_ICON_COLOR[step]!) }}
+            >
+              {STEP_ICON[step]}
+            </div>
+          </div>
+        )}
         {step === "welcome" && (
           <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
             <div className="animate-hero-badge rounded-full bg-white/15 p-4">
@@ -287,7 +343,7 @@ export default function OnboardingPage() {
 
         {step === "language" && (
           <div className="flex h-full flex-col items-center justify-center gap-4">
-            <h2 className="mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</h2>
+            <h2 className="text-center mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</h2>
             <LangOption label="O'zbekcha" active={language === "uz"} onClick={() => setLanguage("uz")} />
             <LangOption label="Русский" active={language === "ru"} onClick={() => setLanguage("ru")} />
           </div>
@@ -306,22 +362,25 @@ export default function OnboardingPage() {
 
         {step === "account_identifier" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">
+            <h2 className="text-center text-xl font-bold text-text-primary">
               {survey.accountChoice === "login" ? dict.auth.loginIdentifierTitle : dict.auth.createIdentifierTitle}
             </h2>
-            <input
-              value={survey.identifier}
-              onChange={(e) => setSurvey((s) => ({ ...s, identifier: e.target.value }))}
-              placeholder={dict.auth.identifierPlaceholder}
-              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
-            />
+            <div className="relative">
+              <Lock size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input
+                value={survey.identifier}
+                onChange={(e) => setSurvey((s) => ({ ...s, identifier: e.target.value }))}
+                placeholder={dict.auth.identifierPlaceholder}
+                className="tap-target w-full rounded-2xl border border-border bg-surface pl-11 pr-4 text-lg text-text-primary outline-none focus:border-primary"
+              />
+            </div>
             {errorMessage && <p className="text-sm text-danger">{errorMessage}</p>}
           </div>
         )}
 
         {step === "privacy" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">{dict.privacy.title}</h2>
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.privacy.title}</h2>
             <p className="text-sm leading-relaxed text-text-secondary">{dict.privacy.body}</p>
           </div>
         )}
@@ -340,7 +399,7 @@ export default function OnboardingPage() {
 
         {step === "name" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.nameQuestion}</h2>
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.nameQuestion}</h2>
             <input
               value={survey.name}
               onChange={(e) => setSurvey((s) => ({ ...s, name: e.target.value }))}
@@ -352,7 +411,7 @@ export default function OnboardingPage() {
 
         {step === "age" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.ageLabel}</h2>
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.ageLabel}</h2>
             <select
               value={survey.age}
               onChange={(e) => setSurvey((s) => ({ ...s, age: e.target.value }))}
@@ -396,14 +455,14 @@ export default function OnboardingPage() {
 
         {step === "cycle_lengths" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
             <input
               type="number"
               value={survey.averageCycleLength}
               onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
               className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
             />
-            <h2 className="mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
+            <h2 className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
             <input
               type="number"
               value={survey.averagePeriodLength}
@@ -415,7 +474,7 @@ export default function OnboardingPage() {
 
         {step === "last_period" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
             <input
               type="date"
               value={survey.lastPeriodDate}
@@ -427,7 +486,7 @@ export default function OnboardingPage() {
 
         {step === "typical_symptoms" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</h2>
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</h2>
             <div className="grid grid-cols-3 gap-2">
               {SYMPTOM_OPTIONS.map((sym) => (
                 <IconChip
@@ -455,7 +514,7 @@ export default function OnboardingPage() {
 
         {step === "health_conditions" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.healthConditionsQuestion}</h2>
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.healthConditionsQuestion}</h2>
             <div className="grid grid-cols-2 gap-2">
               {HEALTH_CONDITION_OPTIONS.map((cond) => (
                 <IconChip
@@ -503,7 +562,7 @@ export default function OnboardingPage() {
 
         {step === "height_weight" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
             <label className="text-sm font-semibold text-text-secondary">{dict.onboarding.heightLabel}</label>
             <input
               type="number"

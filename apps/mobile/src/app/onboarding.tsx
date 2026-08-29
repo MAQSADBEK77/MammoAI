@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import Animated, { FadeInUp, FadeIn } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { Lock } from "lucide-react-native";
 import clsx from "clsx";
 import type {
   CycleRegularity,
@@ -12,7 +15,7 @@ import type {
   PeriodAttitude,
   Symptom,
 } from "@mammoai/shared";
-import { ADULT_GOALS, MINOR_GOALS, goalToLandingTab, needsCycleInfo, needsHeightWeight } from "@mammoai/shared";
+import { ADULT_GOALS, MINOR_GOALS, goalToLandingTab, needsCycleInfo, needsHeightWeight, gradientStops, colors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -106,6 +109,50 @@ const HEALTH_CONDITION_OPTIONS: HealthCondition[] = [
   "unknown",
   "none",
 ];
+
+// Web versiyasi bilan bir xil (apps/web/src/app/onboarding/page.tsx) — har bir
+// savol bosqichi uchun emoji ikona + rang.
+const STEP_ICON: Partial<Record<Step, string>> = {
+  language: "🌐",
+  account_choice: "👤",
+  account_identifier: "🔐",
+  privacy: "🛡️",
+  heard_about_us: "💬",
+  name: "✍️",
+  age: "🎂",
+  goal: "🎯",
+  cycle_regularity: "🔄",
+  cycle_lengths: "📏",
+  last_period: "🩸",
+  typical_symptoms: "🤒",
+  period_attitude: "💭",
+  health_conditions: "🩺",
+  family_history: "🧬",
+  last_checkup: "🗓️",
+  height_weight: "⚖️",
+  notifications: "🔔",
+};
+
+const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
+  language: colors.secondary,
+  account_choice: colors.secondary,
+  account_identifier: colors.secondary,
+  privacy: colors.secondary,
+  heard_about_us: colors.secondary,
+  name: colors.secondary,
+  age: colors.secondary,
+  goal: colors.primary,
+  cycle_regularity: colors.primary,
+  cycle_lengths: colors.primary,
+  last_period: colors.primary,
+  typical_symptoms: colors.primary,
+  period_attitude: colors.primary,
+  health_conditions: colors.accent,
+  family_history: colors.accent,
+  last_checkup: colors.accent,
+  height_weight: colors.accent,
+  notifications: colors.primary,
+};
 
 function landingPath(goal: Goal): "/(tabs)/tsikl" | "/(tabs)/homiladorlik" | "/(tabs)/tekshiruvlar" {
   const tab = goalToLandingTab(goal);
@@ -258,11 +305,25 @@ export default function OnboardingScreen() {
         )}
 
         <ScrollView className="flex-1" contentContainerClassName="flex-grow justify-center gap-4">
-          {step === "welcome" && <WelcomeHero title={dict.onboarding.welcomeTitle} subtitle={dict.onboarding.welcomeSubtitle} />}
+          {STEP_ICON[step] && (
+            <Animated.View key={`icon-${step}`} entering={FadeIn.duration(350)} className="mb-1 items-center">
+              <LinearGradient
+                colors={gradientStops(STEP_ICON_COLOR[step]!)}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" }}
+              >
+                <Text style={{ fontSize: 30 }}>{STEP_ICON[step]}</Text>
+              </LinearGradient>
+            </Animated.View>
+          )}
+
+          <Animated.View key={`content-${step}`} entering={FadeInUp.duration(400)} className="gap-4">
+            {step === "welcome" && <WelcomeHero title={dict.onboarding.welcomeTitle} subtitle={dict.onboarding.welcomeSubtitle} />}
 
           {step === "language" && (
             <View className="items-center gap-4">
-              <Text className="mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</Text>
+              <Text className="text-center mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</Text>
               <LangOption label="O'zbekcha" active={language === "uz"} onPress={() => setLanguage("uz")} />
               <LangOption label="Русский" active={language === "ru"} onPress={() => setLanguage("ru")} />
             </View>
@@ -281,13 +342,14 @@ export default function OnboardingScreen() {
 
           {step === "account_identifier" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">
+              <Text className="text-center text-xl font-bold text-text-primary">
                 {survey.accountChoice === "login" ? dict.auth.loginIdentifierTitle : dict.auth.createIdentifierTitle}
               </Text>
               <TextField
                 value={survey.identifier}
                 onChangeText={(v) => setSurvey((s) => ({ ...s, identifier: v }))}
                 placeholder={dict.auth.identifierPlaceholder}
+                icon={<Lock size={18} color="#9CA3AF" />}
               />
               {errorMessage && <Text className="text-sm text-danger">{errorMessage}</Text>}
             </View>
@@ -295,7 +357,7 @@ export default function OnboardingScreen() {
 
           {step === "privacy" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">{dict.privacy.title}</Text>
+              <Text className="text-center text-xl font-bold text-text-primary">{dict.privacy.title}</Text>
               <Text className="leading-relaxed text-text-secondary">{dict.privacy.body}</Text>
             </View>
           )}
@@ -314,14 +376,14 @@ export default function OnboardingScreen() {
 
           {step === "name" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">{dict.onboarding.nameQuestion}</Text>
+              <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.nameQuestion}</Text>
               <TextField value={survey.name} onChangeText={(v) => setSurvey((s) => ({ ...s, name: v }))} placeholder={dict.onboarding.namePlaceholder} />
             </View>
           )}
 
           {step === "age" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">{dict.onboarding.ageLabel}</Text>
+              <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.ageLabel}</Text>
               <TextField value={survey.age} onChangeText={(v) => setSurvey((s) => ({ ...s, age: v }))} keyboardType="numeric" placeholder="30" />
             </View>
           )}
@@ -352,23 +414,23 @@ export default function OnboardingScreen() {
 
           {step === "cycle_lengths" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</Text>
+              <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</Text>
               <TextField value={survey.averageCycleLength} onChangeText={(v) => setSurvey((s) => ({ ...s, averageCycleLength: v }))} keyboardType="numeric" />
-              <Text className="mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</Text>
+              <Text className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</Text>
               <TextField value={survey.averagePeriodLength} onChangeText={(v) => setSurvey((s) => ({ ...s, averagePeriodLength: v }))} keyboardType="numeric" />
             </View>
           )}
 
           {step === "last_period" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</Text>
+              <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</Text>
               <TextField value={survey.lastPeriodDate} onChangeText={(v) => setSurvey((s) => ({ ...s, lastPeriodDate: v }))} placeholder="YYYY-MM-DD" />
             </View>
           )}
 
           {step === "typical_symptoms" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</Text>
+              <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</Text>
               <View className="flex-row flex-wrap gap-2">
                 {SYMPTOM_OPTIONS.map((sym) => (
                   <IconChip
@@ -396,7 +458,7 @@ export default function OnboardingScreen() {
 
           {step === "health_conditions" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">{dict.onboarding.healthConditionsQuestion}</Text>
+              <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.healthConditionsQuestion}</Text>
               <View className="flex-row flex-wrap gap-2">
                 {HEALTH_CONDITION_OPTIONS.map((cond) => (
                   <IconChip
@@ -443,7 +505,7 @@ export default function OnboardingScreen() {
 
           {step === "height_weight" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</Text>
+              <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</Text>
               <Text className="text-sm font-semibold text-text-secondary">{dict.onboarding.heightLabel}</Text>
               <TextField value={survey.heightCm} onChangeText={(v) => setSurvey((s) => ({ ...s, heightCm: v }))} keyboardType="numeric" />
               <Text className="text-sm font-semibold text-text-secondary">{dict.onboarding.weightLabel}</Text>
@@ -469,6 +531,7 @@ export default function OnboardingScreen() {
               <Text className="text-center text-text-secondary">{dict.onboarding.analyzingSubtitle}</Text>
             </View>
           )}
+          </Animated.View>
         </ScrollView>
 
         {step === "welcome" ? (
@@ -530,7 +593,7 @@ function ChoiceStep({
           key={opt.value}
           onPress={opt.onPress}
           className={clsx(
-            "min-h-[48px] w-full justify-center rounded-2xl border-2 px-5 py-4",
+            "min-h-[48px] w-full justify-center rounded-2xl border-2 px-5 py-4 active:scale-[0.98]",
             selected === opt.value ? "border-primary bg-primary-light" : "border-border bg-surface"
           )}
         >
