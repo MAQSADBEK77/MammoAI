@@ -30,6 +30,10 @@ export default function PregnancyPage() {
     return (
       <div className="space-y-4">
         <ScreenHeader title={dict.pregnancy.title} />
+        <div className="flex justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
+          <img src="/illustrations/expecting.svg" alt="" className="h-40 w-auto" />
+        </div>
         <Card className="space-y-3">
           <p className="text-sm text-text-secondary">{dict.onboarding.lastCheckupQuestion}</p>
           <input

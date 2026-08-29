@@ -110,6 +110,21 @@ const STEP_ICON: Partial<Record<Step, string>> = {
   notifications: "🔔",
 };
 
+// Har bir bosqich uchun to'liq illyustratsiya (unDraw, litsenziyasiz-erkin, tijorat
+// uchun ochiq — https://undraw.co) — mavjud bo'lsa, kichik emoji doira o'rniga shu
+// ko'rsatiladi. Haqiqiy odam fotosurati emas (roziliksiz/litsenziyasiz muammo
+// bo'lardi), lekin "quruq matn" o'rniga chizilgan sifatli vizual taassurot beradi.
+const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
+  account_identifier: "secure-login",
+  goal: "goal",
+  cycle_lengths: "calendar",
+  last_period: "calendar",
+  health_conditions: "medicine",
+  last_checkup: "doctor",
+  notifications: "notifications",
+  period_attitude: "meditation",
+};
+
 const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   language: colors.secondary,
   account_choice: colors.secondary,
@@ -321,15 +336,22 @@ export default function OnboardingPage() {
       )}
 
       <div key={step} className="flex-1 animate-fade-in-up">
-        {STEP_ICON[step] && (
-          <div className="mb-5 flex justify-center">
-            <div
-              className="flex h-16 w-16 items-center justify-center rounded-full text-3xl shadow-lg"
-              style={{ background: cssGradient(STEP_ICON_COLOR[step]!) }}
-            >
-              {STEP_ICON[step]}
-            </div>
+        {STEP_ILLUSTRATION[step] ? (
+          <div className="mb-4 flex justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
+            <img src={`/illustrations/${STEP_ILLUSTRATION[step]}.svg`} alt="" className="h-36 w-auto" />
           </div>
+        ) : (
+          STEP_ICON[step] && (
+            <div className="mb-5 flex justify-center">
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-full text-3xl shadow-lg"
+                style={{ background: cssGradient(STEP_ICON_COLOR[step]!) }}
+              >
+                {STEP_ICON[step]}
+              </div>
+            </div>
+          )
         )}
         {step === "welcome" && (
           <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
@@ -338,6 +360,10 @@ export default function OnboardingPage() {
             </div>
             <h1 className="animate-hero-title text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</h1>
             <p className="animate-hero-subtitle max-w-xs text-white/85">{dict.onboarding.welcomeSubtitle}</p>
+            <div className="animate-fade-in-up rounded-[32px] bg-white/15 p-4" style={{ animationDelay: "0.5s" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
+              <img src="/illustrations/welcome.svg" alt="" className="h-32 w-auto" />
+            </div>
           </div>
         )}
 
@@ -593,7 +619,8 @@ export default function OnboardingPage() {
 
         {step === "analyzing" && (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center animate-fade-in-up">
-            <div className="h-14 w-14 animate-pulse rounded-full bg-primary-light" />
+            {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
+            <img src="/illustrations/well-done.svg" alt="" className="h-40 w-auto animate-pulse" />
             <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.analyzingTitle}</h2>
             <p className="text-text-secondary">{dict.onboarding.analyzingSubtitle}</p>
           </div>

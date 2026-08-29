@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react-native";
+import HealthyLifestyleIllustration from "../../../assets/illustrations/healthy-lifestyle.svg";
 
 const STATUS_ICON = { pending: Clock, done: CheckCircle2, overdue: AlertCircle } as const;
 const STATUS_ICON_COLOR = { pending: "#9CA3AF", done: "#57B894", overdue: "#E0506F" } as const;
@@ -42,6 +43,10 @@ export default function ChecklistScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-8">
         <ScreenHeader title={dict.checklist.title} />
+
+        <View className="items-center">
+          <HealthyLifestyleIllustration width={170} height={110} />
+        </View>
 
         <Pressable onPress={() => router.push("/xavf-testi")}>
           <Card>

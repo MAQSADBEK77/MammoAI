@@ -9,6 +9,7 @@ import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, Card, ProgressBar, ScreenHeader, TextField } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
+import ExpectingIllustration from "../../../assets/illustrations/expecting.svg";
 
 export default function PregnancyScreen() {
   const { dict } = useI18n();
@@ -37,6 +38,9 @@ export default function PregnancyScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background px-4">
         <ScreenHeader title={dict.pregnancy.title} />
+        <View className="items-center py-2">
+          <ExpectingIllustration width={200} height={160} />
+        </View>
         <Card className="gap-3">
           <Text className="text-sm text-text-secondary">{dict.onboarding.lastCheckupQuestion}</Text>
           <TextField value={lmpInput} onChangeText={setLmpInput} placeholder="YYYY-MM-DD" />

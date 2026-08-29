@@ -21,6 +21,19 @@ import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar, TextField } from "@/components/ui";
 import { WelcomeHero } from "@/components/WelcomeHero";
+// unDraw illyustratsiyalari (litsenziyasiz-erkin, tijorat uchun ochiq) — web versiyasi
+// bilan bir xil fayllar (apps/web/public/illustrations/), lekin bu yerda
+// react-native-svg-transformer orqali to'g'ridan-to'g'ri komponent sifatida import
+// qilinadi (Metro statik import talab qiladi, shuning uchun dinamik require yo'q).
+import WelcomeIllustration from "../../assets/illustrations/welcome.svg";
+import SecureLoginIllustration from "../../assets/illustrations/secure-login.svg";
+import GoalIllustration from "../../assets/illustrations/goal.svg";
+import CalendarIllustration from "../../assets/illustrations/calendar.svg";
+import MedicineIllustration from "../../assets/illustrations/medicine.svg";
+import DoctorIllustration from "../../assets/illustrations/doctor.svg";
+import NotificationsIllustration from "../../assets/illustrations/notifications.svg";
+import MeditationIllustration from "../../assets/illustrations/meditation.svg";
+import WellDoneIllustration from "../../assets/illustrations/well-done.svg";
 
 type Step =
   | "welcome"
@@ -131,6 +144,19 @@ const STEP_ICON: Partial<Record<Step, string>> = {
   last_checkup: "🗓️",
   height_weight: "⚖️",
   notifications: "🔔",
+};
+
+// Web versiyasi bilan bir xil (apps/web/src/app/onboarding/page.tsx) — mavjud bo'lsa,
+// kichik emoji doira o'rniga to'liq illyustratsiya ko'rsatiladi.
+const STEP_ILLUSTRATION: Partial<Record<Step, React.ComponentType<{ width?: number; height?: number }>>> = {
+  account_identifier: SecureLoginIllustration,
+  goal: GoalIllustration,
+  cycle_lengths: CalendarIllustration,
+  last_period: CalendarIllustration,
+  health_conditions: MedicineIllustration,
+  last_checkup: DoctorIllustration,
+  notifications: NotificationsIllustration,
+  period_attitude: MeditationIllustration,
 };
 
 const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
@@ -305,21 +331,37 @@ export default function OnboardingScreen() {
         )}
 
         <ScrollView className="flex-1" contentContainerClassName="flex-grow justify-center gap-4">
-          {STEP_ICON[step] && (
-            <Animated.View key={`icon-${step}`} entering={FadeIn.duration(350)} className="mb-1 items-center">
-              <LinearGradient
-                colors={gradientStops(STEP_ICON_COLOR[step]!)}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{ width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" }}
-              >
-                <Text style={{ fontSize: 30 }}>{STEP_ICON[step]}</Text>
-              </LinearGradient>
+          {STEP_ILLUSTRATION[step] ? (
+            <Animated.View key={`illustration-${step}`} entering={FadeIn.duration(350)} className="mb-1 items-center">
+              {(() => {
+                const Illustration = STEP_ILLUSTRATION[step]!;
+                return <Illustration width={180} height={130} />;
+              })()}
             </Animated.View>
+          ) : (
+            STEP_ICON[step] && (
+              <Animated.View key={`icon-${step}`} entering={FadeIn.duration(350)} className="mb-1 items-center">
+                <LinearGradient
+                  colors={gradientStops(STEP_ICON_COLOR[step]!)}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{ width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" }}
+                >
+                  <Text style={{ fontSize: 30 }}>{STEP_ICON[step]}</Text>
+                </LinearGradient>
+              </Animated.View>
+            )
           )}
 
           <Animated.View key={`content-${step}`} entering={FadeInUp.duration(400)} className="gap-4">
-            {step === "welcome" && <WelcomeHero title={dict.onboarding.welcomeTitle} subtitle={dict.onboarding.welcomeSubtitle} />}
+            {step === "welcome" && (
+              <View className="items-center gap-6">
+                <WelcomeHero title={dict.onboarding.welcomeTitle} subtitle={dict.onboarding.welcomeSubtitle} />
+                <Animated.View entering={FadeIn.duration(500).delay(500)} className="rounded-[32px] bg-white/15 p-4">
+                  <WelcomeIllustration width={160} height={115} />
+                </Animated.View>
+              </View>
+            )}
 
           {step === "language" && (
             <View className="items-center gap-4">
@@ -526,7 +568,7 @@ export default function OnboardingScreen() {
 
           {step === "analyzing" && (
             <View className="items-center gap-4">
-              <View className="h-14 w-14 rounded-full bg-primary-light" />
+              <WellDoneIllustration width={180} height={130} />
               <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.analyzingTitle}</Text>
               <Text className="text-center text-text-secondary">{dict.onboarding.analyzingSubtitle}</Text>
             </View>

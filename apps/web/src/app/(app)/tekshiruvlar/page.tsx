@@ -37,6 +37,11 @@ export default function ChecklistPage() {
     <div className="space-y-4 pb-6">
       <ScreenHeader title={dict.checklist.title} />
 
+      <div className="flex justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
+        <img src="/illustrations/healthy-lifestyle.svg" alt="" className="h-32 w-auto" />
+      </div>
+
       <button onClick={() => router.push("/xavf-testi")} className="block w-full text-left">
         <Card>
           <p className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</p>
