@@ -188,20 +188,15 @@ export default function ProfilePage() {
         </SettingsRow>
       </Card>
 
-      <Card className="bg-secondary-light/40">
+      <div className="bg-aurora-pregnancy rounded-[28px] p-5">
         <div className="flex items-center gap-3">
-          <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xl shadow-sm"
-            style={{ background: cssGradient(colors.secondary) }}
-          >
-            ✨
-          </div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-xl">✨</div>
           <div>
-            <p className="font-semibold text-text-primary">{dict.profile.premiumTitle}</p>
-            <p className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</p>
+            <p className="font-semibold text-white">{dict.profile.premiumTitle}</p>
+            <p className="mt-1 text-sm text-white/80">{dict.profile.premiumSubtitle}</p>
           </div>
         </div>
-      </Card>
+      </div>
 
       <Card className="space-y-1">
         <button className="w-full text-left" onClick={() => flash(dict.profile.rateAppComingSoon)}>

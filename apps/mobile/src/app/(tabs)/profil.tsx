@@ -7,7 +7,7 @@ import * as Sharing from "expo-sharing";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
 import type { Language } from "@mammoai/shared";
-import { goalToLandingTab, gradientStops, colors } from "@mammoai/shared";
+import { goalToLandingTab, gradientStops, colors, gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -48,7 +48,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
         <View className="flex-row items-center justify-between">
           <ScreenHeader title={dict.profile.title} />
           {modeIcon && onboardingProfile && (
@@ -142,22 +142,22 @@ export default function ProfileScreen() {
           </SettingsRow>
         </Card>
 
-        <Card className="bg-secondary-light/40">
+        <LinearGradient
+          colors={gradients.pregnancy}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ borderRadius: 28, padding: 20 }}
+        >
           <View className="flex-row items-center gap-3">
-            <LinearGradient
-              colors={gradientStops(colors.secondary)}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" }}
-            >
-              <Text style={{ fontSize: 20 }}>✨</Text>
-            </LinearGradient>
+            <View className="h-12 w-12 items-center justify-center rounded-full bg-white/20">
+              <Text style={{ fontSize: 22 }}>✨</Text>
+            </View>
             <View className="flex-1">
-              <Text className="font-semibold text-text-primary">{dict.profile.premiumTitle}</Text>
-              <Text className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</Text>
+              <Text className="font-semibold text-white">{dict.profile.premiumTitle}</Text>
+              <Text className="mt-1 text-sm text-white/80">{dict.profile.premiumSubtitle}</Text>
             </View>
           </View>
-        </Card>
+        </LinearGradient>
 
         <Card className="gap-1">
           <Pressable onPress={() => Alert.alert(dict.profile.rateAppButton, dict.profile.rateAppComingSoon)}>
