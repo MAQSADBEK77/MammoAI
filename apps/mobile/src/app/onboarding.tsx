@@ -17,6 +17,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar, TextField } from "@/components/ui";
+import { WelcomeHero } from "@/components/WelcomeHero";
 
 type Step =
   | "welcome"
@@ -257,15 +258,7 @@ export default function OnboardingScreen() {
         )}
 
         <ScrollView className="flex-1" contentContainerClassName="flex-grow justify-center gap-4">
-          {step === "welcome" && (
-            <View className="items-center gap-6">
-              <View className="h-20 w-20 items-center justify-center rounded-full bg-white/15">
-                <Text className="text-3xl">🎗️</Text>
-              </View>
-              <Text className="text-center text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</Text>
-              <Text className="max-w-xs text-center text-white/85">{dict.onboarding.welcomeSubtitle}</Text>
-            </View>
-          )}
+          {step === "welcome" && <WelcomeHero title={dict.onboarding.welcomeTitle} subtitle={dict.onboarding.welcomeSubtitle} />}
 
           {step === "language" && (
             <View className="items-center gap-4">
@@ -288,7 +281,9 @@ export default function OnboardingScreen() {
 
           {step === "account_identifier" && (
             <View className="gap-4">
-              <Text className="text-xl font-bold text-text-primary">{dict.auth.identifierLabel}</Text>
+              <Text className="text-xl font-bold text-text-primary">
+                {survey.accountChoice === "login" ? dict.auth.loginIdentifierTitle : dict.auth.createIdentifierTitle}
+              </Text>
               <TextField
                 value={survey.identifier}
                 onChangeText={(v) => setSurvey((s) => ({ ...s, identifier: v }))}

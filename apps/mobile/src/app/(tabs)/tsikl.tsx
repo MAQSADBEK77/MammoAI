@@ -106,21 +106,21 @@ export default function CycleScreen() {
           </Card>
         )}
 
-        {dayInCycle && data.prediction && (
-          <Card>
+        <Card>
+          <Pressable onPress={() => !dayInCycle && setLogging(true)}>
             <CycleRing
-              dayInCycle={dayInCycle}
+              dayInCycle={dayInCycle ?? 1}
               cycleLength={data.settings.averageCycleLength}
               label={dict.cycle.title}
-              sublabel={dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)}
+              sublabel={data.prediction ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod) : dict.cycle.ringEmptyLabel}
             />
-            {periodDay && (
-              <View className="mt-4 items-center">
-                <Badge tone="primary">{`${isMinor ? "🐰 " : ""}${dict.cycle.periodDayBadge(periodDay)}`}</Badge>
-              </View>
-            )}
-          </Card>
-        )}
+          </Pressable>
+          {periodDay && (
+            <View className="mt-4 items-center">
+              <Badge tone="primary">{`${isMinor ? "🐰 " : ""}${dict.cycle.periodDayBadge(periodDay)}`}</Badge>
+            </View>
+          )}
+        </Card>
 
         <Card>
           <MonthCalendar monthDate={new Date()} markers={markers} today={today} />

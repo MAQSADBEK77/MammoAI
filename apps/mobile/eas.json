@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://total-moves-fri-pine.trycloudflare.com"
+        "EXPO_PUBLIC_API_URL": "https://smtp-sporting-property-placing.trycloudflare.com"
       }
     },
     "production": {

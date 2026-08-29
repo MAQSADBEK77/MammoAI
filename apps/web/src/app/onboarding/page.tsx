@@ -276,12 +276,12 @@ export default function OnboardingPage() {
 
       <div className="flex-1">
         {step === "welcome" && (
-          <div className="flex h-full flex-col items-center justify-center gap-6 text-center animate-fade-in-up">
-            <div className="rounded-full bg-white/15 p-4">
+          <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
+            <div className="animate-hero-badge rounded-full bg-white/15 p-4">
               <Image src="/logo.svg" alt="Logo" width={180} height={101} priority />
             </div>
-            <h1 className="text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</h1>
-            <p className="max-w-xs text-white/85">{dict.onboarding.welcomeSubtitle}</p>
+            <h1 className="animate-hero-title text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</h1>
+            <p className="animate-hero-subtitle max-w-xs text-white/85">{dict.onboarding.welcomeSubtitle}</p>
           </div>
         )}
 
@@ -306,7 +306,9 @@ export default function OnboardingPage() {
 
         {step === "account_identifier" && (
           <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-xl font-bold text-text-primary">{dict.auth.identifierLabel}</h2>
+            <h2 className="text-xl font-bold text-text-primary">
+              {survey.accountChoice === "login" ? dict.auth.loginIdentifierTitle : dict.auth.createIdentifierTitle}
+            </h2>
             <input
               value={survey.identifier}
               onChange={(e) => setSurvey((s) => ({ ...s, identifier: e.target.value }))}

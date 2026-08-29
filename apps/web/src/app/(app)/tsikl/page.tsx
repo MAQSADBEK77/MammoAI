@@ -106,24 +106,24 @@ export default function CyclePage() {
         </Card>
       )}
 
-      {dayInCycle && data.prediction && (
-        <Card>
+      <Card>
+        <button onClick={() => !dayInCycle && setLogging(true)} className="w-full">
           <CycleRing
-            dayInCycle={dayInCycle}
+            dayInCycle={dayInCycle ?? 1}
             cycleLength={data.settings.averageCycleLength}
             label={dict.cycle.title}
-            sublabel={dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)}
+            sublabel={data.prediction ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod) : dict.cycle.ringEmptyLabel}
           />
-          {periodDay && (
-            <div className="mt-4 flex justify-center">
-              <Badge tone="primary">
-                {isMinor ? "🐰 " : ""}
-                {dict.cycle.periodDayBadge(periodDay)}
-              </Badge>
-            </div>
-          )}
-        </Card>
-      )}
+        </button>
+        {periodDay && (
+          <div className="mt-4 flex justify-center">
+            <Badge tone="primary">
+              {isMinor ? "🐰 " : ""}
+              {dict.cycle.periodDayBadge(periodDay)}
+            </Badge>
+          </div>
+        )}
+      </Card>
 
       <Card>
         <MonthCalendar monthDate={new Date()} markers={markers} today={today} />
