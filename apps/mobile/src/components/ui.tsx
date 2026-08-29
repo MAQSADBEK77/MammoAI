@@ -20,7 +20,7 @@ export function Button({
   return (
     <Pressable
       disabled={disabled}
-      className={clsx("min-h-[48px] flex-row items-center justify-center gap-2 rounded-2xl px-5", v.bg, disabled && "opacity-50", className)}
+      className={clsx("min-h-[48px] flex-row items-center justify-center gap-2 rounded-full px-6", v.bg, disabled && "opacity-50", className)}
       {...props}
     >
       {typeof children === "string" ? (
@@ -32,9 +32,13 @@ export function Button({
   );
 }
 
-export function Card({ className, children, ...props }: ViewProps & { className?: string }) {
+export function Card({ className, children, style, ...props }: ViewProps & { className?: string }) {
   return (
-    <View className={clsx("rounded-2xl border border-border bg-surface p-5", className)} {...props}>
+    <View
+      className={clsx("rounded-3xl bg-surface p-5", className)}
+      style={[{ shadowColor: "#241B26", shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, style]}
+      {...props}
+    >
       {children}
     </View>
   );
@@ -87,15 +91,10 @@ export function IconChip({
   return (
     <Pressable
       onPress={onPress}
-      className={clsx(
-        "min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-2xl border px-3 py-3",
-        active ? "border-primary bg-primary-light" : "border-border bg-surface"
-      )}
+      className={clsx("min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 py-3", active ? "bg-primary" : "bg-surface-muted")}
     >
       {icon && <Text className="text-xl leading-none">{icon}</Text>}
-      <Text className={clsx("text-center text-xs font-medium leading-tight", active ? "text-primary-dark" : "text-text-secondary")}>
-        {label}
-      </Text>
+      <Text className={clsx("text-center text-xs font-medium leading-tight", active ? "text-white" : "text-text-secondary")}>{label}</Text>
     </Pressable>
   );
 }
@@ -118,7 +117,7 @@ export function TextField({
       placeholder={placeholder}
       keyboardType={keyboardType}
       className="min-h-[48px] rounded-2xl border border-border bg-surface px-4 text-base text-text-primary"
-      placeholderTextColor="#9C8A92"
+      placeholderTextColor="#A79EA9"
     />
   );
 }

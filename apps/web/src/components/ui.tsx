@@ -7,8 +7,8 @@ type ButtonVariant = "primary" | "secondary" | "ghost";
 
 function buttonClasses(variant: ButtonVariant, className?: string) {
   return clsx(
-    "tap-target inline-flex items-center justify-center gap-2 rounded-2xl px-5 font-semibold transition active:scale-[0.98] disabled:opacity-50",
-    variant === "primary" && "bg-primary text-white shadow-sm hover:bg-primary-dark",
+    "tap-target inline-flex items-center justify-center gap-2 rounded-full px-6 font-semibold transition active:scale-[0.98] disabled:opacity-50",
+    variant === "primary" && "bg-primary text-white shadow-md shadow-primary/25 hover:bg-primary-dark",
     variant === "secondary" && "bg-secondary-light text-text-primary hover:brightness-95",
     variant === "ghost" && "bg-transparent text-text-secondary hover:bg-surface-muted",
     className
@@ -44,7 +44,7 @@ export function LinkButton({
 
 export function Card({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={clsx("rounded-2xl border border-border bg-surface p-5 shadow-sm", className)} {...props}>
+    <div className={clsx("rounded-3xl bg-surface p-5 shadow-md shadow-text-primary/5", className)} {...props}>
       {children}
     </div>
   );
@@ -107,10 +107,8 @@ export function IconChip({
       type="button"
       onClick={onClick}
       className={clsx(
-        "tap-target flex flex-col items-center gap-1.5 rounded-2xl border px-3 py-3 text-xs font-medium transition",
-        active
-          ? "border-primary bg-primary-light text-primary-dark"
-          : "border-border bg-surface text-text-secondary hover:border-primary-light"
+        "tap-target flex flex-col items-center gap-1.5 rounded-2xl px-3 py-3 text-xs font-medium transition",
+        active ? "bg-primary text-white shadow-md shadow-primary/25" : "bg-surface-muted text-text-secondary hover:bg-primary-light/40"
       )}
     >
       {icon && <span className="text-xl leading-none">{icon}</span>}

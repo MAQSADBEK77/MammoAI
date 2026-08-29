@@ -5,26 +5,26 @@
  * bir xil ushlab turiladi (mobil ilova xuddi shu qiymatlarni JS orqali oladi).
  */
 @theme {
-  --color-primary: #f48998;
-  --color-primary-dark: #e06b7c;
-  --color-primary-light: #fbc4cc;
-  --color-secondary: #b98bd6;
-  --color-secondary-light: #e4d3f2;
-  --color-accent: #8fb6e0;
-  --color-accent-light: #d9e8f7;
+  --color-primary: #ee3f73;
+  --color-primary-dark: #c82f5c;
+  --color-primary-light: #fcd9e3;
+  --color-secondary: #8b6fd1;
+  --color-secondary-light: #e6dff7;
+  --color-accent: #5fb6c4;
+  --color-accent-light: #dcf1f3;
 
-  --color-background: #fffaf1;
+  --color-background: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-muted: #fbf3e9;
+  --color-surface-muted: #f7f5f6;
 
-  --color-text-primary: #2b2027;
-  --color-text-secondary: #6b5a62;
-  --color-text-muted: #9c8a92;
-  --color-border: #efe1e6;
+  --color-text-primary: #241b26;
+  --color-text-secondary: #6e6470;
+  --color-text-muted: #a79ea9;
+  --color-border: #f0ebee;
 
-  --color-success: #6fae8a;
-  --color-warning: #e0a458;
-  --color-danger: #d9707a;
+  --color-success: #57b894;
+  --color-warning: #e7a83f;
+  --color-danger: #e0506f;
 
   --font-sans: var(--font-body), system-ui, sans-serif;
 }
@@ -42,7 +42,7 @@
   --color-text-primary: #000000;
   --color-text-secondary: #1a1a1a;
   --color-border: #000000;
-  --color-primary: #c43e52;
+  --color-primary: #b01446;
 }
 
 html {

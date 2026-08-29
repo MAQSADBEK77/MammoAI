@@ -83,7 +83,7 @@ export default function ClinicsScreen() {
                       Linking.openURL(`tel:${clinic.phone}`);
                     }}
                   >
-                    <Phone size={16} color="#2B2027" />
+                    <Phone size={16} color="#241B26" />
                     <Text className="text-sm font-semibold text-text-primary">{dict.clinics.callButton}</Text>
                   </Button>
                 </View>
@@ -95,7 +95,7 @@ export default function ClinicsScreen() {
                       Linking.openURL(`https://www.openstreetmap.org/directions?to=${clinic.lat}%2C${clinic.lng}`);
                     }}
                   >
-                    <NavigationIcon size={16} color="#6B5A62" />
+                    <NavigationIcon size={16} color="#6E6470" />
                     <Text className="text-sm font-semibold text-text-secondary">{dict.clinics.directionsButton}</Text>
                   </Button>
                 </View>
@@ -117,7 +117,7 @@ function ViewToggle({ active, Icon, label, onPress }: { active: boolean; Icon: t
         active ? "border-primary bg-primary-light" : "border-border bg-surface"
       )}
     >
-      <Icon size={16} color={active ? "#E06B7C" : "#6B5A62"} />
+      <Icon size={16} color={active ? "#C82F5C" : "#6E6470"} />
       <Text className={clsx("text-sm font-semibold", active ? "text-primary-dark" : "text-text-secondary")}>{label}</Text>
     </Pressable>
   );

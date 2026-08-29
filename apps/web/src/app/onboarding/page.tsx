@@ -262,7 +262,12 @@ export default function OnboardingPage() {
   const goalOptions = isMinor ? MINOR_GOALS : ADULT_GOALS;
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-between bg-background px-6 py-8">
+    <div
+      className={clsx(
+        "mx-auto flex min-h-dvh max-w-md flex-col justify-between px-6 py-8",
+        step === "welcome" ? "bg-primary" : "bg-background"
+      )}
+    >
       {step !== "welcome" && step !== "analyzing" && (
         <div className="mb-6">
           <ProgressBar value={(stepIndex / (steps.length - 1)) * 100} />
@@ -272,9 +277,11 @@ export default function OnboardingPage() {
       <div className="flex-1">
         {step === "welcome" && (
           <div className="flex h-full flex-col items-center justify-center gap-6 text-center animate-fade-in-up">
-            <Image src="/logo.svg" alt="Logo" width={200} height={112} priority />
-            <h1 className="text-3xl font-extrabold text-text-primary">{dict.onboarding.welcomeTitle}</h1>
-            <p className="max-w-xs text-text-secondary">{dict.onboarding.welcomeSubtitle}</p>
+            <div className="rounded-full bg-white/15 p-4">
+              <Image src="/logo.svg" alt="Logo" width={180} height={101} priority />
+            </div>
+            <h1 className="text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</h1>
+            <p className="max-w-xs text-white/85">{dict.onboarding.welcomeSubtitle}</p>
           </div>
         )}
 
@@ -557,7 +564,7 @@ export default function OnboardingPage() {
 
       {step === "welcome" && (
         <div className="mt-8">
-          <Button className="w-full" onClick={goNext}>
+          <Button className="w-full !bg-white !text-primary-dark shadow-lg" onClick={goNext}>
             {dict.onboarding.startButton}
           </Button>
         </div>

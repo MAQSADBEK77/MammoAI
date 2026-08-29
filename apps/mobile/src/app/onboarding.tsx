@@ -248,7 +248,7 @@ export default function OnboardingScreen() {
   const goalOptions = isMinor ? MINOR_GOALS : ADULT_GOALS;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className={clsx("flex-1", step === "welcome" ? "bg-primary" : "bg-background")}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 px-6 py-4">
         {step !== "welcome" && step !== "analyzing" && (
           <View className="mb-6">
@@ -259,11 +259,11 @@ export default function OnboardingScreen() {
         <ScrollView className="flex-1" contentContainerClassName="flex-grow justify-center gap-4">
           {step === "welcome" && (
             <View className="items-center gap-6">
-              <View className="h-20 w-20 items-center justify-center rounded-full bg-primary">
+              <View className="h-20 w-20 items-center justify-center rounded-full bg-white/15">
                 <Text className="text-3xl">🎗️</Text>
               </View>
-              <Text className="text-center text-3xl font-extrabold text-text-primary">{dict.onboarding.welcomeTitle}</Text>
-              <Text className="max-w-xs text-center text-text-secondary">{dict.onboarding.welcomeSubtitle}</Text>
+              <Text className="text-center text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</Text>
+              <Text className="max-w-xs text-center text-white/85">{dict.onboarding.welcomeSubtitle}</Text>
             </View>
           )}
 
@@ -477,7 +477,9 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         {step === "welcome" ? (
-          <Button onPress={goNext}>{dict.onboarding.startButton}</Button>
+          <Button onPress={goNext} className="!bg-white shadow-lg">
+            <Text className="text-base font-semibold text-primary-dark">{dict.onboarding.startButton}</Text>
+          </Button>
         ) : step !== "analyzing" ? (
           <View className="mt-4 flex-row items-center gap-3">
             {stepIndex > 0 && (

@@ -1,29 +1,30 @@
-// Dizayn tokenlari — logo ranglaridan (pushti #F48998, iliq oq #FFFAF1) kelib chiqib,
-// texnik hujjatda tasvirlangan "yumshoq pushti/binafsha/ko'k, iliq va ishonchli" yo'nalish.
-// Web (Tailwind CSS o'zgaruvchilari) va mobil (NativeWind/JS tema) ikkalasi ham shundan
-// o'qiydi — shu orqali ikki ilova bir xil dizaynda bo'ladi.
+// Dizayn tokenlari — Dribbble "Lunari — Period Tracker App UI Kit" uslubiga
+// moslashtirilgan (foydalanuvchi skrinshotlar orqali ulashgan namuna): jasur/
+// to'yingan pushti, oq fon, to'liq aylana ("pill") tugmalar, yumshoq soyali kartalar.
+// Web (Tailwind CSS o'zgaruvchilari) va mobil (NativeWind/JS tema) ikkalasi ham
+// shundan o'qiydi — shu orqali ikki ilova bir xil dizaynda bo'ladi.
 
 export const colors = {
-  primary: "#F48998", // brend pushtisi (logo)
-  primaryDark: "#E06B7C",
-  primaryLight: "#FBC4CC",
-  secondary: "#B98BD6", // yumshoq binafsha
-  secondaryLight: "#E4D3F2",
-  accent: "#8FB6E0", // yumshoq ko'k (homiladorlik bo'limi uchun)
-  accentLight: "#D9E8F7",
+  primary: "#EE3F73", // Lunari uslubidagi jasur pushti-qizil
+  primaryDark: "#C82F5C",
+  primaryLight: "#FCD9E3",
+  secondary: "#8B6FD1", // binafsha (accent variatsiyasi uchun)
+  secondaryLight: "#E6DFF7",
+  accent: "#5FB6C4", // moviy-yashil (unumdor oyna, homiladorlik uchun)
+  accentLight: "#DCF1F3",
 
-  background: "#FFFAF1", // logo foni — iliq oq
+  background: "#FFFFFF", // Lunari — asosiy ekranlarda oq fon
   surface: "#FFFFFF",
-  surfaceMuted: "#FBF3E9",
+  surfaceMuted: "#F7F5F6",
 
-  textPrimary: "#2B2027",
-  textSecondary: "#6B5A62",
-  textMuted: "#9C8A92",
-  border: "#EFE1E6",
+  textPrimary: "#241B26",
+  textSecondary: "#6E6470",
+  textMuted: "#A79EA9",
+  border: "#F0EBEE",
 
-  success: "#6FAE8A",
-  warning: "#E0A458",
-  danger: "#D9707A",
+  success: "#57B894",
+  warning: "#E7A83F",
+  danger: "#E0506F",
 
   // Yuqori kontrast rejimi (Profil sozlamasi — funksional bo'lmagan talab: default
   // yuqori kontrast, kattalashtirish imkoniyati)
@@ -32,7 +33,7 @@ export const colors = {
     textPrimary: "#000000",
     textSecondary: "#1A1A1A",
     border: "#000000",
-    primary: "#C43E52",
+    primary: "#B01446",
   },
 } as const;
 
@@ -41,10 +42,11 @@ export const fontScale = {
   large: { body: 19, small: 16, h1: 32, h2: 26, h3: 21, button: 20 },
 } as const;
 
+// Lunari uslubi: tugmalar to'liq aylana ("pill"), kartalar kattaroq radiusda.
 export const radii = {
-  sm: 8,
-  md: 14,
-  lg: 20,
+  sm: 12,
+  md: 20,
+  lg: 28,
   full: 999,
 } as const;
 

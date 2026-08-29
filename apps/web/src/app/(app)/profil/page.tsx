@@ -9,6 +9,7 @@ import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
 import clsx from "clsx";
+import { Type, Eye, Bell, Shield, HelpCircle, Crown, BarChart3 } from "lucide-react";
 
 export default function ProfilePage() {
   const { dict, language, setLanguage } = useI18n();
@@ -112,11 +113,10 @@ export default function ProfilePage() {
         />
       </Card>
 
-      <Card className="space-y-3">
-        <p className="text-sm font-semibold text-text-secondary">{dict.profile.accessibilityTitle}</p>
+      <Card className="space-y-1">
+        <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.profile.accessibilityTitle}</p>
 
-        <div className="flex items-center justify-between">
-          <span className="text-text-primary">{dict.profile.fontSizeLabel}</span>
+        <SettingsRow icon={Type} label={dict.profile.fontSizeLabel}>
           <div className="flex gap-2">
             <button
               onClick={() => save({ fontScale: "normal" })}
@@ -137,40 +137,45 @@ export default function ProfilePage() {
               {dict.profile.fontSizeLarge}
             </button>
           </div>
-        </div>
+        </SettingsRow>
 
-        <div className="flex items-center justify-between">
-          <span className="text-text-primary">{dict.profile.highContrastLabel}</span>
+        <SettingsRow icon={Eye} label={dict.profile.highContrastLabel}>
           <Toggle checked={user.highContrast} onChange={() => save({ highContrast: !user.highContrast })} />
-        </div>
+        </SettingsRow>
 
-        <div className="flex items-center justify-between">
-          <span className="text-text-primary">{dict.profile.notificationsLabel}</span>
+        <SettingsRow icon={Bell} label={dict.profile.notificationsLabel} last>
           <Toggle checked={user.notificationsEnabled} onChange={() => save({ notificationsEnabled: !user.notificationsEnabled })} />
-        </div>
+        </SettingsRow>
       </Card>
 
-      <Card className="space-y-2">
-        <p className="text-sm font-semibold text-text-secondary">{dict.profile.statsTitle}</p>
-        <p className="text-text-primary">{dict.profile.statsLogsCount(logsCount ?? 0)}</p>
+      <Card className="space-y-1">
+        <SettingsRow icon={BarChart3} label={dict.profile.statsTitle} last>
+          <span className="text-sm text-text-secondary">{dict.profile.statsLogsCount(logsCount ?? 0)}</span>
+        </SettingsRow>
       </Card>
 
-      <Card className="space-y-2">
-        <p className="text-sm font-semibold text-text-secondary">{dict.profile.securityTitle}</p>
-        <Link href="/maxfiylik" className="text-primary-dark underline">
-          {dict.profile.privacyPolicyLink}
+      <Card className="space-y-1">
+        <Link href="/maxfiylik">
+          <SettingsRow icon={Shield} label={dict.profile.securityTitle} last>
+            <span className="text-sm text-primary-dark">{dict.profile.privacyPolicyLink}</span>
+          </SettingsRow>
         </Link>
       </Card>
 
       <Card className="space-y-1">
-        <p className="text-sm font-semibold text-text-secondary">{dict.profile.helpTitle}</p>
-        <p className="text-text-primary">{dict.profile.helpPhoneLabel}</p>
-        <p className="text-text-secondary">{dict.profile.helpPhoneValue}</p>
+        <SettingsRow icon={HelpCircle} label={dict.profile.helpTitle} last>
+          <span className="text-right text-sm text-text-secondary">{dict.profile.helpPhoneValue}</span>
+        </SettingsRow>
       </Card>
 
-      <Card className="border-secondary/40 bg-secondary-light/30">
-        <p className="font-semibold text-text-primary">{dict.profile.premiumTitle}</p>
-        <p className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</p>
+      <Card className="bg-secondary-light/40">
+        <div className="flex items-center gap-3">
+          <Crown className="text-secondary" size={22} />
+          <div>
+            <p className="font-semibold text-text-primary">{dict.profile.premiumTitle}</p>
+            <p className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</p>
+          </div>
+        </div>
       </Card>
 
       <Button variant="secondary" className="w-full" onClick={exportData} disabled={exporting}>
@@ -180,6 +185,30 @@ export default function ProfilePage() {
       {(saving || savedFlash) && (
         <p className="text-center text-sm text-text-muted">{savedFlash ? dict.profile.savedMessage : dict.common.loading}</p>
       )}
+    </div>
+  );
+}
+
+function SettingsRow({
+  icon: Icon,
+  label,
+  children,
+  last,
+}: {
+  icon: typeof Type;
+  label: string;
+  children: React.ReactNode;
+  last?: boolean;
+}) {
+  return (
+    <div className={clsx("flex items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-light/60">
+          <Icon size={18} className="text-primary-dark" />
+        </div>
+        <span className="font-medium text-text-primary">{label}</span>
+      </div>
+      {children}
     </div>
   );
 }

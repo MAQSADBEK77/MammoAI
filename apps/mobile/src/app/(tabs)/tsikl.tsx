@@ -8,6 +8,7 @@ import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, IconChip, ScreenHeader } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
+import { CycleRing } from "@/components/CycleRing";
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -69,9 +70,12 @@ export default function CycleScreen() {
   }
 
   let periodDay: number | null = null;
+  let dayInCycle: number | null = null;
   if (data.settings.lastPeriodStart) {
     const diff = Math.round((new Date(today).getTime() - new Date(data.settings.lastPeriodStart).getTime()) / 86400000);
     if (diff >= 0 && diff < data.settings.averagePeriodLength) periodDay = diff + 1;
+    const cycleLen = data.settings.averageCycleLength || 28;
+    dayInCycle = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
   }
 
   const todayLog = data.logs.find((l) => l.date === today);
@@ -95,21 +99,26 @@ export default function CycleScreen() {
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
         <ScreenHeader title={dict.cycle.title} />
 
-        {periodDay && <Badge tone="primary">{`${isMinor ? "🐰 " : ""}${dict.cycle.periodDayBadge(periodDay)}`}</Badge>}
-
         {data.isIrregular && (
-          <Card className="border border-warning/40 bg-warning/10">
+          <Card className="bg-warning/10">
             <Text className="font-semibold text-text-primary">{dict.cycle.irregularBannerTitle}</Text>
             <Text className="mt-1 text-sm text-text-secondary">{dict.cycle.irregularBannerAction}</Text>
           </Card>
         )}
 
-        {data.prediction && (
+        {dayInCycle && data.prediction && (
           <Card>
-            <Text className="text-lg font-bold text-text-primary">
-              {dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)}
-            </Text>
-            <Text className="mt-1 text-sm text-text-secondary">{dict.cycle.fertileWindowLabel}</Text>
+            <CycleRing
+              dayInCycle={dayInCycle}
+              cycleLength={data.settings.averageCycleLength}
+              label={dict.cycle.title}
+              sublabel={dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)}
+            />
+            {periodDay && (
+              <View className="mt-4 items-center">
+                <Badge tone="primary">{`${isMinor ? "🐰 " : ""}${dict.cycle.periodDayBadge(periodDay)}`}</Badge>
+              </View>
+            )}
           </Card>
         )}
 

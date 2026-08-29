@@ -11,6 +11,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, ScreenHeader, TextField } from "@/components/ui";
+import { Type, Eye, Bell, Shield, HelpCircle, Crown, BarChart3, type LucideIcon } from "lucide-react-native";
 
 export default function ProfileScreen() {
   const { dict, language, setLanguage } = useI18n();
@@ -87,11 +88,10 @@ export default function ProfileScreen() {
           </Button>
         </Card>
 
-        <Card className="gap-3">
-          <Text className="text-sm font-semibold text-text-secondary">{dict.profile.accessibilityTitle}</Text>
+        <Card className="gap-1">
+          <Text className="mb-1 text-sm font-semibold text-text-secondary">{dict.profile.accessibilityTitle}</Text>
 
-          <View className="flex-row items-center justify-between">
-            <Text className="text-text-primary">{dict.profile.fontSizeLabel}</Text>
+          <SettingsRow icon={Type} label={dict.profile.fontSizeLabel}>
             <View className="flex-row gap-2">
               <Pressable
                 onPress={() => save({ fontScale: "normal" })}
@@ -110,40 +110,45 @@ export default function ProfileScreen() {
                 </Text>
               </Pressable>
             </View>
-          </View>
+          </SettingsRow>
 
-          <View className="flex-row items-center justify-between">
-            <Text className="text-text-primary">{dict.profile.highContrastLabel}</Text>
+          <SettingsRow icon={Eye} label={dict.profile.highContrastLabel}>
             <Toggle checked={user.highContrast} onPress={() => save({ highContrast: !user.highContrast })} />
-          </View>
+          </SettingsRow>
 
-          <View className="flex-row items-center justify-between">
-            <Text className="text-text-primary">{dict.profile.notificationsLabel}</Text>
+          <SettingsRow icon={Bell} label={dict.profile.notificationsLabel} last>
             <Toggle checked={user.notificationsEnabled} onPress={() => save({ notificationsEnabled: !user.notificationsEnabled })} />
-          </View>
+          </SettingsRow>
         </Card>
 
         <Card className="gap-1">
-          <Text className="text-sm font-semibold text-text-secondary">{dict.profile.statsTitle}</Text>
-          <Text className="text-text-primary">{dict.profile.statsLogsCount(logsCount ?? 0)}</Text>
+          <SettingsRow icon={BarChart3} label={dict.profile.statsTitle} last>
+            <Text className="text-sm text-text-secondary">{dict.profile.statsLogsCount(logsCount ?? 0)}</Text>
+          </SettingsRow>
         </Card>
 
         <Pressable onPress={() => router.push("/maxfiylik")}>
           <Card className="gap-1">
-            <Text className="text-sm font-semibold text-text-secondary">{dict.profile.securityTitle}</Text>
-            <Text className="text-primary-dark underline">{dict.profile.privacyPolicyLink}</Text>
+            <SettingsRow icon={Shield} label={dict.profile.securityTitle} last>
+              <Text className="text-sm text-primary-dark">{dict.profile.privacyPolicyLink}</Text>
+            </SettingsRow>
           </Card>
         </Pressable>
 
         <Card className="gap-1">
-          <Text className="text-sm font-semibold text-text-secondary">{dict.profile.helpTitle}</Text>
-          <Text className="text-text-primary">{dict.profile.helpPhoneLabel}</Text>
-          <Text className="text-text-secondary">{dict.profile.helpPhoneValue}</Text>
+          <SettingsRow icon={HelpCircle} label={dict.profile.helpTitle} last>
+            <Text className="text-right text-sm text-text-secondary">{dict.profile.helpPhoneValue}</Text>
+          </SettingsRow>
         </Card>
 
-        <Card className="border border-secondary/40 bg-secondary-light/30">
-          <Text className="font-semibold text-text-primary">{dict.profile.premiumTitle}</Text>
-          <Text className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</Text>
+        <Card className="bg-secondary-light/40">
+          <View className="flex-row items-center gap-3">
+            <Crown color="#8B6FD1" size={22} />
+            <View className="flex-1">
+              <Text className="font-semibold text-text-primary">{dict.profile.premiumTitle}</Text>
+              <Text className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</Text>
+            </View>
+          </View>
         </Card>
 
         <Button
@@ -161,6 +166,30 @@ export default function ProfileScreen() {
         </Button>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function SettingsRow({
+  icon: Icon,
+  label,
+  children,
+  last,
+}: {
+  icon: LucideIcon;
+  label: string;
+  children: React.ReactNode;
+  last?: boolean;
+}) {
+  return (
+    <View className={clsx("flex-row items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
+      <View className="flex-row items-center gap-3">
+        <View className="h-9 w-9 items-center justify-center rounded-full bg-primary-light/60">
+          <Icon size={18} color="#C82F5C" />
+        </View>
+        <Text className="font-medium text-text-primary">{label}</Text>
+      </View>
+      {children}
+    </View>
   );
 }
 
