@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://comparing-stand-expertise-manhattan.trycloudflare.com"
+        "EXPO_PUBLIC_API_URL": "https://compressed-championships-short-assurance.trycloudflare.com"
       }
     },
     "production": {
