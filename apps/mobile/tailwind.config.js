@@ -22,6 +22,13 @@ module.exports = {
         success: "#57B894",
         warning: "#E7A83F",
         danger: "#E0506F",
+        // "Aurora" kengaytmasi — suzuvchi tungi-siyoh navigatsiya paneli va h.k.
+        // (packages/shared/src/design-tokens.ts#gradients bilan bir xil).
+        nav: { DEFAULT: "#241127", light: "#3B1B45" },
+      },
+      borderRadius: {
+        "4xl": "28px",
+        "5xl": "32px",
       },
     },
   },

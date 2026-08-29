@@ -26,6 +26,15 @@
   --color-warning: #e7a83f;
   --color-danger: #e0506f;
 
+  /* "Aurora" kengaytmasi — packages/shared/src/design-tokens.ts bilan bir xil
+     qiymatlar (gradients/glass/shadow). Suzuvchi tungi-siyoh navigatsiya paneli
+     va shisha-effekt kartalar uchun. */
+  --color-nav: #241127;
+  --color-nav-light: #3b1b45;
+  --glass-light: rgba(255, 255, 255, 0.62);
+  --glass-light-strong: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.55);
+
   --font-sans: var(--font-body), system-ui, sans-serif;
 }
 
@@ -114,4 +123,36 @@ body {
 
 .animate-hero-subtitle {
   animation: fade-in-up 0.5s ease-out 0.4s both;
+}
+
+/* "Aurora" kengaytmasi — orzu-uslub gradient fonlar va shisha-effekt kartalar. */
+.bg-aurora-hero {
+  background: linear-gradient(135deg, #fde6ef 0%, #efe7fc 100%);
+}
+
+.bg-aurora-cycle {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+}
+
+.bg-aurora-pregnancy {
+  background: linear-gradient(135deg, var(--color-secondary) 0%, #4c1d95 100%);
+}
+
+.bg-aurora-checkup {
+  background: linear-gradient(135deg, var(--color-accent) 0%, #0f766e 100%);
+}
+
+.glass-card {
+  background: var(--glass-light);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.floating-tag {
+  background: var(--glass-light-strong);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(59, 27, 69, 0.12);
 }

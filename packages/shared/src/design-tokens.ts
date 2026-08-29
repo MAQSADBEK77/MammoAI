@@ -68,3 +68,49 @@ export const cycleColors = {
   fertile: colors.accent,
   predicted: colors.primaryLight,
 } as const;
+
+// "Aurora" tema kengaytmasi — 2026-08-30 kechasi dizayn yangilanishi. Ikkita
+// premium UI-kit (binafsha "Pregnancy Monitor" va pushti/tungi "Lunari") dan
+// ilhomlanib, MammoAI'ning o'z brend ranglariga (pushti+binafsha+moviy-yashil)
+// moslab qurilgan gradient/shisha/soya tizimi. Web va mobil bir xil qiymatdan
+// o'qiydi (bu yerda va globals.css/tailwind.config.js'da qo'lda takrorlangan).
+export const gradients = {
+  // Onboarding/hero fonlar uchun orzu-uslub pushti→lavanda o'tish.
+  hero: ["#FDE6EF", "#EFE7FC"] as [string, string],
+  heroStrong: ["#FBD3E6", "#DCCEFA"] as [string, string],
+  cycle: [colors.primary, colors.primaryDark] as [string, string],
+  pregnancy: [colors.secondary, "#4C1D95"] as [string, string],
+  checkup: [colors.accent, "#0F766E"] as [string, string],
+  // Suzuvchi pastki navigatsiya paneli — chuqur tun-siyoh rang (Lunari
+  // tungi rejimidan ilhomlangan), ustida gradient faol doira bilan.
+  navBar: ["#241127", "#3B1B45"] as [string, string],
+  navActive: [colors.primary, colors.secondary] as [string, string],
+} as const;
+
+// RN'da haqiqiy backdrop-blur yo'q (expo-blur qo'shilmagan), shuning uchun
+// "shisha" hissi yarim shaffof oq/qora qatlam + nozik border + soya orqali
+// taqlid qilinadi — LinearGradient fonlar ustida joylashtirilganda ishlaydi.
+export const glass = {
+  light: "rgba(255,255,255,0.62)",
+  lightStrong: "rgba(255,255,255,0.82)",
+  border: "rgba(255,255,255,0.55)",
+  dark: "rgba(36,17,39,0.55)",
+  darkStrong: "rgba(36,17,39,0.78)",
+} as const;
+
+export const shadow = {
+  soft: {
+    shadowColor: "#3B1B45",
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  card: {
+    shadowColor: "#1F2937",
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+} as const;
