@@ -326,7 +326,7 @@ export default function OnboardingPage() {
     <div
       className={clsx(
         "mx-auto flex min-h-dvh max-w-md flex-col justify-between px-6 py-8",
-        step === "welcome" ? "bg-primary" : "bg-background"
+        step === "welcome" ? "bg-aurora-cycle" : "bg-background"
       )}
     >
       {step !== "welcome" && step !== "analyzing" && (
@@ -666,8 +666,8 @@ function LangOption({ label, active, onClick }: { label: string; active: boolean
     <button
       onClick={onClick}
       className={clsx(
-        "tap-target w-full max-w-xs rounded-2xl border-2 px-6 py-4 text-lg font-semibold transition",
-        active ? "border-primary bg-primary-light text-primary-dark" : "border-border bg-surface text-text-primary"
+        "tap-target w-full max-w-xs rounded-3xl border-2 px-6 py-4 text-lg font-semibold transition active:scale-[0.98]",
+        active ? "border-primary bg-primary-light text-primary-dark shadow-lg shadow-primary/20" : "border-border bg-surface text-text-primary"
       )}
     >
       {label}
@@ -692,9 +692,9 @@ function ChoiceStep({
           key={opt.value}
           onClick={opt.onClick}
           className={clsx(
-            "tap-target w-full rounded-2xl border-2 px-5 py-4 text-left text-base font-medium transition",
+            "tap-target w-full rounded-3xl border-2 px-5 py-4 text-left text-base font-medium transition active:scale-[0.98]",
             selected === opt.value
-              ? "border-primary bg-primary-light text-primary-dark"
+              ? "border-primary bg-primary-light text-primary-dark shadow-lg shadow-primary/20"
               : "border-border bg-surface text-text-primary hover:border-primary-light"
           )}
         >

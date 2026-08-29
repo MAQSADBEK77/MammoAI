@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Animated, { FadeInUp, FadeIn } from "react-native-reanimated";
@@ -15,7 +15,7 @@ import type {
   PeriodAttitude,
   Symptom,
 } from "@mammoai/shared";
-import { ADULT_GOALS, MINOR_GOALS, goalToLandingTab, needsCycleInfo, needsHeightWeight, gradientStops, colors } from "@mammoai/shared";
+import { ADULT_GOALS, MINOR_GOALS, goalToLandingTab, needsCycleInfo, needsHeightWeight, gradientStops, colors, gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -322,7 +322,11 @@ export default function OnboardingScreen() {
   const goalOptions = isMinor ? MINOR_GOALS : ADULT_GOALS;
 
   return (
-    <SafeAreaView className={clsx("flex-1", step === "welcome" ? "bg-primary" : "bg-background")}>
+    <View style={{ flex: 1 }}>
+      {step === "welcome" && (
+        <LinearGradient colors={gradients.cycle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
+      )}
+      <SafeAreaView className={clsx("flex-1", step !== "welcome" && "bg-background")}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 px-6 py-4">
         {step !== "welcome" && step !== "analyzing" && (
           <View className="mb-6">
@@ -603,7 +607,8 @@ export default function OnboardingScreen() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -611,7 +616,8 @@ function LangOption({ label, active, onPress }: { label: string; active: boolean
   return (
     <Pressable
       onPress={onPress}
-      className={clsx("w-full max-w-xs rounded-2xl border-2 px-6 py-4", active ? "border-primary bg-primary-light" : "border-border bg-surface")}
+      className={clsx("w-full max-w-xs rounded-3xl border-2 px-6 py-4 active:scale-[0.98]", active ? "border-primary bg-primary-light" : "border-border bg-surface")}
+      style={active ? { shadowColor: "#F43F7F", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 } : undefined}
     >
       <Text className={clsx("text-center text-lg font-semibold", active ? "text-primary-dark" : "text-text-primary")}>{label}</Text>
     </Pressable>
@@ -630,18 +636,22 @@ function ChoiceStep({
   return (
     <View className="gap-3">
       <Text className="mb-2 text-xl font-bold text-text-primary">{title}</Text>
-      {options.map((opt) => (
-        <Pressable
-          key={opt.value}
-          onPress={opt.onPress}
-          className={clsx(
-            "min-h-[48px] w-full justify-center rounded-2xl border-2 px-5 py-4 active:scale-[0.98]",
-            selected === opt.value ? "border-primary bg-primary-light" : "border-border bg-surface"
-          )}
-        >
-          <Text className={clsx("text-base font-medium", selected === opt.value ? "text-primary-dark" : "text-text-primary")}>{opt.label}</Text>
-        </Pressable>
-      ))}
+      {options.map((opt) => {
+        const active = selected === opt.value;
+        return (
+          <Pressable
+            key={opt.value}
+            onPress={opt.onPress}
+            className={clsx(
+              "min-h-[48px] w-full justify-center rounded-3xl border-2 px-5 py-4 active:scale-[0.98]",
+              active ? "border-primary bg-primary-light" : "border-border bg-surface"
+            )}
+            style={active ? { shadowColor: "#F43F7F", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 } : undefined}
+          >
+            <Text className={clsx("text-base font-medium", active ? "text-primary-dark" : "text-text-primary")}>{opt.label}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
