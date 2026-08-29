@@ -56,7 +56,7 @@ export default function ClinicsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-8">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-32">
         <ScreenHeader title={dict.clinics.title} />
         <Text className="-mt-3 text-xs text-text-muted">{dict.clinics.seedDataNotice}</Text>
 
@@ -85,7 +85,12 @@ export default function ClinicsScreen() {
           filtered.map((clinic) => (
             <Card key={clinic.id} className="gap-2">
               <View className="flex-row items-start justify-between gap-2">
-                <Text className="flex-1 font-semibold text-text-primary">{clinic.name}</Text>
+                <View className="flex-1 flex-row items-start gap-2.5">
+                  <View className="h-9 w-9 items-center justify-center rounded-full bg-accent/15">
+                    <Text style={{ fontSize: 16 }}>🏥</Text>
+                  </View>
+                  <Text className="flex-1 pt-1.5 font-semibold text-text-primary">{clinic.name}</Text>
+                </View>
                 {clinic.freeScreening && <Badge tone="success">{dict.clinics.freeScreeningBadge}</Badge>}
               </View>
               <View className="flex-row items-start gap-1.5">

@@ -89,7 +89,10 @@ export default function ClinicsPage() {
           {filtered.map((clinic) => (
             <Card key={clinic.id} className="space-y-2" onMouseEnter={() => track(clinic, "view")}>
               <div className="flex items-start justify-between gap-2">
-                <p className="font-semibold text-text-primary">{clinic.name}</p>
+                <p className="flex items-start gap-2.5 font-semibold text-text-primary">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-base">🏥</span>
+                  <span className="pt-1.5">{clinic.name}</span>
+                </p>
                 {clinic.freeScreening && <Badge tone="success">{dict.clinics.freeScreeningBadge}</Badge>}
               </div>
               <p className="flex items-start gap-1.5 text-sm text-text-secondary">
