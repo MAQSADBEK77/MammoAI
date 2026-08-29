@@ -66,7 +66,7 @@ export default function PregnancyScreen() {
   const milestone = getMilestoneForWeek(status.currentWeek);
   const sizeLabel = dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
   const progressPct = (status.currentWeek / 40) * 100;
-  const greeting = `🤰 ${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())}`;
+  const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
 
   return (
     <SafeAreaView className="flex-1 bg-background">

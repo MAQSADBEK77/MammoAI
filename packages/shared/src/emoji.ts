@@ -1,14 +1,15 @@
-// Emoji ikonalar — https://fetch-blush-80931080.figma.site/ manba bundle'ida
-// topilgan haqiqiy emoji to'plamiga mos ravishda tanlangan (kayfiyat, oqim,
-// alomat, tsikl fazasi uchun). Foydalanuvchi so'rovi: "iconlarni qo'sh" —
-// bu yerda IconChip/PhaseCard kabi joylarda ishlatiladigan bitta manba.
+// Emoji ikonalar — https://fetch-blush-80931080.figma.site/ manbasining asl
+// React kodi (loyiha ichiga "Uzbek Women's Health Tracker" nomi bilan tashlangan
+// figma-make eksporti, src/App.tsx) dan olingan ANIQ emoji to'plami (kayfiyat,
+// alomat, tsikl fazasi va h.k. uchun) — endi taxmin emas, aynan manbadan.
+// Foydalanuvchi so'rovi: "shundagi iconlarni meni dasturimga qil".
 
 import type { Mood, FlowLevel, Symptom } from "./types";
 import type { CyclePhase } from "./logic/cycle-phase";
 
 export const MOOD_EMOJI: Record<Mood, string> = {
   happy: "😄",
-  calm: "😌",
+  calm: "🙂",
   tired: "😴",
   sad: "😔",
   irritable: "😡",
@@ -25,14 +26,14 @@ export const FLOW_EMOJI: Record<FlowLevel, string> = {
 export const SYMPTOM_EMOJI: Record<Symptom, string> = {
   cramps: "🤕",
   headache: "🤯",
-  bloating: "🎈",
+  bloating: "🫀",
   acne: "🔴",
   back_pain: "🦴",
   nausea: "🤢",
   breast_tenderness: "💗",
   insomnia: "😴",
-  fatigue: "😪",
-  irritability: "😤",
+  fatigue: "😴",
+  irritability: "🌊",
   difficulty_concentrating: "🌀",
 };
 

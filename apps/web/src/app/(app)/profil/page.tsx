@@ -9,7 +9,7 @@ import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
 import clsx from "clsx";
-import { Type, Eye, Bell, Shield, HelpCircle, Crown, BarChart3, Star, Share2 } from "lucide-react";
+import { Type, Eye } from "lucide-react";
 
 export default function ProfilePage() {
   const { dict, language, setLanguage } = useI18n();
@@ -163,27 +163,27 @@ export default function ProfilePage() {
           <Toggle checked={user.highContrast} onChange={() => save({ highContrast: !user.highContrast })} />
         </SettingsRow>
 
-        <SettingsRow icon={Bell} label={dict.profile.notificationsLabel} last>
+        <SettingsRow icon="🔔" label={dict.profile.notificationsLabel} last>
           <Toggle checked={user.notificationsEnabled} onChange={() => save({ notificationsEnabled: !user.notificationsEnabled })} />
         </SettingsRow>
       </Card>
 
       <Card className="space-y-1">
-        <SettingsRow icon={BarChart3} label={dict.profile.statsTitle} last>
+        <SettingsRow icon="📊" label={dict.profile.statsTitle} last>
           <span className="text-sm text-text-secondary">{dict.profile.statsLogsCount(logsCount ?? 0)}</span>
         </SettingsRow>
       </Card>
 
       <Card className="space-y-1">
         <Link href="/maxfiylik">
-          <SettingsRow icon={Shield} label={dict.profile.securityTitle} last>
+          <SettingsRow icon="🔒" label={dict.profile.securityTitle} last>
             <span className="text-sm text-primary-dark">{dict.profile.privacyPolicyLink}</span>
           </SettingsRow>
         </Link>
       </Card>
 
       <Card className="space-y-1">
-        <SettingsRow icon={HelpCircle} label={dict.profile.helpTitle} last>
+        <SettingsRow icon="❓" label={dict.profile.helpTitle} last>
           <span className="text-right text-sm text-text-secondary">{dict.profile.helpPhoneValue}</span>
         </SettingsRow>
       </Card>
@@ -191,10 +191,10 @@ export default function ProfilePage() {
       <Card className="bg-secondary-light/40">
         <div className="flex items-center gap-3">
           <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xl shadow-sm"
             style={{ background: cssGradient(colors.secondary) }}
           >
-            <Crown className="text-white" size={20} />
+            ✨
           </div>
           <div>
             <p className="font-semibold text-text-primary">{dict.profile.premiumTitle}</p>
@@ -205,10 +205,10 @@ export default function ProfilePage() {
 
       <Card className="space-y-1">
         <button className="w-full text-left" onClick={() => flash(dict.profile.rateAppComingSoon)}>
-          <SettingsRow icon={Star} label={dict.profile.rateAppButton} />
+          <SettingsRow icon="⭐" label={dict.profile.rateAppButton} />
         </button>
         <button className="w-full text-left" onClick={shareApp}>
-          <SettingsRow icon={Share2} label={dict.profile.shareAppButton} last />
+          <SettingsRow icon="📱" label={dict.profile.shareAppButton} last />
         </button>
       </Card>
 
@@ -226,24 +226,27 @@ export default function ProfilePage() {
 }
 
 function SettingsRow({
-  icon: Icon,
+  icon,
   label,
   children,
   last,
 }: {
-  icon: typeof Type;
+  /** Lucide komponenti (aniq mos emoji topilmagan holatlar uchun) yoki manba
+   * ilovadagi ("Uzbek Women's Health Tracker" — src/App.tsx) aynan emoji. */
+  icon: typeof Type | string;
   label: string;
   children?: React.ReactNode;
   last?: boolean;
 }) {
+  const Icon = typeof icon === "string" ? null : icon;
   return (
     <div className={clsx("flex items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <div className="flex items-center gap-3">
         <div
-          className="flex h-9 w-9 items-center justify-center rounded-full shadow-sm"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-lg shadow-sm"
           style={{ background: cssGradient(colors.primary) }}
         >
-          <Icon size={18} className="text-white" />
+          {Icon ? <Icon size={18} className="text-white" /> : (icon as string)}
         </div>
         <span className="font-medium text-text-primary">{label}</span>
       </div>

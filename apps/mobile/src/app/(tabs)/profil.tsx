@@ -12,7 +12,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, ScreenHeader, TextField } from "@/components/ui";
-import { Type, Eye, Bell, Shield, HelpCircle, Crown, BarChart3, Star, Share2, type LucideIcon } from "lucide-react-native";
+import { Type, Eye, type LucideIcon } from "lucide-react-native";
 
 export default function ProfileScreen() {
   const { dict, language, setLanguage } = useI18n();
@@ -117,27 +117,27 @@ export default function ProfileScreen() {
             <Toggle checked={user.highContrast} onPress={() => save({ highContrast: !user.highContrast })} />
           </SettingsRow>
 
-          <SettingsRow icon={Bell} label={dict.profile.notificationsLabel} last>
+          <SettingsRow icon="🔔" label={dict.profile.notificationsLabel} last>
             <Toggle checked={user.notificationsEnabled} onPress={() => save({ notificationsEnabled: !user.notificationsEnabled })} />
           </SettingsRow>
         </Card>
 
         <Card className="gap-1">
-          <SettingsRow icon={BarChart3} label={dict.profile.statsTitle} last>
+          <SettingsRow icon="📊" label={dict.profile.statsTitle} last>
             <Text className="text-sm text-text-secondary">{dict.profile.statsLogsCount(logsCount ?? 0)}</Text>
           </SettingsRow>
         </Card>
 
         <Pressable onPress={() => router.push("/maxfiylik")}>
           <Card className="gap-1">
-            <SettingsRow icon={Shield} label={dict.profile.securityTitle} last>
+            <SettingsRow icon="🔒" label={dict.profile.securityTitle} last>
               <Text className="text-sm text-primary-dark">{dict.profile.privacyPolicyLink}</Text>
             </SettingsRow>
           </Card>
         </Pressable>
 
         <Card className="gap-1">
-          <SettingsRow icon={HelpCircle} label={dict.profile.helpTitle} last>
+          <SettingsRow icon="❓" label={dict.profile.helpTitle} last>
             <Text className="text-right text-sm text-text-secondary">{dict.profile.helpPhoneValue}</Text>
           </SettingsRow>
         </Card>
@@ -150,7 +150,7 @@ export default function ProfileScreen() {
               end={{ x: 1, y: 1 }}
               style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" }}
             >
-              <Crown color="#FFFFFF" size={20} />
+              <Text style={{ fontSize: 20 }}>✨</Text>
             </LinearGradient>
             <View className="flex-1">
               <Text className="font-semibold text-text-primary">{dict.profile.premiumTitle}</Text>
@@ -161,10 +161,10 @@ export default function ProfileScreen() {
 
         <Card className="gap-1">
           <Pressable onPress={() => Alert.alert(dict.profile.rateAppButton, dict.profile.rateAppComingSoon)}>
-            <SettingsRow icon={Star} label={dict.profile.rateAppButton} />
+            <SettingsRow icon="⭐" label={dict.profile.rateAppButton} />
           </Pressable>
           <Pressable onPress={() => Share.share({ message: dict.profile.shareAppMessage })}>
-            <SettingsRow icon={Share2} label={dict.profile.shareAppButton} last />
+            <SettingsRow icon="📱" label={dict.profile.shareAppButton} last />
           </Pressable>
         </Card>
 
@@ -187,16 +187,19 @@ export default function ProfileScreen() {
 }
 
 function SettingsRow({
-  icon: Icon,
+  icon,
   label,
   children,
   last,
 }: {
-  icon: LucideIcon;
+  /** Lucide komponenti (aniq mos emoji topilmagan holatlar uchun) yoki manba
+   * ilovadagi ("Uzbek Women's Health Tracker" — src/App.tsx) aynan emoji. */
+  icon: LucideIcon | string;
   label: string;
   children?: React.ReactNode;
   last?: boolean;
 }) {
+  const Icon = typeof icon === "string" ? null : icon;
   return (
     <View className={clsx("flex-row items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <View className="flex-row items-center gap-3">
@@ -206,7 +209,7 @@ function SettingsRow({
           end={{ x: 1, y: 1 }}
           style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" }}
         >
-          <Icon size={18} color="#FFFFFF" />
+          {Icon ? <Icon size={18} color="#FFFFFF" /> : <Text style={{ fontSize: 16 }}>{icon as string}</Text>}
         </LinearGradient>
         <Text className="font-medium text-text-primary">{label}</Text>
       </View>

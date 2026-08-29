@@ -85,7 +85,7 @@ export default function CyclePage() {
   const cycleLen = data.settings.averageCycleLength || 28;
   const periodLen = data.settings.averagePeriodLength || 5;
   const phase = dayInCycle ? getCyclePhase(dayInCycle, cycleLen, periodLen) : null;
-  const greeting = `👋 ${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())}`;
+  const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
 
   async function saveLog() {
     setSaving(true);

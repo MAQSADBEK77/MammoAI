@@ -65,7 +65,7 @@ export default function PregnancyPage() {
   const milestone = getMilestoneForWeek(status.currentWeek);
   const sizeLabel = dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
   const progressPct = (status.currentWeek / 40) * 100;
-  const greeting = `🤰 ${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())}`;
+  const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
 
   return (
     <div className="space-y-5 pb-6">

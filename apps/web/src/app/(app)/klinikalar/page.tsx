@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { Phone, Navigation as NavigationIcon, List, Map as MapIcon, Search, MapPin } from "lucide-react";
+import { Navigation as NavigationIcon, List, Map as MapIcon } from "lucide-react";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
@@ -61,7 +61,7 @@ export default function ClinicsPage() {
       <p className="-mt-3 text-xs text-text-muted">{dict.clinics.seedDataNotice}</p>
 
       <div className="relative">
-        <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">🔍</span>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -93,7 +93,7 @@ export default function ClinicsPage() {
                 {clinic.freeScreening && <Badge tone="success">{dict.clinics.freeScreeningBadge}</Badge>}
               </div>
               <p className="flex items-start gap-1.5 text-sm text-text-secondary">
-                <MapPin size={14} className="mt-0.5 shrink-0 text-text-muted" /> {clinic.address}
+                <span className="mt-0.5 shrink-0">📍</span> {clinic.address}
               </p>
               <div className="flex flex-wrap gap-1">
                 {clinic.specialties.map((s) => (
@@ -107,7 +107,7 @@ export default function ClinicsPage() {
                   variant="secondary"
                   className="flex-1"
                 >
-                  <Phone size={16} /> {dict.clinics.callButton}
+                  📞 {dict.clinics.callButton}
                 </LinkButton>
                 <LinkButton
                   href={`https://www.openstreetmap.org/directions?to=${clinic.lat}%2C${clinic.lng}`}
