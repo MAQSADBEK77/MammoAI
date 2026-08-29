@@ -1,8 +1,8 @@
 "use client";
 
 // Lunari uslubidagi doiraviy sikl-halqasi — bosh ekran (Tsikl) markazida joriy
-// kun va progressni ko'rsatadi. Faza kartalari YO'Q (foydalanuvchi tanlovi) —
-// faqat vizual progress-indikator.
+// kun va progressni ko'rsatadi. Joriy faza kartasi (PhaseCard) alohida, halqa
+// ostida chiqadi — bu yerda faqat vizual progress-indikator.
 
 const SIZE = 200;
 const STROKE = 14;

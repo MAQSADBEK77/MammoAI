@@ -5,22 +5,22 @@
  * bir xil ushlab turiladi (mobil ilova xuddi shu qiymatlarni JS orqali oladi).
  */
 @theme {
-  --color-primary: #ee3f73;
-  --color-primary-dark: #c82f5c;
-  --color-primary-light: #fcd9e3;
-  --color-secondary: #8b6fd1;
-  --color-secondary-light: #e6dff7;
-  --color-accent: #5fb6c4;
-  --color-accent-light: #dcf1f3;
+  --color-primary: #f43f7f;
+  --color-primary-dark: #d62a63;
+  --color-primary-light: #ffb3cb;
+  --color-secondary: #7c3aed;
+  --color-secondary-light: #c4b5fd;
+  --color-accent: #0d9488;
+  --color-accent-light: #5eead4;
 
-  --color-background: #ffffff;
+  --color-background: #f9fafb;
   --color-surface: #ffffff;
-  --color-surface-muted: #f7f5f6;
+  --color-surface-muted: #f3f4f6;
 
-  --color-text-primary: #241b26;
-  --color-text-secondary: #6e6470;
-  --color-text-muted: #a79ea9;
-  --color-border: #f0ebee;
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #9ca3af;
+  --color-border: #e5e7eb;
 
   --color-success: #57b894;
   --color-warning: #e7a83f;

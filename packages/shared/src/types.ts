@@ -148,7 +148,14 @@ export interface Clinic {
   isSeedData: true;
 }
 
-export type ClinicSpecialty = "gynecology" | "oncology" | "radiology" | "general";
+export type ClinicSpecialty =
+  | "gynecology"
+  | "oncology"
+  | "radiology"
+  | "general"
+  | "endocrinology"
+  | "reproductology"
+  | "laparoscopy";
 
 export type ReferralAction = "view" | "call" | "directions";
 

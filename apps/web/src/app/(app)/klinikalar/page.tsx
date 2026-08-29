@@ -16,7 +16,15 @@ const ClinicsMap = dynamic(() => import("@/components/ClinicsMap").then((m) => m
   loading: () => <div className="h-80 w-full animate-pulse rounded-2xl bg-surface-muted" />,
 });
 
-const SPECIALTIES: ClinicSpecialty[] = ["gynecology", "oncology", "radiology", "general"];
+const SPECIALTIES: ClinicSpecialty[] = [
+  "gynecology",
+  "oncology",
+  "radiology",
+  "general",
+  "endocrinology",
+  "reproductology",
+  "laparoscopy",
+];
 
 export default function ClinicsPage() {
   const { dict } = useI18n();
@@ -26,15 +34,20 @@ export default function ClinicsPage() {
   const [clinics, setClinics] = useState<Clinic[] | null>(null);
   const [view, setView] = useState<"list" | "map">("list");
   const [filter, setFilter] = useState<ClinicSpecialty | "all">("all");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     api.clinics.list().then(setClinics);
   }, []);
 
-  const filtered = useMemo(
-    () => (clinics ?? []).filter((c) => filter === "all" || c.specialties.includes(filter)),
-    [clinics, filter]
-  );
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (clinics ?? []).filter(
+      (c) =>
+        (filter === "all" || c.specialties.includes(filter)) &&
+        (!q || c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q))
+    );
+  }, [clinics, filter, search]);
 
   if (!clinics) return <p className="text-text-secondary">{dict.common.loading}</p>;
 
@@ -46,6 +59,13 @@ export default function ClinicsPage() {
     <div className="space-y-4 pb-6">
       <ScreenHeader title={dict.clinics.title} />
       <p className="-mt-3 text-xs text-text-muted">{dict.clinics.seedDataNotice}</p>
+
+      <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder={dict.clinics.searchPlaceholder}
+        className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none focus:border-primary"
+      />
 
       <div className="flex gap-2">
         <ViewToggle active={view === "list"} icon={List} label={dict.clinics.listView} onClick={() => setView("list")} />

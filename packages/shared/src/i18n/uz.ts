@@ -22,6 +22,13 @@ const uz = {
     free: "Bepul",
     paid: "Pullik",
     continueButton: "Davom etish",
+    // Kunning vaqtiga qarab shaxsiylashtirilgan salomlashuv (Figma "Make" manbasi:
+    // "Salom, {Ism}" / "Xayrli tong, {Ism}"). `name` bo'sh bo'lsa ismisiz qaytadi.
+    greeting: (name: string | null, hour: number) => {
+      const time =
+        hour >= 5 && hour < 11 ? "Xayrli tong" : hour >= 11 && hour < 17 ? "Xayrli kun" : hour >= 17 && hour < 23 ? "Xayrli kech" : "Salom";
+      return name ? `${time}, ${name}` : time;
+    },
   },
 
   nav: {
@@ -187,6 +194,21 @@ const uz = {
     },
   },
 
+  // Tsikl fazasi kartasi (CycleRing ostida) — Figma "Make" manbasidagi haqiqiy
+  // iboralarga asoslangan ("Tuxum hujayra chiqadi", "Progesteron oshadi").
+  cyclePhase: {
+    menstrual: { name: "Hayz fazasi", description: "Bachadon shilliq qavati chiqmoqda. Dam olish va o'zingizga g'amxo'rlik qilish vaqti." },
+    follicular: { name: "Follikul fazasi", description: "Tuxumdonda follikulalar rivojlanmoqda, energiya darajasi asta oshib bormoqda." },
+    ovulation: { name: "Ovulyatsiya", description: "Tuxum hujayra chiqadi — bu davrda homilador bo'lish ehtimoli eng yuqori." },
+    luteal: { name: "Lyuteal faza", description: "Progesteron oshadi. PMS alomatlari shu davrda ko'proq seziladi." },
+    fertilityLabel: "Unumdorlik darajasi",
+    fertilityLevels: {
+      low: "Past",
+      medium: "O'rtacha",
+      high: "Yuqori",
+    },
+  },
+
   pregnancy: {
     title: "Homiladorlik",
     weekLabel: (week: number) => `${week}-hafta`,
@@ -258,11 +280,15 @@ const uz = {
     listView: "Ro'yxat",
     mapView: "Xarita",
     filterAll: "Barchasi",
+    searchPlaceholder: "Klinika yoki manzil...",
     specialties: {
       gynecology: "Ginekologiya",
       oncology: "Onkologiya",
       radiology: "Radiologiya",
       general: "Umumiy",
+      endocrinology: "Endokrinologiya",
+      reproductology: "Reproduktologiya",
+      laparoscopy: "Laparoskopiya",
     },
     freeScreeningBadge: "Bepul skrining",
     callButton: "Qo'ng'iroq qilish",
@@ -330,6 +356,11 @@ const uz = {
     helpPhoneValue: "[Sizning kontakt raqamingiz — bu yerga qo'yiladi]",
     premiumTitle: "Premium",
     premiumSubtitle: "Tez orada qo'shimcha imkoniyatlar bilan",
+    rateAppButton: "Ilovani baholash",
+    rateAppComingSoon: "Ilova hali do'konlarda emas — chiqqach, shu yerdan baholay olasiz.",
+    shareAppButton: "Ilovani ulashish",
+    shareAppMessage: "Ayollar salomatligi — hayz sikli, homiladorlik va sog'liqni kuzatish ilovasi.",
+    shareAppLinkCopied: "Havola nusxalandi",
   },
 };
 

@@ -21,6 +21,11 @@ const ru: Dictionary = {
     free: "Бесплатно",
     paid: "Платно",
     continueButton: "Продолжить",
+    greeting: (name: string | null, hour: number) => {
+      const time =
+        hour >= 5 && hour < 11 ? "Доброе утро" : hour >= 11 && hour < 17 ? "Добрый день" : hour >= 17 && hour < 23 ? "Добрый вечер" : "Привет";
+      return name ? `${time}, ${name}` : time;
+    },
   },
 
   nav: {
@@ -186,6 +191,19 @@ const ru: Dictionary = {
     },
   },
 
+  cyclePhase: {
+    menstrual: { name: "Фаза менструации", description: "Слизистая оболочка матки отторгается. Время для отдыха и заботы о себе." },
+    follicular: { name: "Фолликулярная фаза", description: "В яичниках развиваются фолликулы, уровень энергии постепенно растёт." },
+    ovulation: { name: "Овуляция", description: "Выходит яйцеклетка — вероятность зачатия в этот период наиболее высока." },
+    luteal: { name: "Лютеиновая фаза", description: "Повышается прогестерон. Симптомы ПМС обычно ощущаются именно в этот период." },
+    fertilityLabel: "Уровень фертильности",
+    fertilityLevels: {
+      low: "Низкий",
+      medium: "Средний",
+      high: "Высокий",
+    },
+  },
+
   pregnancy: {
     title: "Беременность",
     weekLabel: (week: number) => `${week}-я неделя`,
@@ -257,11 +275,15 @@ const ru: Dictionary = {
     listView: "Список",
     mapView: "Карта",
     filterAll: "Все",
+    searchPlaceholder: "Клиника или адрес...",
     specialties: {
       gynecology: "Гинекология",
       oncology: "Онкология",
       radiology: "Радиология",
       general: "Общая практика",
+      endocrinology: "Эндокринология",
+      reproductology: "Репродуктология",
+      laparoscopy: "Лапароскопия",
     },
     freeScreeningBadge: "Бесплатный скрининг",
     callButton: "Позвонить",
@@ -329,6 +351,11 @@ const ru: Dictionary = {
     helpPhoneValue: "[Ваш контактный номер — будет указан здесь]",
     premiumTitle: "Premium",
     premiumSubtitle: "Скоро с дополнительными возможностями",
+    rateAppButton: "Оценить приложение",
+    rateAppComingSoon: "Приложение пока не в магазинах — после выхода вы сможете оценить его здесь.",
+    shareAppButton: "Поделиться приложением",
+    shareAppMessage: "Здоровье женщины — приложение для отслеживания цикла, беременности и здоровья.",
+    shareAppLinkCopied: "Ссылка скопирована",
   },
 };
 

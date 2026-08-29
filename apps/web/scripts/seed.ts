@@ -140,16 +140,74 @@ const SEED_CLINICS: SeedClinic[] = [
   },
 ];
 
-const clinicsCount = db.prepare("SELECT COUNT(*) as count FROM clinics").get() as { count: number };
-if (clinicsCount.count > 0) {
-  console.log(`Klinikalar jadvalida allaqachon ${clinicsCount.count} ta yozuv bor — seed o'tkazib yuborildi.`);
-} else {
-  const insertClinic = db.prepare(
-    `INSERT INTO clinics (id, name, address, region, lat, lng, phone, specialties, free_screening)
-     VALUES (@id, @name, @address, @region, @lat, @lng, @phone, @specialties, @freeScreening)`
-  );
-  const insertClinics = db.transaction((clinics: SeedClinic[]) => {
-    for (const c of clinics) {
+// Endokrinologiya/reproduktologiya/laparoskopiya yo'nalishlari uchun qo'shimcha
+// namunaviy klinikalar — nomlar ochiq manbadan (jamoat joylashuv katalogi darajasida,
+// sharh/reyting emas), lekin biz uchun hamkorlik tasdig'i EMAS, shuning uchun
+// "isSeedData" bayrog'i va yuqoridagi izoh saqlanadi.
+const SEED_CLINICS_V2: SeedClinic[] = [
+  {
+    name: "Najot Tibbiyot Markazi",
+    address: "Toshkent sh., Yunusobod tumani, Bog'ishamol ko'chasi 223",
+    region: "Toshkent",
+    lat: 41.3454,
+    lng: 69.2924,
+    phone: "+998712005555",
+    specialties: ["gynecology", "endocrinology", "reproductology"],
+    freeScreening: false,
+  },
+  {
+    name: "Respublika Perinatal Markazi",
+    address: "Toshkent sh., Mirzo Ulug'bek tumani, Taras Shevchenko ko'chasi 1",
+    region: "Toshkent",
+    lat: 41.3298,
+    lng: 69.3037,
+    phone: "+998712344422",
+    specialties: ["gynecology", "general"],
+    freeScreening: true,
+  },
+  {
+    name: "Shifo Reproduktologiya Klinikasi",
+    address: "Toshkent sh., Shayxontohur tumani, Navoiy ko'chasi 30",
+    region: "Toshkent",
+    lat: 41.3305,
+    lng: 69.2489,
+    phone: "+998712331144",
+    specialties: ["reproductology", "endocrinology", "laparoscopy"],
+    freeScreening: false,
+  },
+  {
+    name: "Ona va Bola Salomatligi NIAM",
+    address: "Toshkent sh., Olmazor tumani, Farg'ona yo'li ko'chasi 2",
+    region: "Toshkent",
+    lat: 41.3567,
+    lng: 69.2273,
+    phone: "+998712632299",
+    specialties: ["gynecology", "reproductology", "general"],
+    freeScreening: true,
+  },
+  {
+    name: "City Medical Center",
+    address: "Toshkent sh., Mirobod tumani, Shahrisabz ko'chasi 16",
+    region: "Toshkent",
+    lat: 41.3053,
+    lng: 69.2809,
+    phone: "+998712345501",
+    specialties: ["gynecology", "endocrinology", "laparoscopy"],
+    freeScreening: false,
+  },
+];
+
+const insertClinic = db.prepare(
+  `INSERT INTO clinics (id, name, address, region, lat, lng, phone, specialties, free_screening)
+   VALUES (@id, @name, @address, @region, @lat, @lng, @phone, @specialties, @freeScreening)`
+);
+const findClinicByName = db.prepare("SELECT id FROM clinics WHERE name = ?");
+
+function seedClinicsIfMissing(clinics: SeedClinic[]) {
+  const insertMany = db.transaction((list: SeedClinic[]) => {
+    let added = 0;
+    for (const c of list) {
+      if (findClinicByName.get(c.name)) continue;
       insertClinic.run({
         id: randomUUID(),
         name: c.name,
@@ -161,11 +219,22 @@ if (clinicsCount.count > 0) {
         specialties: JSON.stringify(c.specialties),
         freeScreening: c.freeScreening ? 1 : 0,
       });
+      added++;
     }
+    return added;
   });
-  insertClinics(SEED_CLINICS);
-  console.log(`${SEED_CLINICS.length} ta namunaviy klinika qo'shildi.`);
+  return insertMany(clinics);
 }
+
+const addedV1 = seedClinicsIfMissing(SEED_CLINICS);
+console.log(addedV1 > 0 ? `${addedV1} ta namunaviy klinika qo'shildi.` : "Asosiy namunaviy klinikalar allaqachon mavjud.");
+
+const addedV2 = seedClinicsIfMissing(SEED_CLINICS_V2);
+console.log(
+  addedV2 > 0
+    ? `${addedV2} ta qo'shimcha klinika (endokrinologiya/reproduktologiya/laparoskopiya) qo'shildi.`
+    : "Qo'shimcha klinikalar allaqachon mavjud."
+);
 
 // ---------------------------------------------------------------------------
 // Maqolalar — App.pdf §20. Umumiy ta'limiy matn, haqiqiy tibbiy kontent manbai

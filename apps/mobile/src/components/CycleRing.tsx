@@ -25,13 +25,13 @@ export function CycleRing({
   return (
     <View className="self-center" style={{ width: SIZE, height: SIZE }}>
       <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ transform: [{ rotate: "-90deg" }] }}>
-        <Circle cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} fill="none" stroke="#FCD9E3" strokeWidth={STROKE} />
+        <Circle cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} fill="none" stroke="#FFB3CB" strokeWidth={STROKE} />
         <Circle
           cx={SIZE / 2}
           cy={SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="#EE3F73"
+          stroke="#F43F7F"
           strokeWidth={STROKE}
           strokeLinecap="round"
           strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}

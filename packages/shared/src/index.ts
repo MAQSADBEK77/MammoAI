@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./design-tokens";
 export * from "./logic/cycle";
+export * from "./logic/cycle-phase";
 export * from "./logic/pregnancy";
 export * from "./logic/checklist-rules";
 export * from "./logic/risk-quiz";

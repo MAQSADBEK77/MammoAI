@@ -1,26 +1,27 @@
-// Dizayn tokenlari — Dribbble "Lunari — Period Tracker App UI Kit" uslubiga
-// moslashtirilgan (foydalanuvchi skrinshotlar orqali ulashgan namuna): jasur/
-// to'yingan pushti, oq fon, to'liq aylana ("pill") tugmalar, yumshoq soyali kartalar.
+// Dizayn tokenlari — https://fetch-blush-80931080.figma.site/ ("Lunari") manba
+// kodidan (JS/CSS bundle) chiqarib olingan ANIQ rang qiymatlari asosida. Bu screenshot
+// emas, haqiqiy ishlaydigan React ilovasining kompilyatsiya qilingan CSS/JS'idan
+// topilgan hex kodlar — shuning uchun taxminiy emas, aniq.
 // Web (Tailwind CSS o'zgaruvchilari) va mobil (NativeWind/JS tema) ikkalasi ham
 // shundan o'qiydi — shu orqali ikki ilova bir xil dizaynda bo'ladi.
 
 export const colors = {
-  primary: "#EE3F73", // Lunari uslubidagi jasur pushti-qizil
-  primaryDark: "#C82F5C",
-  primaryLight: "#FCD9E3",
-  secondary: "#8B6FD1", // binafsha (accent variatsiyasi uchun)
-  secondaryLight: "#E6DFF7",
-  accent: "#5FB6C4", // moviy-yashil (unumdor oyna, homiladorlik uchun)
-  accentLight: "#DCF1F3",
+  primary: "#F43F7F", // manba: asosiy pushti-qizil
+  primaryDark: "#D62A63",
+  primaryLight: "#FFB3CB",
+  secondary: "#7C3AED", // manba: binafsha
+  secondaryLight: "#C4B5FD",
+  accent: "#0D9488", // manba: moviy-yashil (unumdor oyna, homiladorlik uchun)
+  accentLight: "#5EEAD4",
 
-  background: "#FFFFFF", // Lunari — asosiy ekranlarda oq fon
+  background: "#F9FAFB", // manba: asosiy ekranlar foni (juda och kulrang)
   surface: "#FFFFFF",
-  surfaceMuted: "#F7F5F6",
+  surfaceMuted: "#F3F4F6",
 
-  textPrimary: "#241B26",
-  textSecondary: "#6E6470",
-  textMuted: "#A79EA9",
-  border: "#F0EBEE",
+  textPrimary: "#1F2937",
+  textSecondary: "#4B5563",
+  textMuted: "#9CA3AF",
+  border: "#E5E7EB",
 
   success: "#57B894",
   warning: "#E7A83F",
@@ -42,7 +43,7 @@ export const fontScale = {
   large: { body: 19, small: 16, h1: 32, h2: 26, h3: 21, button: 20 },
 } as const;
 
-// Lunari uslubi: tugmalar to'liq aylana ("pill"), kartalar kattaroq radiusda.
+// Tugmalar to'liq aylana ("pill"), kartalar kattaroq radiusda.
 export const radii = {
   sm: 12,
   md: 20,

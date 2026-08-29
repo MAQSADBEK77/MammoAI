@@ -3,12 +3,14 @@ import { Pressable, ScrollView, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
+import { getCyclePhase } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, IconChip, ScreenHeader } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
+import { PhaseCard } from "@/components/PhaseCard";
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -79,6 +81,10 @@ export default function CycleScreen() {
   }
 
   const todayLog = data.logs.find((l) => l.date === today);
+  const cycleLen = data.settings.averageCycleLength || 28;
+  const periodLen = data.settings.averagePeriodLength || 5;
+  const phase = dayInCycle ? getCyclePhase(dayInCycle, cycleLen, periodLen) : null;
+  const greeting = dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours());
 
   async function saveLog() {
     setSaving(true);
@@ -97,7 +103,7 @@ export default function CycleScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
-        <ScreenHeader title={dict.cycle.title} />
+        <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
 
         {data.isIrregular && (
           <Card className="bg-warning/10">
@@ -121,6 +127,8 @@ export default function CycleScreen() {
             </View>
           )}
         </Card>
+
+        {phase && <PhaseCard phase={phase} />}
 
         <Card>
           <MonthCalendar monthDate={new Date()} markers={markers} today={today} />

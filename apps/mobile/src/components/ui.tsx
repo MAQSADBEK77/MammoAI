@@ -36,7 +36,7 @@ export function Card({ className, children, style, ...props }: ViewProps & { cla
   return (
     <View
       className={clsx("rounded-3xl bg-surface p-5", className)}
-      style={[{ shadowColor: "#241B26", shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, style]}
+      style={[{ shadowColor: "#1F2937", shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, style]}
       {...props}
     >
       {children}
@@ -117,7 +117,7 @@ export function TextField({
       placeholder={placeholder}
       keyboardType={keyboardType}
       className="min-h-[48px] rounded-2xl border border-border bg-surface px-4 text-base text-text-primary"
-      placeholderTextColor="#A79EA9"
+      placeholderTextColor="#9CA3AF"
     />
   );
 }

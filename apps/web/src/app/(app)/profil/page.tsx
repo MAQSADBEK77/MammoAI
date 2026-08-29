@@ -9,7 +9,7 @@ import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
 import clsx from "clsx";
-import { Type, Eye, Bell, Shield, HelpCircle, Crown, BarChart3 } from "lucide-react";
+import { Type, Eye, Bell, Shield, HelpCircle, Crown, BarChart3, Star, Share2 } from "lucide-react";
 
 export default function ProfilePage() {
   const { dict, language, setLanguage } = useI18n();
@@ -20,6 +20,7 @@ export default function ProfilePage() {
   const [savedFlash, setSavedFlash] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [logsCount, setLogsCount] = useState<number | null>(null);
+  const [actionFlash, setActionFlash] = useState<string | null>(null);
 
   useEffect(() => {
     api.cycle.get().then((res) => setLogsCount(res.logs.length));
@@ -52,6 +53,25 @@ export default function ProfilePage() {
       URL.revokeObjectURL(url);
     } finally {
       setExporting(false);
+    }
+  }
+
+  function flash(message: string) {
+    setActionFlash(message);
+    setTimeout(() => setActionFlash(null), 2000);
+  }
+
+  async function shareApp() {
+    const url = typeof window !== "undefined" ? window.location.origin : "";
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: dict.common.appName, text: dict.profile.shareAppMessage, url });
+      } catch {
+        // Foydalanuvchi bekor qildi — hech narsa qilinmaydi.
+      }
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      flash(dict.profile.shareAppLinkCopied);
     }
   }
 
@@ -178,12 +198,23 @@ export default function ProfilePage() {
         </div>
       </Card>
 
+      <Card className="space-y-1">
+        <button className="w-full text-left" onClick={() => flash(dict.profile.rateAppComingSoon)}>
+          <SettingsRow icon={Star} label={dict.profile.rateAppButton} />
+        </button>
+        <button className="w-full text-left" onClick={shareApp}>
+          <SettingsRow icon={Share2} label={dict.profile.shareAppButton} last />
+        </button>
+      </Card>
+
       <Button variant="secondary" className="w-full" onClick={exportData} disabled={exporting}>
         {dict.profile.exportButton}
       </Button>
 
-      {(saving || savedFlash) && (
-        <p className="text-center text-sm text-text-muted">{savedFlash ? dict.profile.savedMessage : dict.common.loading}</p>
+      {(saving || savedFlash || actionFlash) && (
+        <p className="text-center text-sm text-text-muted">
+          {actionFlash ?? (savedFlash ? dict.profile.savedMessage : dict.common.loading)}
+        </p>
       )}
     </div>
   );
@@ -197,7 +228,7 @@ function SettingsRow({
 }: {
   icon: typeof Type;
   label: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   last?: boolean;
 }) {
   return (

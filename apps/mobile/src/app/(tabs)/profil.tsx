@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollView, View, Text, Pressable } from "react-native";
+import { ScrollView, View, Text, Pressable, Share, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import * as FileSystem from "expo-file-system/legacy";
@@ -11,7 +11,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, ScreenHeader, TextField } from "@/components/ui";
-import { Type, Eye, Bell, Shield, HelpCircle, Crown, BarChart3, type LucideIcon } from "lucide-react-native";
+import { Type, Eye, Bell, Shield, HelpCircle, Crown, BarChart3, Star, Share2, type LucideIcon } from "lucide-react-native";
 
 export default function ProfileScreen() {
   const { dict, language, setLanguage } = useI18n();
@@ -143,12 +143,21 @@ export default function ProfileScreen() {
 
         <Card className="bg-secondary-light/40">
           <View className="flex-row items-center gap-3">
-            <Crown color="#8B6FD1" size={22} />
+            <Crown color="#7C3AED" size={22} />
             <View className="flex-1">
               <Text className="font-semibold text-text-primary">{dict.profile.premiumTitle}</Text>
               <Text className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</Text>
             </View>
           </View>
+        </Card>
+
+        <Card className="gap-1">
+          <Pressable onPress={() => Alert.alert(dict.profile.rateAppButton, dict.profile.rateAppComingSoon)}>
+            <SettingsRow icon={Star} label={dict.profile.rateAppButton} />
+          </Pressable>
+          <Pressable onPress={() => Share.share({ message: dict.profile.shareAppMessage })}>
+            <SettingsRow icon={Share2} label={dict.profile.shareAppButton} last />
+          </Pressable>
         </Card>
 
         <Button
@@ -177,14 +186,14 @@ function SettingsRow({
 }: {
   icon: LucideIcon;
   label: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   last?: boolean;
 }) {
   return (
     <View className={clsx("flex-row items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <View className="flex-row items-center gap-3">
         <View className="h-9 w-9 items-center justify-center rounded-full bg-primary-light/60">
-          <Icon size={18} color="#C82F5C" />
+          <Icon size={18} color="#D62A63" />
         </View>
         <Text className="font-medium text-text-primary">{label}</Text>
       </View>

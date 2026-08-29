@@ -7,10 +7,18 @@ import clsx from "clsx";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, ScreenHeader, TextField } from "@/components/ui";
 import { ClinicsMap } from "@/components/ClinicsMap";
 
-const SPECIALTIES: ClinicSpecialty[] = ["gynecology", "oncology", "radiology", "general"];
+const SPECIALTIES: ClinicSpecialty[] = [
+  "gynecology",
+  "oncology",
+  "radiology",
+  "general",
+  "endocrinology",
+  "reproductology",
+  "laparoscopy",
+];
 
 export default function ClinicsScreen() {
   const { dict } = useI18n();
@@ -19,15 +27,20 @@ export default function ClinicsScreen() {
   const [clinics, setClinics] = useState<Clinic[] | null>(null);
   const [view, setView] = useState<"list" | "map">("list");
   const [filter, setFilter] = useState<ClinicSpecialty | "all">("all");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     api.clinics.list().then(setClinics);
   }, []);
 
-  const filtered = useMemo(
-    () => (clinics ?? []).filter((c) => filter === "all" || c.specialties.includes(filter)),
-    [clinics, filter]
-  );
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (clinics ?? []).filter(
+      (c) =>
+        (filter === "all" || c.specialties.includes(filter)) &&
+        (!q || c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q))
+    );
+  }, [clinics, filter, search]);
 
   if (!clinics) {
     return (
@@ -46,6 +59,8 @@ export default function ClinicsScreen() {
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-8">
         <ScreenHeader title={dict.clinics.title} />
         <Text className="-mt-3 text-xs text-text-muted">{dict.clinics.seedDataNotice}</Text>
+
+        <TextField value={search} onChangeText={setSearch} placeholder={dict.clinics.searchPlaceholder} />
 
         <View className="flex-row gap-2">
           <ViewToggle active={view === "list"} Icon={List} label={dict.clinics.listView} onPress={() => setView("list")} />
@@ -83,7 +98,7 @@ export default function ClinicsScreen() {
                       Linking.openURL(`tel:${clinic.phone}`);
                     }}
                   >
-                    <Phone size={16} color="#241B26" />
+                    <Phone size={16} color="#1F2937" />
                     <Text className="text-sm font-semibold text-text-primary">{dict.clinics.callButton}</Text>
                   </Button>
                 </View>
@@ -95,7 +110,7 @@ export default function ClinicsScreen() {
                       Linking.openURL(`https://www.openstreetmap.org/directions?to=${clinic.lat}%2C${clinic.lng}`);
                     }}
                   >
-                    <NavigationIcon size={16} color="#6E6470" />
+                    <NavigationIcon size={16} color="#4B5563" />
                     <Text className="text-sm font-semibold text-text-secondary">{dict.clinics.directionsButton}</Text>
                   </Button>
                 </View>
@@ -117,7 +132,7 @@ function ViewToggle({ active, Icon, label, onPress }: { active: boolean; Icon: t
         active ? "border-primary bg-primary-light" : "border-border bg-surface"
       )}
     >
-      <Icon size={16} color={active ? "#C82F5C" : "#6E6470"} />
+      <Icon size={16} color={active ? "#D62A63" : "#4B5563"} />
       <Text className={clsx("text-sm font-semibold", active ? "text-primary-dark" : "text-text-secondary")}>{label}</Text>
     </Pressable>
   );

@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
+import { getCyclePhase } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, Card, ScreenHeader, IconChip, Badge } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
+import { PhaseCard } from "@/components/PhaseCard";
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -80,6 +82,10 @@ export default function CyclePage() {
   }
 
   const todayLog = data.logs.find((l) => l.date === today);
+  const cycleLen = data.settings.averageCycleLength || 28;
+  const periodLen = data.settings.averagePeriodLength || 5;
+  const phase = dayInCycle ? getCyclePhase(dayInCycle, cycleLen, periodLen) : null;
+  const greeting = dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours());
 
   async function saveLog() {
     setSaving(true);
@@ -97,7 +103,7 @@ export default function CyclePage() {
 
   return (
     <div className="space-y-5 pb-6">
-      <ScreenHeader title={dict.cycle.title} />
+      <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
 
       {data.isIrregular && (
         <Card className="bg-warning/10">
@@ -124,6 +130,8 @@ export default function CyclePage() {
           </div>
         )}
       </Card>
+
+      {phase && <PhaseCard phase={phase} />}
 
       <Card>
         <MonthCalendar monthDate={new Date()} markers={markers} today={today} />
