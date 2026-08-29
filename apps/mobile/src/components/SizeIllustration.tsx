@@ -1,6 +1,8 @@
 // PLACEHOLDER illyustratsiya — web versiyasi bilan bir xil mantiq (spec §3, ko'ring:
 // apps/web/src/components/SizeIllustration.tsx uchun izoh).
-import { View, Text } from "react-native";
+import { Text } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { gradientStops, colors } from "@mammoai/shared";
 
 const ICON_EMOJI: Record<string, string> = {
   seed: "🌱",
@@ -21,11 +23,13 @@ export function SizeIllustration({ icon }: { icon: string }) {
   const size = 72 + index * 10;
 
   return (
-    <View
-      className="items-center justify-center self-center rounded-full bg-accent-light"
-      style={{ width: size, height: size }}
+    <LinearGradient
+      colors={gradientStops(colors.accent)}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={{ width: size, height: size, borderRadius: size / 2, alignItems: "center", justifyContent: "center", alignSelf: "center" }}
     >
       <Text style={{ fontSize: size * 0.45 }}>{ICON_EMOJI[icon] ?? "🤰"}</Text>
-    </View>
+    </LinearGradient>
   );
 }

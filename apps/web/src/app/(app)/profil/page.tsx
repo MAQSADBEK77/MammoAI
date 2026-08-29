@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Language } from "@mammoai/shared";
-import { goalToLandingTab } from "@mammoai/shared";
+import { goalToLandingTab, cssGradient, colors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -190,7 +190,12 @@ export default function ProfilePage() {
 
       <Card className="bg-secondary-light/40">
         <div className="flex items-center gap-3">
-          <Crown className="text-secondary" size={22} />
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm"
+            style={{ background: cssGradient(colors.secondary) }}
+          >
+            <Crown className="text-white" size={20} />
+          </div>
           <div>
             <p className="font-semibold text-text-primary">{dict.profile.premiumTitle}</p>
             <p className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</p>
@@ -234,8 +239,11 @@ function SettingsRow({
   return (
     <div className={clsx("flex items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-light/60">
-          <Icon size={18} className="text-primary-dark" />
+        <div
+          className="flex h-9 w-9 items-center justify-center rounded-full shadow-sm"
+          style={{ background: cssGradient(colors.primary) }}
+        >
+          <Icon size={18} className="text-white" />
         </div>
         <span className="font-medium text-text-primary">{label}</span>
       </div>

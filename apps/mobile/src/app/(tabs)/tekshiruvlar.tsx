@@ -6,6 +6,10 @@ import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
+import { CheckCircle2, Clock, AlertCircle } from "lucide-react-native";
+
+const STATUS_ICON = { pending: Clock, done: CheckCircle2, overdue: AlertCircle } as const;
+const STATUS_ICON_COLOR = { pending: "#9CA3AF", done: "#57B894", overdue: "#E0506F" } as const;
 
 export default function ChecklistScreen() {
   const { dict } = useI18n();
@@ -47,10 +51,14 @@ export default function ChecklistScreen() {
 
         {items.map((item) => {
           const info = dict.checklist.items[item.type];
+          const StatusIcon = STATUS_ICON[item.status];
           return (
             <Card key={item.id} className="gap-2">
               <View className="flex-row items-start justify-between gap-3">
-                <Text className="flex-1 font-semibold text-text-primary">{info.title}</Text>
+                <View className="flex-1 flex-row items-start gap-2">
+                  <StatusIcon size={18} color={STATUS_ICON_COLOR[item.status]} style={{ marginTop: 2 }} />
+                  <Text className="flex-1 font-semibold text-text-primary">{info.title}</Text>
+                </View>
                 <View className="items-end gap-1">
                   <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
                   <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>

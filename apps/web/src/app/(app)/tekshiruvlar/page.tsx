@@ -6,6 +6,10 @@ import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
+import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
+
+const STATUS_ICON = { pending: Clock, done: CheckCircle2, overdue: AlertCircle } as const;
+const STATUS_ICON_COLOR = { pending: "text-text-muted", done: "text-success", overdue: "text-danger" } as const;
 
 export default function ChecklistPage() {
   const { dict } = useI18n();
@@ -43,10 +47,14 @@ export default function ChecklistPage() {
 
       {items.map((item) => {
         const info = dict.checklist.items[item.type];
+        const StatusIcon = STATUS_ICON[item.status];
         return (
           <Card key={item.id} className="space-y-2">
             <div className="flex items-start justify-between gap-3">
-              <p className="font-semibold text-text-primary">{info.title}</p>
+              <p className="flex items-start gap-2 font-semibold text-text-primary">
+                <StatusIcon size={18} className={`mt-0.5 shrink-0 ${STATUS_ICON_COLOR[item.status]}`} />
+                {info.title}
+              </p>
               <div className="flex flex-col items-end gap-1">
                 <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
                 <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>

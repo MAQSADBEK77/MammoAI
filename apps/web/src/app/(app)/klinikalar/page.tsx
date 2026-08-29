@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { Phone, Navigation as NavigationIcon, List, Map as MapIcon } from "lucide-react";
+import { Phone, Navigation as NavigationIcon, List, Map as MapIcon, Search, MapPin } from "lucide-react";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
@@ -60,12 +60,15 @@ export default function ClinicsPage() {
       <ScreenHeader title={dict.clinics.title} />
       <p className="-mt-3 text-xs text-text-muted">{dict.clinics.seedDataNotice}</p>
 
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder={dict.clinics.searchPlaceholder}
-        className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none focus:border-primary"
-      />
+      <div className="relative">
+        <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={dict.clinics.searchPlaceholder}
+          className="tap-target w-full rounded-2xl border border-border bg-surface pl-10 pr-4 text-sm text-text-primary outline-none focus:border-primary"
+        />
+      </div>
 
       <div className="flex gap-2">
         <ViewToggle active={view === "list"} icon={List} label={dict.clinics.listView} onClick={() => setView("list")} />
@@ -89,7 +92,9 @@ export default function ClinicsPage() {
                 <p className="font-semibold text-text-primary">{clinic.name}</p>
                 {clinic.freeScreening && <Badge tone="success">{dict.clinics.freeScreeningBadge}</Badge>}
               </div>
-              <p className="text-sm text-text-secondary">{clinic.address}</p>
+              <p className="flex items-start gap-1.5 text-sm text-text-secondary">
+                <MapPin size={14} className="mt-0.5 shrink-0 text-text-muted" /> {clinic.address}
+              </p>
               <div className="flex flex-wrap gap-1">
                 {clinic.specialties.map((s) => (
                   <Badge key={s}>{dict.clinics.specialties[s]}</Badge>

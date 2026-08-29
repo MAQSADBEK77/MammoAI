@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ScrollView, View, Text, Pressable, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
-import { Phone, Navigation as NavigationIcon, List, Map as MapIcon } from "lucide-react-native";
+import { Phone, Navigation as NavigationIcon, List, Map as MapIcon, Search, MapPin } from "lucide-react-native";
 import clsx from "clsx";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -60,7 +60,12 @@ export default function ClinicsScreen() {
         <ScreenHeader title={dict.clinics.title} />
         <Text className="-mt-3 text-xs text-text-muted">{dict.clinics.seedDataNotice}</Text>
 
-        <TextField value={search} onChangeText={setSearch} placeholder={dict.clinics.searchPlaceholder} />
+        <TextField
+          value={search}
+          onChangeText={setSearch}
+          placeholder={dict.clinics.searchPlaceholder}
+          icon={<Search size={16} color="#9CA3AF" />}
+        />
 
         <View className="flex-row gap-2">
           <ViewToggle active={view === "list"} Icon={List} label={dict.clinics.listView} onPress={() => setView("list")} />
@@ -83,7 +88,10 @@ export default function ClinicsScreen() {
                 <Text className="flex-1 font-semibold text-text-primary">{clinic.name}</Text>
                 {clinic.freeScreening && <Badge tone="success">{dict.clinics.freeScreeningBadge}</Badge>}
               </View>
-              <Text className="text-sm text-text-secondary">{clinic.address}</Text>
+              <View className="flex-row items-start gap-1.5">
+                <MapPin size={14} color="#9CA3AF" style={{ marginTop: 2 }} />
+                <Text className="flex-1 text-sm text-text-secondary">{clinic.address}</Text>
+              </View>
               <View className="flex-row flex-wrap gap-1">
                 {clinic.specialties.map((s) => (
                   <Badge key={s}>{dict.clinics.specialties[s]}</Badge>

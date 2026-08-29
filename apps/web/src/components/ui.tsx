@@ -8,7 +8,7 @@ type ButtonVariant = "primary" | "secondary" | "ghost";
 function buttonClasses(variant: ButtonVariant, className?: string) {
   return clsx(
     "tap-target inline-flex items-center justify-center gap-2 rounded-full px-6 font-semibold transition active:scale-[0.98] disabled:opacity-50",
-    variant === "primary" && "bg-primary text-white shadow-md shadow-primary/25 hover:bg-primary-dark",
+    variant === "primary" && "bg-gradient-to-br from-primary to-primary-dark text-white shadow-md shadow-primary/25 hover:brightness-105",
     variant === "secondary" && "bg-secondary-light text-text-primary hover:brightness-95",
     variant === "ghost" && "bg-transparent text-text-secondary hover:bg-surface-muted",
     className

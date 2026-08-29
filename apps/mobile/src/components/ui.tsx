@@ -1,5 +1,8 @@
 import { Pressable, Text, TextInput, View, type PressableProps, type ViewProps } from "react-native";
+import type { ReactNode } from "react";
 import clsx from "clsx";
+import { LinearGradient } from "expo-linear-gradient";
+import { gradientStops, colors } from "@mammoai/shared";
 
 type Variant = "primary" | "secondary" | "ghost";
 
@@ -17,17 +20,31 @@ export function Button({
   ...props
 }: PressableProps & { variant?: Variant; children: React.ReactNode; className?: string }) {
   const v = VARIANT_CLASSES[variant];
+  const content = typeof children === "string" ? <Text className={clsx("text-base font-semibold", v.text)}>{children}</Text> : children;
+
+  // Primary tugma — gradient fon (manba bundle'ida topilgan diagonal gradient naqshi).
+  if (variant === "primary") {
+    return (
+      <Pressable disabled={disabled} className={clsx("overflow-hidden rounded-full", disabled && "opacity-50", className)} {...props}>
+        <LinearGradient
+          colors={gradientStops(colors.primary)}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 24 }}
+        >
+          {content}
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       disabled={disabled}
       className={clsx("min-h-[48px] flex-row items-center justify-center gap-2 rounded-full px-6", v.bg, disabled && "opacity-50", className)}
       {...props}
     >
-      {typeof children === "string" ? (
-        <Text className={clsx("text-base font-semibold", v.text)}>{children}</Text>
-      ) : (
-        children
-      )}
+      {content}
     </Pressable>
   );
 }
@@ -104,20 +121,26 @@ export function TextField({
   onChangeText,
   placeholder,
   keyboardType,
+  icon,
 }: {
   value: string;
   onChangeText: (v: string) => void;
   placeholder?: string;
   keyboardType?: "default" | "numeric" | "phone-pad";
+  /** Chap tomonda ko'rsatiladigan ikona (masalan, qidiruv maydonidagi lupa). */
+  icon?: ReactNode;
 }) {
   return (
-    <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      keyboardType={keyboardType}
-      className="min-h-[48px] rounded-2xl border border-border bg-surface px-4 text-base text-text-primary"
-      placeholderTextColor="#9CA3AF"
-    />
+    <View className="relative justify-center">
+      {icon && <View className="absolute left-4 z-10">{icon}</View>}
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        keyboardType={keyboardType}
+        className={clsx("min-h-[48px] rounded-2xl border border-border bg-surface pr-4 text-base text-text-primary", icon ? "pl-11" : "pl-4")}
+        placeholderTextColor="#9CA3AF"
+      />
+    </View>
   );
 }

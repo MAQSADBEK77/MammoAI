@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { getCyclePhase } from "@mammoai/shared";
+import { getCyclePhase, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -85,7 +85,7 @@ export default function CyclePage() {
   const cycleLen = data.settings.averageCycleLength || 28;
   const periodLen = data.settings.averagePeriodLength || 5;
   const phase = dayInCycle ? getCyclePhase(dayInCycle, cycleLen, periodLen) : null;
-  const greeting = dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours());
+  const greeting = `👋 ${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())}`;
 
   async function saveLog() {
     setSaving(true);
@@ -141,8 +141,16 @@ export default function CyclePage() {
       <div>
         <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.dailyCheckinTitle}</p>
         <div className="grid grid-cols-3 gap-2">
-          <QuickCard label={dict.cycle.moodCardLabel} value={todayLog?.mood ? dict.cycle.moods[todayLog.mood] : undefined} onClick={() => setLogging(true)} />
-          <QuickCard label={dict.cycle.flowCardLabel} value={todayLog?.flow ? dict.cycle.flowLevels[todayLog.flow] : undefined} onClick={() => setLogging(true)} />
+          <QuickCard
+            label={dict.cycle.moodCardLabel}
+            value={todayLog?.mood ? `${MOOD_EMOJI[todayLog.mood]} ${dict.cycle.moods[todayLog.mood]}` : undefined}
+            onClick={() => setLogging(true)}
+          />
+          <QuickCard
+            label={dict.cycle.flowCardLabel}
+            value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
+            onClick={() => setLogging(true)}
+          />
           <QuickCard
             label={dict.cycle.symptomsCardLabel}
             value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}
@@ -159,6 +167,7 @@ export default function CyclePage() {
               {FLOW_LEVELS.map((f) => (
                 <IconChip
                   key={f}
+                  icon={FLOW_EMOJI[f]}
                   label={dict.cycle.flowLevels[f]}
                   active={flow === f}
                   onClick={() => setFlow(flow === f ? null : f)}
@@ -173,6 +182,7 @@ export default function CyclePage() {
               {MOODS.map((m) => (
                 <IconChip
                   key={m}
+                  icon={MOOD_EMOJI[m]}
                   label={dict.cycle.moods[m]}
                   active={mood === m}
                   onClick={() => setMood(mood === m ? null : m)}
@@ -187,6 +197,7 @@ export default function CyclePage() {
               {SYMPTOMS.map((s) => (
                 <IconChip
                   key={s}
+                  icon={SYMPTOM_EMOJI[s]}
                   label={dict.cycle.symptoms[s]}
                   active={symptoms.includes(s)}
                   onClick={() =>
@@ -228,8 +239,8 @@ export default function CyclePage() {
             <Card key={log.id} className="flex items-center justify-between py-3">
               <span className="text-sm text-text-secondary">{log.date}</span>
               <div className="flex gap-1">
-                {log.flow && <Badge tone="primary">{dict.cycle.flowLevels[log.flow]}</Badge>}
-                {log.mood && <Badge>{dict.cycle.moods[log.mood]}</Badge>}
+                {log.flow && <Badge tone="primary">{FLOW_EMOJI[log.flow]} {dict.cycle.flowLevels[log.flow]}</Badge>}
+                {log.mood && <Badge>{MOOD_EMOJI[log.mood]} {dict.cycle.moods[log.mood]}</Badge>}
               </div>
             </Card>
           ))}

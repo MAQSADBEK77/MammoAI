@@ -8,3 +8,4 @@ export * from "./logic/risk-quiz";
 export * from "./logic/goal";
 export * from "./api-client";
 export * from "./i18n";
+export * from "./emoji";

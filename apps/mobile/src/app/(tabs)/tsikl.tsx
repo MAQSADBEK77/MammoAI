@@ -3,7 +3,7 @@ import { Pressable, ScrollView, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { getCyclePhase } from "@mammoai/shared";
+import { getCyclePhase, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -84,7 +84,7 @@ export default function CycleScreen() {
   const cycleLen = data.settings.averageCycleLength || 28;
   const periodLen = data.settings.averagePeriodLength || 5;
   const phase = dayInCycle ? getCyclePhase(dayInCycle, cycleLen, periodLen) : null;
-  const greeting = dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours());
+  const greeting = `👋 ${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())}`;
 
   async function saveLog() {
     setSaving(true);
@@ -137,8 +137,16 @@ export default function CycleScreen() {
         <View>
           <Text className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.dailyCheckinTitle}</Text>
           <View className="flex-row gap-2">
-            <QuickCard label={dict.cycle.moodCardLabel} value={todayLog?.mood ? dict.cycle.moods[todayLog.mood] : undefined} onPress={() => setLogging(true)} />
-            <QuickCard label={dict.cycle.flowCardLabel} value={todayLog?.flow ? dict.cycle.flowLevels[todayLog.flow] : undefined} onPress={() => setLogging(true)} />
+            <QuickCard
+              label={dict.cycle.moodCardLabel}
+              value={todayLog?.mood ? `${MOOD_EMOJI[todayLog.mood]} ${dict.cycle.moods[todayLog.mood]}` : undefined}
+              onPress={() => setLogging(true)}
+            />
+            <QuickCard
+              label={dict.cycle.flowCardLabel}
+              value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
+              onPress={() => setLogging(true)}
+            />
             <QuickCard
               label={dict.cycle.symptomsCardLabel}
               value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}
@@ -153,7 +161,13 @@ export default function CycleScreen() {
               <Text className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.flowLabel}</Text>
               <View className="flex-row gap-2">
                 {FLOW_LEVELS.map((f) => (
-                  <IconChip key={f} label={dict.cycle.flowLevels[f]} active={flow === f} onPress={() => setFlow(flow === f ? null : f)} />
+                  <IconChip
+                    key={f}
+                    icon={FLOW_EMOJI[f]}
+                    label={dict.cycle.flowLevels[f]}
+                    active={flow === f}
+                    onPress={() => setFlow(flow === f ? null : f)}
+                  />
                 ))}
               </View>
             </View>
@@ -162,7 +176,13 @@ export default function CycleScreen() {
               <Text className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.moodLabel}</Text>
               <View className="flex-row flex-wrap gap-2">
                 {MOODS.map((m) => (
-                  <IconChip key={m} label={dict.cycle.moods[m]} active={mood === m} onPress={() => setMood(mood === m ? null : m)} />
+                  <IconChip
+                    key={m}
+                    icon={MOOD_EMOJI[m]}
+                    label={dict.cycle.moods[m]}
+                    active={mood === m}
+                    onPress={() => setMood(mood === m ? null : m)}
+                  />
                 ))}
               </View>
             </View>
@@ -173,6 +193,7 @@ export default function CycleScreen() {
                 {SYMPTOMS.map((s) => (
                   <IconChip
                     key={s}
+                    icon={SYMPTOM_EMOJI[s]}
                     label={dict.cycle.symptoms[s]}
                     active={symptoms.includes(s)}
                     onPress={() => setSymptoms((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]))}
@@ -212,8 +233,8 @@ export default function CycleScreen() {
           <Card key={log.id} className="flex-row items-center justify-between py-3">
             <Text className="text-sm text-text-secondary">{log.date}</Text>
             <View className="flex-row gap-1">
-              {log.flow && <Badge tone="primary">{dict.cycle.flowLevels[log.flow]}</Badge>}
-              {log.mood && <Badge>{dict.cycle.moods[log.mood]}</Badge>}
+              {log.flow && <Badge tone="primary">{`${FLOW_EMOJI[log.flow]} ${dict.cycle.flowLevels[log.flow]}`}</Badge>}
+              {log.mood && <Badge>{`${MOOD_EMOJI[log.mood]} ${dict.cycle.moods[log.mood]}`}</Badge>}
             </View>
           </Card>
         ))}

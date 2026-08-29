@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import type { PregnancyResponse } from "@mammoai/shared";
 import { getMilestoneForWeek } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, Card, ScreenHeader, ProgressBar } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
 
 export default function PregnancyPage() {
   const { dict } = useI18n();
+  const { onboardingProfile } = useSession();
   const [data, setData] = useState<PregnancyResponse | null>(null);
   const [lmpInput, setLmpInput] = useState("");
   const [addingVisit, setAddingVisit] = useState(false);
@@ -59,12 +61,16 @@ export default function PregnancyPage() {
   const milestone = getMilestoneForWeek(status.currentWeek);
   const sizeLabel = dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
   const progressPct = (status.currentWeek / 40) * 100;
+  const greeting = `🤰 ${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())}`;
 
   return (
     <div className="space-y-5 pb-6">
-      <ScreenHeader title={dict.pregnancy.title} subtitle={dict.pregnancy.trimester(status.trimester)} />
+      <ScreenHeader title={greeting} subtitle={dict.pregnancy.trimester(status.trimester)} />
 
-      <Card className="space-y-4 text-center animate-fade-in-up">
+      <Card
+        className="space-y-4 text-center animate-fade-in-up"
+        style={{ background: "linear-gradient(135deg, #e8f5e9 0%, #e3f2fd 100%)" }}
+      >
         <SizeIllustration icon={milestone.icon} />
         <h2 className="text-2xl font-extrabold text-text-primary">{dict.pregnancy.weekLabel(status.currentWeek)}</h2>
         <p className="text-text-secondary">{dict.pregnancy.sizeComparison(sizeLabel)}</p>

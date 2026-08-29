@@ -1,6 +1,8 @@
 // Haftalik o'lcham illyustratsiyasi — PLACEHOLDER: haqiqiy dizayner chizmagan, keyin
 // mos illyustratsiya to'plami bilan almashtirish uchun tuzilma tayyor (spec §3).
-// Hozircha emoji + o'sib boruvchi doira orqali "kattalik" hissi beriladi.
+// Hozircha emoji + o'sib boruvchi gradient doira orqali "kattalik" hissi beriladi.
+
+import { cssGradient, colors } from "@mammoai/shared";
 
 const ICON_EMOJI: Record<string, string> = {
   seed: "🌱",
@@ -23,8 +25,8 @@ export function SizeIllustration({ icon }: { icon: string }) {
 
   return (
     <div
-      className="mx-auto flex items-center justify-center rounded-full bg-accent-light transition-all"
-      style={{ width: size, height: size }}
+      className="mx-auto flex items-center justify-center rounded-full shadow-md transition-all"
+      style={{ width: size, height: size, background: cssGradient(colors.accent) }}
     >
       <span style={{ fontSize: size * 0.45 }}>{ICON_EMOJI[icon] ?? "🤰"}</span>
     </div>

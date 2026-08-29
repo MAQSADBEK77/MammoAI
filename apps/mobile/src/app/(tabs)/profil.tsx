@@ -5,8 +5,9 @@ import { router } from "expo-router";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import clsx from "clsx";
+import { LinearGradient } from "expo-linear-gradient";
 import type { Language } from "@mammoai/shared";
-import { goalToLandingTab } from "@mammoai/shared";
+import { goalToLandingTab, gradientStops, colors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -143,7 +144,14 @@ export default function ProfileScreen() {
 
         <Card className="bg-secondary-light/40">
           <View className="flex-row items-center gap-3">
-            <Crown color="#7C3AED" size={22} />
+            <LinearGradient
+              colors={gradientStops(colors.secondary)}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" }}
+            >
+              <Crown color="#FFFFFF" size={20} />
+            </LinearGradient>
             <View className="flex-1">
               <Text className="font-semibold text-text-primary">{dict.profile.premiumTitle}</Text>
               <Text className="mt-1 text-sm text-text-secondary">{dict.profile.premiumSubtitle}</Text>
@@ -192,9 +200,14 @@ function SettingsRow({
   return (
     <View className={clsx("flex-row items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <View className="flex-row items-center gap-3">
-        <View className="h-9 w-9 items-center justify-center rounded-full bg-primary-light/60">
-          <Icon size={18} color="#D62A63" />
-        </View>
+        <LinearGradient
+          colors={gradientStops(colors.primary)}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" }}
+        >
+          <Icon size={18} color="#FFFFFF" />
+        </LinearGradient>
         <Text className="font-medium text-text-primary">{label}</Text>
       </View>
       {children}

@@ -26,13 +26,19 @@ export function CycleRing({
   return (
     <div className="relative mx-auto" style={{ width: SIZE, height: SIZE }}>
       <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="-rotate-90">
+        <defs>
+          <linearGradient id="cycleRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="var(--color-primary)" />
+            <stop offset="100%" stopColor="var(--color-primary-dark)" />
+          </linearGradient>
+        </defs>
         <circle cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} fill="none" stroke="var(--color-primary-light)" strokeWidth={STROKE} />
         <circle
           cx={SIZE / 2}
           cy={SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="var(--color-primary)"
+          stroke="url(#cycleRingGradient)"
           strokeWidth={STROKE}
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
