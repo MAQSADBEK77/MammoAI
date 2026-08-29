@@ -142,6 +142,10 @@ body {
   background: linear-gradient(135deg, var(--color-accent) 0%, #0f766e 100%);
 }
 
+.bg-aurora-nav {
+  background: linear-gradient(135deg, var(--color-nav) 0%, var(--color-nav-light) 100%);
+}
+
 .glass-card {
   background: var(--glass-light);
   border: 1px solid var(--glass-border);

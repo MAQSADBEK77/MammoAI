@@ -19,21 +19,25 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto flex max-w-2xl items-stretch justify-between px-1">
+    <nav className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      <div className="bg-aurora-nav flex w-full max-w-md items-stretch justify-between gap-1 rounded-[32px] px-2 py-2 shadow-2xl shadow-black/30">
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname?.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
-              className={clsx(
-                "tap-target flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium",
-                active ? "text-primary" : "text-text-muted"
-              )}
+              className="tap-target flex flex-1 flex-col items-center justify-center gap-0.5 rounded-3xl py-1.5 text-[10px] font-bold text-white/50 transition"
             >
-              <Icon size={22} strokeWidth={active ? 2.4 : 2} />
-              <span>{label}</span>
+              <span
+                className={clsx(
+                  "flex h-10 w-10 items-center justify-center rounded-full transition",
+                  active && "bg-gradient-to-br from-primary to-secondary"
+                )}
+              >
+                <Icon size={20} strokeWidth={active ? 2.4 : 2} className={active ? "text-white" : "text-white/50"} />
+              </span>
+              <span className={active ? "text-white" : "text-white/50"}>{label}</span>
             </Link>
           );
         })}
