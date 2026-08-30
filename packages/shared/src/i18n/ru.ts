@@ -162,6 +162,10 @@ const ru: Dictionary = {
     articlesCardTitle: "Интересные статьи",
     riskQuizCardTitle: "Тест самопроверки",
     riskQuizCardSubtitle: "Узнайте уровень риска за 2 минуты",
+    cycleLengthLabel: "Длина цикла",
+    periodLengthLabel: "Длительность менструации",
+    daysUnit: (n: number) => `${n} дн.`,
+    recentLogsTitle: "Последние записи",
     flowLevels: {
       spotting: "Мажущие",
       light: "Лёгкие",

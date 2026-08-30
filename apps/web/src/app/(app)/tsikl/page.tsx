@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Smile, Droplet, Stethoscope } from "lucide-react";
+import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText, ChevronRight } from "lucide-react";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card, ScreenHeader, IconChip, Badge } from "@/components/ui";
+import { Button, Card, FloatingTag, ScreenHeader, IconChip, Badge } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
@@ -131,6 +131,19 @@ export default function CyclePage() {
             </Badge>
           </div>
         )}
+
+        <div className="mt-4 flex justify-center gap-3">
+          <FloatingTag
+            icon={<CalendarRange size={18} className="text-primary" />}
+            value={dict.cycle.daysUnit(data.settings.averageCycleLength)}
+            label={dict.cycle.cycleLengthLabel}
+          />
+          <FloatingTag
+            icon={<Droplet size={18} className="text-primary" />}
+            value={dict.cycle.daysUnit(data.settings.averagePeriodLength)}
+            label={dict.cycle.periodLengthLabel}
+          />
+        </div>
       </Card>
 
       {phase && <PhaseCard phase={phase} />}
@@ -229,13 +242,19 @@ export default function CyclePage() {
 
       <div className="grid grid-cols-2 gap-3">
         <button onClick={() => router.push("/xavf-testi")} className="text-left">
-          <Card className="h-full">
+          <Card className="h-full space-y-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-warning/15">
+              <ShieldAlert size={20} className="text-warning" />
+            </span>
             <p className="font-semibold text-text-primary">{dict.cycle.riskQuizCardTitle}</p>
-            <p className="mt-1 text-xs text-text-secondary">{dict.cycle.riskQuizCardSubtitle}</p>
+            <p className="text-xs text-text-secondary">{dict.cycle.riskQuizCardSubtitle}</p>
           </Card>
         </button>
         <button onClick={() => router.push("/maqolalar")} className="text-left">
-          <Card className="h-full">
+          <Card className="h-full space-y-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary/15">
+              <BookOpenText size={20} className="text-secondary" />
+            </span>
             <p className="font-semibold text-text-primary">{dict.cycle.articlesCardTitle}</p>
           </Card>
         </button>
@@ -243,13 +262,18 @@ export default function CyclePage() {
 
       {data.logs.length > 0 && (
         <div className="space-y-2">
+          <p className="text-base font-bold text-text-primary">{dict.cycle.recentLogsTitle}</p>
           {data.logs.slice(0, 5).map((log) => (
-            <Card key={log.id} className="flex items-center justify-between py-3">
-              <span className="text-sm text-text-secondary">{log.date}</span>
+            <Card key={log.id} className="flex items-center gap-3 py-3">
+              <span className="bg-aurora-cycle flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl">
+                <Droplet size={18} className="text-white" />
+              </span>
+              <span className="flex-1 text-sm font-medium text-text-primary">{log.date}</span>
               <div className="flex gap-1">
                 {log.flow && <Badge tone="primary">{FLOW_EMOJI[log.flow]} {dict.cycle.flowLevels[log.flow]}</Badge>}
                 {log.mood && <Badge>{MOOD_EMOJI[log.mood]} {dict.cycle.moods[log.mood]}</Badge>}
               </div>
+              <ChevronRight size={16} className="shrink-0 text-text-muted" />
             </Card>
           ))}
         </div>

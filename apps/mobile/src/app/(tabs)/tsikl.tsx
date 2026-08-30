@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Smile, Droplet, Stethoscope } from "lucide-react-native";
+import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText, ChevronRight } from "lucide-react-native";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { getCyclePhase, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { getCyclePhase, gradients, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, IconChip, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, FloatingTag, IconChip, ScreenHeader } from "@/components/ui";
+import { LinearGradient } from "expo-linear-gradient";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
@@ -127,6 +128,19 @@ export default function CycleScreen() {
               <Badge tone="primary">{`${isMinor ? "🐰 " : ""}${dict.cycle.periodDayBadge(periodDay)}`}</Badge>
             </View>
           )}
+
+          <View className="mt-4 flex-row gap-3">
+            <FloatingTag
+              icon={<CalendarRange size={18} color="#F43F7F" />}
+              value={dict.cycle.daysUnit(data.settings.averageCycleLength)}
+              label={dict.cycle.cycleLengthLabel}
+            />
+            <FloatingTag
+              icon={<Droplet size={18} color="#F43F7F" />}
+              value={dict.cycle.daysUnit(data.settings.averagePeriodLength)}
+              label={dict.cycle.periodLengthLabel}
+            />
+          </View>
         </Card>
 
         {phase && <PhaseCard phase={phase} />}
@@ -224,27 +238,47 @@ export default function CycleScreen() {
 
         <View className="flex-row gap-3">
           <Pressable className="flex-1" onPress={() => router.push("/xavf-testi")}>
-            <Card>
+            <Card className="gap-2.5">
+              <View className="h-10 w-10 items-center justify-center rounded-2xl bg-warning/15">
+                <ShieldAlert size={20} color="#E7A83F" />
+              </View>
               <Text className="font-semibold text-text-primary">{dict.cycle.riskQuizCardTitle}</Text>
-              <Text className="mt-1 text-xs text-text-secondary">{dict.cycle.riskQuizCardSubtitle}</Text>
+              <Text className="text-xs text-text-secondary">{dict.cycle.riskQuizCardSubtitle}</Text>
             </Card>
           </Pressable>
           <Pressable className="flex-1" onPress={() => router.push("/maqolalar")}>
-            <Card>
+            <Card className="gap-2.5">
+              <View className="h-10 w-10 items-center justify-center rounded-2xl bg-secondary/15">
+                <BookOpenText size={20} color="#7C3AED" />
+              </View>
               <Text className="font-semibold text-text-primary">{dict.cycle.articlesCardTitle}</Text>
             </Card>
           </Pressable>
         </View>
 
-        {data.logs.slice(0, 5).map((log) => (
-          <Card key={log.id} className="flex-row items-center justify-between py-3">
-            <Text className="text-sm text-text-secondary">{log.date}</Text>
-            <View className="flex-row gap-1">
-              {log.flow && <Badge tone="primary">{`${FLOW_EMOJI[log.flow]} ${dict.cycle.flowLevels[log.flow]}`}</Badge>}
-              {log.mood && <Badge>{`${MOOD_EMOJI[log.mood]} ${dict.cycle.moods[log.mood]}`}</Badge>}
-            </View>
-          </Card>
-        ))}
+        {data.logs.length > 0 && (
+          <View className="gap-2">
+            <Text className="text-base font-bold text-text-primary">{dict.cycle.recentLogsTitle}</Text>
+            {data.logs.slice(0, 5).map((log) => (
+              <Card key={log.id} className="flex-row items-center gap-3 py-3">
+                <LinearGradient
+                  colors={gradients.cycle}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{ width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center" }}
+                >
+                  <Droplet size={18} color="#FFFFFF" />
+                </LinearGradient>
+                <Text className="flex-1 text-sm font-medium text-text-primary">{log.date}</Text>
+                <View className="flex-row gap-1">
+                  {log.flow && <Badge tone="primary">{`${FLOW_EMOJI[log.flow]} ${dict.cycle.flowLevels[log.flow]}`}</Badge>}
+                  {log.mood && <Badge>{`${MOOD_EMOJI[log.mood]} ${dict.cycle.moods[log.mood]}`}</Badge>}
+                </View>
+                <ChevronRight size={16} color="#9CA3AF" />
+              </Card>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

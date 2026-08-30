@@ -165,6 +165,10 @@ const uz = {
     articlesCardTitle: "Qiziqarli maqolalar",
     riskQuizCardTitle: "O'z-o'zini tekshirish testi",
     riskQuizCardSubtitle: "2 daqiqada xavf darajangizni bilib oling",
+    cycleLengthLabel: "Sikl uzunligi",
+    periodLengthLabel: "Hayz davomiyligi",
+    daysUnit: (n: number) => `${n} kun`,
+    recentLogsTitle: "So'nggi yozuvlar",
     flowLevels: {
       spotting: "Tomchi",
       light: "Yengil",
