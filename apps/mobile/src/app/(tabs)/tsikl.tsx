@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText, ChevronRight } from "lucide-react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText } from "lucide-react-native";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, gradients, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -114,6 +115,7 @@ export default function CycleScreen() {
           </Card>
         )}
 
+        <Animated.View entering={FadeInUp.duration(450)}>
         <Card variant="glass" className="items-center">
           <Pressable onPress={() => !dayInCycle && setLogging(true)}>
             <CycleRing
@@ -142,8 +144,13 @@ export default function CycleScreen() {
             />
           </View>
         </Card>
+        </Animated.View>
 
-        {phase && <PhaseCard phase={phase} />}
+        {phase && (
+          <Animated.View entering={FadeInUp.duration(450).delay(80)}>
+            <PhaseCard phase={phase} />
+          </Animated.View>
+        )}
 
         <Card>
           <MonthCalendar monthDate={new Date()} markers={markers} today={today} />
@@ -237,7 +244,7 @@ export default function CycleScreen() {
         )}
 
         <View className="flex-row gap-3">
-          <Pressable className="flex-1" onPress={() => router.push("/xavf-testi")}>
+          <Pressable className="flex-1 active:scale-[0.98]" onPress={() => router.push("/xavf-testi")}>
             <Card className="gap-2.5">
               <View className="h-10 w-10 items-center justify-center rounded-2xl bg-warning/15">
                 <ShieldAlert size={20} color="#E7A83F" />
@@ -246,7 +253,7 @@ export default function CycleScreen() {
               <Text className="text-xs text-text-secondary">{dict.cycle.riskQuizCardSubtitle}</Text>
             </Card>
           </Pressable>
-          <Pressable className="flex-1" onPress={() => router.push("/maqolalar")}>
+          <Pressable className="flex-1 active:scale-[0.98]" onPress={() => router.push("/maqolalar")}>
             <Card className="gap-2.5">
               <View className="h-10 w-10 items-center justify-center rounded-2xl bg-secondary/15">
                 <BookOpenText size={20} color="#7C3AED" />
@@ -274,7 +281,6 @@ export default function CycleScreen() {
                   {log.flow && <Badge tone="primary">{`${FLOW_EMOJI[log.flow]} ${dict.cycle.flowLevels[log.flow]}`}</Badge>}
                   {log.mood && <Badge>{`${MOOD_EMOJI[log.mood]} ${dict.cycle.moods[log.mood]}`}</Badge>}
                 </View>
-                <ChevronRight size={16} color="#9CA3AF" />
               </Card>
             ))}
           </View>

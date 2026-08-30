@@ -46,14 +46,14 @@ export default function ChecklistPage() {
         <img src="/illustrations/healthy-lifestyle.svg" alt="" className="h-32 w-auto" />
       </div>
 
-      <div className="flex gap-2.5">
+      <div className="animate-fade-in-up flex gap-2.5">
         <StatTile icon={<CheckCircle2 size={16} />} label={statusLabel.done} value={String(doneCount)} tone="accent" active />
         <StatTile icon={<Clock size={16} />} label={statusLabel.pending} value={String(pendingCount)} tone="secondary" active />
         <StatTile icon={<AlertCircle size={16} />} label={statusLabel.overdue} value={String(overdueCount)} tone="primary" active />
       </div>
 
       <button onClick={() => router.push("/xavf-testi")} className="block w-full text-left">
-        <Card>
+        <Card interactive>
           <p className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</p>
         </Card>
       </button>

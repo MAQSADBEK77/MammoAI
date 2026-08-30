@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ScrollView, View, Text, Pressable, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { Navigation as NavigationIcon, MapPin, ShieldCheck } from "lucide-react-native";
 import clsx from "clsx";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
@@ -66,7 +67,7 @@ export default function ClinicsScreen() {
           icon={<Text style={{ fontSize: 16 }}>🔍</Text>}
         />
 
-        <View className="flex-row gap-3">
+        <Animated.View entering={FadeInUp.duration(450)} className="flex-row gap-3">
           <StatTile icon={<MapPin size={16} color="#FFFFFF" />} label={dict.clinics.foundCountLabel} value={String(filtered.length)} tone="secondary" active />
           <StatTile
             icon={<ShieldCheck size={16} color="#FFFFFF" />}
@@ -75,7 +76,7 @@ export default function ClinicsScreen() {
             tone="accent"
             active
           />
-        </View>
+        </Animated.View>
 
         <SegmentedControl
           value={view}
@@ -152,7 +153,10 @@ export default function ClinicsScreen() {
 
 function FilterChip({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} className={clsx("rounded-full border px-3 py-1.5", active ? "border-primary bg-primary" : "border-border bg-surface")}>
+    <Pressable
+      onPress={onPress}
+      className={clsx("rounded-full border px-3 py-1.5 active:scale-95", active ? "border-primary bg-primary" : "border-border bg-surface")}
+    >
       <Text className={clsx("text-xs font-medium", active ? "text-white" : "text-text-secondary")}>{label}</Text>
     </Pressable>
   );

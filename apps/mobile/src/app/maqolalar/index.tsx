@@ -33,7 +33,7 @@ export default function ArticlesScreen() {
         <ScreenHeader title={dict.articles.title} />
         <Text className="-mt-3 text-xs text-text-muted">{dict.articles.seedDataNotice}</Text>
         {articles.map((article) => (
-          <Pressable key={article.id} onPress={() => router.push(`/maqolalar/${article.slug}`)}>
+          <Pressable key={article.id} className="active:scale-[0.98]" onPress={() => router.push(`/maqolalar/${article.slug}`)}>
             <Card className="flex-row items-start gap-3">
               <View className={`h-11 w-11 items-center justify-center rounded-2xl ${CATEGORY_TINT[article.category]}`}>
                 <Text style={{ fontSize: 20 }}>{CATEGORY_EMOJI[article.category]}</Text>

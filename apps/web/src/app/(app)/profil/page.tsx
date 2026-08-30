@@ -90,7 +90,7 @@ export default function ProfilePage() {
     <div className="space-y-5 pb-6">
       {/* Profil "shaxsiy" kartasi — pushti→binafsha gradient, avatar, maqsad
           yorlig'i va haqiqiy foydalanish statistikasi. */}
-      <div className="bg-aurora-profile space-y-4 rounded-[32px] p-6">
+      <div className="bg-aurora-profile animate-fade-in-up space-y-4 rounded-[32px] p-6">
         <div className="flex items-center gap-3.5">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/20 text-2xl font-extrabold text-white">
             {initials}
@@ -197,13 +197,13 @@ export default function ProfilePage() {
         </SettingsRow>
       </Card>
 
-      <Card className="space-y-1">
-        <Link href="/maxfiylik">
+      <Link href="/maxfiylik">
+        <Card interactive className="space-y-1">
           <SettingsRow icon="🔒" label={dict.profile.securityTitle} last>
             <span className="text-sm text-primary-dark">{dict.profile.privacyPolicyLink}</span>
           </SettingsRow>
-        </Link>
-      </Card>
+        </Card>
+      </Link>
 
       <Card className="space-y-1">
         <SettingsRow icon="❓" label={dict.profile.helpTitle} last>
@@ -222,10 +222,16 @@ export default function ProfilePage() {
       </div>
 
       <Card className="space-y-1">
-        <button className="w-full text-left" onClick={() => flash(dict.profile.rateAppComingSoon)}>
+        <button
+          className="-mx-2 w-[calc(100%+16px)] rounded-2xl px-2 text-left transition hover:bg-surface-muted active:scale-[0.99]"
+          onClick={() => flash(dict.profile.rateAppComingSoon)}
+        >
           <SettingsRow icon="⭐" label={dict.profile.rateAppButton} />
         </button>
-        <button className="w-full text-left" onClick={shareApp}>
+        <button
+          className="-mx-2 w-[calc(100%+16px)] rounded-2xl px-2 text-left transition hover:bg-surface-muted active:scale-[0.99]"
+          onClick={shareApp}
+        >
           <SettingsRow icon="📱" label={dict.profile.shareAppButton} last />
         </button>
       </Card>

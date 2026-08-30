@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import {
   ChevronRight,
   CalendarClock,
@@ -123,6 +124,7 @@ export default function PregnancyScreen() {
 
         {/* Homiladorlik "sayohati" kartasi — referens: binafsha gradient fon,
             markazda o'lcham-illyustratsiya, ustida suzuvchi statistik yorliqlar. */}
+        <Animated.View entering={FadeInUp.duration(450)}>
         <LinearGradient
           colors={gradients.pregnancy}
           start={{ x: 0, y: 0 }}
@@ -149,9 +151,10 @@ export default function PregnancyScreen() {
             <Text className="text-center text-sm font-semibold text-white">{dict.pregnancy.daysRemaining(status.daysRemaining)}</Text>
           </View>
         </LinearGradient>
+        </Animated.View>
 
         {/* Sog'liq ko'rsatkichlari — foydalanuvchi o'zi qayd etadigan tezkor-jurnal. */}
-        <View className="gap-2">
+        <Animated.View entering={FadeInUp.duration(450).delay(80)} className="gap-2">
           <Text className="text-base font-bold text-text-primary">{dict.pregnancy.vitalsTitle}</Text>
           <Text className="-mt-1 text-xs text-text-muted">{dict.pregnancy.vitalsDisclaimer}</Text>
 
@@ -211,9 +214,11 @@ export default function PregnancyScreen() {
               </View>
             </Card>
           )}
-        </View>
+        </Animated.View>
 
-        {/* Navbatdagi ko'rik — haqiqiy `visits` ma'lumotidan (eng yaqin kelgusi sana). */}
+        {/* Navbatdagi ko'rik — haqiqiy `visits` ma'lumotidan (eng yaqin kelgusi sana).
+            Bosilganda tashrif qo'shish shakli ochiladi — strelka shunchaki bezak emas. */}
+        <Pressable className="active:scale-[0.98]" onPress={() => setAddingVisit(true)}>
         <Card className="flex-row items-center gap-3">
           <View className="h-11 w-11 items-center justify-center rounded-2xl bg-secondary/15">
             <CalendarDays size={20} color="#7C3AED" />
@@ -233,6 +238,7 @@ export default function PregnancyScreen() {
           </View>
           <ChevronRight size={18} color="#9CA3AF" />
         </Card>
+        </Pressable>
 
         {status.trimester === 3 && (
           <Card className="flex-row items-center justify-between">
@@ -310,7 +316,6 @@ export default function PregnancyScreen() {
                   {v.clinicName ? ` · ${v.clinicName}` : ""}
                 </Text>
               </View>
-              <ChevronRight size={18} color="#9CA3AF" />
             </Card>
           ))}
         </View>

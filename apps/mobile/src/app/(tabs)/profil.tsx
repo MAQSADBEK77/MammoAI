@@ -6,6 +6,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import type { Language } from "@mammoai/shared";
 import { goalToLandingTab, gradientStops, colors, gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -54,6 +55,7 @@ export default function ProfileScreen() {
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
         {/* Profil "shaxsiy" kartasi — pushti→binafsha gradient, avatar, maqsad
             yorlig'i va haqiqiy foydalanish statistikasi. */}
+        <Animated.View entering={FadeInUp.duration(450)}>
         <LinearGradient colors={gradients.profile} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 32, padding: 22, gap: 16 }}>
           <View className="flex-row items-center gap-3.5">
             <View className="h-16 w-16 items-center justify-center rounded-full bg-white/20">
@@ -91,6 +93,7 @@ export default function ProfileScreen() {
             </View>
           </View>
         </LinearGradient>
+        </Animated.View>
 
         <Card className="gap-3">
           <Text className="text-sm font-semibold text-text-secondary">{dict.profile.languageLabel}</Text>
@@ -158,7 +161,7 @@ export default function ProfileScreen() {
           </SettingsRow>
         </Card>
 
-        <Pressable onPress={() => router.push("/maxfiylik")}>
+        <Pressable className="active:scale-[0.98]" onPress={() => router.push("/maxfiylik")}>
           <Card className="gap-1">
             <SettingsRow icon="🔒" label={dict.profile.securityTitle} last>
               <Text className="text-sm text-primary-dark">{dict.profile.privacyPolicyLink}</Text>
@@ -190,10 +193,10 @@ export default function ProfileScreen() {
         </LinearGradient>
 
         <Card className="gap-1">
-          <Pressable onPress={() => Alert.alert(dict.profile.rateAppButton, dict.profile.rateAppComingSoon)}>
+          <Pressable className="active:opacity-60" onPress={() => Alert.alert(dict.profile.rateAppButton, dict.profile.rateAppComingSoon)}>
             <SettingsRow icon="⭐" label={dict.profile.rateAppButton} />
           </Pressable>
-          <Pressable onPress={() => Share.share({ message: dict.profile.shareAppMessage })}>
+          <Pressable className="active:opacity-60" onPress={() => Share.share({ message: dict.profile.shareAppMessage })}>
             <SettingsRow icon="📱" label={dict.profile.shareAppButton} last />
           </Pressable>
         </Card>

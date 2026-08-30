@@ -152,7 +152,7 @@ export default function PregnancyPage() {
                   setVitalError(null);
                 }}
               >
-                <Card className="h-full space-y-3">
+                <Card interactive className="h-full space-y-3">
                   <div className="flex items-center justify-between">
                     <span className={`flex h-9 w-9 items-center justify-center rounded-full ${VITAL_TINT[type]}`}>
                       <Icon size={18} />
@@ -201,26 +201,29 @@ export default function PregnancyPage() {
         )}
       </div>
 
-      {/* Navbatdagi ko'rik — haqiqiy `visits` ma'lumotidan (eng yaqin kelgusi sana). */}
-      <Card className="flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/10">
-          <CalendarDays size={20} className="text-secondary" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-text-secondary">{dict.pregnancy.nextCheckupTitle}</p>
-          {nextVisit ? (
-            <>
-              <p className="font-bold text-text-primary">{nextVisit.date}</p>
-              <p className="text-sm text-text-secondary">
-                {nextVisit.label} · {dict.pregnancy.nextCheckupDaysLeft(nextVisitDaysLeft ?? 0)}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-text-muted">{dict.pregnancy.nextCheckupNone}</p>
-          )}
-        </div>
-        <ChevronRight size={18} className="shrink-0 text-text-muted" />
-      </Card>
+      {/* Navbatdagi ko'rik — haqiqiy `visits` ma'lumotidan. Bosilganda tashrif
+          qo'shish shakli ochiladi — strelka shunchaki bezak emas. */}
+      <button type="button" className="w-full text-left" onClick={() => setAddingVisit(true)}>
+        <Card interactive className="flex items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/10">
+            <CalendarDays size={20} className="text-secondary" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-text-secondary">{dict.pregnancy.nextCheckupTitle}</p>
+            {nextVisit ? (
+              <>
+                <p className="font-bold text-text-primary">{nextVisit.date}</p>
+                <p className="text-sm text-text-secondary">
+                  {nextVisit.label} · {dict.pregnancy.nextCheckupDaysLeft(nextVisitDaysLeft ?? 0)}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-text-muted">{dict.pregnancy.nextCheckupNone}</p>
+            )}
+          </div>
+          <ChevronRight size={18} className="shrink-0 text-text-muted" />
+        </Card>
+      </button>
 
       {status.trimester === 3 && (
         <Card className="flex items-center justify-between">
@@ -312,7 +315,6 @@ export default function PregnancyPage() {
                   {v.clinicName ? ` · ${v.clinicName}` : ""}
                 </p>
               </div>
-              <ChevronRight size={18} className="text-text-muted" />
             </Card>
           ))}
         </div>

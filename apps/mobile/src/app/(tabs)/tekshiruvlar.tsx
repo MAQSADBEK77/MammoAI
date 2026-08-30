@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
@@ -52,7 +53,7 @@ export default function ChecklistScreen() {
           <HealthyLifestyleIllustration width={170} height={110} />
         </View>
 
-        <View className="flex-row gap-2.5">
+        <Animated.View entering={FadeInUp.duration(450)} className="flex-row gap-2.5">
           <StatTile
             icon={<CheckCircle2 size={16} color="#FFFFFF" />}
             label={statusLabel.done}
@@ -74,9 +75,9 @@ export default function ChecklistScreen() {
             tone="primary"
             active
           />
-        </View>
+        </Animated.View>
 
-        <Pressable onPress={() => router.push("/xavf-testi")}>
+        <Pressable className="active:scale-[0.98]" onPress={() => router.push("/xavf-testi")}>
           <Card>
             <Text className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</Text>
           </Card>

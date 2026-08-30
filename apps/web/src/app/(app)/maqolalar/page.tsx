@@ -28,7 +28,7 @@ export default function ArticlesPage() {
 
       {articles.map((article) => (
         <Link key={article.id} href={`/maqolalar/${article.slug}`}>
-          <Card className="flex items-start gap-3">
+          <Card interactive className="flex items-start gap-3">
             <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-lg ${CATEGORY_TINT[article.category]}`}>
               {CATEGORY_EMOJI[article.category]}
             </span>

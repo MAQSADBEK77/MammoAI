@@ -59,12 +59,12 @@ export function IconButton({
 }) {
   const toneClass =
     tone === "surface"
-      ? "bg-surface shadow-md shadow-text-primary/5"
+      ? "bg-surface shadow-md shadow-text-primary/5 hover:bg-surface-muted"
       : tone === "dark"
-        ? "bg-nav text-white"
+        ? "bg-nav text-white hover:brightness-110"
         : tone === "primary"
-          ? "bg-primary text-white"
-          : "floating-tag";
+          ? "bg-primary text-white hover:brightness-105"
+          : "floating-tag hover:bg-white/90";
   return (
     <button
       type="button"
@@ -83,13 +83,17 @@ export function Card({
   className,
   children,
   variant = "default",
+  /** Karta button/Link ichida ("bosiladigan" ro'yxat elementi) bo'lsa true qiling —
+   * hover'da yumshoq ko'tarilish/soya, bosilganda kichrayish qo'shiladi. */
+  interactive,
   ...props
-}: HTMLAttributes<HTMLDivElement> & { variant?: CardVariant }) {
+}: HTMLAttributes<HTMLDivElement> & { variant?: CardVariant; interactive?: boolean }) {
   return (
     <div
       className={clsx(
-        "rounded-[28px] p-5",
+        "rounded-[28px] p-5 transition-all duration-200",
         variant === "flat" ? "bg-surface-muted" : variant === "glass" ? "glass-card" : "bg-surface shadow-md shadow-text-primary/5",
+        interactive && "cursor-pointer hover:-translate-y-0.5 hover:shadow-xl hover:shadow-text-primary/10 active:translate-y-0 active:scale-[0.99]",
         className
       )}
       {...props}
@@ -184,6 +188,7 @@ export function StatTile({
   unit,
   tone = "muted",
   active,
+  interactive,
 }: {
   icon?: ReactNode;
   label: string;
@@ -191,6 +196,8 @@ export function StatTile({
   unit?: string;
   tone?: "primary" | "secondary" | "accent" | "muted";
   active?: boolean;
+  /** Karta bosiladigan bo'lsa (masalan qiymat kiritish uchun) true qiling. */
+  interactive?: boolean;
 }) {
   const toneBg = active
     ? tone === "primary"
@@ -204,7 +211,14 @@ export function StatTile({
   const textTone = active ? "text-white" : "text-text-primary";
   const subTone = active ? "text-white/75" : "text-text-secondary";
   return (
-    <div className={clsx("flex-1 rounded-3xl p-4", toneBg, active && "shadow-lg shadow-nav/20")}>
+    <div
+      className={clsx(
+        "flex-1 rounded-3xl p-4 transition-all duration-200",
+        toneBg,
+        active && "shadow-lg shadow-nav/20",
+        interactive && "cursor-pointer hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-[0.98]"
+      )}
+    >
       <div className={clsx("flex items-center gap-1.5 text-xs font-semibold", subTone)}>
         {icon}
         {label}
@@ -237,8 +251,8 @@ export function SegmentedControl<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={clsx(
-              "tap-target flex-1 rounded-full px-3 text-xs font-semibold transition",
-              active ? "bg-primary text-white shadow" : "bg-transparent text-text-secondary hover:text-text-primary"
+              "tap-target flex-1 rounded-full px-3 text-xs font-semibold transition active:scale-95",
+              active ? "bg-primary text-white shadow" : "bg-transparent text-text-secondary hover:bg-white/70 hover:text-text-primary"
             )}
           >
             {opt.label}

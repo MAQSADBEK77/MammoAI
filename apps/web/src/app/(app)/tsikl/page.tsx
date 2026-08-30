@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText, ChevronRight } from "lucide-react";
+import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText } from "lucide-react";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -114,7 +114,7 @@ export default function CyclePage() {
         </Card>
       )}
 
-      <Card variant="glass" className="flex flex-col items-center">
+      <Card variant="glass" className="animate-fade-in-up flex flex-col items-center">
         <button onClick={() => !dayInCycle && setLogging(true)} className="w-full">
           <CycleRing
             dayInCycle={dayInCycle ?? 1}
@@ -242,7 +242,7 @@ export default function CyclePage() {
 
       <div className="grid grid-cols-2 gap-3">
         <button onClick={() => router.push("/xavf-testi")} className="text-left">
-          <Card className="h-full space-y-2.5">
+          <Card interactive className="h-full space-y-2.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-warning/15">
               <ShieldAlert size={20} className="text-warning" />
             </span>
@@ -251,7 +251,7 @@ export default function CyclePage() {
           </Card>
         </button>
         <button onClick={() => router.push("/maqolalar")} className="text-left">
-          <Card className="h-full space-y-2.5">
+          <Card interactive className="h-full space-y-2.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary/15">
               <BookOpenText size={20} className="text-secondary" />
             </span>
@@ -273,7 +273,6 @@ export default function CyclePage() {
                 {log.flow && <Badge tone="primary">{FLOW_EMOJI[log.flow]} {dict.cycle.flowLevels[log.flow]}</Badge>}
                 {log.mood && <Badge>{MOOD_EMOJI[log.mood]} {dict.cycle.moods[log.mood]}</Badge>}
               </div>
-              <ChevronRight size={16} className="shrink-0 text-text-muted" />
             </Card>
           ))}
         </div>
@@ -299,7 +298,7 @@ function QuickCard({
   const toneBg = tone === "primary" ? "bg-primary" : tone === "secondary" ? "bg-secondary" : "bg-accent";
   return (
     <button onClick={onClick} className="text-left">
-      <Card className={clsx("flex h-full flex-col items-center justify-center gap-2 py-4 text-center", filled && `${toneBg} text-white`)}>
+      <Card interactive className={clsx("flex h-full flex-col items-center justify-center gap-2 py-4 text-center", filled && `${toneBg} text-white`)}>
         <span className={clsx("flex h-10 w-10 items-center justify-center rounded-2xl", filled ? "bg-white/20" : "bg-surface-muted text-text-secondary")}>
           {icon}
         </span>

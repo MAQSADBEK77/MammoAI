@@ -69,7 +69,7 @@ export default function ClinicsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="animate-fade-in-up grid grid-cols-2 gap-3">
         <StatTile icon={<MapPin size={16} />} label={dict.clinics.foundCountLabel} value={String(filtered.length)} tone="secondary" active />
         <StatTile
           icon={<ShieldCheck size={16} />}
@@ -150,8 +150,10 @@ function FilterChip({ active, label, onClick }: { active: boolean; label: string
     <button
       onClick={onClick}
       className={clsx(
-        "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium",
-        active ? "border-primary bg-primary text-white" : "border-border bg-surface text-text-secondary"
+        "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition active:scale-95",
+        active
+          ? "border-primary bg-primary text-white"
+          : "border-border bg-surface text-text-secondary hover:border-primary-light hover:bg-primary-light/20 hover:text-primary-dark"
       )}
     >
       {label}
