@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { goalToLandingTab } from "@mammoai/shared";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
+import { LoadingSpinner } from "@/components/ui";
 
 export default function IndexScreen() {
   const { status, onboardingProfile } = useSession();
@@ -21,7 +22,7 @@ export default function IndexScreen() {
 
   return (
     <View className="flex-1 items-center justify-center bg-background">
-      <Text className="text-text-secondary">{dict.common.loading}</Text>
+      <LoadingSpinner label={dict.common.loading} />
     </View>
   );
 }

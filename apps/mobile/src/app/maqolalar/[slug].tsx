@@ -5,7 +5,7 @@ import { useLocalSearchParams } from "expo-router";
 import type { Article } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, LoadingSpinner } from "@/components/ui";
 
 export default function ArticleDetailScreen() {
   const { dict } = useI18n();
@@ -19,7 +19,7 @@ export default function ArticleDetailScreen() {
   if (!article) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary">{dict.common.loading}</Text>
+        <LoadingSpinner label={dict.common.loading} />
       </SafeAreaView>
     );
   }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 import { BottomNav } from "@/components/BottomNav";
+import { LoadingSpinner } from "@/components/ui";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
@@ -18,7 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (status !== "onboarded") {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background">
-        <p className="text-text-secondary">{dict.common.loading}</p>
+        <LoadingSpinner label={dict.common.loading} />
       </div>
     );
   }

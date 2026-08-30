@@ -6,7 +6,7 @@ import { RISK_QUIZ_QUESTIONS } from "@mammoai/shared";
 import type { RiskQuizAnswers, RiskQuizResult } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ProgressBar, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, LoadingSpinner, ProgressBar, ScreenHeader } from "@/components/ui";
 
 export default function RiskQuizPage() {
   const { dict } = useI18n();
@@ -45,7 +45,7 @@ export default function RiskQuizPage() {
   const shown = result ?? (existingResult && !started ? existingResult : null);
 
   if (existingResult === undefined) {
-    return <p className="text-text-secondary">{dict.common.loading}</p>;
+    return <LoadingSpinner label={dict.common.loading} />;
   }
 
   return (

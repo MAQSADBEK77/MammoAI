@@ -7,7 +7,7 @@ import { getMilestoneForWeek, getVitalTone } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, FloatingTag, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
@@ -53,7 +53,7 @@ export default function PregnancyPage() {
     }
   }
 
-  if (!data) return <p className="text-text-secondary">{dict.common.loading}</p>;
+  if (!data) return <LoadingSpinner label={dict.common.loading} />;
 
   if (!data.status) {
     return (

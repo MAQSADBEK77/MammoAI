@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader, StatTile } from "@/components/ui";
+import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 const STATUS_ICON = { pending: Clock, done: CheckCircle2, overdue: AlertCircle } as const;
@@ -20,7 +20,7 @@ export default function ChecklistPage() {
     api.checklist.list().then(setItems);
   }, []);
 
-  if (!items) return <p className="text-text-secondary">{dict.common.loading}</p>;
+  if (!items) return <LoadingSpinner label={dict.common.loading} />;
 
   async function complete(id: string) {
     setItems(await api.checklist.complete(id));

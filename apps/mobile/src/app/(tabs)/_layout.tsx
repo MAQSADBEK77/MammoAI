@@ -6,6 +6,7 @@ import { Calendar, Baby, ListChecks, MapPin, User } from "lucide-react-native";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 import { TabBarBackground, TabIcon } from "@/components/TabBar";
+import { LoadingSpinner } from "@/components/ui";
 
 export default function TabsLayout() {
   const { status } = useSession();
@@ -19,7 +20,7 @@ export default function TabsLayout() {
   if (status !== "onboarded") {
     return (
       <View className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary">{dict.common.loading}</Text>
+        <LoadingSpinner label={dict.common.loading} />
       </View>
     );
   }

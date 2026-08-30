@@ -9,7 +9,7 @@ import { getCyclePhase, gradients, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from 
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, FloatingTag, IconChip, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, FloatingTag, IconChip, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { LinearGradient } from "expo-linear-gradient";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
@@ -51,7 +51,7 @@ export default function CycleScreen() {
   if (!data) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary">{dict.common.loading}</Text>
+        <LoadingSpinner label={dict.common.loading} />
       </SafeAreaView>
     );
   }

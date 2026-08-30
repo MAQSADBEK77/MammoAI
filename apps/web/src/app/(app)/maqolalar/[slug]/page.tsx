@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import type { Article } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, LoadingSpinner } from "@/components/ui";
 
 export default function ArticleDetailPage() {
   const { dict } = useI18n();
@@ -16,7 +16,7 @@ export default function ArticleDetailPage() {
     api.articles.get(params.slug).then(setArticle);
   }, [params.slug]);
 
-  if (!article) return <p className="text-text-secondary">{dict.common.loading}</p>;
+  if (!article) return <LoadingSpinner label={dict.common.loading} />;
 
   return (
     <div className="space-y-4 pb-6">

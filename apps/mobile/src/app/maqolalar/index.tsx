@@ -6,7 +6,7 @@ import { ChevronRight } from "lucide-react-native";
 import type { Article, ArticleCategory } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Card, ScreenHeader } from "@/components/ui";
+import { Badge, Card, LoadingSpinner, ScreenHeader } from "@/components/ui";
 
 const CATEGORY_EMOJI: Record<ArticleCategory, string> = { cycle: "🩸", pregnancy: "🤰", checkups: "🩺" };
 const CATEGORY_TINT: Record<ArticleCategory, string> = { cycle: "bg-primary/15", pregnancy: "bg-secondary/15", checkups: "bg-accent/15" };
@@ -22,7 +22,7 @@ export default function ArticlesScreen() {
   if (!articles) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary">{dict.common.loading}</Text>
+        <LoadingSpinner label={dict.common.loading} />
       </SafeAreaView>
     );
   }

@@ -1,7 +1,9 @@
 import { Image, Pressable, Text, TextInput, View, type PressableProps, type ViewProps } from "react-native";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from "react-native-reanimated";
 import { gradientStops, colors, glass, gradients } from "@mammoai/shared";
 
 type Variant = "primary" | "secondary" | "ghost" | "dark";
@@ -327,6 +329,57 @@ export function TextField({
         className={clsx("min-h-[48px] rounded-2xl border border-border bg-surface pr-4 text-base text-text-primary", icon ? "pl-11" : "pl-4")}
         placeholderTextColor="#9CA3AF"
       />
+    </View>
+  );
+}
+
+const SPINNER_SIZE = 48;
+const SPINNER_STROKE = 5;
+const SPINNER_RADIUS = (SPINNER_SIZE - SPINNER_STROKE) / 2;
+const SPINNER_CIRCUMFERENCE = 2 * Math.PI * SPINNER_RADIUS;
+
+/** Brendlangan aylanuvchi yuklash indikatori — gradient halqa + ixtiyoriy matn. */
+export function LoadingSpinner({ label }: { label?: string }) {
+  const rotation = useSharedValue(0);
+
+  useEffect(() => {
+    rotation.value = withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const spinStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation.value}deg` }] }));
+
+  return (
+    <View className="items-center gap-3">
+      <Animated.View style={spinStyle}>
+        <Svg width={SPINNER_SIZE} height={SPINNER_SIZE} viewBox={`0 0 ${SPINNER_SIZE} ${SPINNER_SIZE}`}>
+          <Defs>
+            <SvgLinearGradient id="loadingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <Stop offset="0%" stopColor={colors.primary} />
+              <Stop offset="100%" stopColor={colors.secondary} />
+            </SvgLinearGradient>
+          </Defs>
+          <Circle
+            cx={SPINNER_SIZE / 2}
+            cy={SPINNER_SIZE / 2}
+            r={SPINNER_RADIUS}
+            stroke={colors.surfaceMuted}
+            strokeWidth={SPINNER_STROKE}
+            fill="none"
+          />
+          <Circle
+            cx={SPINNER_SIZE / 2}
+            cy={SPINNER_SIZE / 2}
+            r={SPINNER_RADIUS}
+            stroke="url(#loadingGradient)"
+            strokeWidth={SPINNER_STROKE}
+            strokeLinecap="round"
+            fill="none"
+            strokeDasharray={`${SPINNER_CIRCUMFERENCE * 0.3} ${SPINNER_CIRCUMFERENCE}`}
+          />
+        </Svg>
+      </Animated.View>
+      {label && <Text className="text-sm font-medium text-text-secondary">{label}</Text>}
     </View>
   );
 }

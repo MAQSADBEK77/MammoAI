@@ -19,7 +19,7 @@ import { getMilestoneForWeek, getVitalTone, gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, FloatingTag, ScreenHeader, TextField } from "@/components/ui";
+import { Badge, Button, Card, FloatingTag, LoadingSpinner, ScreenHeader, TextField } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
 import ExpectingIllustration from "../../../assets/illustrations/expecting.svg";
 
@@ -69,7 +69,7 @@ export default function PregnancyScreen() {
   if (!data) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary">{dict.common.loading}</Text>
+        <LoadingSpinner label={dict.common.loading} />
       </SafeAreaView>
     );
   }

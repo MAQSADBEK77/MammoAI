@@ -2,6 +2,7 @@
 
 import { type AnchorHTMLAttributes, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from "react";
 import clsx from "clsx";
+import { colors } from "@mammoai/shared";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "dark";
 
@@ -295,5 +296,38 @@ export function IconChip({
       {icon && <span className="text-xl leading-none">{icon}</span>}
       <span className="text-center leading-tight">{label}</span>
     </button>
+  );
+}
+
+const SPINNER_SIZE = 48;
+const SPINNER_STROKE = 5;
+const SPINNER_RADIUS = (SPINNER_SIZE - SPINNER_STROKE) / 2;
+const SPINNER_CIRCUMFERENCE = 2 * Math.PI * SPINNER_RADIUS;
+
+/** Brendlangan aylanuvchi yuklash indikatori — gradient halqa + ixtiyoriy matn. */
+export function LoadingSpinner({ label }: { label?: string }) {
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <svg width={SPINNER_SIZE} height={SPINNER_SIZE} viewBox={`0 0 ${SPINNER_SIZE} ${SPINNER_SIZE}`} className="animate-spin">
+        <defs>
+          <linearGradient id="loadingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={colors.primary} />
+            <stop offset="100%" stopColor={colors.secondary} />
+          </linearGradient>
+        </defs>
+        <circle cx={SPINNER_SIZE / 2} cy={SPINNER_SIZE / 2} r={SPINNER_RADIUS} stroke={colors.surfaceMuted} strokeWidth={SPINNER_STROKE} fill="none" />
+        <circle
+          cx={SPINNER_SIZE / 2}
+          cy={SPINNER_SIZE / 2}
+          r={SPINNER_RADIUS}
+          stroke="url(#loadingGradient)"
+          strokeWidth={SPINNER_STROKE}
+          strokeLinecap="round"
+          fill="none"
+          strokeDasharray={`${SPINNER_CIRCUMFERENCE * 0.3} ${SPINNER_CIRCUMFERENCE}`}
+        />
+      </svg>
+      {label && <p className="text-sm font-medium text-text-secondary">{label}</p>}
+    </div>
   );
 }

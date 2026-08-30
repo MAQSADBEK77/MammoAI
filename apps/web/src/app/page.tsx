@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { goalToLandingTab } from "@mammoai/shared";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
+import { LoadingSpinner } from "@/components/ui";
 
 export default function RootPage() {
   const { status, onboardingProfile } = useSession();
@@ -23,7 +24,7 @@ export default function RootPage() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background">
-      <p className="text-text-secondary">{dict.common.loading}</p>
+      <LoadingSpinner label={dict.common.loading} />
     </div>
   );
 }

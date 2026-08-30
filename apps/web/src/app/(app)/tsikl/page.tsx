@@ -9,7 +9,7 @@ import { getCyclePhase, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/s
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card, FloatingTag, ScreenHeader, IconChip, Badge } from "@/components/ui";
+import { Button, Card, FloatingTag, LoadingSpinner, ScreenHeader, IconChip, Badge } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
@@ -49,7 +49,7 @@ export default function CyclePage() {
   }, []);
 
   if (!data) {
-    return <p className="text-text-secondary">{dict.common.loading}</p>;
+    return <LoadingSpinner label={dict.common.loading} />;
   }
 
   const markers: Record<string, DayMarker> = {};

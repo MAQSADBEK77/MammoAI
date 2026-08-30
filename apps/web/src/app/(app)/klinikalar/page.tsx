@@ -7,7 +7,7 @@ import { Navigation as NavigationIcon, MapPin, ShieldCheck } from "lucide-react"
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Card, LinkButton, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
+import { Badge, Card, LinkButton, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
 import clsx from "clsx";
 
 // Leaflet DOM/window'ga tayanadi — faqat client'da render qilinadi.
@@ -49,7 +49,7 @@ export default function ClinicsPage() {
     );
   }, [clinics, filter, search]);
 
-  if (!clinics) return <p className="text-text-secondary">{dict.common.loading}</p>;
+  if (!clinics) return <LoadingSpinner label={dict.common.loading} />;
 
   async function track(clinic: Clinic, action: "view" | "call" | "directions") {
     api.referrals.log({ clinicId: clinic.id, checklistItemId, action }).catch(() => {});

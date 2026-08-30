@@ -8,7 +8,7 @@ import clsx from "clsx";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader, SegmentedControl, StatTile, TextField } from "@/components/ui";
+import { Badge, Button, Card, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile, TextField } from "@/components/ui";
 import { ClinicsMap } from "@/components/ClinicsMap";
 
 const SPECIALTIES: ClinicSpecialty[] = [
@@ -46,7 +46,7 @@ export default function ClinicsScreen() {
   if (!clinics) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary">{dict.common.loading}</Text>
+        <LoadingSpinner label={dict.common.loading} />
       </SafeAreaView>
     );
   }

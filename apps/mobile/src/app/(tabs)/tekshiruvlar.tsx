@@ -6,7 +6,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader, StatTile } from "@/components/ui";
+import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react-native";
 import HealthyLifestyleIllustration from "../../../assets/illustrations/healthy-lifestyle.svg";
 
@@ -24,7 +24,7 @@ export default function ChecklistScreen() {
   if (!items) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary">{dict.common.loading}</Text>
+        <LoadingSpinner label={dict.common.loading} />
       </SafeAreaView>
     );
   }
