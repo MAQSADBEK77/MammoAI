@@ -25,156 +25,170 @@ export const sql =
     ssl: "require",
     // "CREATE TABLE/INDEX IF NOT EXISTS" har cold-start'da NOTICE chiqaradi (zararsiz) — bosamiz.
     onnotice: () => {},
+    // MUHIM: DATABASE_URL Supabase'ning Supavisor "Transaction pooler"iga (6543-port)
+    // ishora qiladi — bu rejimda har bir so'rov turli backend ulanishiga tushishi mumkin,
+    // shuning uchun prepared statement'lar (postgres.js standart holati) ishlamaydi va
+    // sekin/nostabil bo'lib qoladi. `prepare: false` buni butunlay o'chiradi.
+    prepare: false,
+    // MUHIM: postgres.js standart pool hajmi (max: 10) bilan sinovdan o'tkazilganda
+    // aniqlandi — agar bir vaqtda ishlayotgan so'rovlar soni pool hajmidan oshib,
+    // navbatga turishga (queue) to'g'ri kelsa, Supavisor bilan birga bu MUALLIQ
+    // ABADIY osilib qoladi (xato chiqmaydi, shunchaki javob kelmaydi). Yechim — pool
+    // hajmini bizning eng katta parallel so'rov portlashimizdan (getAdminStats'da 15 ta)
+    // sezilarli darajada katta qilib qo'yish, shunda navbatga turishga hech qachon
+    // to'g'ri kelmaydi.
+    max: 20,
   });
 if (process.env.NODE_ENV !== "production") global.__mammoaiSql = sql;
 
+// Jadvallar orasidagi FK bog'liqligi bosqichlarga bo'lingan — har bosqich ichida
+// so'rovlar bir-biriga bog'liq emas, shuning uchun ketma-ket emas, parallel
+// yuboriladi (Supabase pooler'gacha bo'lgan tarmoq kechikishi tufayli 17 ta
+// ketma-ket so'rov cold-start'da bir necha o'n soniyagacha cho'zilishi mumkin edi).
 async function initSchema() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      phone TEXT UNIQUE,
-      email TEXT UNIQUE,
-      name TEXT,
-      region TEXT,
-      language TEXT NOT NULL DEFAULT 'uz',
-      font_scale TEXT NOT NULL DEFAULT 'normal',
-      high_contrast BOOLEAN NOT NULL DEFAULT FALSE,
-      notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-      token_version INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL
-    )
-  `;
+  // 0-bosqich: hech kimga bog'liq bo'lmagan jadvallar.
+  await Promise.all([
+    sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        phone TEXT UNIQUE,
+        email TEXT UNIQUE,
+        name TEXT,
+        region TEXT,
+        language TEXT NOT NULL DEFAULT 'uz',
+        font_scale TEXT NOT NULL DEFAULT 'normal',
+        high_contrast BOOLEAN NOT NULL DEFAULT FALSE,
+        notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+        token_version INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS articles (
+        id TEXT PRIMARY KEY,
+        slug TEXT UNIQUE NOT NULL,
+        category TEXT NOT NULL,
+        title TEXT NOT NULL,
+        excerpt TEXT NOT NULL,
+        body TEXT NOT NULL
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS clinics (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        region TEXT NOT NULL,
+        lat DOUBLE PRECISION NOT NULL,
+        lng DOUBLE PRECISION NOT NULL,
+        phone TEXT NOT NULL,
+        specialties TEXT NOT NULL DEFAULT '[]',
+        free_screening BOOLEAN NOT NULL DEFAULT FALSE
+      )
+    `,
+  ]);
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS onboarding_profiles (
-      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-      name TEXT,
-      age INTEGER NOT NULL,
-      is_pregnant BOOLEAN NOT NULL,
-      cycle_regularity TEXT NOT NULL,
-      family_history BOOLEAN NOT NULL,
-      last_checkup TEXT NOT NULL,
-      primary_goal TEXT NOT NULL,
-      heard_about_us TEXT,
-      typical_symptoms TEXT NOT NULL DEFAULT '[]',
-      period_attitude TEXT,
-      health_conditions TEXT NOT NULL DEFAULT '[]',
-      health_conditions_other TEXT,
-      height_cm DOUBLE PRECISION,
-      weight_kg DOUBLE PRECISION
-    )
-  `;
+  // 1-bosqich: faqat users'ga bog'liq jadvallar (parallel, chunki bir-biriga bog'liq emas).
+  await Promise.all([
+    sql`
+      CREATE TABLE IF NOT EXISTS onboarding_profiles (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT,
+        age INTEGER NOT NULL,
+        is_pregnant BOOLEAN NOT NULL,
+        cycle_regularity TEXT NOT NULL,
+        family_history BOOLEAN NOT NULL,
+        last_checkup TEXT NOT NULL,
+        primary_goal TEXT NOT NULL,
+        heard_about_us TEXT,
+        typical_symptoms TEXT NOT NULL DEFAULT '[]',
+        period_attitude TEXT,
+        health_conditions TEXT NOT NULL DEFAULT '[]',
+        health_conditions_other TEXT,
+        height_cm DOUBLE PRECISION,
+        weight_kg DOUBLE PRECISION
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS risk_quiz_results (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        answers TEXT NOT NULL,
+        score INTEGER NOT NULL,
+        level TEXT NOT NULL,
+        completed_at TEXT NOT NULL
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS cycle_settings (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        last_period_start TEXT,
+        average_cycle_length INTEGER NOT NULL DEFAULT 28,
+        average_period_length INTEGER NOT NULL DEFAULT 5
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS cycle_logs (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        flow TEXT,
+        mood TEXT,
+        symptoms TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL,
+        UNIQUE(user_id, date)
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_profiles (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        last_menstrual_period TEXT,
+        due_date TEXT
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_visits (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        label TEXT NOT NULL,
+        date TEXT NOT NULL,
+        clinic_name TEXT,
+        note TEXT,
+        created_at TEXT NOT NULL
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_kicks (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        count INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (user_id, date)
+      )
+    `,
+    // "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi qayd etadigan tezkor-jurnal.
+    sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_vitals (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type TEXT NOT NULL,
+        value TEXT NOT NULL,
+        recorded_at TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS checklist_items (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        due_date TEXT,
+        completed_at TEXT,
+        created_at TEXT NOT NULL
+      )
+    `,
+  ]);
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS risk_quiz_results (
-      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-      answers TEXT NOT NULL,
-      score INTEGER NOT NULL,
-      level TEXT NOT NULL,
-      completed_at TEXT NOT NULL
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS articles (
-      id TEXT PRIMARY KEY,
-      slug TEXT UNIQUE NOT NULL,
-      category TEXT NOT NULL,
-      title TEXT NOT NULL,
-      excerpt TEXT NOT NULL,
-      body TEXT NOT NULL
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS cycle_settings (
-      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-      last_period_start TEXT,
-      average_cycle_length INTEGER NOT NULL DEFAULT 28,
-      average_period_length INTEGER NOT NULL DEFAULT 5
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS cycle_logs (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      date TEXT NOT NULL,
-      flow TEXT,
-      mood TEXT,
-      symptoms TEXT NOT NULL DEFAULT '[]',
-      created_at TEXT NOT NULL,
-      UNIQUE(user_id, date)
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS pregnancy_profiles (
-      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-      last_menstrual_period TEXT,
-      due_date TEXT
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS pregnancy_visits (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      label TEXT NOT NULL,
-      date TEXT NOT NULL,
-      clinic_name TEXT,
-      note TEXT,
-      created_at TEXT NOT NULL
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS pregnancy_kicks (
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      date TEXT NOT NULL,
-      count INTEGER NOT NULL DEFAULT 0,
-      PRIMARY KEY (user_id, date)
-    )
-  `;
-
-  // "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi qayd etadigan tezkor-jurnal.
-  await sql`
-    CREATE TABLE IF NOT EXISTS pregnancy_vitals (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      type TEXT NOT NULL,
-      value TEXT NOT NULL,
-      recorded_at TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS checklist_items (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      type TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'pending',
-      due_date TEXT,
-      completed_at TEXT,
-      created_at TEXT NOT NULL
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS clinics (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      address TEXT NOT NULL,
-      region TEXT NOT NULL,
-      lat DOUBLE PRECISION NOT NULL,
-      lng DOUBLE PRECISION NOT NULL,
-      phone TEXT NOT NULL,
-      specialties TEXT NOT NULL DEFAULT '[]',
-      free_screening BOOLEAN NOT NULL DEFAULT FALSE
-    )
-  `;
-
+  // 2-bosqich: users + clinics + checklist_items'ga bog'liq.
   await sql`
     CREATE TABLE IF NOT EXISTS referral_events (
       id TEXT PRIMARY KEY,
@@ -186,10 +200,13 @@ async function initSchema() {
     )
   `;
 
-  await sql`CREATE INDEX IF NOT EXISTS idx_cycle_logs_user ON cycle_logs(user_id)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`;
+  // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
+  await Promise.all([
+    sql`CREATE INDEX IF NOT EXISTS idx_cycle_logs_user ON cycle_logs(user_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
+  ]);
 }
 
 // Har bir sovuq-start (cold start)da bir marta ishga tushadi va idempotent

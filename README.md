@@ -41,6 +41,7 @@ qo'shish shart — pastga qarang).
    - `SESSION_SECRET` — o'zingiz tasodifiy uzun satr yarating (masalan
      `openssl rand -hex 48`) — **bu majburiy**, aks holda har deploy/cold-start'da
      sessiyalar bekor bo'lib qoladi.
+   - `ADMIN_PASSWORD` — admin panel (`/admin`) uchun parol, quyiga qarang.
 4. Deploy qilingandan keyin bir marta `DATABASE_URL`ni mahalliy `.env.local`ga
    qo'yib `npm run seed` ishga tushiring (namunaviy klinikalar/maqolalarni
    to'ldirish uchun) — bazaga to'g'ridan-to'g'ri ulanadi, Vercel'ga deploy shart
@@ -48,6 +49,25 @@ qo'shish shart — pastga qarang).
 5. Mobil ilova (`apps/mobile/eas.json` → `build.preview.env.EXPO_PUBLIC_API_URL`)
    manzilini Vercel domeningizga (masalan `https://mammoai.vercel.app`) o'zgartiring
    — shunda APK istalgan tarmoqdan ishlaydi (lokal Wi-Fi shart emas).
+
+## Admin panel (`/admin`)
+
+Foydalanuvchi/tizim sessiyasidan butunlay alohida, bitta parol bilan himoyalangan
+boshqaruv paneli — foydalanuvchilar, klinikalar, maqolalar (CRUD) va real
+statistika (ro'yxatdan o'tishlar, faollik, kontent hajmi) shu yerda.
+
+1. `apps/web/.env.local` (lokal) va Vercel **Environment Variables** (production)
+   ga `ADMIN_PASSWORD` qo'shing — o'zingiz tanlagan kuchli qiymat.
+2. `http://localhost:3000/admin` (yoki `https://<domen>/admin`) ga kirib, shu
+   parolni kiriting.
+
+**Eslatma — "server yuklamasi":** Vercel serverless funksiyalarida an'anaviy
+CPU/server-yuklama ko'rsatkichi mavjud emas (bu Vercelning o'z pullik Analytics
+xizmati yoki alohida so'rov-logging tizimi talab qiladi — hozircha loyiha
+doirasidan tashqarida qoldirildi). Shuning uchun boshqaruv panelida shu o'rniga
+haqiqiy foydalanish/faollik statistikasi ko'rsatiladi; real trafik/so'rovlar
+sonini bilish uchun to'g'ridan-to'g'ri [Vercel dashboard](https://vercel.com/dashboard)
+ga qarang.
 
 ## Ishga tushirish — mobil
 

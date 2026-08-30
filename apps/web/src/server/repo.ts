@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "./db";
+import { ApiError } from "./api-utils";
 import type {
   Article,
   ArticleCategory,
@@ -686,4 +687,233 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
   const rows = (await sql`SELECT * FROM articles WHERE slug = ${slug}`) as unknown as ArticleRow[];
   const row = rows[0];
   return row ? articleFromRow(row) : null;
+}
+
+export async function createArticle(article: Omit<Article, "id" | "isSeedData">): Promise<Article> {
+  await ensureSchema();
+  const id = randomUUID();
+  await sql`
+    INSERT INTO articles (id, slug, category, title, excerpt, body)
+    VALUES (${id}, ${article.slug}, ${article.category}, ${article.title}, ${article.excerpt}, ${article.body})
+  `;
+  return { id, ...article, isSeedData: true };
+}
+
+export async function updateArticle(id: string, patch: Partial<Omit<Article, "id" | "isSeedData">>): Promise<void> {
+  await ensureSchema();
+  const current = (await sql`SELECT * FROM articles WHERE id = ${id}`) as unknown as ArticleRow[];
+  const row = current[0];
+  if (!row) throw new ApiError(404, "Maqola topilmadi");
+  const merged = { ...articleFromRow(row), ...patch };
+  await sql`
+    UPDATE articles SET slug = ${merged.slug}, category = ${merged.category}, title = ${merged.title},
+      excerpt = ${merged.excerpt}, body = ${merged.body}
+    WHERE id = ${id}
+  `;
+}
+
+export async function deleteArticle(id: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM articles WHERE id = ${id}`;
+}
+
+// ---------------------------------------------------------------------------
+// Admin — klinikalar CRUD
+// ---------------------------------------------------------------------------
+
+export async function createClinic(clinic: Omit<Clinic, "id" | "isSeedData">): Promise<Clinic> {
+  await ensureSchema();
+  const id = randomUUID();
+  await sql`
+    INSERT INTO clinics (id, name, address, region, lat, lng, phone, specialties, free_screening)
+    VALUES (${id}, ${clinic.name}, ${clinic.address}, ${clinic.region}, ${clinic.lat}, ${clinic.lng}, ${clinic.phone}, ${JSON.stringify(clinic.specialties)}, ${clinic.freeScreening})
+  `;
+  return { id, ...clinic, isSeedData: true };
+}
+
+export async function updateClinic(id: string, patch: Partial<Omit<Clinic, "id" | "isSeedData">>): Promise<void> {
+  await ensureSchema();
+  const current = (await sql`SELECT * FROM clinics WHERE id = ${id}`) as unknown as ClinicRow[];
+  const row = current[0];
+  if (!row) throw new ApiError(404, "Klinika topilmadi");
+  const merged = { ...clinicFromRow(row), ...patch };
+  await sql`
+    UPDATE clinics SET name = ${merged.name}, address = ${merged.address}, region = ${merged.region},
+      lat = ${merged.lat}, lng = ${merged.lng}, phone = ${merged.phone},
+      specialties = ${JSON.stringify(merged.specialties)}, free_screening = ${merged.freeScreening}
+    WHERE id = ${id}
+  `;
+}
+
+export async function deleteClinic(id: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM clinics WHERE id = ${id}`;
+}
+
+// ---------------------------------------------------------------------------
+// Admin — foydalanuvchilar ro'yxati va boshqaruvi
+// ---------------------------------------------------------------------------
+
+export interface AdminUserSummary extends User {
+  primaryGoal: OnboardingProfile["primaryGoal"] | null;
+  cycleLogsCount: number;
+  lastActiveAt: string | null;
+}
+
+export async function listUsersAdmin(params: { search?: string; limit?: number; offset?: number }): Promise<{
+  users: AdminUserSummary[];
+  total: number;
+}> {
+  await ensureSchema();
+  const limit = params.limit ?? 50;
+  const offset = params.offset ?? 0;
+  const q = params.search?.trim();
+  const searchPattern = q ? `%${q}%` : null;
+
+  const whereClause = searchPattern
+    ? sql`WHERE u.name ILIKE ${searchPattern} OR u.phone ILIKE ${searchPattern} OR u.email ILIKE ${searchPattern}`
+    : sql``;
+
+  const rows = (await sql`
+    SELECT u.*, o.primary_goal,
+      (SELECT count(*) FROM cycle_logs c WHERE c.user_id = u.id)::int AS cycle_logs_count,
+      GREATEST(
+        (SELECT max(c.created_at) FROM cycle_logs c WHERE c.user_id = u.id),
+        (SELECT max(v.created_at) FROM pregnancy_vitals v WHERE v.user_id = u.id),
+        (SELECT max(k.completed_at) FROM checklist_items k WHERE k.user_id = u.id AND k.completed_at IS NOT NULL)
+      ) AS last_active_at
+    FROM users u
+    LEFT JOIN onboarding_profiles o ON o.user_id = u.id
+    ${whereClause}
+    ORDER BY u.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `) as unknown as (UserRow & { primary_goal: OnboardingProfile["primaryGoal"] | null; cycle_logs_count: number; last_active_at: string | null })[];
+
+  const [{ count }] = (await sql`SELECT count(*)::int as count FROM users u ${whereClause}`) as unknown as { count: number }[];
+
+  return {
+    total: count,
+    users: rows.map((row) => ({
+      ...userFromRow(row),
+      primaryGoal: row.primary_goal,
+      cycleLogsCount: row.cycle_logs_count,
+      lastActiveAt: row.last_active_at,
+    })),
+  };
+}
+
+export async function deleteUserAdmin(id: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM users WHERE id = ${id}`;
+}
+
+// ---------------------------------------------------------------------------
+// Admin — statistika (bosh sahifasi uchun)
+// ---------------------------------------------------------------------------
+
+export interface AdminStats {
+  totalUsers: number;
+  newUsersToday: number;
+  newUsersThisWeek: number;
+  activeUsersLast7Days: number;
+  languageBreakdown: { language: Language; count: number }[];
+  goalBreakdown: { goal: string; count: number }[];
+  contentCounts: {
+    cycleLogs: number;
+    pregnancyVisits: number;
+    pregnancyVitals: number;
+    checklistCompleted: number;
+    riskQuizResults: number;
+    referralEvents: number;
+    clinics: number;
+    articles: number;
+  };
+  signupsByDay: { day: string; count: number }[];
+}
+
+export async function getAdminStats(): Promise<AdminStats> {
+  await ensureSchema();
+
+  const [
+    [{ count: totalUsers }],
+    [{ count: newUsersToday }],
+    [{ count: newUsersThisWeek }],
+    [{ count: activeUsersLast7Days }],
+    languageRows,
+    goalRows,
+    [{ count: cycleLogs }],
+    [{ count: pregnancyVisits }],
+    [{ count: pregnancyVitals }],
+    [{ count: checklistCompleted }],
+    [{ count: riskQuizResults }],
+    [{ count: referralEvents }],
+    [{ count: clinicsCount }],
+    [{ count: articlesCount }],
+    signupsByDayRows,
+  ] = (await Promise.all([
+    sql`SELECT count(*)::int as count FROM users`,
+    sql`SELECT count(*)::int as count FROM users WHERE (created_at)::timestamptz >= now() - interval '1 day'`,
+    sql`SELECT count(*)::int as count FROM users WHERE (created_at)::timestamptz >= now() - interval '7 days'`,
+    sql`
+      SELECT count(DISTINCT user_id)::int as count FROM (
+        SELECT user_id, created_at FROM cycle_logs WHERE (created_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, created_at FROM pregnancy_vitals WHERE (created_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, completed_at FROM checklist_items WHERE completed_at IS NOT NULL AND (completed_at)::timestamptz >= now() - interval '7 days'
+      ) recent
+    `,
+    sql`SELECT language, count(*)::int as count FROM users GROUP BY language ORDER BY count DESC`,
+    sql`SELECT primary_goal as goal, count(*)::int as count FROM onboarding_profiles GROUP BY primary_goal ORDER BY count DESC`,
+    sql`SELECT count(*)::int as count FROM cycle_logs`,
+    sql`SELECT count(*)::int as count FROM pregnancy_visits`,
+    sql`SELECT count(*)::int as count FROM pregnancy_vitals`,
+    sql`SELECT count(*)::int as count FROM checklist_items WHERE status = 'done'`,
+    sql`SELECT count(*)::int as count FROM risk_quiz_results`,
+    sql`SELECT count(*)::int as count FROM referral_events`,
+    sql`SELECT count(*)::int as count FROM clinics`,
+    sql`SELECT count(*)::int as count FROM articles`,
+    sql`
+      SELECT to_char(d.day, 'YYYY-MM-DD') as day, count(u.id)::int as count
+      FROM generate_series(now()::date - interval '29 days', now()::date, interval '1 day') as d(day)
+      LEFT JOIN users u ON (u.created_at)::timestamptz::date = d.day
+      GROUP BY d.day ORDER BY d.day ASC
+    `,
+  ])) as unknown as [
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { language: Language; count: number }[],
+    { goal: string; count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { day: string; count: number }[],
+  ];
+
+  return {
+    totalUsers,
+    newUsersToday,
+    newUsersThisWeek,
+    activeUsersLast7Days,
+    languageBreakdown: languageRows,
+    goalBreakdown: goalRows.filter((r) => r.goal),
+    contentCounts: {
+      cycleLogs,
+      pregnancyVisits,
+      pregnancyVitals,
+      checklistCompleted,
+      riskQuizResults,
+      referralEvents,
+      clinics: clinicsCount,
+      articles: articlesCount,
+    },
+    signupsByDay: signupsByDayRows,
+  };
 }
