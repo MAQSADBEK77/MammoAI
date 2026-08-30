@@ -299,33 +299,33 @@ export function IconChip({
   );
 }
 
-const SPINNER_SIZE = 48;
-const SPINNER_STROKE = 5;
-const SPINNER_RADIUS = (SPINNER_SIZE - SPINNER_STROKE) / 2;
-const SPINNER_CIRCUMFERENCE = 2 * Math.PI * SPINNER_RADIUS;
+const BLOOM_PETAL_COUNT = 5;
+const BLOOM_PETAL_COLORS = [colors.primary, colors.secondary, colors.primary, colors.secondary, colors.accent];
+const BLOOM_DURATION = 2.4;
 
-/** Brendlangan aylanuvchi yuklash indikatori — gradient halqa + ixtiyoriy matn. */
+/**
+ * Brendlangan yuklash indikatori — 🌸 gul ochilishi: kurtak yopiq holatdan
+ * boshlanadi, har bir bargi navbat bilan (kechikish bilan) katta bo'lib ochiladi,
+ * to'liq ochilgach yig'ilib, qaytadan boshlanadi (tinimsiz sikl).
+ */
 export function LoadingSpinner({ label }: { label?: string }) {
   return (
-    <div className="flex flex-col items-center gap-3">
-      <svg width={SPINNER_SIZE} height={SPINNER_SIZE} viewBox={`0 0 ${SPINNER_SIZE} ${SPINNER_SIZE}`} className="animate-spin">
-        <defs>
-          <linearGradient id="loadingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={colors.primary} />
-            <stop offset="100%" stopColor={colors.secondary} />
-          </linearGradient>
-        </defs>
-        <circle cx={SPINNER_SIZE / 2} cy={SPINNER_SIZE / 2} r={SPINNER_RADIUS} stroke={colors.surfaceMuted} strokeWidth={SPINNER_STROKE} fill="none" />
-        <circle
-          cx={SPINNER_SIZE / 2}
-          cy={SPINNER_SIZE / 2}
-          r={SPINNER_RADIUS}
-          stroke="url(#loadingGradient)"
-          strokeWidth={SPINNER_STROKE}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={`${SPINNER_CIRCUMFERENCE * 0.3} ${SPINNER_CIRCUMFERENCE}`}
-        />
+    <div className="flex min-h-[50vh] flex-1 flex-col items-center justify-center gap-4">
+      <svg width={72} height={72} viewBox="-40 -40 80 80">
+        {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
+          <g key={i} transform={`rotate(${(360 / BLOOM_PETAL_COUNT) * i})`}>
+            <ellipse
+              cx={0}
+              cy={-16}
+              rx={9}
+              ry={15}
+              fill={BLOOM_PETAL_COLORS[i % BLOOM_PETAL_COLORS.length]}
+              className="animate-bloom-petal"
+              style={{ transformOrigin: "0px 0px", animationDelay: `${(i * BLOOM_DURATION) / BLOOM_PETAL_COUNT}s` }}
+            />
+          </g>
+        ))}
+        <circle r={6} fill={colors.warning} />
       </svg>
       {label && <p className="text-sm font-medium text-text-secondary">{label}</p>}
     </div>

@@ -2,8 +2,16 @@ import { Image, Pressable, Text, TextInput, View, type PressableProps, type View
 import { useEffect, type ReactNode } from "react";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from "react-native-reanimated";
+import Svg, { Circle, Ellipse, G } from "react-native-svg";
+import Animated, {
+  useAnimatedProps,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { gradientStops, colors, glass, gradients } from "@mammoai/shared";
 
 type Variant = "primary" | "secondary" | "ghost" | "dark";
@@ -333,52 +341,57 @@ export function TextField({
   );
 }
 
-const SPINNER_SIZE = 48;
-const SPINNER_STROKE = 5;
-const SPINNER_RADIUS = (SPINNER_SIZE - SPINNER_STROKE) / 2;
-const SPINNER_CIRCUMFERENCE = 2 * Math.PI * SPINNER_RADIUS;
+const BLOOM_PETAL_COUNT = 5;
+const BLOOM_PETAL_COLORS = [colors.primary, colors.secondary, colors.primary, colors.secondary, colors.accent];
+const BLOOM_DURATION = 2400;
+const AnimatedG = Animated.createAnimatedComponent(G);
 
-/** Brendlangan aylanuvchi yuklash indikatori — gradient halqa + ixtiyoriy matn. */
-export function LoadingSpinner({ label }: { label?: string }) {
-  const rotation = useSharedValue(0);
+/** Bitta gul bargi — markazdan (0,0) boshlab kattalashib ochiladi, so'ng yig'iladi. */
+function BloomPetal({ index }: { index: number }) {
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    rotation.value = withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1);
+    const delay = (index * BLOOM_DURATION) / BLOOM_PETAL_COUNT;
+    progress.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: BLOOM_DURATION * 0.35, easing: Easing.out(Easing.ease) }),
+          withTiming(1, { duration: BLOOM_DURATION * 0.3 }),
+          withTiming(0, { duration: BLOOM_DURATION * 0.35, easing: Easing.in(Easing.ease) })
+        ),
+        -1
+      )
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const spinStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation.value}deg` }] }));
+  const animatedProps = useAnimatedProps(() => ({ scale: progress.value }) as never);
+  const angle = (360 / BLOOM_PETAL_COUNT) * index;
 
   return (
-    <View className="items-center gap-3">
-      <Animated.View style={spinStyle}>
-        <Svg width={SPINNER_SIZE} height={SPINNER_SIZE} viewBox={`0 0 ${SPINNER_SIZE} ${SPINNER_SIZE}`}>
-          <Defs>
-            <SvgLinearGradient id="loadingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <Stop offset="0%" stopColor={colors.primary} />
-              <Stop offset="100%" stopColor={colors.secondary} />
-            </SvgLinearGradient>
-          </Defs>
-          <Circle
-            cx={SPINNER_SIZE / 2}
-            cy={SPINNER_SIZE / 2}
-            r={SPINNER_RADIUS}
-            stroke={colors.surfaceMuted}
-            strokeWidth={SPINNER_STROKE}
-            fill="none"
-          />
-          <Circle
-            cx={SPINNER_SIZE / 2}
-            cy={SPINNER_SIZE / 2}
-            r={SPINNER_RADIUS}
-            stroke="url(#loadingGradient)"
-            strokeWidth={SPINNER_STROKE}
-            strokeLinecap="round"
-            fill="none"
-            strokeDasharray={`${SPINNER_CIRCUMFERENCE * 0.3} ${SPINNER_CIRCUMFERENCE}`}
-          />
-        </Svg>
-      </Animated.View>
+    <G rotation={angle} origin="0,0">
+      <AnimatedG animatedProps={animatedProps}>
+        <Ellipse cx={0} cy={-16} rx={9} ry={15} fill={BLOOM_PETAL_COLORS[index % BLOOM_PETAL_COLORS.length]} />
+      </AnimatedG>
+    </G>
+  );
+}
+
+/**
+ * Brendlangan yuklash indikatori — 🌸 gul ochilishi: kurtak yopiq holatdan
+ * boshlanadi, har bir bargi navbat bilan (kechikish bilan) katta bo'lib ochiladi,
+ * to'liq ochilgach yig'ilib, qaytadan boshlanadi (tinimsiz sikl).
+ */
+export function LoadingSpinner({ label }: { label?: string }) {
+  return (
+    <View className="flex-1 items-center justify-center gap-4">
+      <Svg width={72} height={72} viewBox="-40 -40 80 80">
+        {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
+          <BloomPetal key={i} index={i} />
+        ))}
+        <Circle r={6} fill={colors.warning} />
+      </Svg>
       {label && <Text className="text-sm font-medium text-text-secondary">{label}</Text>}
     </View>
   );

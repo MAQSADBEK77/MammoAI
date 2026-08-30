@@ -157,6 +157,25 @@ body {
   -webkit-backdrop-filter: blur(16px);
 }
 
+/* Yuklash indikatori — 🌸 gul ochilishi (LoadingSpinner). Har bir barg
+   navbat bilan kattalashib ochiladi, so'ng birga yig'ilib qaytadan boshlanadi. */
+@keyframes bloom-petal {
+  0%,
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  35%,
+  65% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-bloom-petal {
+  animation: bloom-petal 2.4s ease-in-out infinite;
+}
+
 .floating-tag {
   background: var(--glass-light-strong);
   border: 1px solid var(--glass-border);
