@@ -2,9 +2,10 @@ import { Image, Pressable, Text, TextInput, View, type PressableProps, type View
 import { useEffect, type ReactNode } from "react";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle, Ellipse, G } from "react-native-svg";
+import Svg, { Circle, Defs, Ellipse, G, RadialGradient, Stop } from "react-native-svg";
 import Animated, {
   useAnimatedProps,
+  useAnimatedStyle,
   useSharedValue,
   withDelay,
   withRepeat,
@@ -378,21 +379,55 @@ function BloomPetal({ index }: { index: number }) {
   );
 }
 
+/** Orqa fondagi xira, "nafas oluvchi" rangli nur — expo-blur'siz taqlid qilingan blur atmosferasi. */
+function BloomGlow() {
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    pulse.value = withRepeat(withSequence(withTiming(1, { duration: 1800 }), withTiming(0, { duration: 1800 })), -1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const glowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 0.9 + pulse.value * 0.25 }],
+    opacity: 0.35 + pulse.value * 0.2,
+  }));
+
+  return (
+    <Animated.View style={[{ position: "absolute", width: 220, height: 220 }, glowStyle]}>
+      <Svg width={220} height={220} viewBox="0 0 220 220">
+        <Defs>
+          <RadialGradient id="glow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor={colors.primary} stopOpacity={0.9} />
+            <Stop offset="60%" stopColor={colors.secondary} stopOpacity={0.4} />
+            <Stop offset="100%" stopColor={colors.secondary} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={110} cy={110} r={110} fill="url(#glow)" />
+      </Svg>
+    </Animated.View>
+  );
+}
+
 /**
  * Brendlangan yuklash indikatori — 🌸 gul ochilishi: kurtak yopiq holatdan
  * boshlanadi, har bir bargi navbat bilan (kechikish bilan) katta bo'lib ochiladi,
- * to'liq ochilgach yig'ilib, qaytadan boshlanadi (tinimsiz sikl).
+ * to'liq ochilgach yig'ilib, qaytadan boshlanadi (tinimsiz sikl). Xira rangli nur
+ * fonida, yarim shaffof "shisha" karta ichida ko'rsatiladi.
  */
 export function LoadingSpinner({ label }: { label?: string }) {
   return (
     <View className="flex-1 items-center justify-center gap-4">
-      <Svg width={72} height={72} viewBox="-40 -40 80 80">
-        {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
-          <BloomPetal key={i} index={i} />
-        ))}
-        <Circle r={6} fill={colors.warning} />
-      </Svg>
-      {label && <Text className="text-sm font-medium text-text-secondary">{label}</Text>}
+      <BloomGlow />
+      <View className="items-center gap-4 rounded-[32px] border border-white/70 bg-white/60 px-10 py-9">
+        <Svg width={72} height={72} viewBox="-40 -40 80 80">
+          {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
+            <BloomPetal key={i} index={i} />
+          ))}
+          <Circle r={6} fill={colors.warning} />
+        </Svg>
+        {label && <Text className="text-sm font-medium text-text-secondary">{label}</Text>}
+      </View>
     </View>
   );
 }

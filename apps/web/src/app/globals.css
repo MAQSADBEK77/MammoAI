@@ -176,6 +176,22 @@ body {
   animation: bloom-petal 2.4s ease-in-out infinite;
 }
 
+@keyframes bloom-glow {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.55;
+  }
+}
+
+.animate-bloom-glow {
+  animation: bloom-glow 3.6s ease-in-out infinite;
+}
+
 .floating-tag {
   background: var(--glass-light-strong);
   border: 1px solid var(--glass-border);
