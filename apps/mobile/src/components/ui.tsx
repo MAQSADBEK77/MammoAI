@@ -2,7 +2,7 @@ import { Image, Pressable, Text, TextInput, View, type PressableProps, type View
 import { useEffect, type ReactNode } from "react";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle, Defs, Ellipse, G, RadialGradient, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, G, Path, RadialGradient, Stop } from "react-native-svg";
 import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
@@ -342,9 +342,12 @@ export function TextField({
   );
 }
 
-const BLOOM_PETAL_COUNT = 5;
-const BLOOM_PETAL_COLORS = [colors.primary, colors.secondary, colors.primary, colors.secondary, colors.accent];
+const BLOOM_PETAL_COUNT = 6;
+const BLOOM_PETAL_COLORS = [colors.primary, colors.secondary, colors.accent, colors.primary, colors.secondary, colors.accent];
 const BLOOM_DURATION = 2400;
+// Uzunchoq, uchlari yumshoq barg shakli — LottieFiles "Flower Loader"
+// havolasidagi barg proporsiyasiga yaqin, lekin o'zimizga tegishli chizilgan.
+const BLOOM_PETAL_PATH = "M0,0 C-9,-11 -7,-25 0,-32 C7,-25 9,-11 0,0 Z";
 const AnimatedG = Animated.createAnimatedComponent(G);
 
 /** Bitta gul bargi — markazdan (0,0) boshlab kattalashib ochiladi, so'ng yig'iladi. */
@@ -373,7 +376,7 @@ function BloomPetal({ index }: { index: number }) {
   return (
     <G rotation={angle} origin="0,0">
       <AnimatedG animatedProps={animatedProps}>
-        <Ellipse cx={0} cy={-16} rx={9} ry={15} fill={BLOOM_PETAL_COLORS[index % BLOOM_PETAL_COLORS.length]} />
+        <Path d={BLOOM_PETAL_PATH} fill={BLOOM_PETAL_COLORS[index % BLOOM_PETAL_COLORS.length]} />
       </AnimatedG>
     </G>
   );

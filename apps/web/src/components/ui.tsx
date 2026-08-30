@@ -299,9 +299,13 @@ export function IconChip({
   );
 }
 
-const BLOOM_PETAL_COUNT = 5;
-const BLOOM_PETAL_COLORS = [colors.primary, colors.secondary, colors.primary, colors.secondary, colors.accent];
+const BLOOM_PETAL_COUNT = 6;
+const BLOOM_PETAL_COLORS = [colors.primary, colors.secondary, colors.accent, colors.primary, colors.secondary, colors.accent];
 const BLOOM_DURATION = 2.4;
+// Uzunchoq, uchlari yumshoq barg shakli (0,0) dan (0,-32) gacha — LottieFiles
+// "Flower Loader" havolasidagi barg proporsiyasiga yaqin, lekin o'zimizga
+// tegishli (chizilgan) shakl.
+const BLOOM_PETAL_PATH = "M0,0 C-9,-11 -7,-25 0,-32 C7,-25 9,-11 0,0 Z";
 
 /**
  * Brendlangan yuklash indikatori — 🌸 gul ochilishi: kurtak yopiq holatdan
@@ -320,11 +324,8 @@ export function LoadingSpinner({ label }: { label?: string }) {
         <svg width={72} height={72} viewBox="-40 -40 80 80">
           {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
             <g key={i} transform={`rotate(${(360 / BLOOM_PETAL_COUNT) * i})`}>
-              <ellipse
-                cx={0}
-                cy={-16}
-                rx={9}
-                ry={15}
+              <path
+                d={BLOOM_PETAL_PATH}
                 fill={BLOOM_PETAL_COLORS[i % BLOOM_PETAL_COLORS.length]}
                 className="animate-bloom-petal"
                 style={{ transformOrigin: "0px 0px", animationDelay: `${(i * BLOOM_DURATION) / BLOOM_PETAL_COUNT}s` }}
