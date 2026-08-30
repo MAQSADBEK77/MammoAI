@@ -326,6 +326,7 @@ const uz = {
     directionsButton: "Yo'nalish",
     seedDataNotice: "Namunaviy ma'lumot — haqiqiy klinika bazasi hali to'ldirilmoqda.",
     distanceKm: (km: number) => `${km.toFixed(1)} km`,
+    foundCountLabel: "Topildi",
   },
 
   riskQuiz: {

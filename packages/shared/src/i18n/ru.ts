@@ -321,6 +321,7 @@ const ru: Dictionary = {
     directionsButton: "Маршрут",
     seedDataNotice: "Демонстрационные данные — реальная база клиник ещё пополняется.",
     distanceKm: (km: number) => `${km.toFixed(1)} км`,
+    foundCountLabel: "Найдено",
   },
 
   riskQuiz: {

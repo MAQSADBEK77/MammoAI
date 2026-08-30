@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { Navigation as NavigationIcon, List, Map as MapIcon } from "lucide-react";
+import { Navigation as NavigationIcon, MapPin, ShieldCheck } from "lucide-react";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Card, LinkButton, ScreenHeader } from "@/components/ui";
+import { Badge, Card, LinkButton, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
 import clsx from "clsx";
 
 // Leaflet DOM/window'ga tayanadi — faqat client'da render qilinadi.
@@ -57,8 +57,7 @@ export default function ClinicsPage() {
 
   return (
     <div className="space-y-4 pb-6">
-      <ScreenHeader title={dict.clinics.title} />
-      <p className="-mt-3 text-xs text-text-muted">{dict.clinics.seedDataNotice}</p>
+      <ScreenHeader title={dict.clinics.title} subtitle={dict.clinics.seedDataNotice} />
 
       <div className="relative">
         <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">🔍</span>
@@ -70,12 +69,27 @@ export default function ClinicsPage() {
         />
       </div>
 
-      <div className="flex gap-2">
-        <ViewToggle active={view === "list"} icon={List} label={dict.clinics.listView} onClick={() => setView("list")} />
-        <ViewToggle active={view === "map"} icon={MapIcon} label={dict.clinics.mapView} onClick={() => setView("map")} />
+      <div className="grid grid-cols-2 gap-3">
+        <StatTile icon={<MapPin size={16} />} label={dict.clinics.foundCountLabel} value={String(filtered.length)} tone="secondary" active />
+        <StatTile
+          icon={<ShieldCheck size={16} />}
+          label={dict.clinics.freeScreeningBadge}
+          value={String(filtered.filter((c) => c.freeScreening).length)}
+          tone="accent"
+          active
+        />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <SegmentedControl
+        value={view}
+        onChange={setView}
+        options={[
+          { value: "list", label: dict.clinics.listView },
+          { value: "map", label: dict.clinics.mapView },
+        ]}
+      />
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
         <FilterChip active={filter === "all"} label={dict.clinics.filterAll} onClick={() => setFilter("all")} />
         {SPECIALTIES.map((s) => (
           <FilterChip key={s} active={filter === s} label={dict.clinics.specialties[s]} onClick={() => setFilter(s)} />
@@ -131,36 +145,12 @@ export default function ClinicsPage() {
   );
 }
 
-function ViewToggle({
-  active,
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon: typeof List;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={clsx(
-        "tap-target flex flex-1 items-center justify-center gap-2 rounded-2xl border text-sm font-semibold",
-        active ? "border-primary bg-primary-light text-primary-dark" : "border-border bg-surface text-text-secondary"
-      )}
-    >
-      <Icon size={16} /> {label}
-    </button>
-  );
-}
-
 function FilterChip({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className={clsx(
-        "rounded-full border px-3 py-1.5 text-xs font-medium",
+        "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium",
         active ? "border-primary bg-primary text-white" : "border-border bg-surface text-text-secondary"
       )}
     >

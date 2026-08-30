@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ScrollView, View, Text, Pressable, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
-import { Navigation as NavigationIcon, List, Map as MapIcon } from "lucide-react-native";
+import { Navigation as NavigationIcon, MapPin, ShieldCheck } from "lucide-react-native";
 import clsx from "clsx";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader, TextField } from "@/components/ui";
+import { Badge, Button, Card, ScreenHeader, SegmentedControl, StatTile, TextField } from "@/components/ui";
 import { ClinicsMap } from "@/components/ClinicsMap";
 
 const SPECIALTIES: ClinicSpecialty[] = [
@@ -57,8 +57,7 @@ export default function ClinicsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-32">
-        <ScreenHeader title={dict.clinics.title} />
-        <Text className="-mt-3 text-xs text-text-muted">{dict.clinics.seedDataNotice}</Text>
+        <ScreenHeader title={dict.clinics.title} subtitle={dict.clinics.seedDataNotice} />
 
         <TextField
           value={search}
@@ -67,17 +66,32 @@ export default function ClinicsScreen() {
           icon={<Text style={{ fontSize: 16 }}>🔍</Text>}
         />
 
-        <View className="flex-row gap-2">
-          <ViewToggle active={view === "list"} Icon={List} label={dict.clinics.listView} onPress={() => setView("list")} />
-          <ViewToggle active={view === "map"} Icon={MapIcon} label={dict.clinics.mapView} onPress={() => setView("map")} />
+        <View className="flex-row gap-3">
+          <StatTile icon={<MapPin size={16} color="#FFFFFF" />} label={dict.clinics.foundCountLabel} value={String(filtered.length)} tone="secondary" active />
+          <StatTile
+            icon={<ShieldCheck size={16} color="#FFFFFF" />}
+            label={dict.clinics.freeScreeningBadge}
+            value={String(filtered.filter((c) => c.freeScreening).length)}
+            tone="accent"
+            active
+          />
         </View>
 
-        <View className="flex-row flex-wrap gap-2">
+        <SegmentedControl
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "list", label: dict.clinics.listView },
+            { value: "map", label: dict.clinics.mapView },
+          ]}
+        />
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 pr-4">
           <FilterChip active={filter === "all"} label={dict.clinics.filterAll} onPress={() => setFilter("all")} />
           {SPECIALTIES.map((s) => (
             <FilterChip key={s} active={filter === s} label={dict.clinics.specialties[s]} onPress={() => setFilter(s)} />
           ))}
-        </View>
+        </ScrollView>
 
         {view === "map" ? (
           <ClinicsMap clinics={filtered} />
@@ -133,21 +147,6 @@ export default function ClinicsScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function ViewToggle({ active, Icon, label, onPress }: { active: boolean; Icon: typeof List; label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={clsx(
-        "min-h-[44px] flex-1 flex-row items-center justify-center gap-2 rounded-2xl border",
-        active ? "border-primary bg-primary-light" : "border-border bg-surface"
-      )}
-    >
-      <Icon size={16} color={active ? "#D62A63" : "#4B5563"} />
-      <Text className={clsx("text-sm font-semibold", active ? "text-primary-dark" : "text-text-secondary")}>{label}</Text>
-    </Pressable>
   );
 }
 
