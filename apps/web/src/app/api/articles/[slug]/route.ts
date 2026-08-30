@@ -4,9 +4,9 @@ import { getArticleBySlug } from "@/server/repo";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
   try {
-    requireUser(request);
+    await requireUser(request);
     const { slug } = await context.params;
-    const article = getArticleBySlug(slug);
+    const article = await getArticleBySlug(slug);
     if (!article) return NextResponse.json({ error: "Maqola topilmadi" }, { status: 404 });
     return NextResponse.json(article);
   } catch (error) {

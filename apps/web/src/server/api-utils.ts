@@ -18,7 +18,7 @@ export function jsonError(error: unknown): NextResponse {
 }
 
 /** Cookie (veb) yoki "Authorization: Bearer" (mobil) orqali joriy foydalanuvchini oladi. */
-export function getAuthenticatedUser(request: NextRequest): (User & { tokenVersion: number }) | null {
+export async function getAuthenticatedUser(request: NextRequest): Promise<(User & { tokenVersion: number }) | null> {
   let token = request.cookies.get(SESSION_COOKIE)?.value;
   if (!token) {
     const authHeader = request.headers.get("authorization");
@@ -29,13 +29,13 @@ export function getAuthenticatedUser(request: NextRequest): (User & { tokenVersi
   const payload = verifySession(token);
   if (!payload) return null;
 
-  const user = getUserById(payload.sub);
+  const user = await getUserById(payload.sub);
   if (!user || user.tokenVersion !== payload.tokenVersion) return null;
   return user;
 }
 
-export function requireUser(request: NextRequest): User & { tokenVersion: number } {
-  const user = getAuthenticatedUser(request);
+export async function requireUser(request: NextRequest): Promise<User & { tokenVersion: number }> {
+  const user = await getAuthenticatedUser(request);
   if (!user) throw new ApiError(401, "Sessiya topilmadi — onboarding'dan qayta o'ting");
   return user;
 }

@@ -14,9 +14,9 @@ import {
   listRecentVitalsByType,
 } from "./repo";
 
-export function buildCycleResponse(userId: string): CycleResponse {
-  const settings = getCycleSettings(userId);
-  const logs = listCycleLogs(userId);
+export async function buildCycleResponse(userId: string): Promise<CycleResponse> {
+  const settings = await getCycleSettings(userId);
+  const logs = await listCycleLogs(userId);
   const prediction = predictCycle(settings);
 
   const periodStarts = logs
@@ -35,24 +35,23 @@ export function buildCycleResponse(userId: string): CycleResponse {
 }
 
 /** Vazn — oldingi qayddan (yoki, birinchi qayd bo'lsa, onboarding vaznidan) farqi, kg. */
-function computeWeightDeltaKg(userId: string): number | null {
-  const recent = listRecentVitalsByType(userId, "weight", 2);
+async function computeWeightDeltaKg(userId: string): Promise<number | null> {
+  const recent = await listRecentVitalsByType(userId, "weight", 2);
   const latest = recent[0] ? Number(recent[0].value) : null;
   if (latest === null || Number.isNaN(latest)) return null;
-  const previous = recent[1] ? Number(recent[1].value) : getOnboardingProfile(userId)?.weightKg ?? null;
+  const previous = recent[1] ? Number(recent[1].value) : ((await getOnboardingProfile(userId))?.weightKg ?? null);
   if (previous === null || Number.isNaN(previous)) return null;
   return Math.round((latest - previous) * 10) / 10;
 }
 
-export function buildPregnancyResponse(userId: string): PregnancyResponse {
-  const profile = getPregnancyProfile(userId);
+export async function buildPregnancyResponse(userId: string): Promise<PregnancyResponse> {
+  const profile = await getPregnancyProfile(userId);
   const status = profile ? getPregnancyStatus(profile) : null;
-  return {
-    profile,
-    status,
-    visits: listPregnancyVisits(userId),
-    kicksToday: getKicksToday(userId),
-    latestVitals: getLatestVitals(userId),
-    weightDeltaKg: computeWeightDeltaKg(userId),
-  };
+  const [visits, kicksToday, latestVitals, weightDeltaKg] = await Promise.all([
+    listPregnancyVisits(userId),
+    getKicksToday(userId),
+    getLatestVitals(userId),
+    computeWeightDeltaKg(userId),
+  ]);
+  return { profile, status, visits, kicksToday, latestVitals, weightDeltaKg };
 }

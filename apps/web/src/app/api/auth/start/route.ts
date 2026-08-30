@@ -25,15 +25,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "To'g'ri telefon raqam yoki email kiriting" }, { status: 400 });
     }
 
-    const existing = findUserByIdentifier(identifier);
+    const existing = await findUserByIdentifier(identifier);
     const { user, tokenVersion } = existing
       ? { user: existing, tokenVersion: existing.tokenVersion }
-      : createUserWithIdentifier(identifier, body.language ?? "uz");
+      : await createUserWithIdentifier(identifier, body.language ?? "uz");
 
     const token = signSession({ sub: user.id, tokenVersion });
     const res = NextResponse.json({
       user,
-      onboardingProfile: getOnboardingProfile(user.id),
+      onboardingProfile: await getOnboardingProfile(user.id),
       token,
       isNewAccount: !existing,
     });

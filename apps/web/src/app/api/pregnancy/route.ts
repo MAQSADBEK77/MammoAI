@@ -8,8 +8,8 @@ import { syncChecklistForUser } from "@/server/checklist-sync";
 
 export async function GET(request: NextRequest) {
   try {
-    const user = requireUser(request);
-    return NextResponse.json(buildPregnancyResponse(user.id));
+    const user = await requireUser(request);
+    return NextResponse.json(await buildPregnancyResponse(user.id));
   } catch (error) {
     return jsonError(error);
   }
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 /** Tug'ilish sanasi kalkulyatori — oxirgi hayz yoki homiladorlik sanasidan (spec §3). */
 export async function PATCH(request: NextRequest) {
   try {
-    const user = requireUser(request);
+    const user = await requireUser(request);
     const body = (await request.json()) as Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate">>;
 
     const patch: Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate">> = {};
@@ -30,9 +30,9 @@ export async function PATCH(request: NextRequest) {
       patch.lastMenstrualPeriod = lmpFromDueDate(body.dueDate);
     }
 
-    updatePregnancyProfile(user.id, patch);
-    syncChecklistForUser(user.id);
-    return NextResponse.json(buildPregnancyResponse(user.id));
+    await updatePregnancyProfile(user.id, patch);
+    await syncChecklistForUser(user.id);
+    return NextResponse.json(await buildPregnancyResponse(user.id));
   } catch (error) {
     return jsonError(error);
   }

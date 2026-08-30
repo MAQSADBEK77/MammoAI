@@ -4,8 +4,8 @@ import { listClinics } from "@/server/repo";
 
 export async function GET(request: NextRequest) {
   try {
-    requireUser(request);
-    return NextResponse.json(listClinics());
+    await requireUser(request);
+    return NextResponse.json(await listClinics());
   } catch (error) {
     return jsonError(error);
   }

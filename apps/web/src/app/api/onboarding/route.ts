@@ -12,20 +12,20 @@ type OnboardingBody = Omit<OnboardingProfile, "userId"> & { notificationsEnabled
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = requireUser(request);
+    const user = await requireUser(request);
     const body = (await request.json()) as OnboardingBody;
     if (!body.age || body.age < 13 || body.age > 100) {
       return NextResponse.json({ error: "Yosh noto'g'ri kiritildi (kamida 13 bo'lishi kerak)" }, { status: 400 });
     }
 
     const profile: OnboardingProfile = { userId: user.id, ...body };
-    saveOnboardingProfile(profile);
-    updateUser(user.id, { name: body.name, notificationsEnabled: body.notificationsEnabled });
-    syncChecklistForUser(user.id);
+    await saveOnboardingProfile(profile);
+    await updateUser(user.id, { name: body.name, notificationsEnabled: body.notificationsEnabled });
+    await syncChecklistForUser(user.id);
 
     return NextResponse.json({
       user: { ...user, name: body.name, notificationsEnabled: body.notificationsEnabled },
-      onboardingProfile: getOnboardingProfile(user.id),
+      onboardingProfile: await getOnboardingProfile(user.id),
     });
   } catch (error) {
     return jsonError(error);

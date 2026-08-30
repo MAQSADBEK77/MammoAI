@@ -6,9 +6,9 @@ import { buildPregnancyResponse } from "@/server/views";
 /** Tepki hisoblagich — spec §3: "oddiy hisoblagich, uchinchi trimestr uchun". */
 export async function POST(request: NextRequest) {
   try {
-    const user = requireUser(request);
-    incrementKicks(user.id);
-    return NextResponse.json(buildPregnancyResponse(user.id));
+    const user = await requireUser(request);
+    await incrementKicks(user.id);
+    return NextResponse.json(await buildPregnancyResponse(user.id));
   } catch (error) {
     return jsonError(error);
   }

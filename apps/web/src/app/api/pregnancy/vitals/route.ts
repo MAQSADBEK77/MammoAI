@@ -18,7 +18,7 @@ const VALUE_PATTERN: Record<VitalType, RegExp> = {
 /** "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi qayd etadigan tezkor-jurnal. */
 export async function POST(request: NextRequest) {
   try {
-    const user = requireUser(request);
+    const user = await requireUser(request);
     const body = (await request.json()) as { type?: VitalType; value?: string; recordedAt?: string };
     const value = body.value?.trim();
 
@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Qiymat formati noto'g'ri" }, { status: 400 });
     }
 
-    addPregnancyVital(user.id, body.type, value, body.recordedAt);
-    return NextResponse.json(buildPregnancyResponse(user.id));
+    await addPregnancyVital(user.id, body.type, value, body.recordedAt);
+    return NextResponse.json(await buildPregnancyResponse(user.id));
   } catch (error) {
     return jsonError(error);
   }

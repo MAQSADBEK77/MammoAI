@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { db } from "./db";
+import { sql, ensureSchema } from "./db";
 import type {
   Article,
   ArticleCategory,
@@ -43,8 +43,8 @@ interface UserRow {
   region: string | null;
   language: Language;
   font_scale: "normal" | "large";
-  high_contrast: number;
-  notifications_enabled: number;
+  high_contrast: boolean;
+  notifications_enabled: boolean;
   token_version: number;
   created_at: string;
 }
@@ -64,12 +64,11 @@ function userFromRow(row: UserRow): User {
   };
 }
 
-export function createAnonymousUser(language: Language): { user: User; tokenVersion: number } {
+export async function createAnonymousUser(language: Language): Promise<{ user: User; tokenVersion: number }> {
+  await ensureSchema();
   const id = randomUUID();
   const createdAt = now();
-  db.prepare(
-    `INSERT INTO users (id, language, created_at) VALUES (?, ?, ?)`
-  ).run(id, language, createdAt);
+  await sql`INSERT INTO users (id, language, created_at) VALUES (${id}, ${language}, ${createdAt})`;
   return {
     user: {
       id,
@@ -92,9 +91,13 @@ export function isEmailIdentifier(identifier: string): boolean {
   return identifier.includes("@");
 }
 
-export function findUserByIdentifier(identifier: string): (User & { tokenVersion: number }) | null {
-  const column = isEmailIdentifier(identifier) ? "email" : "phone";
-  const row = db.prepare(`SELECT * FROM users WHERE ${column} = ?`).get(identifier) as UserRow | undefined;
+export async function findUserByIdentifier(identifier: string): Promise<(User & { tokenVersion: number }) | null> {
+  await ensureSchema();
+  const isEmail = isEmailIdentifier(identifier);
+  const rows = (isEmail
+    ? await sql`SELECT * FROM users WHERE email = ${identifier}`
+    : await sql`SELECT * FROM users WHERE phone = ${identifier}`) as unknown as UserRow[];
+  const row = rows[0];
   return row ? { ...userFromRow(row), tokenVersion: row.token_version } : null;
 }
 
@@ -103,21 +106,22 @@ export function findUserByIdentifier(identifier: string): (User & { tokenVersion
  * emas"). Xavfsizlik pasayadi (identifikator bilishning o'zi kirish uchun yetarli),
  * lekin bu ongli tanlangan tezkor-ro'yxatdan o'tish yechimi.
  */
-export function createUserWithIdentifier(
+export async function createUserWithIdentifier(
   identifier: string,
   language: Language
-): { user: User; tokenVersion: number } {
+): Promise<{ user: User; tokenVersion: number }> {
+  await ensureSchema();
   const id = randomUUID();
   const createdAt = now();
   const isEmail = isEmailIdentifier(identifier);
-  db.prepare(
-    `INSERT INTO users (id, phone, email, language, created_at) VALUES (?, ?, ?, ?, ?)`
-  ).run(id, isEmail ? null : identifier, isEmail ? identifier : null, language, createdAt);
+  const phone = isEmail ? null : identifier;
+  const email = isEmail ? identifier : null;
+  await sql`INSERT INTO users (id, phone, email, language, created_at) VALUES (${id}, ${phone}, ${email}, ${language}, ${createdAt})`;
   return {
     user: {
       id,
-      phone: isEmail ? null : identifier,
-      email: isEmail ? identifier : null,
+      phone,
+      email,
       name: null,
       region: null,
       language,
@@ -130,30 +134,29 @@ export function createUserWithIdentifier(
   };
 }
 
-export function getUserById(id: string): (User & { tokenVersion: number }) | null {
-  const row = db.prepare(`SELECT * FROM users WHERE id = ?`).get(id) as UserRow | undefined;
+export async function getUserById(id: string): Promise<(User & { tokenVersion: number }) | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM users WHERE id = ${id}`) as unknown as UserRow[];
+  const row = rows[0];
   if (!row) return null;
   return { ...userFromRow(row), tokenVersion: row.token_version };
 }
 
-export function updateUser(
+export async function updateUser(
   id: string,
   patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled">>
-): User {
-  const current = getUserById(id);
+): Promise<User> {
+  await ensureSchema();
+  const current = await getUserById(id);
   if (!current) throw new Error("Foydalanuvchi topilmadi");
   const merged = { ...current, ...patch };
-  db.prepare(
-    `UPDATE users SET name = ?, phone = ?, language = ?, font_scale = ?, high_contrast = ?, notifications_enabled = ? WHERE id = ?`
-  ).run(
-    merged.name,
-    merged.phone,
-    merged.language,
-    merged.fontScale,
-    merged.highContrast ? 1 : 0,
-    merged.notificationsEnabled ? 1 : 0,
-    id
-  );
+  await sql`
+    UPDATE users SET
+      name = ${merged.name}, phone = ${merged.phone}, language = ${merged.language},
+      font_scale = ${merged.fontScale}, high_contrast = ${merged.highContrast},
+      notifications_enabled = ${merged.notificationsEnabled}
+    WHERE id = ${id}
+  `;
   return merged;
 }
 
@@ -165,9 +168,9 @@ interface OnboardingRow {
   user_id: string;
   name: string | null;
   age: number;
-  is_pregnant: number;
+  is_pregnant: boolean;
   cycle_regularity: OnboardingProfile["cycleRegularity"];
-  family_history: number;
+  family_history: boolean;
   last_checkup: OnboardingProfile["lastCheckup"];
   primary_goal: OnboardingProfile["primaryGoal"];
   heard_about_us: HeardAboutUs | null;
@@ -199,47 +202,36 @@ function onboardingFromRow(row: OnboardingRow): OnboardingProfile {
   };
 }
 
-export function saveOnboardingProfile(profile: OnboardingProfile): void {
-  db.prepare(
-    `INSERT INTO onboarding_profiles (
-       user_id, name, age, is_pregnant, cycle_regularity, family_history, last_checkup, primary_goal,
-       heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg
-     )
-     VALUES (
-       @userId, @name, @age, @isPregnant, @cycleRegularity, @familyHistory, @lastCheckup, @primaryGoal,
-       @heardAboutUs, @typicalSymptoms, @periodAttitude, @healthConditions, @healthConditionsOther, @heightCm, @weightKg
-     )
-     ON CONFLICT(user_id) DO UPDATE SET
-       name = excluded.name, age = excluded.age, is_pregnant = excluded.is_pregnant,
-       cycle_regularity = excluded.cycle_regularity, family_history = excluded.family_history,
-       last_checkup = excluded.last_checkup, primary_goal = excluded.primary_goal,
-       heard_about_us = excluded.heard_about_us, typical_symptoms = excluded.typical_symptoms,
-       period_attitude = excluded.period_attitude,
-       health_conditions = excluded.health_conditions, health_conditions_other = excluded.health_conditions_other,
-       height_cm = excluded.height_cm, weight_kg = excluded.weight_kg`
-  ).run({
-    userId: profile.userId,
-    name: profile.name,
-    age: profile.age,
-    isPregnant: profile.isPregnant ? 1 : 0,
-    cycleRegularity: profile.cycleRegularity,
-    familyHistory: profile.familyHistory ? 1 : 0,
-    lastCheckup: profile.lastCheckup,
-    primaryGoal: profile.primaryGoal,
-    heardAboutUs: profile.heardAboutUs,
-    typicalSymptoms: JSON.stringify(profile.typicalSymptoms ?? []),
-    periodAttitude: profile.periodAttitude,
-    healthConditions: JSON.stringify(profile.healthConditions ?? []),
-    healthConditionsOther: profile.healthConditionsOther,
-    heightCm: profile.heightCm,
-    weightKg: profile.weightKg,
-  });
+export async function saveOnboardingProfile(profile: OnboardingProfile): Promise<void> {
+  await ensureSchema();
+  const typicalSymptoms = JSON.stringify(profile.typicalSymptoms ?? []);
+  const healthConditions = JSON.stringify(profile.healthConditions ?? []);
+  await sql`
+    INSERT INTO onboarding_profiles (
+      user_id, name, age, is_pregnant, cycle_regularity, family_history, last_checkup, primary_goal,
+      heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg
+    )
+    VALUES (
+      ${profile.userId}, ${profile.name}, ${profile.age}, ${profile.isPregnant}, ${profile.cycleRegularity},
+      ${profile.familyHistory}, ${profile.lastCheckup}, ${profile.primaryGoal}, ${profile.heardAboutUs},
+      ${typicalSymptoms}, ${profile.periodAttitude}, ${healthConditions}, ${profile.healthConditionsOther},
+      ${profile.heightCm}, ${profile.weightKg}
+    )
+    ON CONFLICT (user_id) DO UPDATE SET
+      name = EXCLUDED.name, age = EXCLUDED.age, is_pregnant = EXCLUDED.is_pregnant,
+      cycle_regularity = EXCLUDED.cycle_regularity, family_history = EXCLUDED.family_history,
+      last_checkup = EXCLUDED.last_checkup, primary_goal = EXCLUDED.primary_goal,
+      heard_about_us = EXCLUDED.heard_about_us, typical_symptoms = EXCLUDED.typical_symptoms,
+      period_attitude = EXCLUDED.period_attitude,
+      health_conditions = EXCLUDED.health_conditions, health_conditions_other = EXCLUDED.health_conditions_other,
+      height_cm = EXCLUDED.height_cm, weight_kg = EXCLUDED.weight_kg
+  `;
 }
 
-export function getOnboardingProfile(userId: string): OnboardingProfile | null {
-  const row = db.prepare(`SELECT * FROM onboarding_profiles WHERE user_id = ?`).get(userId) as
-    | OnboardingRow
-    | undefined;
+export async function getOnboardingProfile(userId: string): Promise<OnboardingProfile | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM onboarding_profiles WHERE user_id = ${userId}`) as unknown as OnboardingRow[];
+  const row = rows[0];
   return row ? onboardingFromRow(row) : null;
 }
 
@@ -254,10 +246,10 @@ interface CycleSettingsRow {
   average_period_length: number;
 }
 
-export function getCycleSettings(userId: string): CycleSettings {
-  const row = db.prepare(`SELECT * FROM cycle_settings WHERE user_id = ?`).get(userId) as
-    | CycleSettingsRow
-    | undefined;
+export async function getCycleSettings(userId: string): Promise<CycleSettings> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM cycle_settings WHERE user_id = ${userId}`) as unknown as CycleSettingsRow[];
+  const row = rows[0];
   if (!row) {
     return {
       userId,
@@ -274,20 +266,21 @@ export function getCycleSettings(userId: string): CycleSettings {
   };
 }
 
-export function updateCycleSettings(
+export async function updateCycleSettings(
   userId: string,
   patch: Partial<Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength">>
-): CycleSettings {
-  const current = getCycleSettings(userId);
+): Promise<CycleSettings> {
+  await ensureSchema();
+  const current = await getCycleSettings(userId);
   const merged = { ...current, ...patch };
-  db.prepare(
-    `INSERT INTO cycle_settings (user_id, last_period_start, average_cycle_length, average_period_length)
-     VALUES (@userId, @lastPeriodStart, @averageCycleLength, @averagePeriodLength)
-     ON CONFLICT(user_id) DO UPDATE SET
-       last_period_start = excluded.last_period_start,
-       average_cycle_length = excluded.average_cycle_length,
-       average_period_length = excluded.average_period_length`
-  ).run(merged);
+  await sql`
+    INSERT INTO cycle_settings (user_id, last_period_start, average_cycle_length, average_period_length)
+    VALUES (${merged.userId}, ${merged.lastPeriodStart}, ${merged.averageCycleLength}, ${merged.averagePeriodLength})
+    ON CONFLICT (user_id) DO UPDATE SET
+      last_period_start = EXCLUDED.last_period_start,
+      average_cycle_length = EXCLUDED.average_cycle_length,
+      average_period_length = EXCLUDED.average_period_length
+  `;
   return merged;
 }
 
@@ -313,45 +306,42 @@ function cycleLogFromRow(row: CycleLogRow): CycleLog {
   };
 }
 
-export function listCycleLogs(userId: string, limit = 180): CycleLog[] {
-  const rows = db
-    .prepare(`SELECT * FROM cycle_logs WHERE user_id = ? ORDER BY date DESC LIMIT ?`)
-    .all(userId, limit) as CycleLogRow[];
+export async function listCycleLogs(userId: string, limit = 180): Promise<CycleLog[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT * FROM cycle_logs WHERE user_id = ${userId} ORDER BY date DESC LIMIT ${limit}
+  `) as unknown as CycleLogRow[];
   return rows.map(cycleLogFromRow);
 }
 
-export function upsertCycleLog(
+export async function upsertCycleLog(
   userId: string,
   log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms">
-): CycleLog {
+): Promise<CycleLog> {
+  await ensureSchema();
   const id = randomUUID();
   const createdAt = now();
-  db.prepare(
-    `INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at)
-     VALUES (@id, @userId, @date, @flow, @mood, @symptoms, @createdAt)
-     ON CONFLICT(user_id, date) DO UPDATE SET
-       flow = excluded.flow, mood = excluded.mood, symptoms = excluded.symptoms`
-  ).run({
-    id,
-    userId,
-    date: log.date,
-    flow: log.flow,
-    mood: log.mood,
-    symptoms: JSON.stringify(log.symptoms ?? []),
-    createdAt,
-  });
+  const symptoms = JSON.stringify(log.symptoms ?? []);
+  await sql`
+    INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at)
+    VALUES (${id}, ${userId}, ${log.date}, ${log.flow}, ${log.mood}, ${symptoms}, ${createdAt})
+    ON CONFLICT (user_id, date) DO UPDATE SET
+      flow = EXCLUDED.flow, mood = EXCLUDED.mood, symptoms = EXCLUDED.symptoms
+  `;
 
   // Agar bu "hayz boshlanishi" bo'lsa (oqim belgilangan) va sana joriy last_period_start'dan
   // keyingi bo'lsa — sozlamalarni yangilaymiz, shunda bashorat to'g'ri hisoblanadi.
   if (log.flow) {
-    const settings = getCycleSettings(userId);
+    const settings = await getCycleSettings(userId);
     if (!settings.lastPeriodStart || log.date > settings.lastPeriodStart) {
-      updateCycleSettings(userId, { lastPeriodStart: log.date });
+      await updateCycleSettings(userId, { lastPeriodStart: log.date });
     }
   }
 
-  const row = db.prepare(`SELECT * FROM cycle_logs WHERE user_id = ? AND date = ?`).get(userId, log.date) as CycleLogRow;
-  return cycleLogFromRow(row);
+  const rows = (await sql`
+    SELECT * FROM cycle_logs WHERE user_id = ${userId} AND date = ${log.date}
+  `) as unknown as CycleLogRow[];
+  return cycleLogFromRow(rows[0]);
 }
 
 // ---------------------------------------------------------------------------
@@ -364,26 +354,27 @@ interface PregnancyRow {
   due_date: string | null;
 }
 
-export function getPregnancyProfile(userId: string): PregnancyProfile | null {
-  const row = db.prepare(`SELECT * FROM pregnancy_profiles WHERE user_id = ?`).get(userId) as
-    | PregnancyRow
-    | undefined;
+export async function getPregnancyProfile(userId: string): Promise<PregnancyProfile | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM pregnancy_profiles WHERE user_id = ${userId}`) as unknown as PregnancyRow[];
+  const row = rows[0];
   if (!row) return null;
   return { userId, lastMenstrualPeriod: row.last_menstrual_period, dueDate: row.due_date };
 }
 
-export function updatePregnancyProfile(
+export async function updatePregnancyProfile(
   userId: string,
   patch: Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate">>
-): PregnancyProfile {
-  const current = getPregnancyProfile(userId) ?? { userId, lastMenstrualPeriod: null, dueDate: null };
+): Promise<PregnancyProfile> {
+  await ensureSchema();
+  const current = (await getPregnancyProfile(userId)) ?? { userId, lastMenstrualPeriod: null, dueDate: null };
   const merged = { ...current, ...patch };
-  db.prepare(
-    `INSERT INTO pregnancy_profiles (user_id, last_menstrual_period, due_date)
-     VALUES (@userId, @lastMenstrualPeriod, @dueDate)
-     ON CONFLICT(user_id) DO UPDATE SET
-       last_menstrual_period = excluded.last_menstrual_period, due_date = excluded.due_date`
-  ).run(merged);
+  await sql`
+    INSERT INTO pregnancy_profiles (user_id, last_menstrual_period, due_date)
+    VALUES (${merged.userId}, ${merged.lastMenstrualPeriod}, ${merged.dueDate})
+    ON CONFLICT (user_id) DO UPDATE SET
+      last_menstrual_period = EXCLUDED.last_menstrual_period, due_date = EXCLUDED.due_date
+  `;
   return merged;
 }
 
@@ -409,38 +400,42 @@ function visitFromRow(row: VisitRow): PregnancyVisitLog {
   };
 }
 
-export function listPregnancyVisits(userId: string): PregnancyVisitLog[] {
-  const rows = db
-    .prepare(`SELECT * FROM pregnancy_visits WHERE user_id = ? ORDER BY date ASC`)
-    .all(userId) as VisitRow[];
+export async function listPregnancyVisits(userId: string): Promise<PregnancyVisitLog[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT * FROM pregnancy_visits WHERE user_id = ${userId} ORDER BY date ASC
+  `) as unknown as VisitRow[];
   return rows.map(visitFromRow);
 }
 
-export function addPregnancyVisit(
+export async function addPregnancyVisit(
   userId: string,
   visit: Pick<PregnancyVisitLog, "label" | "date" | "clinicName" | "note">
-): PregnancyVisitLog {
+): Promise<PregnancyVisitLog> {
+  await ensureSchema();
   const id = randomUUID();
   const createdAt = now();
-  db.prepare(
-    `INSERT INTO pregnancy_visits (id, user_id, label, date, clinic_name, note, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, userId, visit.label, visit.date, visit.clinicName, visit.note, createdAt);
+  await sql`
+    INSERT INTO pregnancy_visits (id, user_id, label, date, clinic_name, note, created_at)
+    VALUES (${id}, ${userId}, ${visit.label}, ${visit.date}, ${visit.clinicName}, ${visit.note}, ${createdAt})
+  `;
   return { id, userId, label: visit.label, date: visit.date, clinicName: visit.clinicName, note: visit.note, createdAt };
 }
 
-export function getKicksToday(userId: string): number {
-  const row = db
-    .prepare(`SELECT count FROM pregnancy_kicks WHERE user_id = ? AND date = ?`)
-    .get(userId, today()) as { count: number } | undefined;
-  return row?.count ?? 0;
+export async function getKicksToday(userId: string): Promise<number> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT count FROM pregnancy_kicks WHERE user_id = ${userId} AND date = ${today()}
+  `) as unknown as { count: number }[];
+  return rows[0]?.count ?? 0;
 }
 
-export function incrementKicks(userId: string): number {
-  db.prepare(
-    `INSERT INTO pregnancy_kicks (user_id, date, count) VALUES (?, ?, 1)
-     ON CONFLICT(user_id, date) DO UPDATE SET count = count + 1`
-  ).run(userId, today());
+export async function incrementKicks(userId: string): Promise<number> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO pregnancy_kicks (user_id, date, count) VALUES (${userId}, ${today()}, 1)
+    ON CONFLICT (user_id, date) DO UPDATE SET count = pregnancy_kicks.count + 1
+  `;
   return getKicksToday(userId);
 }
 
@@ -458,31 +453,40 @@ function vitalFromRow(row: VitalRow): PregnancyVitalLog {
 }
 
 /** Turi bo'yicha eng so'nggi (created_at bo'yicha) yozuvlar — 2 tasi (delta hisoblash uchun). */
-export function listRecentVitalsByType(userId: string, type: VitalType, limit = 2): PregnancyVitalLog[] {
-  const rows = db
-    .prepare(`SELECT * FROM pregnancy_vitals WHERE user_id = ? AND type = ? ORDER BY created_at DESC LIMIT ?`)
-    .all(userId, type, limit) as VitalRow[];
+export async function listRecentVitalsByType(userId: string, type: VitalType, limit = 2): Promise<PregnancyVitalLog[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT * FROM pregnancy_vitals WHERE user_id = ${userId} AND type = ${type}
+    ORDER BY created_at DESC LIMIT ${limit}
+  `) as unknown as VitalRow[];
   return rows.map(vitalFromRow);
 }
 
 /** Har bir tur uchun eng so'nggi qayd — bosh sahifadagi "Sog'liq ko'rsatkichlari" bo'limi uchun. */
-export function getLatestVitals(userId: string): Partial<Record<VitalType, PregnancyVitalLog>> {
+export async function getLatestVitals(userId: string): Promise<Partial<Record<VitalType, PregnancyVitalLog>>> {
   const types: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
   const result: Partial<Record<VitalType, PregnancyVitalLog>> = {};
   for (const type of types) {
-    const [latest] = listRecentVitalsByType(userId, type, 1);
+    const [latest] = await listRecentVitalsByType(userId, type, 1);
     if (latest) result[type] = latest;
   }
   return result;
 }
 
-export function addPregnancyVital(userId: string, type: VitalType, value: string, recordedAt?: string): PregnancyVitalLog {
+export async function addPregnancyVital(
+  userId: string,
+  type: VitalType,
+  value: string,
+  recordedAt?: string
+): Promise<PregnancyVitalLog> {
+  await ensureSchema();
   const id = randomUUID();
   const createdAt = now();
   const recorded = recordedAt ?? today();
-  db.prepare(
-    `INSERT INTO pregnancy_vitals (id, user_id, type, value, recorded_at, created_at) VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(id, userId, type, value, recorded, createdAt);
+  await sql`
+    INSERT INTO pregnancy_vitals (id, user_id, type, value, recorded_at, created_at)
+    VALUES (${id}, ${userId}, ${type}, ${value}, ${recorded}, ${createdAt})
+  `;
   return { id, userId, type, value, recordedAt: recorded, createdAt };
 }
 
@@ -513,10 +517,11 @@ function checklistFromRow(row: ChecklistRow): ChecklistItem {
   };
 }
 
-export function listChecklistItems(userId: string): ChecklistItem[] {
-  const rows = db
-    .prepare(`SELECT * FROM checklist_items WHERE user_id = ? ORDER BY (due_date IS NULL), due_date ASC`)
-    .all(userId) as ChecklistRow[];
+export async function listChecklistItems(userId: string): Promise<ChecklistItem[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT * FROM checklist_items WHERE user_id = ${userId} ORDER BY (due_date IS NULL), due_date ASC
+  `) as unknown as ChecklistRow[];
 
   const todayStr = today();
   const items = rows.map(checklistFromRow);
@@ -524,31 +529,30 @@ export function listChecklistItems(userId: string): ChecklistItem[] {
   // Muddati o'tgan bandlarni belgilaymiz (spec §4: "Muddati o'tgan bandlar uchun eslatma").
   for (const item of items) {
     if (item.status === "pending" && item.dueDate && item.dueDate < todayStr) {
-      db.prepare(`UPDATE checklist_items SET status = 'overdue' WHERE id = ?`).run(item.id);
+      await sql`UPDATE checklist_items SET status = 'overdue' WHERE id = ${item.id}`;
       item.status = "overdue";
     }
   }
   return items;
 }
 
-export function ensureChecklistItem(
-  userId: string,
-  type: ChecklistItemType,
-  dueDate: string | null
-): void {
-  const exists = db
-    .prepare(`SELECT id FROM checklist_items WHERE user_id = ? AND type = ? AND status != 'done'`)
-    .get(userId, type);
-  if (exists) return;
-  db.prepare(
-    `INSERT INTO checklist_items (id, user_id, type, status, due_date, created_at) VALUES (?, ?, ?, 'pending', ?, ?)`
-  ).run(randomUUID(), userId, type, dueDate, now());
+export async function ensureChecklistItem(userId: string, type: ChecklistItemType, dueDate: string | null): Promise<void> {
+  await ensureSchema();
+  const existing = await sql`
+    SELECT id FROM checklist_items WHERE user_id = ${userId} AND type = ${type} AND status != 'done'
+  `;
+  if (existing.length > 0) return;
+  await sql`
+    INSERT INTO checklist_items (id, user_id, type, status, due_date, created_at)
+    VALUES (${randomUUID()}, ${userId}, ${type}, 'pending', ${dueDate}, ${now()})
+  `;
 }
 
-export function completeChecklistItem(userId: string, id: string): void {
-  db.prepare(
-    `UPDATE checklist_items SET status = 'done', completed_at = ? WHERE id = ? AND user_id = ?`
-  ).run(now(), id, userId);
+export async function completeChecklistItem(userId: string, id: string): Promise<void> {
+  await ensureSchema();
+  await sql`
+    UPDATE checklist_items SET status = 'done', completed_at = ${now()} WHERE id = ${id} AND user_id = ${userId}
+  `;
 }
 
 // ---------------------------------------------------------------------------
@@ -564,7 +568,7 @@ interface ClinicRow {
   lng: number;
   phone: string;
   specialties: string;
-  free_screening: number;
+  free_screening: boolean;
 }
 
 function clinicFromRow(row: ClinicRow): Clinic {
@@ -582,18 +586,21 @@ function clinicFromRow(row: ClinicRow): Clinic {
   };
 }
 
-export function listClinics(): Clinic[] {
-  const rows = db.prepare(`SELECT * FROM clinics ORDER BY name ASC`).all() as ClinicRow[];
+export async function listClinics(): Promise<Clinic[]> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM clinics ORDER BY name ASC`) as unknown as ClinicRow[];
   return rows.map(clinicFromRow);
 }
 
-export function logReferralEvent(
+export async function logReferralEvent(
   userId: string,
   payload: { clinicId: string; checklistItemId: string | null; action: ReferralAction }
-): void {
-  db.prepare(
-    `INSERT INTO referral_events (id, user_id, clinic_id, checklist_item_id, action, created_at) VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(randomUUID(), userId, payload.clinicId, payload.checklistItemId, payload.action, now());
+): Promise<void> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO referral_events (id, user_id, clinic_id, checklist_item_id, action, created_at)
+    VALUES (${randomUUID()}, ${userId}, ${payload.clinicId}, ${payload.checklistItemId}, ${payload.action}, ${now()})
+  `;
 }
 
 // ---------------------------------------------------------------------------
@@ -618,26 +625,28 @@ function riskQuizFromRow(row: RiskQuizRow): RiskQuizResult {
   };
 }
 
-export function getRiskQuizResult(userId: string): RiskQuizResult | null {
-  const row = db.prepare(`SELECT * FROM risk_quiz_results WHERE user_id = ?`).get(userId) as
-    | RiskQuizRow
-    | undefined;
+export async function getRiskQuizResult(userId: string): Promise<RiskQuizResult | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM risk_quiz_results WHERE user_id = ${userId}`) as unknown as RiskQuizRow[];
+  const row = rows[0];
   return row ? riskQuizFromRow(row) : null;
 }
 
-export function saveRiskQuizResult(
+export async function saveRiskQuizResult(
   userId: string,
   answers: RiskQuizAnswers,
   score: number,
   level: RiskLevel
-): RiskQuizResult {
+): Promise<RiskQuizResult> {
+  await ensureSchema();
   const completedAt = now();
-  db.prepare(
-    `INSERT INTO risk_quiz_results (user_id, answers, score, level, completed_at)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(user_id) DO UPDATE SET
-       answers = excluded.answers, score = excluded.score, level = excluded.level, completed_at = excluded.completed_at`
-  ).run(userId, JSON.stringify(answers), score, level, completedAt);
+  const answersJson = JSON.stringify(answers);
+  await sql`
+    INSERT INTO risk_quiz_results (user_id, answers, score, level, completed_at)
+    VALUES (${userId}, ${answersJson}, ${score}, ${level}, ${completedAt})
+    ON CONFLICT (user_id) DO UPDATE SET
+      answers = EXCLUDED.answers, score = EXCLUDED.score, level = EXCLUDED.level, completed_at = EXCLUDED.completed_at
+  `;
   return { userId, answers, score, level, completedAt };
 }
 
@@ -666,12 +675,15 @@ function articleFromRow(row: ArticleRow): Article {
   };
 }
 
-export function listArticles(): Article[] {
-  const rows = db.prepare(`SELECT * FROM articles ORDER BY title ASC`).all() as ArticleRow[];
+export async function listArticles(): Promise<Article[]> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM articles ORDER BY title ASC`) as unknown as ArticleRow[];
   return rows.map(articleFromRow);
 }
 
-export function getArticleBySlug(slug: string): Article | null {
-  const row = db.prepare(`SELECT * FROM articles WHERE slug = ?`).get(slug) as ArticleRow | undefined;
+export async function getArticleBySlug(slug: string): Promise<Article | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM articles WHERE slug = ${slug}`) as unknown as ArticleRow[];
+  const row = rows[0];
   return row ? articleFromRow(row) : null;
 }

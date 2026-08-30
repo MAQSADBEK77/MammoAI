@@ -11,16 +11,16 @@ const addDays = (dateStr: string, days: number) => {
  * Onboarding profiliga va joriy holatga qarab checklist bandlarini yaratadi/yangilaydi.
  * Oddiy qoidalar jadvali — ML kerak emas (spec §4).
  */
-export function syncChecklistForUser(userId: string): void {
-  const profile = getOnboardingProfile(userId);
+export async function syncChecklistForUser(userId: string): Promise<void> {
+  const profile = await getOnboardingProfile(userId);
   if (!profile) return;
 
-  const cycleSettings = getCycleSettings(userId);
-  const recentLogs = listCycleLogs(userId, 12);
+  const cycleSettings = await getCycleSettings(userId);
+  const recentLogs = await listCycleLogs(userId, 12);
   const cycleIrregular =
     profile.cycleRegularity === "irregular" || isCycleIrregular(recentLogs.map(() => cycleSettings.averageCycleLength));
 
-  const pregnancy = getPregnancyProfile(userId);
+  const pregnancy = await getPregnancyProfile(userId);
   const isPregnant = profile.isPregnant || !!pregnancy?.dueDate;
 
   const generated = generateChecklist({
@@ -32,6 +32,6 @@ export function syncChecklistForUser(userId: string): void {
 
   const today = new Date().toISOString().slice(0, 10);
   for (const item of generated) {
-    ensureChecklistItem(userId, item.type, item.dueInDays != null ? addDays(today, item.dueInDays) : null);
+    await ensureChecklistItem(userId, item.type, item.dueInDays != null ? addDays(today, item.dueInDays) : null);
   }
 }

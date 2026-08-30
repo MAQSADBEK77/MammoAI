@@ -3,7 +3,7 @@
 // kerak bo'lgan demo yozuvlar (shuning uchun umumiy, tavsifiy nomlar ishlatilgan).
 
 import { randomUUID } from "node:crypto";
-import { db } from "../src/server/db";
+import { sql, ensureSchema } from "../src/server/db";
 import type { ArticleCategory, ClinicSpecialty } from "@mammoai/shared";
 
 interface SeedClinic {
@@ -197,44 +197,32 @@ const SEED_CLINICS_V2: SeedClinic[] = [
   },
 ];
 
-const insertClinic = db.prepare(
-  `INSERT INTO clinics (id, name, address, region, lat, lng, phone, specialties, free_screening)
-   VALUES (@id, @name, @address, @region, @lat, @lng, @phone, @specialties, @freeScreening)`
-);
-const findClinicByName = db.prepare("SELECT id FROM clinics WHERE name = ?");
-
-function seedClinicsIfMissing(clinics: SeedClinic[]) {
-  const insertMany = db.transaction((list: SeedClinic[]) => {
-    let added = 0;
-    for (const c of list) {
-      if (findClinicByName.get(c.name)) continue;
-      insertClinic.run({
-        id: randomUUID(),
-        name: c.name,
-        address: c.address,
-        region: c.region,
-        lat: c.lat,
-        lng: c.lng,
-        phone: c.phone,
-        specialties: JSON.stringify(c.specialties),
-        freeScreening: c.freeScreening ? 1 : 0,
-      });
-      added++;
-    }
-    return added;
-  });
-  return insertMany(clinics);
+async function seedClinicsIfMissing(clinics: SeedClinic[]): Promise<number> {
+  let added = 0;
+  for (const c of clinics) {
+    const existing = await sql`SELECT id FROM clinics WHERE name = ${c.name}`;
+    if (existing.length > 0) continue;
+    await sql`
+      INSERT INTO clinics (id, name, address, region, lat, lng, phone, specialties, free_screening)
+      VALUES (${randomUUID()}, ${c.name}, ${c.address}, ${c.region}, ${c.lat}, ${c.lng}, ${c.phone}, ${JSON.stringify(c.specialties)}, ${c.freeScreening})
+    `;
+    added++;
+  }
+  return added;
 }
 
-const addedV1 = seedClinicsIfMissing(SEED_CLINICS);
-console.log(addedV1 > 0 ? `${addedV1} ta namunaviy klinika qo'shildi.` : "Asosiy namunaviy klinikalar allaqachon mavjud.");
+async function seed() {
+  await ensureSchema();
 
-const addedV2 = seedClinicsIfMissing(SEED_CLINICS_V2);
-console.log(
-  addedV2 > 0
-    ? `${addedV2} ta qo'shimcha klinika (endokrinologiya/reproduktologiya/laparoskopiya) qo'shildi.`
-    : "Qo'shimcha klinikalar allaqachon mavjud."
-);
+  const addedV1 = await seedClinicsIfMissing(SEED_CLINICS);
+  console.log(addedV1 > 0 ? `${addedV1} ta namunaviy klinika qo'shildi.` : "Asosiy namunaviy klinikalar allaqachon mavjud.");
+
+  const addedV2 = await seedClinicsIfMissing(SEED_CLINICS_V2);
+  console.log(
+    addedV2 > 0
+      ? `${addedV2} ta qo'shimcha klinika (endokrinologiya/reproduktologiya/laparoskopiya) qo'shildi.`
+      : "Qo'shimcha klinikalar allaqachon mavjud."
+  );
 
 // ---------------------------------------------------------------------------
 // Maqolalar — App.pdf §20. Umumiy ta'limiy matn, haqiqiy tibbiy kontent manbai
@@ -294,16 +282,23 @@ const SEED_ARTICLES: SeedArticle[] = [
   },
 ];
 
-const articlesCount = db.prepare("SELECT COUNT(*) as count FROM articles").get() as { count: number };
-if (articlesCount.count > 0) {
-  console.log(`Maqolalar jadvalida allaqachon ${articlesCount.count} ta yozuv bor — seed o'tkazib yuborildi.`);
-} else {
-  const insertArticle = db.prepare(
-    `INSERT INTO articles (id, slug, category, title, excerpt, body) VALUES (@id, @slug, @category, @title, @excerpt, @body)`
-  );
-  const insertArticles = db.transaction((articles: SeedArticle[]) => {
-    for (const a of articles) insertArticle.run({ id: randomUUID(), ...a });
-  });
-  insertArticles(SEED_ARTICLES);
-  console.log(`${SEED_ARTICLES.length} ta namunaviy maqola qo'shildi.`);
+  const [{ count: articlesCount }] = (await sql`SELECT COUNT(*)::int as count FROM articles`) as unknown as { count: number }[];
+  if (articlesCount > 0) {
+    console.log(`Maqolalar jadvalida allaqachon ${articlesCount} ta yozuv bor — seed o'tkazib yuborildi.`);
+  } else {
+    for (const a of SEED_ARTICLES) {
+      await sql`
+        INSERT INTO articles (id, slug, category, title, excerpt, body)
+        VALUES (${randomUUID()}, ${a.slug}, ${a.category}, ${a.title}, ${a.excerpt}, ${a.body})
+      `;
+    }
+    console.log(`${SEED_ARTICLES.length} ta namunaviy maqola qo'shildi.`);
+  }
+
+  await sql.end();
 }
+
+seed().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

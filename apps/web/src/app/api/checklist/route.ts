@@ -5,9 +5,9 @@ import { syncChecklistForUser } from "@/server/checklist-sync";
 
 export async function GET(request: NextRequest) {
   try {
-    const user = requireUser(request);
-    syncChecklistForUser(user.id);
-    return NextResponse.json(listChecklistItems(user.id));
+    const user = await requireUser(request);
+    await syncChecklistForUser(user.id);
+    return NextResponse.json(await listChecklistItems(user.id));
   } catch (error) {
     return jsonError(error);
   }

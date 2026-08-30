@@ -9,7 +9,7 @@ import { logReferralEvent } from "@/server/repo";
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = requireUser(request);
+    const user = await requireUser(request);
     const body = (await request.json()) as {
       clinicId: string;
       checklistItemId?: string | null;
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!body.clinicId || !body.action) {
       return NextResponse.json({ error: "clinicId va action kerak" }, { status: 400 });
     }
-    logReferralEvent(user.id, {
+    await logReferralEvent(user.id, {
       clinicId: body.clinicId,
       checklistItemId: body.checklistItemId ?? null,
       action: body.action,
