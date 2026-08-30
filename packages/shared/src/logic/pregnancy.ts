@@ -1,7 +1,7 @@
 // Homiladorlik hisob-kitoblari — spec §3: tug'ilish sanasi kalkulyatori, joriy hafta.
 // Standart tibbiy qoida: homiladorlik oxirgi hayz sanasidan (LMP) 280 kun (40 hafta) davom etadi.
 
-import type { PregnancyProfile } from "../types";
+import type { PregnancyProfile, VitalType } from "../types";
 
 const PREGNANCY_DAYS = 280;
 
@@ -81,4 +81,31 @@ export function getMilestoneForWeek(week: number): WeeklyMilestone {
     PREGNANCY_MILESTONES.find((m) => week >= m.fromWeek && week <= m.toWeek) ??
     PREGNANCY_MILESTONES[PREGNANCY_MILESTONES.length - 1]
   );
+}
+
+// "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi kiritgan qiymatning keng tarqalgan
+// "normal" oralig'ida ekanini yumshoq ko'rsatish (tibbiy tashxis EMAS, faqat umumiy
+// yo'naltiruvchi belgi — App.pdf'dagi xavf-testi bilan bir xil ehtiyotkorlik).
+export type VitalTone = "normal" | "attention";
+
+export function getVitalTone(type: VitalType, value: string): VitalTone | null {
+  if (type === "weight") return null; // vazn uchun "normal/e'tibor" emas, o'zgarish (delta) ko'rsatiladi
+  if (type === "heart_rate") {
+    const bpm = Number(value);
+    if (Number.isNaN(bpm)) return null;
+    return bpm >= 60 && bpm <= 100 ? "normal" : "attention";
+  }
+  if (type === "temperature") {
+    const c = Number(value);
+    if (Number.isNaN(c)) return null;
+    return c >= 36.1 && c <= 37.2 ? "normal" : "attention";
+  }
+  if (type === "blood_pressure") {
+    const match = /^(\d{2,3})\/(\d{2,3})$/.exec(value);
+    if (!match) return null;
+    const sys = Number(match[1]);
+    const dia = Number(match[2]);
+    return sys >= 90 && sys <= 120 && dia >= 60 && dia <= 80 ? "normal" : "attention";
+  }
+  return null;
 }

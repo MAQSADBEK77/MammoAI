@@ -111,6 +111,22 @@ export interface PregnancyVisitLog {
   createdAt: string;
 }
 
+// "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi qayd etadigan tezkor-jurnal
+// (yurak urishi, qon bosimi, vazn, harorat). E'TIBOR: bu tibbiy asbob/sensordan
+// emas, foydalanuvchi qo'lda kiritgan qiymat — shuning uchun UI'da har doim
+// "o'zingiz kiritgan" ekanligi va tibbiy maslahat emasligi ta'kidlanadi.
+export type VitalType = "heart_rate" | "blood_pressure" | "weight" | "temperature";
+
+export interface PregnancyVitalLog {
+  id: string;
+  userId: string;
+  type: VitalType;
+  /** Ko'pchilik turlar uchun oddiy son ("85", "36.7"); qon bosimi uchun "115/75". */
+  value: string;
+  recordedAt: string; // YYYY-MM-DD
+  createdAt: string;
+}
+
 export type ChecklistItemType =
   | "gyn_annual_checkup"
   | "pap_test"

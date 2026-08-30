@@ -2,15 +2,34 @@ import { useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { ChevronRight, CalendarClock, Hourglass, Stethoscope } from "lucide-react-native";
-import type { PregnancyResponse } from "@mammoai/shared";
-import { getMilestoneForWeek, gradients } from "@mammoai/shared";
+import {
+  ChevronRight,
+  CalendarClock,
+  Hourglass,
+  Stethoscope,
+  Heart,
+  Activity,
+  Scale,
+  Thermometer,
+  CalendarDays,
+} from "lucide-react-native";
+import type { PregnancyResponse, VitalType } from "@mammoai/shared";
+import { getMilestoneForWeek, getVitalTone, gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card, FloatingTag, ScreenHeader, TextField } from "@/components/ui";
+import { Badge, Button, Card, FloatingTag, ScreenHeader, TextField } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
 import ExpectingIllustration from "../../../assets/illustrations/expecting.svg";
+
+const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
+const VITAL_ICON: Record<VitalType, typeof Heart> = { heart_rate: Heart, blood_pressure: Activity, weight: Scale, temperature: Thermometer };
+const VITAL_ICON_COLOR: Record<VitalType, string> = {
+  heart_rate: "#F43F7F",
+  blood_pressure: "#7C3AED",
+  weight: "#0D9488",
+  temperature: "#E7A83F",
+};
 
 export default function PregnancyScreen() {
   const { dict } = useI18n();
@@ -22,6 +41,25 @@ export default function PregnancyScreen() {
   const [visitDate, setVisitDate] = useState("");
   const [visitClinic, setVisitClinic] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loggingVital, setLoggingVital] = useState<VitalType | null>(null);
+  const [vitalInput, setVitalInput] = useState("");
+  const [savingVital, setSavingVital] = useState(false);
+  const [vitalError, setVitalError] = useState<string | null>(null);
+
+  async function saveVital() {
+    if (!loggingVital || !vitalInput.trim()) return;
+    setSavingVital(true);
+    setVitalError(null);
+    try {
+      setData(await api.pregnancy.logVital({ type: loggingVital, value: vitalInput.trim() }));
+      setLoggingVital(null);
+      setVitalInput("");
+    } catch {
+      setVitalError(dict.pregnancy.vitalsInvalidFormat);
+    } finally {
+      setSavingVital(false);
+    }
+  }
 
   useEffect(() => {
     api.pregnancy.get().then(setData);
@@ -72,6 +110,12 @@ export default function PregnancyScreen() {
   const weeksRemaining = Math.max(0, 40 - status.currentWeek);
   const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const nextVisit = data.visits.find((v) => v.date >= todayStr) ?? null;
+  const nextVisitDaysLeft = nextVisit
+    ? Math.max(0, Math.round((new Date(nextVisit.date + "T00:00:00Z").getTime() - new Date(todayStr + "T00:00:00Z").getTime()) / 86400000))
+    : null;
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
@@ -105,6 +149,90 @@ export default function PregnancyScreen() {
             <Text className="text-center text-sm font-semibold text-white">{dict.pregnancy.daysRemaining(status.daysRemaining)}</Text>
           </View>
         </LinearGradient>
+
+        {/* Sog'liq ko'rsatkichlari — foydalanuvchi o'zi qayd etadigan tezkor-jurnal. */}
+        <View className="gap-2">
+          <Text className="text-base font-bold text-text-primary">{dict.pregnancy.vitalsTitle}</Text>
+          <Text className="-mt-1 text-xs text-text-muted">{dict.pregnancy.vitalsDisclaimer}</Text>
+
+          <View className="flex-row flex-wrap gap-3">
+            {VITAL_TYPES.map((type) => {
+              const Icon = VITAL_ICON[type];
+              const latest = data.latestVitals[type];
+              const tone = latest ? getVitalTone(type, latest.value) : null;
+              return (
+                <Pressable key={type} className="w-[47%] flex-1" onPress={() => { setLoggingVital(type); setVitalInput(""); setVitalError(null); }}>
+                  <Card className="gap-3">
+                    <View className="flex-row items-center justify-between">
+                      <View className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: `${VITAL_ICON_COLOR[type]}1A` }}>
+                        <Icon size={18} color={VITAL_ICON_COLOR[type]} />
+                      </View>
+                      {type === "weight" && data.weightDeltaKg !== null ? (
+                        <Badge tone="primary">{dict.pregnancy.vitalsWeightChange(data.weightDeltaKg)}</Badge>
+                      ) : (
+                        tone && <Badge tone={tone === "normal" ? "success" : "warning"}>{tone === "normal" ? dict.pregnancy.vitalsNormal : dict.pregnancy.vitalsAttention}</Badge>
+                      )}
+                    </View>
+                    {latest ? (
+                      <Text className="text-xl font-extrabold text-text-primary">
+                        {latest.value} <Text className="text-xs font-semibold text-text-secondary">{dict.pregnancy.vitalsUnits[type]}</Text>
+                      </Text>
+                    ) : (
+                      <Text className="text-sm text-text-muted">{dict.pregnancy.vitalsEmpty}</Text>
+                    )}
+                    <Text className="text-xs font-medium text-text-secondary">{dict.pregnancy.vitalsLabels[type]}</Text>
+                  </Card>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {loggingVital && (
+            <Card className="gap-3">
+              <Text className="font-semibold text-text-primary">
+                {dict.pregnancy.vitalsAddTitle} — {dict.pregnancy.vitalsLabels[loggingVital]}
+              </Text>
+              <TextField
+                value={vitalInput}
+                onChangeText={setVitalInput}
+                placeholder={dict.pregnancy.vitalsPlaceholders[loggingVital]}
+                keyboardType={loggingVital === "blood_pressure" ? "default" : "numeric"}
+              />
+              {vitalError && <Text className="text-sm text-danger">{vitalError}</Text>}
+              <View className="flex-row gap-2">
+                <Button variant="ghost" onPress={() => setLoggingVital(null)} disabled={savingVital}>
+                  {dict.common.cancel}
+                </Button>
+                <View className="flex-1">
+                  <Button onPress={saveVital} disabled={savingVital || !vitalInput.trim()}>
+                    {dict.common.save}
+                  </Button>
+                </View>
+              </View>
+            </Card>
+          )}
+        </View>
+
+        {/* Navbatdagi ko'rik — haqiqiy `visits` ma'lumotidan (eng yaqin kelgusi sana). */}
+        <Card className="flex-row items-center gap-3">
+          <View className="h-11 w-11 items-center justify-center rounded-2xl bg-secondary/15">
+            <CalendarDays size={20} color="#7C3AED" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-xs font-semibold text-text-secondary">{dict.pregnancy.nextCheckupTitle}</Text>
+            {nextVisit ? (
+              <>
+                <Text className="font-bold text-text-primary">{nextVisit.date}</Text>
+                <Text className="text-sm text-text-secondary">
+                  {nextVisit.label} · {dict.pregnancy.nextCheckupDaysLeft(nextVisitDaysLeft ?? 0)}
+                </Text>
+              </>
+            ) : (
+              <Text className="text-sm text-text-muted">{dict.pregnancy.nextCheckupNone}</Text>
+            )}
+          </View>
+          <ChevronRight size={18} color="#9CA3AF" />
+        </Card>
 
         {status.trimester === 3 && (
           <Card className="flex-row items-center justify-between">

@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://compressed-championships-short-assurance.trycloudflare.com"
+        "EXPO_PUBLIC_API_URL": "http://172.20.10.2:3000"
       }
     },
     "production": {

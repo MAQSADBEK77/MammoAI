@@ -113,6 +113,18 @@ db.exec(`
     PRIMARY KEY (user_id, date)
   );
 
+  -- "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi qayd etadigan tezkor-jurnal
+  -- (yurak urishi, qon bosimi, vazn, harorat). Qiymat matn sifatida saqlanadi
+  -- (qon bosimi "115/75" kabi ikki sonli bo'lishi mumkin).
+  CREATE TABLE IF NOT EXISTS pregnancy_vitals (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,
+    value TEXT NOT NULL,
+    recorded_at TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS checklist_items (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -147,6 +159,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_cycle_logs_user ON cycle_logs(user_id);
   CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id);
   CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id);
+  CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id);
 `);
 
 // Yengil migratsiya — App.pdf spesifikatsiyasi bilan qo'shilgan ustunlar. Loyiha allaqachon

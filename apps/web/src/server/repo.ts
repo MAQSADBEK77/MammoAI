@@ -17,6 +17,8 @@ import type {
   PeriodAttitude,
   PregnancyProfile,
   PregnancyVisitLog,
+  PregnancyVitalLog,
+  VitalType,
   ReferralAction,
   RiskQuizAnswers,
   RiskQuizResult,
@@ -440,6 +442,48 @@ export function incrementKicks(userId: string): number {
      ON CONFLICT(user_id, date) DO UPDATE SET count = count + 1`
   ).run(userId, today());
   return getKicksToday(userId);
+}
+
+interface VitalRow {
+  id: string;
+  user_id: string;
+  type: VitalType;
+  value: string;
+  recorded_at: string;
+  created_at: string;
+}
+
+function vitalFromRow(row: VitalRow): PregnancyVitalLog {
+  return { id: row.id, userId: row.user_id, type: row.type, value: row.value, recordedAt: row.recorded_at, createdAt: row.created_at };
+}
+
+/** Turi bo'yicha eng so'nggi (created_at bo'yicha) yozuvlar — 2 tasi (delta hisoblash uchun). */
+export function listRecentVitalsByType(userId: string, type: VitalType, limit = 2): PregnancyVitalLog[] {
+  const rows = db
+    .prepare(`SELECT * FROM pregnancy_vitals WHERE user_id = ? AND type = ? ORDER BY created_at DESC LIMIT ?`)
+    .all(userId, type, limit) as VitalRow[];
+  return rows.map(vitalFromRow);
+}
+
+/** Har bir tur uchun eng so'nggi qayd — bosh sahifadagi "Sog'liq ko'rsatkichlari" bo'limi uchun. */
+export function getLatestVitals(userId: string): Partial<Record<VitalType, PregnancyVitalLog>> {
+  const types: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
+  const result: Partial<Record<VitalType, PregnancyVitalLog>> = {};
+  for (const type of types) {
+    const [latest] = listRecentVitalsByType(userId, type, 1);
+    if (latest) result[type] = latest;
+  }
+  return result;
+}
+
+export function addPregnancyVital(userId: string, type: VitalType, value: string, recordedAt?: string): PregnancyVitalLog {
+  const id = randomUUID();
+  const createdAt = now();
+  const recorded = recordedAt ?? today();
+  db.prepare(
+    `INSERT INTO pregnancy_vitals (id, user_id, type, value, recorded_at, created_at) VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(id, userId, type, value, recorded, createdAt);
+  return { id, userId, type, value, recordedAt: recorded, createdAt };
 }
 
 // ---------------------------------------------------------------------------

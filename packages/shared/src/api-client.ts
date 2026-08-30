@@ -16,6 +16,8 @@ import type {
   PeriodAttitude,
   PregnancyProfile,
   PregnancyVisitLog,
+  PregnancyVitalLog,
+  VitalType,
   ReferralAction,
   RiskQuizAnswers,
   RiskQuizResult,
@@ -70,6 +72,10 @@ export interface PregnancyResponse {
   status: PregnancyStatus | null;
   visits: PregnancyVisitLog[];
   kicksToday: number;
+  /** Har bir tur bo'yicha eng so'nggi o'z-o'zidan qayd etilgan ko'rsatkich. */
+  latestVitals: Partial<Record<VitalType, PregnancyVitalLog>>;
+  /** Vazn — oldingi qayddan (yoki onboarding vaznidan) farqi, kg. */
+  weightDeltaKg: number | null;
 }
 
 // App.pdf §5-10 — onboarding so'rovnomasi endi akkaunt yaratilgandan KEYIN, sessiya
@@ -158,6 +164,8 @@ export function createApiClient(config: ApiClientConfig) {
       addVisit: (visit: Pick<PregnancyVisitLog, "label" | "date" | "clinicName" | "note">) =>
         request<PregnancyResponse>("/api/pregnancy/visits", { method: "POST", body: JSON.stringify(visit) }),
       logKick: () => request<PregnancyResponse>("/api/pregnancy/kicks", { method: "POST" }),
+      logVital: (payload: { type: VitalType; value: string; recordedAt?: string }) =>
+        request<PregnancyResponse>("/api/pregnancy/vitals", { method: "POST", body: JSON.stringify(payload) }),
     },
     checklist: {
       list: () => request<ChecklistItem[]>("/api/checklist"),
