@@ -26,3 +26,4 @@ npm-debug.log*
 # Figma Make eksporti — dizayn manbasi sifatida saqlanadi, lekin bu bizning
 # workspace'imiz emas (o'z package.json/pnpm-lock.yaml'iga ega alohida loyiha).
 Uzbek Women's Health Tracker/
+.vercel
