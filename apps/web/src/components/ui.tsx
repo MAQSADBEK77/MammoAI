@@ -320,22 +320,20 @@ export function LoadingSpinner({ label }: { label?: string }) {
         className="animate-bloom-glow pointer-events-none absolute h-56 w-56 rounded-full blur-3xl"
         style={{ background: `radial-gradient(circle, ${colors.primary}, ${colors.secondary})` }}
       />
-      <div className="glass-card relative z-10 flex flex-col items-center gap-4 rounded-[32px] px-10 py-9">
-        <svg width={72} height={72} viewBox="-40 -40 80 80">
-          {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
-            <g key={i} transform={`rotate(${(360 / BLOOM_PETAL_COUNT) * i})`}>
-              <path
-                d={BLOOM_PETAL_PATH}
-                fill={BLOOM_PETAL_COLORS[i % BLOOM_PETAL_COLORS.length]}
-                className="animate-bloom-petal"
-                style={{ transformOrigin: "0px 0px", animationDelay: `${(i * BLOOM_DURATION) / BLOOM_PETAL_COUNT}s` }}
-              />
-            </g>
-          ))}
-          <circle r={6} fill={colors.warning} />
-        </svg>
-        {label && <p className="text-sm font-medium text-text-secondary">{label}</p>}
-      </div>
+      <svg width={72} height={72} viewBox="-40 -40 80 80" className="relative z-10">
+        {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
+          <g key={i} transform={`rotate(${(360 / BLOOM_PETAL_COUNT) * i})`}>
+            <path
+              d={BLOOM_PETAL_PATH}
+              fill={BLOOM_PETAL_COLORS[i % BLOOM_PETAL_COLORS.length]}
+              className="animate-bloom-petal"
+              style={{ transformOrigin: "0px 0px", animationDelay: `${(i * BLOOM_DURATION) / BLOOM_PETAL_COUNT}s` }}
+            />
+          </g>
+        ))}
+        <circle r={6} fill={colors.warning} />
+      </svg>
+      {label && <p className="relative z-10 text-sm font-medium text-text-secondary">{label}</p>}
     </div>
   );
 }

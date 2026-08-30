@@ -416,21 +416,23 @@ function BloomGlow() {
  * Brendlangan yuklash indikatori — 🌸 gul ochilishi: kurtak yopiq holatdan
  * boshlanadi, har bir bargi navbat bilan (kechikish bilan) katta bo'lib ochiladi,
  * to'liq ochilgach yig'ilib, qaytadan boshlanadi (tinimsiz sikl). Xira rangli nur
- * fonida, yarim shaffof "shisha" karta ichida ko'rsatiladi.
+ * fonida, hech qanday to'rtburchak karta bo'lmasdan, to'g'ridan-to'g'ri suzadi.
  */
 export function LoadingSpinner({ label }: { label?: string }) {
   return (
     <View className="flex-1 items-center justify-center gap-4">
       <BloomGlow />
-      <View className="items-center gap-4 rounded-[32px] border border-white/70 bg-white/60 px-10 py-9">
-        <Svg width={72} height={72} viewBox="-40 -40 80 80">
-          {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
-            <BloomPetal key={i} index={i} />
-          ))}
-          <Circle r={6} fill={colors.warning} />
-        </Svg>
-        {label && <Text className="text-sm font-medium text-text-secondary">{label}</Text>}
-      </View>
+      <Svg width={72} height={72} viewBox="-40 -40 80 80" style={{ zIndex: 1 }}>
+        {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
+          <BloomPetal key={i} index={i} />
+        ))}
+        <Circle r={6} fill={colors.warning} />
+      </Svg>
+      {label && (
+        <Text className="text-sm font-medium text-text-secondary" style={{ zIndex: 1 }}>
+          {label}
+        </Text>
+      )}
     </View>
   );
 }
