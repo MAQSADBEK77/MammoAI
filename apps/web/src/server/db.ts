@@ -19,7 +19,13 @@ declare global {
 }
 
 // Dev rejimida modul qayta yuklanganda ulanishni qayta-qayta ochmaslik uchun global'da saqlaymiz.
-export const sql = global.__mammoaiSql ?? postgres(DATABASE_URL, { ssl: "require" });
+export const sql =
+  global.__mammoaiSql ??
+  postgres(DATABASE_URL, {
+    ssl: "require",
+    // "CREATE TABLE/INDEX IF NOT EXISTS" har cold-start'da NOTICE chiqaradi (zararsiz) — bosamiz.
+    onnotice: () => {},
+  });
 if (process.env.NODE_ENV !== "production") global.__mammoaiSql = sql;
 
 async function initSchema() {
