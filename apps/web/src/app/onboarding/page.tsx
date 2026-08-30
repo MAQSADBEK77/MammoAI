@@ -325,8 +325,8 @@ export default function OnboardingPage() {
   return (
     <div
       className={clsx(
-        "mx-auto flex min-h-dvh max-w-md flex-col justify-between px-6 py-8",
-        step === "welcome" ? "bg-aurora-cycle" : "bg-background"
+        "mx-auto flex min-h-dvh max-w-md flex-col px-6 py-8",
+        step === "welcome" ? "bg-aurora-cycle justify-center" : "bg-background justify-between"
       )}
     >
       {step !== "welcome" && step !== "analyzing" && (
@@ -335,7 +335,7 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      <div key={step} className="flex-1 animate-fade-in-up">
+      <div key={step} className={clsx("animate-fade-in-up", step !== "welcome" && "flex-1")}>
         {STEP_ILLUSTRATION[step] ? (
           <div className="mb-4 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
@@ -354,9 +354,12 @@ export default function OnboardingPage() {
           )
         )}
         {step === "welcome" && (
-          <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
-            <div className="animate-hero-badge rounded-full bg-white/15 p-4">
-              <Image src="/logo.svg" alt="Logo" width={180} height={101} priority />
+          <div className="flex flex-col items-center gap-6 text-center">
+            {/* logo.svg o'zining pushti foni bilan keladi (alohida "brend karta" sifatida
+                chizilgan) — shuning uchun uni shaffof belgidek emas, ozgina buralgan
+                soyali kartadek ko'rsatamiz, tashqi rangdosh "halqa" bilan o'rab emas. */}
+            <div className="animate-hero-badge overflow-hidden rounded-[28px] shadow-2xl shadow-black/20 ring-4 ring-white/20">
+              <Image src="/logo.svg" alt="Logo" width={140} height={79} priority />
             </div>
             <h1 className="animate-hero-title text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</h1>
             <p className="animate-hero-subtitle max-w-xs text-white/85">{dict.onboarding.welcomeSubtitle}</p>
@@ -364,6 +367,13 @@ export default function OnboardingPage() {
               {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
               <img src="/illustrations/welcome.svg" alt="" className="h-32 w-auto" />
             </div>
+            <button
+              type="button"
+              onClick={goNext}
+              className="tap-target mt-2 w-full max-w-xs rounded-full bg-white text-base font-bold text-primary-dark shadow-lg transition hover:brightness-95 active:scale-[0.98]"
+            >
+              {dict.onboarding.startButton}
+            </button>
           </div>
         )}
 
@@ -650,13 +660,6 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {step === "welcome" && (
-        <div className="mt-8">
-          <Button className="w-full !bg-white !text-primary-dark shadow-lg" onClick={goNext}>
-            {dict.onboarding.startButton}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

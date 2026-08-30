@@ -581,9 +581,16 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         {step === "welcome" ? (
-          <Button onPress={goNext} className="!bg-white shadow-lg">
-            <Text className="text-base font-semibold text-primary-dark">{dict.onboarding.startButton}</Text>
-          </Button>
+          // Button'ning "primary" varianti doim gradient (LinearGradient) chizadi —
+          // className orqali bekor qilib bo'lmaydi, shuning uchun bu yerda alohida
+          // toza oq tugma qo'lda quriladi.
+          <Pressable
+            onPress={goNext}
+            className="min-h-[52px] w-full items-center justify-center rounded-full bg-white active:scale-[0.98]"
+            style={{ shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 }}
+          >
+            <Text className="text-base font-bold text-primary-dark">{dict.onboarding.startButton}</Text>
+          </Pressable>
         ) : step !== "analyzing" ? (
           <View className="mt-4 flex-row items-center gap-3">
             {stepIndex > 0 && (
