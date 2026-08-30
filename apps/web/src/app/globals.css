@@ -146,6 +146,10 @@ body {
   background: linear-gradient(135deg, var(--color-nav) 0%, var(--color-nav-light) 100%);
 }
 
+.bg-aurora-profile {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+}
+
 .glass-card {
   background: var(--glass-light);
   border: 1px solid var(--glass-border);

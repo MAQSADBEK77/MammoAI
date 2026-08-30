@@ -7,9 +7,9 @@ import { goalToLandingTab, cssGradient, colors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader } from "@/components/ui";
+import { Button, Card } from "@/components/ui";
 import clsx from "clsx";
-import { Type, Eye } from "lucide-react";
+import { Type, Eye, CalendarClock, NotebookPen } from "lucide-react";
 
 export default function ProfilePage() {
   const { dict, language, setLanguage } = useI18n();
@@ -83,15 +83,44 @@ export default function ProfilePage() {
         : "🩸"
     : null;
 
+  const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
+  const daysActive = Math.max(0, Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / 86400000));
+
   return (
     <div className="space-y-5 pb-6">
-      <div className="flex items-center justify-between">
-        <ScreenHeader title={dict.profile.title} />
-        {modeIcon && onboardingProfile && (
-          <Badge tone="primary">
-            {modeIcon} {dict.onboarding.goals[onboardingProfile.primaryGoal]}
-          </Badge>
-        )}
+      {/* Profil "shaxsiy" kartasi — pushti→binafsha gradient, avatar, maqsad
+          yorlig'i va haqiqiy foydalanish statistikasi. */}
+      <div className="bg-aurora-profile space-y-4 rounded-[32px] p-6">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/20 text-2xl font-extrabold text-white">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <p className="truncate text-xl font-extrabold text-white">{user.name?.trim() || dict.profile.noNameFallback}</p>
+            {modeIcon && onboardingProfile && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white">
+                {modeIcon} {dict.onboarding.goals[onboardingProfile.primaryGoal]}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
+            <CalendarClock size={18} className="text-white" />
+            <div>
+              <p className="text-sm font-extrabold text-white">{dict.profile.statsDaysValue(daysActive)}</p>
+              <p className="text-[11px] text-white/75">{dict.profile.statsDaysLabel}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
+            <NotebookPen size={18} className="text-white" />
+            <div>
+              <p className="text-sm font-extrabold text-white">{logsCount ?? 0}</p>
+              <p className="text-[11px] text-white/75">{dict.profile.statsLogsLabel}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Card className="space-y-3">
@@ -165,12 +194,6 @@ export default function ProfilePage() {
 
         <SettingsRow icon="🔔" label={dict.profile.notificationsLabel} last>
           <Toggle checked={user.notificationsEnabled} onChange={() => save({ notificationsEnabled: !user.notificationsEnabled })} />
-        </SettingsRow>
-      </Card>
-
-      <Card className="space-y-1">
-        <SettingsRow icon="📊" label={dict.profile.statsTitle} last>
-          <span className="text-sm text-text-secondary">{dict.profile.statsLogsCount(logsCount ?? 0)}</span>
         </SettingsRow>
       </Card>
 

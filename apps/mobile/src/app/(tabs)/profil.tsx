@@ -11,8 +11,8 @@ import { goalToLandingTab, gradientStops, colors, gradients } from "@mammoai/sha
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, ScreenHeader, TextField } from "@/components/ui";
-import { Type, Eye, type LucideIcon } from "lucide-react-native";
+import { Button, Card, TextField } from "@/components/ui";
+import { Type, Eye, CalendarClock, NotebookPen, type LucideIcon } from "lucide-react-native";
 
 export default function ProfileScreen() {
   const { dict, language, setLanguage } = useI18n();
@@ -46,15 +46,51 @@ export default function ProfileScreen() {
         : "🩸"
     : null;
 
+  const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
+  const daysActive = Math.max(0, Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / 86400000));
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
-        <View className="flex-row items-center justify-between">
-          <ScreenHeader title={dict.profile.title} />
-          {modeIcon && onboardingProfile && (
-            <Badge tone="primary">{`${modeIcon} ${dict.onboarding.goals[onboardingProfile.primaryGoal]}`}</Badge>
-          )}
-        </View>
+        {/* Profil "shaxsiy" kartasi — pushti→binafsha gradient, avatar, maqsad
+            yorlig'i va haqiqiy foydalanish statistikasi. */}
+        <LinearGradient colors={gradients.profile} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 32, padding: 22, gap: 16 }}>
+          <View className="flex-row items-center gap-3.5">
+            <View className="h-16 w-16 items-center justify-center rounded-full bg-white/20">
+              <Text className="text-2xl font-extrabold text-white">{initials}</Text>
+            </View>
+            <View className="flex-1 gap-1.5">
+              <Text className="text-xl font-extrabold text-white" numberOfLines={1}>
+                {user.name?.trim() || dict.profile.noNameFallback}
+              </Text>
+              {modeIcon && onboardingProfile && (
+                <View className="flex-row">
+                  <View className="flex-row items-center gap-1 rounded-full bg-white/20 px-3 py-1">
+                    <Text className="text-xs">{modeIcon}</Text>
+                    <Text className="text-xs font-semibold text-white">{dict.onboarding.goals[onboardingProfile.primaryGoal]}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+
+          <View className="flex-row gap-3">
+            <View className="flex-1 flex-row items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
+              <CalendarClock size={18} color="#FFFFFF" />
+              <View>
+                <Text className="text-sm font-extrabold text-white">{dict.profile.statsDaysValue(daysActive)}</Text>
+                <Text className="text-[11px] text-white/75">{dict.profile.statsDaysLabel}</Text>
+              </View>
+            </View>
+            <View className="flex-1 flex-row items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
+              <NotebookPen size={18} color="#FFFFFF" />
+              <View>
+                <Text className="text-sm font-extrabold text-white">{logsCount ?? 0}</Text>
+                <Text className="text-[11px] text-white/75">{dict.profile.statsLogsLabel}</Text>
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
 
         <Card className="gap-3">
           <Text className="text-sm font-semibold text-text-secondary">{dict.profile.languageLabel}</Text>
@@ -119,12 +155,6 @@ export default function ProfileScreen() {
 
           <SettingsRow icon="🔔" label={dict.profile.notificationsLabel} last>
             <Toggle checked={user.notificationsEnabled} onPress={() => save({ notificationsEnabled: !user.notificationsEnabled })} />
-          </SettingsRow>
-        </Card>
-
-        <Card className="gap-1">
-          <SettingsRow icon="📊" label={dict.profile.statsTitle} last>
-            <Text className="text-sm text-text-secondary">{dict.profile.statsLogsCount(logsCount ?? 0)}</Text>
           </SettingsRow>
         </Card>
 
