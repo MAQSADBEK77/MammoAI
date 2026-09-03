@@ -284,7 +284,7 @@ export default function CommunityPage() {
         </Card>
       )}
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1 pt-2">
         <FilterChip active={tag === "all"} label={dict.community.filterAll} onClick={() => setTag("all")} />
         {TAGS.map((t) => (
           <FilterChip key={t} active={tag === t} label={dict.community.tags[t]} onClick={() => setTag(t)} />
