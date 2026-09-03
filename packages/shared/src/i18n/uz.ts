@@ -29,6 +29,22 @@ const uz = {
         hour >= 5 && hour < 11 ? "Xayrli tong" : hour >= 11 && hour < 17 ? "Xayrli kun" : hour >= 17 && hour < 23 ? "Xayrli kech" : "Salom";
       return name ? `${time}, ${name}` : time;
     },
+    months: [
+      "Yanvar",
+      "Fevral",
+      "Mart",
+      "Aprel",
+      "May",
+      "Iyun",
+      "Iyul",
+      "Avgust",
+      "Sentabr",
+      "Oktabr",
+      "Noyabr",
+      "Dekabr",
+    ],
+    // Yakshanbadan boshlab (JS Date.getDay() bilan mos) — oy taqvimi sarlavhasi uchun.
+    weekdaysShort: ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"],
   },
 
   nav: {
@@ -176,6 +192,8 @@ const uz = {
     periodLengthLabel: "Hayz davomiyligi",
     daysUnit: (n: number) => `${n} kun`,
     recentLogsTitle: "So'nggi yozuvlar",
+    calendarLegendPeriod: "Hayz",
+    calendarLegendOvulation: "Ovulyatsiya",
     flowLevels: {
       spotting: "Tomchi",
       light: "Yengil",

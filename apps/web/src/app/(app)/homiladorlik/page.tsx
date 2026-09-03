@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CalendarClock, CalendarDays, ChevronRight, Hourglass, Stethoscope, Heart, Activity, Scale, Thermometer } from "lucide-react";
 import type { PregnancyResponse, VitalType } from "@mammoai/shared";
-import { getMilestoneForWeek, getVitalTone } from "@mammoai/shared";
+import { getMilestoneForWeek, getVitalTone, localDateStr } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -97,7 +97,7 @@ export default function PregnancyPage() {
   const weeksRemaining = Math.max(0, 40 - status.currentWeek);
   const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localDateStr();
   const nextVisit = data.visits.find((v) => v.date >= todayStr) ?? null;
   const nextVisitDaysLeft = nextVisit
     ? Math.max(0, Math.round((new Date(nextVisit.date + "T00:00:00Z").getTime() - new Date(todayStr + "T00:00:00Z").getTime()) / 86400000))

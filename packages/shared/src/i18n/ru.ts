@@ -26,6 +26,21 @@ const ru: Dictionary = {
         hour >= 5 && hour < 11 ? "Доброе утро" : hour >= 11 && hour < 17 ? "Добрый день" : hour >= 17 && hour < 23 ? "Добрый вечер" : "Привет";
       return name ? `${time}, ${name}` : time;
     },
+    months: [
+      "Январь",
+      "Февраль",
+      "Март",
+      "Апрель",
+      "Май",
+      "Июнь",
+      "Июль",
+      "Август",
+      "Сентябрь",
+      "Октябрь",
+      "Ноябрь",
+      "Декабрь",
+    ],
+    weekdaysShort: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"],
   },
 
   nav: {
@@ -173,6 +188,8 @@ const ru: Dictionary = {
     periodLengthLabel: "Длительность менструации",
     daysUnit: (n: number) => `${n} дн.`,
     recentLogsTitle: "Последние записи",
+    calendarLegendPeriod: "Цикл",
+    calendarLegendOvulation: "Овуляция",
     flowLevels: {
       spotting: "Мажущие",
       light: "Лёгкие",

@@ -1,25 +1,25 @@
 import { Pressable, Text, View } from "react-native";
 import clsx from "clsx";
+import { localDateStr } from "@mammoai/shared";
+import { useI18n } from "@/lib/i18n";
 
-export type DayMarker = "period" | "predicted" | "fertile";
-
-const WEEKDAY_LABELS_UZ = ["D", "S", "S", "Ch", "P", "J", "Sh"];
-
-function toDateStr(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
+export type DayMarker = "period" | "predicted";
 
 export function MonthCalendar({
   monthDate,
   markers,
+  ovulationDate,
   today,
   onSelectDate,
 }: {
   monthDate: Date;
   markers: Record<string, DayMarker>;
+  /** Bashorat qilingan ovulyatsiya kuni — kichik nuqta bilan ko'rsatiladi (App.pdf §12). */
+  ovulationDate?: string | null;
   today: string;
   onSelectDate?: (date: string) => void;
 }) {
+  const { dict } = useI18n();
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
   const firstDay = new Date(year, month, 1);
@@ -28,13 +28,29 @@ export function MonthCalendar({
 
   const cells: (string | null)[] = [
     ...Array.from({ length: startOffset }, () => null),
-    ...Array.from({ length: daysInMonth }, (_, i) => toDateStr(new Date(year, month, i + 1))),
+    ...Array.from({ length: daysInMonth }, (_, i) => localDateStr(new Date(year, month, i + 1))),
   ];
 
   return (
     <View>
+      <View className="mb-3 flex-row items-center justify-between">
+        <Text className="font-bold text-text-primary">
+          {dict.common.months[month]} {year}
+        </Text>
+        <View className="flex-row items-center gap-3">
+          <View className="flex-row items-center gap-1.5">
+            <View className="h-2 w-2 rounded-full bg-primary" />
+            <Text className="text-[11px] font-medium text-text-secondary">{dict.cycle.calendarLegendPeriod}</Text>
+          </View>
+          <View className="flex-row items-center gap-1.5">
+            <View className="h-2 w-2 rounded-full bg-secondary" />
+            <Text className="text-[11px] font-medium text-text-secondary">{dict.cycle.calendarLegendOvulation}</Text>
+          </View>
+        </View>
+      </View>
+
       <View className="mb-2 flex-row justify-between">
-        {WEEKDAY_LABELS_UZ.map((w, i) => (
+        {dict.common.weekdaysShort.map((w, i) => (
           <Text key={i} className="w-9 text-center text-xs font-semibold text-text-muted">
             {w}
           </Text>
@@ -45,6 +61,7 @@ export function MonthCalendar({
           if (!date) return <View key={i} className="h-9 w-[14.28%]" />;
           const marker = markers[date];
           const isToday = date === today;
+          const isOvulation = date === ovulationDate;
           return (
             <View key={date} className="h-9 w-[14.28%] items-center justify-center">
               <Pressable
@@ -53,13 +70,13 @@ export function MonthCalendar({
                   "h-8 w-8 items-center justify-center rounded-full",
                   marker === "period" && "bg-primary",
                   marker === "predicted" && "bg-primary-light",
-                  marker === "fertile" && "bg-accent-light",
                   isToday && !marker && "border-2 border-primary"
                 )}
               >
                 <Text className={clsx("text-sm font-medium", marker === "period" ? "text-white" : "text-text-secondary")}>
                   {Number(date.slice(-2))}
                 </Text>
+                {isOvulation && <View className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-secondary" />}
               </Pressable>
             </View>
           );

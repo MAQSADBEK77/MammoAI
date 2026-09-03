@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText } from "lucide-react";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { getCyclePhase, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { getCyclePhase, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -41,7 +41,7 @@ export default function CyclePage() {
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
 
   useEffect(() => {
@@ -55,13 +55,6 @@ export default function CyclePage() {
   const markers: Record<string, DayMarker> = {};
   for (const log of data.logs) if (log.flow) markers[log.date] = "period";
   if (data.prediction) {
-    let d = new Date(data.prediction.fertileWindowStart + "T00:00:00Z");
-    const end = new Date(data.prediction.fertileWindowEnd + "T00:00:00Z");
-    while (d <= end) {
-      const key = d.toISOString().slice(0, 10);
-      if (!markers[key]) markers[key] = "fertile";
-      d.setUTCDate(d.getUTCDate() + 1);
-    }
     let p = new Date(data.prediction.nextPeriodStart + "T00:00:00Z");
     const pEnd = new Date(data.prediction.nextPeriodEnd + "T00:00:00Z");
     while (p <= pEnd) {
@@ -149,7 +142,7 @@ export default function CyclePage() {
       {phase && <PhaseCard phase={phase} />}
 
       <Card>
-        <MonthCalendar monthDate={new Date()} markers={markers} today={today} />
+        <MonthCalendar monthDate={new Date()} markers={markers} ovulationDate={data.prediction?.ovulationDay ?? null} today={today} />
       </Card>
 
       {/* Kunlik nazorat — App.pdf §20: 3 ta tezkor karta */}

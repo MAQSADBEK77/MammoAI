@@ -1,4 +1,5 @@
 export * from "./types";
+export * from "./date";
 export * from "./design-tokens";
 export * from "./logic/cycle";
 export * from "./logic/cycle-phase";
