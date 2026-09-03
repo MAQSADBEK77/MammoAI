@@ -200,7 +200,9 @@ const en: Dictionary = {
     moodCheckinTitle: "How are you feeling today?",
     detailedLogButton: "Detailed entry",
     calendarLegendPeriod: "Period",
+    calendarLegendFollicular: "Follicular",
     calendarLegendOvulation: "Ovulation",
+    calendarLegendLuteal: "Luteal",
     selectedDayFertility: "Fertility",
     flowLevels: {
       spotting: "Spotting",

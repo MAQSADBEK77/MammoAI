@@ -46,6 +46,7 @@ export function CycleScreen() {
   const [moodSaving, setMoodSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(() => localDateStr());
   const [showAllLogs, setShowAllLogs] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
@@ -103,6 +104,21 @@ export function CycleScreen() {
   const todayLog = data.logs.find((l) => l.date === today);
   const selectedPhase = phaseForDate(selectedDate);
   const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
+
+  // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
+  // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
+  // hisoblanadi (foydalanuvchi so'rovi: fazalar ranglar bilan ajralib tursin).
+  const phaseMarkers: Record<string, ReturnType<typeof getCyclePhase>> = {};
+  if (data.settings.lastPeriodStart) {
+    const y = calendarMonth.getFullYear();
+    const m = calendarMonth.getMonth();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = localDateStr(new Date(y, m, d));
+      const phase = phaseForDate(dateStr);
+      if (phase) phaseMarkers[dateStr] = phase;
+    }
+  }
 
   function openLogging(date: string, existing?: CycleLog) {
     setLogDate(date);
@@ -224,12 +240,15 @@ export function CycleScreen() {
 
       <Card className="rounded-[20px]!">
         <MonthCalendar
-          monthDate={new Date()}
+          monthDate={calendarMonth}
           markers={markers}
+          phaseMarkers={phaseMarkers}
           ovulationDate={data.prediction?.ovulationDay ?? null}
           today={today}
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
+          onPrevMonth={() => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
+          onNextMonth={() => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
         />
       </Card>
 

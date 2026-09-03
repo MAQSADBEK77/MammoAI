@@ -198,7 +198,9 @@ const ru: Dictionary = {
     moodCheckinTitle: "Как вы себя чувствуете сегодня?",
     detailedLogButton: "Подробный ввод",
     calendarLegendPeriod: "Цикл",
+    calendarLegendFollicular: "Фолликулярная",
     calendarLegendOvulation: "Овуляция",
+    calendarLegendLuteal: "Лютеиновая",
     selectedDayFertility: "Фертильность",
     flowLevels: {
       spotting: "Мажущие",

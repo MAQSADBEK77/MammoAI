@@ -202,7 +202,9 @@ const uz = {
     moodCheckinTitle: "Bugun o'zingizni qanday his qilyapsiz?",
     detailedLogButton: "Batafsil kiritish",
     calendarLegendPeriod: "Hayz",
+    calendarLegendFollicular: "Follikulyar",
     calendarLegendOvulation: "Ovulyatsiya",
+    calendarLegendLuteal: "Lyuteal",
     selectedDayFertility: "Unumdorlik",
     flowLevels: {
       spotting: "Tomchi",
