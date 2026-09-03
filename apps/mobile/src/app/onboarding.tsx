@@ -15,7 +15,18 @@ import type {
   PeriodAttitude,
   Symptom,
 } from "@mammoai/shared";
-import { ADULT_GOALS, MINOR_GOALS, goalToLandingTab, needsCycleInfo, needsHeightWeight, gradientStops, colors, gradients } from "@mammoai/shared";
+import {
+  ADULT_GOALS,
+  MINOR_GOALS,
+  goalToLandingTab,
+  needsCycleInfo,
+  needsHeightWeight,
+  gradientStops,
+  colors,
+  gradients,
+  formatUzPhoneInput,
+  extractUzPhoneDigits,
+} from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -81,7 +92,7 @@ interface SurveyState {
 
 const INITIAL_SURVEY: SurveyState = {
   accountChoice: null,
-  identifier: "",
+  identifier: "+998",
   heardAboutUs: null,
   name: "",
   age: "",
@@ -232,7 +243,7 @@ export default function OnboardingScreen() {
     setSubmitting(true);
     setErrorMessage(null);
     try {
-      const res = await api.auth.start({ identifier: survey.identifier.trim(), language });
+      const res = await api.auth.start({ identifier: extractUzPhoneDigits(survey.identifier) ?? survey.identifier.trim(), language });
       applyMeResponse(res);
       if (res.onboardingProfile) {
         router.replace(landingPath(res.onboardingProfile.primaryGoal));
@@ -292,7 +303,7 @@ export default function OnboardingScreen() {
       case "account_choice":
         return survey.accountChoice !== null;
       case "account_identifier":
-        return survey.identifier.trim().length > 3;
+        return extractUzPhoneDigits(survey.identifier) !== null;
       case "heard_about_us":
         return survey.heardAboutUs !== null;
       case "name":
@@ -396,7 +407,7 @@ export default function OnboardingScreen() {
               </Text>
               <TextField
                 value={survey.identifier}
-                onChangeText={(v) => setSurvey((s) => ({ ...s, identifier: v }))}
+                onChangeText={(v) => setSurvey((s) => ({ ...s, identifier: formatUzPhoneInput(v) }))}
                 placeholder={dict.auth.identifierPlaceholder}
                 keyboardType="phone-pad"
                 icon={<Lock size={18} color="#9CA3AF" />}

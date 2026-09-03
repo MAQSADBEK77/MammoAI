@@ -10,3 +10,4 @@ export * from "./logic/goal";
 export * from "./api-client";
 export * from "./i18n";
 export * from "./emoji";
+export * from "./phone";

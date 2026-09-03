@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { BloodType, CycleResponse, Goal, Language } from "@mammoai/shared";
-import { BLOOD_TYPES, getModeAccentColors } from "@mammoai/shared";
+import { BLOOD_TYPES, getModeAccentColors, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -117,7 +117,7 @@ export default function ProfilePage() {
   }
 
   async function saveHeader() {
-    await save({ name: name.trim() || null, phone: phone.trim() || null });
+    await save({ name: name.trim() || null, phone: extractUzPhoneDigits(phone) });
     setEditingHeader(false);
   }
 
@@ -238,7 +238,7 @@ export default function ProfilePage() {
                   type="tel"
                   inputMode="tel"
                   value={phone ?? ""}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatUzPhoneInput(e.target.value))}
                   placeholder={dict.profile.phoneLabel}
                   className="tap-target w-full rounded-xl border border-white/30 bg-white/15 px-3 text-sm text-white placeholder:text-white/60 outline-none focus:border-white"
                 />
@@ -253,7 +253,14 @@ export default function ProfilePage() {
 
           <button
             type="button"
-            onClick={() => (editingHeader ? saveHeader() : setEditingHeader(true))}
+            onClick={() => {
+              if (editingHeader) {
+                saveHeader();
+              } else {
+                setPhone(formatUzPhoneInput(user.phone ?? ""));
+                setEditingHeader(true);
+              }
+            }}
             disabled={saving}
             className="tap-target flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30 active:scale-95"
           >

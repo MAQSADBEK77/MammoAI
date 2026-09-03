@@ -12,7 +12,17 @@ import type {
   PeriodAttitude,
   Symptom,
 } from "@mammoai/shared";
-import { ADULT_GOALS, MINOR_GOALS, goalToLandingTab, needsCycleInfo, needsHeightWeight, cssGradient, colors } from "@mammoai/shared";
+import {
+  ADULT_GOALS,
+  MINOR_GOALS,
+  goalToLandingTab,
+  needsCycleInfo,
+  needsHeightWeight,
+  cssGradient,
+  colors,
+  formatUzPhoneInput,
+  extractUzPhoneDigits,
+} from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -66,7 +76,7 @@ interface SurveyState {
 
 const INITIAL_SURVEY: SurveyState = {
   accountChoice: null,
-  identifier: "",
+  identifier: "+998",
   heardAboutUs: null,
   name: "",
   age: "",
@@ -230,7 +240,7 @@ export default function OnboardingPage() {
     setSubmitting(true);
     setErrorMessage(null);
     try {
-      const res = await api.auth.start({ identifier: survey.identifier.trim(), language });
+      const res = await api.auth.start({ identifier: extractUzPhoneDigits(survey.identifier) ?? survey.identifier.trim(), language });
       applyMeResponse(res);
       if (res.onboardingProfile) {
         router.replace(landingPath(res.onboardingProfile.primaryGoal));
@@ -293,7 +303,7 @@ export default function OnboardingPage() {
       case "account_choice":
         return survey.accountChoice !== null;
       case "account_identifier":
-        return survey.identifier.trim().length > 3;
+        return extractUzPhoneDigits(survey.identifier) !== null;
       case "heard_about_us":
         return survey.heardAboutUs !== null;
       case "name":
@@ -410,7 +420,7 @@ export default function OnboardingPage() {
                 type="tel"
                 inputMode="tel"
                 value={survey.identifier}
-                onChange={(e) => setSurvey((s) => ({ ...s, identifier: e.target.value }))}
+                onChange={(e) => setSurvey((s) => ({ ...s, identifier: formatUzPhoneInput(e.target.value) }))}
                 placeholder={dict.auth.identifierPlaceholder}
                 className="tap-target w-full rounded-2xl border border-border bg-surface pl-11 pr-4 text-lg text-text-primary outline-none focus:border-primary"
               />

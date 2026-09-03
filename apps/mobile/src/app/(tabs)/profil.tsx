@@ -9,7 +9,7 @@ import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import type { BloodType, CycleSettings, Goal, Language } from "@mammoai/shared";
-import { BLOOD_TYPES, getModeAccentColors, gradientStops, colors, gradients } from "@mammoai/shared";
+import { BLOOD_TYPES, getModeAccentColors, gradientStops, colors, gradients, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -90,7 +90,7 @@ export default function ProfileScreen() {
   }
 
   async function saveHeader() {
-    await save({ name: name.trim() || null, phone: phone.trim() || null });
+    await save({ name: name.trim() || null, phone: extractUzPhoneDigits(phone) });
     setEditingHeader(false);
   }
 
@@ -175,7 +175,12 @@ export default function ProfileScreen() {
                 {editingHeader ? (
                   <>
                     <TextField value={name} onChangeText={setName} placeholder={dict.profile.nameLabel} />
-                    <TextField value={phone} onChangeText={setPhone} placeholder={dict.profile.phoneLabel} keyboardType="phone-pad" />
+                    <TextField
+                      value={phone}
+                      onChangeText={(v) => setPhone(formatUzPhoneInput(v))}
+                      placeholder={dict.profile.phoneLabel}
+                      keyboardType="phone-pad"
+                    />
                   </>
                 ) : (
                   <>
@@ -190,7 +195,14 @@ export default function ProfileScreen() {
               </View>
 
               <Pressable
-                onPress={() => (editingHeader ? saveHeader() : setEditingHeader(true))}
+                onPress={() => {
+                  if (editingHeader) {
+                    saveHeader();
+                  } else {
+                    setPhone(formatUzPhoneInput(user.phone ?? ""));
+                    setEditingHeader(true);
+                  }
+                }}
                 disabled={saving}
                 className="h-9 w-9 items-center justify-center rounded-full bg-white/20 active:scale-95"
               >
