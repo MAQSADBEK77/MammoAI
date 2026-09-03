@@ -10,6 +10,7 @@ export function MonthCalendar({
   markers,
   ovulationDate,
   today,
+  selectedDate,
   onSelectDate,
 }: {
   monthDate: Date;
@@ -17,6 +18,9 @@ export function MonthCalendar({
   /** Bashorat qilingan ovulyatsiya kuni — kichik nuqta bilan ko'rsatiladi (App.pdf §12). */
   ovulationDate?: string | null;
   today: string;
+  /** Foydalanuvchi bosib tanlagan kun — pastdagi ma'lumot paneli shu kunga
+   * qarab o'zgaradi (kalendar ostida "prognoz" App.pdf/Figma referens). */
+  selectedDate?: string | null;
   onSelectDate?: (date: string) => void;
 }) {
   const { dict } = useI18n();
@@ -62,6 +66,7 @@ export function MonthCalendar({
           const marker = markers[date];
           const isToday = date === today;
           const isOvulation = date === ovulationDate;
+          const isSelected = date === selectedDate;
           return (
             <View key={date} className="h-9 w-[14.28%] items-center justify-center">
               <Pressable
@@ -70,7 +75,8 @@ export function MonthCalendar({
                   "h-8 w-8 items-center justify-center rounded-full",
                   marker === "period" && "bg-primary",
                   marker === "predicted" && "bg-primary-light",
-                  isToday && !marker && "border-2 border-primary"
+                  isToday && !marker && !isSelected && "border-2 border-primary",
+                  isSelected && "border-2 border-primary-dark"
                 )}
               >
                 <Text className={clsx("text-sm font-medium", marker === "period" ? "text-white" : "text-text-secondary")}>

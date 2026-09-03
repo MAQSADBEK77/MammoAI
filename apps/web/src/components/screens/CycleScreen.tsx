@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText } from "lucide-react";
-import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
+import { Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText, ChevronRight } from "lucide-react";
+import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -38,10 +38,14 @@ export function CycleScreen() {
   const router = useRouter();
   const [data, setData] = useState<CycleResponse | null>(null);
   const [logging, setLogging] = useState(false);
+  const [logDate, setLogDate] = useState<string>(() => localDateStr());
   const [flow, setFlow] = useState<FlowLevel | null>(null);
   const [mood, setMood] = useState<Mood | null>(null);
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [saving, setSaving] = useState(false);
+  const [moodSaving, setMoodSaving] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>(() => localDateStr());
+  const [showAllLogs, setShowAllLogs] = useState(false);
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
@@ -66,6 +70,25 @@ export function CycleScreen() {
     }
   }
 
+  const cycleLen = data.settings.averageCycleLength || 28;
+  const periodLen = data.settings.averagePeriodLength || 5;
+
+  // Berilgan istalgan sana uchun tsikl fazasini hisoblaydi — kalendarda qaysi
+  // kun bosilsa, o'sha kun uchun "prognoz" ko'rsatish uchun (App.pdf/Figma
+  // referens: "kalendar pastida ma'lumot bersin, tanlov qilishiga qarab").
+  function phaseForDate(dateStr: string) {
+    if (!data!.settings.lastPeriodStart) return null;
+    const diff = Math.round((new Date(dateStr).getTime() - new Date(data!.settings.lastPeriodStart).getTime()) / 86400000);
+    const dayInCycle = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
+    return getCyclePhase(dayInCycle, cycleLen, periodLen);
+  }
+
+  function formatDateLabel(dateStr: string) {
+    if (dateStr === today) return dict.cycle.todayLabel;
+    const d = new Date(dateStr + "T00:00:00");
+    return `${d.getDate()}-${dict.common.months[d.getMonth()]}`;
+  }
+
   // Hayzning nechinchi kuni (bleeding) va sikldagi umumiy o'rni (halqa uchun) — App.pdf §12.
   let periodDay: number | null = null;
   let dayInCycle: number | null = null;
@@ -74,20 +97,35 @@ export function CycleScreen() {
       (new Date(today).getTime() - new Date(data.settings.lastPeriodStart).getTime()) / 86400000
     );
     if (diff >= 0 && diff < data.settings.averagePeriodLength) periodDay = diff + 1;
-    const cycleLen = data.settings.averageCycleLength || 28;
     dayInCycle = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
   }
 
   const todayLog = data.logs.find((l) => l.date === today);
-  const cycleLen = data.settings.averageCycleLength || 28;
-  const periodLen = data.settings.averagePeriodLength || 5;
-  const phase = dayInCycle ? getCyclePhase(dayInCycle, cycleLen, periodLen) : null;
+  const selectedPhase = phaseForDate(selectedDate);
   const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
+
+  function openLogging(date: string, existing?: CycleLog) {
+    setLogDate(date);
+    setFlow(existing?.flow ?? null);
+    setMood(existing?.mood ?? null);
+    setSymptoms(existing?.symptoms ?? []);
+    setLogging(true);
+  }
+
+  async function pickMood(m: Mood) {
+    setMoodSaving(true);
+    try {
+      const res = await api.cycle.logDay({ date: today, flow: todayLog?.flow ?? null, mood: m, symptoms: todayLog?.symptoms ?? [] });
+      setData(res);
+    } finally {
+      setMoodSaving(false);
+    }
+  }
 
   async function saveLog() {
     setSaving(true);
     try {
-      const res = await api.cycle.logDay({ date: today, flow, mood, symptoms });
+      const res = await api.cycle.logDay({ date: logDate, flow, mood, symptoms });
       setData(res);
       setLogging(false);
       setFlow(null);
@@ -110,7 +148,7 @@ export function CycleScreen() {
       )}
 
       <Card variant="glass" className="animate-fade-in-up flex flex-col items-center">
-        <button onClick={() => !dayInCycle && setLogging(true)} className="w-full">
+        <button onClick={() => !dayInCycle && openLogging(today, todayLog)} className="w-full">
           <CycleRing
             dayInCycle={dayInCycle ?? 1}
             cycleLength={data.settings.averageCycleLength}
@@ -141,39 +179,68 @@ export function CycleScreen() {
         </div>
       </Card>
 
-      {phase && <PhaseCard phase={phase} />}
+      {/* Kunlik kayfiyat so'rovi — Figma referens: kalendar tepasida, faqat
+          "o'zini qanday his qilyapti" so'raladi, bosilgan zahoti saqlanadi va
+          kontekstual javob ko'rsatiladi. */}
+      <div className="space-y-3">
+        <p className="text-base font-bold text-text-primary">{dict.cycle.moodCheckinTitle}</p>
+        <div className="grid grid-cols-6 gap-2">
+          {MOODS.map((m) => (
+            <button
+              key={m}
+              onClick={() => pickMood(m)}
+              disabled={moodSaving}
+              className={clsx(
+                "tap-target flex aspect-square flex-col items-center justify-center rounded-2xl border-2 text-2xl transition active:scale-95 disabled:opacity-60",
+                todayLog?.mood === m ? "border-primary bg-primary-light/40" : "border-transparent bg-surface-muted hover:border-border"
+              )}
+            >
+              {MOOD_EMOJI[m]}
+            </button>
+          ))}
+        </div>
+        {todayLog?.mood && <p className="text-center text-sm font-semibold text-primary-dark">{dict.cycle.moodResponses[todayLog.mood]}</p>}
+      </div>
 
-      <Card className="rounded-[20px]!">
-        <MonthCalendar monthDate={new Date()} markers={markers} ovulationDate={data.prediction?.ovulationDay ?? null} today={today} />
-      </Card>
-
-      {/* Kunlik nazorat — App.pdf §20: 3 ta tezkor karta */}
       <div>
-        <p className="mb-2 text-base font-bold text-text-primary">{dict.cycle.dailyCheckinTitle}</p>
-        <div className="grid grid-cols-3 gap-2.5">
-          <QuickCard
-            icon={<Smile size={20} />}
-            tone="secondary"
-            label={dict.cycle.moodCardLabel}
-            value={todayLog?.mood ? `${MOOD_EMOJI[todayLog.mood]} ${dict.cycle.moods[todayLog.mood]}` : undefined}
-            onClick={() => setLogging(true)}
-          />
+        <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.detailedLogButton}</p>
+        <div className="grid grid-cols-2 gap-2.5">
           <QuickCard
             icon={<Droplet size={20} />}
             tone="primary"
             label={dict.cycle.flowCardLabel}
             value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
-            onClick={() => setLogging(true)}
+            onClick={() => openLogging(today, todayLog)}
           />
           <QuickCard
             icon={<Stethoscope size={20} />}
             tone="accent"
             label={dict.cycle.symptomsCardLabel}
             value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}
-            onClick={() => setLogging(true)}
+            onClick={() => openLogging(today, todayLog)}
           />
         </div>
       </div>
+
+      <Card className="rounded-[20px]!">
+        <MonthCalendar
+          monthDate={new Date()}
+          markers={markers}
+          ovulationDate={data.prediction?.ovulationDay ?? null}
+          today={today}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+        />
+      </Card>
+
+      {/* Tanlangan kun uchun faza/prognoz — App.pdf/Figma referens: "kalendar
+          pastida ma'lumot bersin, tanlov qilishiga qarab". */}
+      {selectedPhase && (
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-text-secondary">{formatDateLabel(selectedDate)}</p>
+          <PhaseCard phase={selectedPhase} />
+        </div>
+      )}
 
       {logging && (
         <Card className="space-y-4">
@@ -255,23 +322,56 @@ export function CycleScreen() {
         </button>
       </div>
 
-      {data.logs.length > 0 && (
-        <div className="space-y-2">
+      {/* So'nggi yozuvlar — Figma referens: nisbiy sana + emoji + qisqa tavsif +
+          o'q, har bir qator bosilsa o'sha kun tahrirlanadi. */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
           <p className="text-base font-bold text-text-primary">{dict.cycle.recentLogsTitle}</p>
-          {data.logs.slice(0, 5).map((log) => (
-            <Card key={log.id} className="flex items-center gap-3 py-3">
-              <span className="bg-aurora-cycle flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl">
-                <Droplet size={18} className="text-white" />
-              </span>
-              <span className="flex-1 text-sm font-medium text-text-primary">{log.date}</span>
-              <div className="flex gap-1">
-                {log.flow && <Badge tone="primary">{FLOW_EMOJI[log.flow]} {dict.cycle.flowLevels[log.flow]}</Badge>}
-                {log.mood && <Badge>{MOOD_EMOJI[log.mood]} {dict.cycle.moods[log.mood]}</Badge>}
-              </div>
-            </Card>
-          ))}
+          {data.logs.length > 3 && (
+            <button type="button" onClick={() => setShowAllLogs((v) => !v)} className="text-sm font-semibold text-primary-dark">
+              {dict.cycle.viewAllLogsLabel}
+            </button>
+          )}
         </div>
-      )}
+
+        {data.logs.length === 0 ? (
+          <p className="text-sm text-text-muted">{dict.cycle.noLogsYet}</p>
+        ) : (
+          <div className="space-y-2">
+            {(showAllLogs ? data.logs : data.logs.slice(0, 3)).map((log) => {
+              const diff = Math.round((new Date(today).getTime() - new Date(log.date).getTime()) / 86400000);
+              const dateLabel = diff === 0 ? dict.cycle.todayLabel : diff === 1 ? dict.cycle.yesterdayLabel : dict.cycle.daysAgoLabel(diff);
+              const subtitleParts: string[] = [];
+              if (log.symptoms.length) {
+                subtitleParts.push(
+                  dict.cycle.symptoms[log.symptoms[0]] + (log.symptoms.length > 1 ? ` +${log.symptoms.length - 1}` : "")
+                );
+              }
+              if (log.flow) subtitleParts.push(dict.cycle.flowLevels[log.flow]);
+              if (!subtitleParts.length && log.mood) subtitleParts.push(dict.cycle.moods[log.mood]);
+              const emoji = log.mood ? MOOD_EMOJI[log.mood] : log.flow ? FLOW_EMOJI[log.flow] : "📝";
+              return (
+                <button key={log.id} type="button" onClick={() => openLogging(log.date, log)} className="w-full text-left">
+                  <Card interactive className="flex items-center gap-3 py-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-light/50 text-xl">
+                      {emoji}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-text-primary">{dateLabel}</p>
+                      {subtitleParts.length > 0 && <p className="truncate text-xs text-text-secondary">{subtitleParts.join(" · ")}</p>}
+                    </div>
+                    <ChevronRight size={18} className="shrink-0 text-text-muted" />
+                  </Card>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <Button className="w-full" onClick={() => openLogging(today, todayLog)}>
+          {dict.cycle.addLogButton}
+        </Button>
+      </div>
     </div>
   );
 }

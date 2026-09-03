@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollView, View, Text, Pressable, Share, Alert, Image } from "react-native";
+import { ScrollView, View, Text, Pressable, Share, Alert, Image, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import * as FileSystem from "expo-file-system/legacy";
@@ -327,31 +327,27 @@ export default function ProfileScreen() {
           )}
         </Card>
 
-        <Card className="gap-3">
-          <Text className="text-sm font-semibold text-text-secondary">{dict.profile.languageLabel}</Text>
-          <View className="flex-row gap-2">
-            {(["uz", "ru"] as Language[]).map((lang) => (
-              <Pressable
-                key={lang}
-                onPress={() => {
-                  setLanguage(lang);
-                  save({ language: lang });
-                }}
-                className={clsx(
-                  "min-h-[48px] flex-1 items-center justify-center rounded-2xl border-2",
-                  language === lang ? "border-primary bg-primary-light" : "border-border bg-surface"
-                )}
-              >
-                <Text className={clsx("font-semibold", language === lang ? "text-primary-dark" : "text-text-primary")}>
-                  {lang === "uz" ? "O'zbekcha" : "Русский"}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </Card>
-
         <Card className="gap-1">
           <Text className="mb-1 text-sm font-semibold text-text-secondary">{dict.profile.accessibilityTitle}</Text>
+
+          <SettingsRow icon="🌐" label={dict.profile.languageLabel}>
+            <View className="flex-row gap-2">
+              {(["uz", "ru"] as Language[]).map((lang) => (
+                <Pressable
+                  key={lang}
+                  onPress={() => {
+                    setLanguage(lang);
+                    save({ language: lang });
+                  }}
+                  className={clsx("min-h-[40px] rounded-full px-4 justify-center", language === lang ? "bg-primary" : "bg-surface-muted")}
+                >
+                  <Text className={clsx("text-sm font-semibold", language === lang ? "text-white" : "text-text-secondary")}>
+                    {lang === "uz" ? "UZ" : "RU"}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </SettingsRow>
 
           <SettingsRow icon={Type} label={dict.profile.fontSizeLabel}>
             <View className="flex-row gap-2">
@@ -393,7 +389,11 @@ export default function ProfileScreen() {
 
         <Card className="gap-1">
           <SettingsRow icon="❓" label={dict.profile.helpTitle} last>
-            <Text className="text-right text-sm text-text-secondary">{dict.profile.helpPhoneValue}</Text>
+            <Pressable onPress={() => Linking.openURL(`tel:${dict.profile.helpPhoneValue.replace(/\s/g, "")}`)}>
+              <Text className="text-right text-sm font-semibold" style={{ color: colors.primaryDark }}>
+                {dict.profile.helpPhoneValue}
+              </Text>
+            </Pressable>
           </SettingsRow>
         </Card>
 

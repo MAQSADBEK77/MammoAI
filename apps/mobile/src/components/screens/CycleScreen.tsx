@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { Pressable, View, Text } from "react-native";
 import { router } from "expo-router";
+import clsx from "clsx";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText } from "lucide-react-native";
-import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { getCyclePhase, gradients, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText, ChevronRight } from "lucide-react-native";
+import type { CycleLog, CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
+import { getCyclePhase, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, FloatingTag, IconChip, LoadingSpinner, ScreenHeader } from "@/components/ui";
-import { LinearGradient } from "expo-linear-gradient";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
@@ -38,10 +38,14 @@ export function CycleScreen() {
   const { onboardingProfile } = useSession();
   const [data, setData] = useState<CycleResponse | null>(null);
   const [logging, setLogging] = useState(false);
+  const [logDate, setLogDate] = useState<string>(() => localDateStr());
   const [flow, setFlow] = useState<FlowLevel | null>(null);
   const [mood, setMood] = useState<Mood | null>(null);
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [saving, setSaving] = useState(false);
+  const [moodSaving, setMoodSaving] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>(() => localDateStr());
+  const [showAllLogs, setShowAllLogs] = useState(false);
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
@@ -65,25 +69,59 @@ export function CycleScreen() {
     }
   }
 
+  const cycleLen = data.settings.averageCycleLength || 28;
+  const periodLen = data.settings.averagePeriodLength || 5;
+
+  // Berilgan istalgan sana uchun tsikl fazasini hisoblaydi — kalendarda qaysi
+  // kun bosilsa, o'sha kun uchun "prognoz" ko'rsatish uchun (App.pdf/Figma
+  // referens: "kalendar pastida ma'lumot bersin, tanlov qilishiga qarab").
+  function phaseForDate(dateStr: string) {
+    if (!data!.settings.lastPeriodStart) return null;
+    const diff = Math.round((new Date(dateStr).getTime() - new Date(data!.settings.lastPeriodStart).getTime()) / 86400000);
+    const dayInCycle = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
+    return getCyclePhase(dayInCycle, cycleLen, periodLen);
+  }
+
+  function formatDateLabel(dateStr: string) {
+    if (dateStr === today) return dict.cycle.todayLabel;
+    const d = new Date(dateStr + "T00:00:00");
+    return `${d.getDate()}-${dict.common.months[d.getMonth()]}`;
+  }
+
   let periodDay: number | null = null;
   let dayInCycle: number | null = null;
   if (data.settings.lastPeriodStart) {
     const diff = Math.round((new Date(today).getTime() - new Date(data.settings.lastPeriodStart).getTime()) / 86400000);
     if (diff >= 0 && diff < data.settings.averagePeriodLength) periodDay = diff + 1;
-    const cycleLen = data.settings.averageCycleLength || 28;
     dayInCycle = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
   }
 
   const todayLog = data.logs.find((l) => l.date === today);
-  const cycleLen = data.settings.averageCycleLength || 28;
-  const periodLen = data.settings.averagePeriodLength || 5;
-  const phase = dayInCycle ? getCyclePhase(dayInCycle, cycleLen, periodLen) : null;
+  const selectedPhase = phaseForDate(selectedDate);
   const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
+
+  function openLogging(date: string, existing?: CycleLog) {
+    setLogDate(date);
+    setFlow(existing?.flow ?? null);
+    setMood(existing?.mood ?? null);
+    setSymptoms(existing?.symptoms ?? []);
+    setLogging(true);
+  }
+
+  async function pickMood(m: Mood) {
+    setMoodSaving(true);
+    try {
+      const res = await api.cycle.logDay({ date: today, flow: todayLog?.flow ?? null, mood: m, symptoms: todayLog?.symptoms ?? [] });
+      setData(res);
+    } finally {
+      setMoodSaving(false);
+    }
+  }
 
   async function saveLog() {
     setSaving(true);
     try {
-      const res = await api.cycle.logDay({ date: today, flow, mood, symptoms });
+      const res = await api.cycle.logDay({ date: logDate, flow, mood, symptoms });
       setData(res);
       setLogging(false);
       setFlow(null);
@@ -107,7 +145,7 @@ export function CycleScreen() {
 
       <Animated.View entering={FadeInUp.duration(450)}>
         <Card variant="glass" className="items-center">
-          <Pressable onPress={() => !dayInCycle && setLogging(true)}>
+          <Pressable onPress={() => !dayInCycle && openLogging(today, todayLog)}>
             <CycleRing
               dayInCycle={dayInCycle ?? 1}
               cycleLength={data.settings.averageCycleLength}
@@ -136,42 +174,72 @@ export function CycleScreen() {
         </Card>
       </Animated.View>
 
-      {phase && (
-        <Animated.View entering={FadeInUp.duration(450).delay(80)}>
-          <PhaseCard phase={phase} />
-        </Animated.View>
-      )}
-
-      <Card style={{ borderRadius: 20 }}>
-        <MonthCalendar monthDate={new Date()} markers={markers} ovulationDate={data.prediction?.ovulationDay ?? null} today={today} />
-      </Card>
+      {/* Kunlik kayfiyat so'rovi — Figma referens: kalendar tepasida, faqat
+          "o'zini qanday his qilyapti" so'raladi, bosilgan zahoti saqlanadi va
+          kontekstual javob ko'rsatiladi. */}
+      <View className="gap-3">
+        <Text className="text-base font-bold text-text-primary">{dict.cycle.moodCheckinTitle}</Text>
+        <View className="flex-row justify-between">
+          {MOODS.map((m) => (
+            <Pressable
+              key={m}
+              onPress={() => pickMood(m)}
+              disabled={moodSaving}
+              className={clsx(
+                "h-12 w-12 items-center justify-center rounded-2xl border-2 active:scale-95",
+                todayLog?.mood === m ? "border-primary bg-primary-light/40" : "border-transparent bg-surface-muted"
+              )}
+            >
+              <Text style={{ fontSize: 22 }}>{MOOD_EMOJI[m]}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {todayLog?.mood && (
+          <Text className="text-center text-sm font-semibold" style={{ color: "#D62A63" }}>
+            {dict.cycle.moodResponses[todayLog.mood]}
+          </Text>
+        )}
+      </View>
 
       <View>
-        <Text className="mb-2 text-base font-bold text-text-primary">{dict.cycle.dailyCheckinTitle}</Text>
+        <Text className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.detailedLogButton}</Text>
         <View className="flex-row gap-2.5">
-          <QuickCard
-            icon={<Smile size={20} color={todayLog?.mood ? "#FFFFFF" : "#7C3AED"} />}
-            tone="secondary"
-            label={dict.cycle.moodCardLabel}
-            value={todayLog?.mood ? `${MOOD_EMOJI[todayLog.mood]} ${dict.cycle.moods[todayLog.mood]}` : undefined}
-            onPress={() => setLogging(true)}
-          />
           <QuickCard
             icon={<Droplet size={20} color={todayLog?.flow ? "#FFFFFF" : "#F43F7F"} />}
             tone="primary"
             label={dict.cycle.flowCardLabel}
             value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
-            onPress={() => setLogging(true)}
+            onPress={() => openLogging(today, todayLog)}
           />
           <QuickCard
             icon={<Stethoscope size={20} color={todayLog?.symptoms.length ? "#FFFFFF" : "#0D9488"} />}
             tone="accent"
             label={dict.cycle.symptomsCardLabel}
             value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}
-            onPress={() => setLogging(true)}
+            onPress={() => openLogging(today, todayLog)}
           />
         </View>
       </View>
+
+      <Card style={{ borderRadius: 20 }}>
+        <MonthCalendar
+          monthDate={new Date()}
+          markers={markers}
+          ovulationDate={data.prediction?.ovulationDay ?? null}
+          today={today}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+        />
+      </Card>
+
+      {/* Tanlangan kun uchun faza/prognoz — App.pdf/Figma referens: "kalendar
+          pastida ma'lumot bersin, tanlov qilishiga qarab". */}
+      {selectedPhase && (
+        <View className="gap-2">
+          <Text className="text-sm font-semibold text-text-secondary">{formatDateLabel(selectedDate)}</Text>
+          <PhaseCard phase={selectedPhase} />
+        </View>
+      )}
 
       {logging && (
         <Card className="gap-4">
@@ -253,28 +321,60 @@ export function CycleScreen() {
         </Pressable>
       </View>
 
-      {data.logs.length > 0 && (
-        <View className="gap-2">
+      {/* So'nggi yozuvlar — Figma referens: nisbiy sana + emoji + qisqa tavsif +
+          o'q, har bir qator bosilsa o'sha kun tahrirlanadi. */}
+      <View className="gap-3">
+        <View className="flex-row items-center justify-between">
           <Text className="text-base font-bold text-text-primary">{dict.cycle.recentLogsTitle}</Text>
-          {data.logs.slice(0, 5).map((log) => (
-            <Card key={log.id} className="flex-row items-center gap-3 py-3">
-              <LinearGradient
-                colors={gradients.cycle}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{ width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center" }}
-              >
-                <Droplet size={18} color="#FFFFFF" />
-              </LinearGradient>
-              <Text className="flex-1 text-sm font-medium text-text-primary">{log.date}</Text>
-              <View className="flex-row gap-1">
-                {log.flow && <Badge tone="primary">{`${FLOW_EMOJI[log.flow]} ${dict.cycle.flowLevels[log.flow]}`}</Badge>}
-                {log.mood && <Badge>{`${MOOD_EMOJI[log.mood]} ${dict.cycle.moods[log.mood]}`}</Badge>}
-              </View>
-            </Card>
-          ))}
+          {data.logs.length > 3 && (
+            <Pressable onPress={() => setShowAllLogs((v) => !v)}>
+              <Text className="text-sm font-semibold" style={{ color: "#D62A63" }}>
+                {dict.cycle.viewAllLogsLabel}
+              </Text>
+            </Pressable>
+          )}
         </View>
-      )}
+
+        {data.logs.length === 0 ? (
+          <Text className="text-sm text-text-muted">{dict.cycle.noLogsYet}</Text>
+        ) : (
+          <View className="gap-2">
+            {(showAllLogs ? data.logs : data.logs.slice(0, 3)).map((log) => {
+              const diff = Math.round((new Date(today).getTime() - new Date(log.date).getTime()) / 86400000);
+              const dateLabel = diff === 0 ? dict.cycle.todayLabel : diff === 1 ? dict.cycle.yesterdayLabel : dict.cycle.daysAgoLabel(diff);
+              const subtitleParts: string[] = [];
+              if (log.symptoms.length) {
+                subtitleParts.push(
+                  dict.cycle.symptoms[log.symptoms[0]] + (log.symptoms.length > 1 ? ` +${log.symptoms.length - 1}` : "")
+                );
+              }
+              if (log.flow) subtitleParts.push(dict.cycle.flowLevels[log.flow]);
+              if (!subtitleParts.length && log.mood) subtitleParts.push(dict.cycle.moods[log.mood]);
+              const emoji = log.mood ? MOOD_EMOJI[log.mood] : log.flow ? FLOW_EMOJI[log.flow] : "📝";
+              return (
+                <Pressable key={log.id} className="active:scale-[0.98]" onPress={() => openLogging(log.date, log)}>
+                  <Card className="flex-row items-center gap-3 py-3">
+                    <View className="h-11 w-11 items-center justify-center rounded-full bg-primary-light/50">
+                      <Text style={{ fontSize: 18 }}>{emoji}</Text>
+                    </View>
+                    <View className="min-w-0 flex-1">
+                      <Text className="font-semibold text-text-primary">{dateLabel}</Text>
+                      {subtitleParts.length > 0 && (
+                        <Text className="text-xs text-text-secondary" numberOfLines={1}>
+                          {subtitleParts.join(" · ")}
+                        </Text>
+                      )}
+                    </View>
+                    <ChevronRight size={18} color="#9CA3AF" />
+                  </Card>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        <Button onPress={() => openLogging(today, todayLog)}>{dict.cycle.addLogButton}</Button>
+      </View>
     </View>
   );
 }

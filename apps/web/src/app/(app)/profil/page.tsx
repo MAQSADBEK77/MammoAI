@@ -387,29 +387,28 @@ export default function ProfilePage() {
         )}
       </Card>
 
-      <Card className="space-y-3">
-        <p className="text-sm font-semibold text-text-secondary">{dict.profile.languageLabel}</p>
-        <div className="flex gap-2">
-          {(["uz", "ru"] as Language[]).map((lang) => (
-            <button
-              key={lang}
-              onClick={() => {
-                setLanguage(lang);
-                save({ language: lang });
-              }}
-              className={clsx(
-                "tap-target flex-1 rounded-2xl border-2 font-semibold",
-                language === lang ? "border-primary bg-primary-light text-primary-dark" : "border-border bg-surface text-text-primary"
-              )}
-            >
-              {lang === "uz" ? "O'zbekcha" : "Русский"}
-            </button>
-          ))}
-        </div>
-      </Card>
-
       <Card className="space-y-1">
         <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.profile.accessibilityTitle}</p>
+
+        <SettingsRow icon="🌐" label={dict.profile.languageLabel}>
+          <div className="flex gap-2">
+            {(["uz", "ru"] as Language[]).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => {
+                  setLanguage(lang);
+                  save({ language: lang });
+                }}
+                className={clsx(
+                  "tap-target rounded-full px-4 text-sm font-semibold",
+                  language === lang ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
+                )}
+              >
+                {lang === "uz" ? "UZ" : "RU"}
+              </button>
+            ))}
+          </div>
+        </SettingsRow>
 
         <SettingsRow icon={Type} label={dict.profile.fontSizeLabel}>
           <div className="flex gap-2">
@@ -453,7 +452,9 @@ export default function ProfilePage() {
 
       <Card className="space-y-1">
         <SettingsRow icon="❓" label={dict.profile.helpTitle} last>
-          <span className="text-right text-sm text-text-secondary">{dict.profile.helpPhoneValue}</span>
+          <a href={`tel:${dict.profile.helpPhoneValue.replace(/\s/g, "")}`} className="text-right text-sm font-semibold text-primary-dark">
+            {dict.profile.helpPhoneValue}
+          </a>
         </SettingsRow>
       </Card>
 

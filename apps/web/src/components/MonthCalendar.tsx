@@ -11,6 +11,7 @@ export function MonthCalendar({
   markers,
   ovulationDate,
   today,
+  selectedDate,
   onSelectDate,
 }: {
   monthDate: Date;
@@ -18,6 +19,9 @@ export function MonthCalendar({
   /** Bashorat qilingan ovulyatsiya kuni — kichik nuqta bilan ko'rsatiladi (App.pdf §12). */
   ovulationDate?: string | null;
   today: string;
+  /** Foydalanuvchi bosib tanlagan kun — pastdagi ma'lumot paneli shu kunga
+   * qarab o'zgaradi (kalendar ostida "prognoz" App.pdf/Figma referens). */
+  selectedDate?: string | null;
   onSelectDate?: (date: string) => void;
 }) {
   const { dict } = useI18n();
@@ -59,6 +63,7 @@ export function MonthCalendar({
           const marker = markers[date];
           const isToday = date === today;
           const isOvulation = date === ovulationDate;
+          const isSelected = date === selectedDate;
           return (
             <button
               key={date}
@@ -68,7 +73,8 @@ export function MonthCalendar({
                 marker === "period" && "bg-primary text-white",
                 marker === "predicted" && "bg-primary-light text-primary-dark",
                 !marker && "text-text-secondary hover:bg-surface-muted",
-                isToday && !marker && "ring-2 ring-primary"
+                isToday && !marker && !isSelected && "ring-2 ring-primary",
+                isSelected && "ring-2 ring-offset-1 ring-primary-dark"
               )}
             >
               {Number(date.slice(-2))}
