@@ -1,30 +1,96 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { Language } from "@mammoai/shared";
-import { goalToLandingTab, cssGradient, colors } from "@mammoai/shared";
+import type { BloodType, CycleResponse, Goal, Language } from "@mammoai/shared";
+import { BLOOD_TYPES, cssGradient, colors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, Card } from "@/components/ui";
 import clsx from "clsx";
-import { Type, Eye, CalendarClock, NotebookPen } from "lucide-react";
+import { Camera, Check, Pencil, Type, Eye, CalendarClock, NotebookPen } from "lucide-react";
+
+// Profil "REJIMNI TANLANG" — App.pdf §5 dagi 7 ta maqsaddan uchtasi shu yerdan
+// tezkor almashtiriladi (qolganlari faqat onboarding'da tanlanadi).
+const MODES: { goal: Goal; icon: string }[] = [
+  { goal: "cycle", icon: "🌸" },
+  { goal: "pregnancy", icon: "🤰" },
+  { goal: "planning_pregnancy", icon: "🌱" },
+];
+
+const AVATAR_SIZE = 256;
+
+/** Rasmni kichik kvadrat (256x256) JPEG'ga siqib, base64 data URI qaytaradi —
+ * bazaga engil saqlash uchun (alohida fayl-saqlash xizmati ulanmagan). */
+function resizeImageToDataUri(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = AVATAR_SIZE;
+      canvas.height = AVATAR_SIZE;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas mavjud emas"));
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => reject(new Error("Rasmni o'qib bo'lmadi"));
+    img.src = URL.createObjectURL(file);
+  });
+}
 
 export default function ProfilePage() {
   const { dict, language, setLanguage } = useI18n();
   const { user, onboardingProfile, refresh } = useSession();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [editingHeader, setEditingHeader] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
+
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [age, setAge] = useState(String(onboardingProfile?.age ?? ""));
+  const [heightCm, setHeightCm] = useState(String(onboardingProfile?.heightCm ?? ""));
+  const [weightKg, setWeightKg] = useState(String(onboardingProfile?.weightKg ?? ""));
+  const [bloodType, setBloodType] = useState<BloodType | "">(onboardingProfile?.bloodType ?? "");
+
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [logsCount, setLogsCount] = useState<number | null>(null);
+  const [cycleSettings, setCycleSettings] = useState<CycleResponse["settings"] | null>(null);
   const [actionFlash, setActionFlash] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   useEffect(() => {
-    api.cycle.get().then((res) => setLogsCount(res.logs.length));
+    api.cycle.get().then((res) => {
+      setLogsCount(res.logs.length);
+      setCycleSettings(res.settings);
+    });
   }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setName(user?.name ?? "");
+      setPhone(user?.phone ?? "");
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [user?.name, user?.phone]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setAge(String(onboardingProfile?.age ?? ""));
+      setHeightCm(String(onboardingProfile?.heightCm ?? ""));
+      setWeightKg(String(onboardingProfile?.weightKg ?? ""));
+      setBloodType(onboardingProfile?.bloodType ?? "");
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [onboardingProfile?.age, onboardingProfile?.heightCm, onboardingProfile?.weightKg, onboardingProfile?.bloodType]);
 
   if (!user) return null;
 
@@ -35,6 +101,52 @@ export default function ProfilePage() {
       await refresh();
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 1500);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveHeader() {
+    await save({ name: name.trim() || null, phone: phone.trim() || null });
+    setEditingHeader(false);
+  }
+
+  async function handleAvatarPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const dataUri = await resizeImageToDataUri(file);
+      await save({ avatarUrl: dataUri });
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  async function changeMode(goal: Goal) {
+    if (goal === onboardingProfile?.primaryGoal) return;
+    if (!window.confirm(dict.profile.modeChangeConfirm)) return;
+    setSaving(true);
+    try {
+      await api.onboarding.update({ primaryGoal: goal, isPregnant: goal === "pregnancy" });
+      await refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveInfo() {
+    setSaving(true);
+    try {
+      await api.onboarding.update({
+        age: Number(age) || onboardingProfile?.age,
+        heightCm: heightCm ? Number(heightCm) : null,
+        weightKg: weightKg ? Number(weightKg) : null,
+        bloodType: bloodType || null,
+      });
+      await refresh();
+      setEditingInfo(false);
     } finally {
       setSaving(false);
     }
@@ -75,34 +187,68 @@ export default function ProfilePage() {
     }
   }
 
-  const modeIcon = onboardingProfile
-    ? goalToLandingTab(onboardingProfile.primaryGoal) === "pregnancy"
-      ? "🤰"
-      : goalToLandingTab(onboardingProfile.primaryGoal) === "checkups"
-        ? "🩺"
-        : "🩸"
-    : null;
-
   const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
   const daysActive = Math.max(0, Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / 86400000));
+  const isCycleMode = onboardingProfile?.primaryGoal === "cycle";
 
   return (
     <div className="space-y-5 pb-6">
-      {/* Profil "shaxsiy" kartasi — pushti→binafsha gradient, avatar, maqsad
-          yorlig'i va haqiqiy foydalanish statistikasi. */}
+      {/* Profil "shaxsiy" kartasi — Figma referens dizayniga moslab pushti gradient,
+          yuklanadigan avatar va tahrirlanadigan ism/telefon. */}
       <div className="bg-aurora-profile animate-fade-in-up space-y-4 rounded-[32px] p-6">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/20 text-2xl font-extrabold text-white">
-            {initials}
-          </div>
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <p className="truncate text-xl font-extrabold text-white">{user.name?.trim() || dict.profile.noNameFallback}</p>
-            {modeIcon && onboardingProfile && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white">
-                {modeIcon} {dict.onboarding.goals[onboardingProfile.primaryGoal]}
-              </span>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={avatarUploading}
+            className="group relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-2xl font-extrabold text-white"
+          >
+            {user.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- kichik base64 avatar, next/image shart emas
+              <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              initials
+            )}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100">
+              <Camera size={18} className="text-white" />
+            </span>
+          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
+
+          <div className="min-w-0 flex-1 space-y-1">
+            {editingHeader ? (
+              <>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={dict.profile.nameLabel}
+                  className="tap-target w-full rounded-xl border border-white/30 bg-white/15 px-3 text-base font-bold text-white placeholder:text-white/60 outline-none focus:border-white"
+                />
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={phone ?? ""}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder={dict.profile.phoneLabel}
+                  className="tap-target w-full rounded-xl border border-white/30 bg-white/15 px-3 text-sm text-white placeholder:text-white/60 outline-none focus:border-white"
+                />
+              </>
+            ) : (
+              <>
+                <p className="truncate text-xl font-extrabold text-white">{user.name?.trim() || dict.profile.noNameFallback}</p>
+                <p className="truncate text-sm text-white/80">{user.phone || dict.profile.phonePlaceholder}</p>
+              </>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={() => (editingHeader ? saveHeader() : setEditingHeader(true))}
+            disabled={saving}
+            className="tap-target flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30 active:scale-95"
+          >
+            {editingHeader ? <Check size={16} /> : <Pencil size={16} />}
+          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -123,6 +269,120 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {onboardingProfile && (
+        <Card className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{dict.profile.modeTitle}</p>
+          <div className="grid grid-cols-3 gap-2">
+            {MODES.map(({ goal, icon }) => {
+              const active = onboardingProfile.primaryGoal === goal;
+              return (
+                <button
+                  key={goal}
+                  onClick={() => changeMode(goal)}
+                  disabled={saving}
+                  className={clsx(
+                    "flex flex-col items-center gap-1.5 rounded-2xl border-2 px-2 py-3 text-center transition active:scale-95",
+                    active ? "border-primary bg-primary-light/40" : "border-border bg-surface hover:border-primary-light"
+                  )}
+                >
+                  <span className="text-xl leading-none">{icon}</span>
+                  <span className={clsx("text-xs font-semibold", active ? "text-primary-dark" : "text-text-secondary")}>
+                    {dict.profile.modes[goal as keyof typeof dict.profile.modes]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      <Card className="space-y-1">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm font-semibold text-text-secondary">{dict.profile.personalInfoTitle}</p>
+          <button
+            onClick={() => (editingInfo ? saveInfo() : setEditingInfo(true))}
+            disabled={saving}
+            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-primary-dark transition hover:bg-primary-light/30"
+          >
+            {editingInfo ? <Check size={14} /> : <Pencil size={14} />}
+            {editingInfo ? dict.profile.doneButton : dict.profile.editButton}
+          </button>
+        </div>
+
+        <SettingsRow icon="🎂" label={dict.profile.ageLabel} last={!editingInfo && !isCycleMode}>
+          {editingInfo ? (
+            <input
+              type="number"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              className="tap-target w-20 rounded-xl border border-border bg-surface px-2 text-right text-sm text-text-primary outline-none focus:border-primary"
+            />
+          ) : (
+            <span className="text-sm text-text-secondary">{onboardingProfile?.age ? dict.profile.ageUnit(onboardingProfile.age) : dict.profile.notSet}</span>
+          )}
+        </SettingsRow>
+
+        <SettingsRow icon="📏" label={dict.profile.heightLabel}>
+          {editingInfo ? (
+            <input
+              type="number"
+              value={heightCm}
+              onChange={(e) => setHeightCm(e.target.value)}
+              className="tap-target w-20 rounded-xl border border-border bg-surface px-2 text-right text-sm text-text-primary outline-none focus:border-primary"
+            />
+          ) : (
+            <span className="text-sm text-text-secondary">
+              {onboardingProfile?.heightCm ? dict.profile.heightUnit(onboardingProfile.heightCm) : dict.profile.notSet}
+            </span>
+          )}
+        </SettingsRow>
+
+        <SettingsRow icon="⚖️" label={dict.profile.weightLabel}>
+          {editingInfo ? (
+            <input
+              type="number"
+              value={weightKg}
+              onChange={(e) => setWeightKg(e.target.value)}
+              className="tap-target w-20 rounded-xl border border-border bg-surface px-2 text-right text-sm text-text-primary outline-none focus:border-primary"
+            />
+          ) : (
+            <span className="text-sm text-text-secondary">
+              {onboardingProfile?.weightKg ? dict.profile.weightUnit(onboardingProfile.weightKg) : dict.profile.notSet}
+            </span>
+          )}
+        </SettingsRow>
+
+        <SettingsRow icon="🩸" label={dict.profile.bloodTypeLabel} last={!isCycleMode}>
+          {editingInfo ? (
+            <select
+              value={bloodType}
+              onChange={(e) => setBloodType(e.target.value as BloodType)}
+              className="tap-target rounded-xl border border-border bg-surface px-2 text-sm text-text-primary outline-none focus:border-primary"
+            >
+              <option value="">{dict.profile.bloodTypeUnknownOption}</option>
+              {BLOOD_TYPES.map((bt) => (
+                <option key={bt} value={bt}>
+                  {bt}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-sm text-text-secondary">{onboardingProfile?.bloodType || dict.profile.bloodTypeUnknown}</span>
+          )}
+        </SettingsRow>
+
+        {isCycleMode && cycleSettings && (
+          <>
+            <SettingsRow icon="📅" label={dict.cycle.cycleLengthLabel}>
+              <span className="text-sm text-text-secondary">{dict.cycle.daysUnit(cycleSettings.averageCycleLength)}</span>
+            </SettingsRow>
+            <SettingsRow icon="🩹" label={dict.cycle.periodLengthLabel} last>
+              <span className="text-sm text-text-secondary">{dict.cycle.daysUnit(cycleSettings.averagePeriodLength)}</span>
+            </SettingsRow>
+          </>
+        )}
+      </Card>
+
       <Card className="space-y-3">
         <p className="text-sm font-semibold text-text-secondary">{dict.profile.languageLabel}</p>
         <div className="flex gap-2">
@@ -142,24 +402,6 @@ export default function ProfilePage() {
             </button>
           ))}
         </div>
-      </Card>
-
-      <Card className="space-y-3">
-        <label className="block text-sm font-semibold text-text-secondary">{dict.profile.nameLabel}</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => save({ name: name || null })}
-          className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-text-primary outline-none focus:border-primary"
-        />
-        <label className="block text-sm font-semibold text-text-secondary">{dict.profile.phoneLabel}</label>
-        <input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          onBlur={() => save({ phone: phone || null })}
-          placeholder={dict.profile.phonePlaceholder}
-          className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-text-primary outline-none focus:border-primary"
-        />
       </Card>
 
       <Card className="space-y-1">

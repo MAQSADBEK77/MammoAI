@@ -10,19 +10,19 @@ interface AuthStartBody {
 }
 
 const PHONE_RE = /^\+?[0-9][0-9\s-]{6,14}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Akkaunt yaratish yoki mavjudiga kirish — App.pdf §2: telefon/email yetarli,
- * SMS-kod yoki parol yo'q (tez, lekin ongli ravishda past xavfsizlik).
+ * Akkaunt yaratish yoki mavjudiga kirish — faqat telefon raqam orqali (email
+ * qo'llab-quvvatlanmaydi), SMS-kod yoki parol yo'q (tez, lekin ongli ravishda
+ * past xavfsizlik).
  */
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as AuthStartBody;
     const identifier = body.identifier?.trim();
 
-    if (!identifier || !(PHONE_RE.test(identifier) || EMAIL_RE.test(identifier))) {
-      return NextResponse.json({ error: "To'g'ri telefon raqam yoki email kiriting" }, { status: 400 });
+    if (!identifier || !PHONE_RE.test(identifier)) {
+      return NextResponse.json({ error: "To'g'ri telefon raqam kiriting" }, { status: 400 });
     }
 
     const existing = await findUserByIdentifier(identifier);

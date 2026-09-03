@@ -269,6 +269,7 @@ export default function OnboardingPage() {
         healthConditionsOther: survey.healthConditionsOther || null,
         heightCm: survey.heightCm ? Number(survey.heightCm) : null,
         weightKg: survey.weightKg ? Number(survey.weightKg) : null,
+        bloodType: null,
         notificationsEnabled: !!survey.notificationsEnabled,
       });
       applyMeResponse(res);
@@ -404,6 +405,8 @@ export default function OnboardingPage() {
             <div className="relative">
               <Lock size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
+                type="tel"
+                inputMode="tel"
                 value={survey.identifier}
                 onChange={(e) => setSurvey((s) => ({ ...s, identifier: e.target.value }))}
                 placeholder={dict.auth.identifierPlaceholder}

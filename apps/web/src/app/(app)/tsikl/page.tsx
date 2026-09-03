@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText } from "lucide-react";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { getCyclePhase, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { getCyclePhase, goalToLandingTab, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -47,6 +47,14 @@ export default function CyclePage() {
   useEffect(() => {
     api.cycle.get().then(setData);
   }, []);
+
+  // Homiladorlik rejimida Tsikl sahifasi keraksiz — to'g'ridan-to'g'ri havoladan
+  // kirilsa ham Homiladorlik'ga yo'naltiramiz (App.pdf §5).
+  useEffect(() => {
+    if (onboardingProfile && goalToLandingTab(onboardingProfile.primaryGoal) === "pregnancy") {
+      router.replace("/homiladorlik");
+    }
+  }, [onboardingProfile, router]);
 
   if (!data) {
     return <LoadingSpinner label={dict.common.loading} />;

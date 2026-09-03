@@ -5,7 +5,7 @@ import { router } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Smile, Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText } from "lucide-react-native";
 import type { CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { getCyclePhase, gradients, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { getCyclePhase, goalToLandingTab, gradients, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -47,6 +47,14 @@ export default function CycleScreen() {
   useEffect(() => {
     api.cycle.get().then(setData);
   }, []);
+
+  // Homiladorlik rejimida Tsikl sahifasi keraksiz (tab ham yashirilgan) — biror
+  // eski havola orqali kirilsa ham Homiladorlik'ga yo'naltiramiz.
+  useEffect(() => {
+    if (onboardingProfile && goalToLandingTab(onboardingProfile.primaryGoal) === "pregnancy") {
+      router.replace("/homiladorlik");
+    }
+  }, [onboardingProfile]);
 
   if (!data) {
     return (

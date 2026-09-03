@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable, TextInput, Share, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { Heart, MessageCircle, Share2, Trash2, UserRound, VenetianMask } from "lucide-react-native";
+import { Bell, Heart, MessageCircle, Share2, Trash2, UserRound, VenetianMask } from "lucide-react-native";
 import clsx from "clsx";
-import type { CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
+import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@/components/ui";
 
 const TAGS: CommunityTag[] = ["cycle", "pregnancy", "checkups", "general"];
 const PAGE_SIZE = 15;
@@ -51,6 +51,10 @@ export default function CommunityScreen() {
   const [tag, setTag] = useState<CommunityTag | "all">("all");
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const [notifications, setNotifications] = useState<AppNotification[] | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerTag, setComposerTag] = useState<CommunityTag>("general");
   const [composerBody, setComposerBody] = useState("");
@@ -72,6 +76,22 @@ export default function CommunityScreen() {
   useEffect(() => {
     api.community.stats().then(setStats);
   }, []);
+
+  useEffect(() => {
+    api.notifications.list().then((res) => {
+      setNotifications(res.notifications);
+      setUnreadCount(res.unreadCount);
+    });
+  }, []);
+
+  async function toggleNotifications() {
+    const opening = !notificationsOpen;
+    setNotificationsOpen(opening);
+    if (opening && unreadCount > 0) {
+      setUnreadCount(0);
+      api.notifications.markAllRead().catch(() => {});
+    }
+  }
 
   useEffect(() => {
     const timeout = setTimeout(() => loadPosts(tag), 0);
@@ -177,7 +197,41 @@ export default function CommunityScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-32">
-        <ScreenHeader title={dict.community.title} subtitle={dict.community.subtitle} />
+        <ScreenHeader
+          title={dict.community.title}
+          subtitle={dict.community.subtitle}
+          right={
+            <View>
+              <IconButton icon={<Bell size={18} color="#1F2937" />} onPress={toggleNotifications} />
+              {unreadCount > 0 && (
+                <View className="absolute -right-0.5 -top-0.5 h-4 w-4 items-center justify-center rounded-full bg-danger">
+                  <Text className="text-[10px] font-bold text-white">{unreadCount > 9 ? "9+" : unreadCount}</Text>
+                </View>
+              )}
+            </View>
+          }
+        />
+
+        {notificationsOpen && (
+          <Card className="gap-2">
+            <Text className="font-semibold text-text-primary">{dict.community.notificationsTitle}</Text>
+            {!notifications || notifications.length === 0 ? (
+              <Text className="text-sm text-text-muted">{dict.community.notificationsEmpty}</Text>
+            ) : (
+              notifications.map((n) => (
+                <View key={n.id} className={clsx("rounded-2xl p-3", n.isRead ? "bg-surface-muted" : "bg-primary-light/40")}>
+                  <Text className="text-sm font-medium text-text-primary">
+                    {dict.community.notificationCommentText(n.actorName ?? dict.community.anonymousAuthor)}
+                  </Text>
+                  <Text className="mt-0.5 text-xs text-text-secondary" numberOfLines={1}>
+                    &ldquo;{n.postExcerpt}&rdquo;
+                  </Text>
+                  <Text className="mt-1 text-[11px] text-text-muted">{formatRelativeTime(n.createdAt, dict)}</Text>
+                </View>
+              ))
+            )}
+          </Card>
+        )}
 
         {stats && (
           <Animated.View entering={FadeInUp.duration(450)} className="flex-row gap-3">

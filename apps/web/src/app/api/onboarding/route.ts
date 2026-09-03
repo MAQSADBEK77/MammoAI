@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { OnboardingProfile } from "@mammoai/shared";
 import { jsonError, requireUser } from "@/server/api-utils";
-import { getOnboardingProfile, saveOnboardingProfile, updateUser } from "@/server/repo";
+import { getOnboardingProfile, saveOnboardingProfile, updateOnboardingProfile, updateUser } from "@/server/repo";
 import { syncChecklistForUser } from "@/server/checklist-sync";
 
 type OnboardingBody = Omit<OnboardingProfile, "userId"> & { notificationsEnabled: boolean };
@@ -27,6 +27,20 @@ export async function POST(request: NextRequest) {
       user: { ...user, name: body.name, notificationsEnabled: body.notificationsEnabled },
       onboardingProfile: await getOnboardingProfile(user.id),
     });
+  } catch (error) {
+    return jsonError(error);
+  }
+}
+
+/** Profil — "REJIMNI TANLANG" va shaxsiy ma'lumotlarni qisman yangilash. */
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await requireUser(request);
+    const patch = (await request.json()) as Partial<
+      Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType">
+    >;
+    const onboardingProfile = await updateOnboardingProfile(user.id, patch);
+    return NextResponse.json({ onboardingProfile });
   } catch (error) {
     return jsonError(error);
   }

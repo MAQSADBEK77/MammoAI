@@ -85,9 +85,9 @@ export const gradients = {
   // tungi rejimidan ilhomlangan), ustida gradient faol doira bilan.
   navBar: ["#241127", "#3B1B45"] as [string, string],
   navActive: [colors.primary, colors.secondary] as [string, string],
-  // Profil "shaxsiy" gradienti — pushti→binafsha diagonal o'tish, boshqa
-  // ekranlardan (tsikl=pushti, homiladorlik=binafsha) farqli, ikkalasini birlashtiradi.
-  profile: [colors.primary, colors.secondary] as [string, string],
+  // Profil "shaxsiy" gradienti — Figma referens dizayniga moslab pushti→to'q
+  // pushti (ilgari pushti→binafsha edi).
+  profile: [colors.primary, colors.primaryDark] as [string, string],
 } as const;
 
 // RN'da haqiqiy backdrop-blur yo'q (expo-blur qo'shilmagan), shuning uchun

@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
-import { Heart, MessageCircle, Share2, Trash2, UserRound, VenetianMask } from "lucide-react";
+import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
+import { Bell, Heart, MessageCircle, Share2, Trash2, UserRound, VenetianMask } from "lucide-react";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@/components/ui";
 
 const TAGS: CommunityTag[] = ["cycle", "pregnancy", "checkups", "general"];
 const PAGE_SIZE = 15;
@@ -47,6 +47,10 @@ export default function CommunityPage() {
   const [tag, setTag] = useState<CommunityTag | "all">("all");
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const [notifications, setNotifications] = useState<AppNotification[] | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerTag, setComposerTag] = useState<CommunityTag>("general");
   const [composerBody, setComposerBody] = useState("");
@@ -68,6 +72,22 @@ export default function CommunityPage() {
   useEffect(() => {
     api.community.stats().then(setStats);
   }, []);
+
+  useEffect(() => {
+    api.notifications.list().then((res) => {
+      setNotifications(res.notifications);
+      setUnreadCount(res.unreadCount);
+    });
+  }, []);
+
+  async function toggleNotifications() {
+    const opening = !notificationsOpen;
+    setNotificationsOpen(opening);
+    if (opening && unreadCount > 0) {
+      setUnreadCount(0);
+      api.notifications.markAllRead().catch(() => {});
+    }
+  }
 
   useEffect(() => {
     const timeout = setTimeout(() => loadPosts(tag), 0);
@@ -168,7 +188,41 @@ export default function CommunityPage() {
 
   return (
     <div className="space-y-4 pb-6">
-      <ScreenHeader title={dict.community.title} subtitle={dict.community.subtitle} />
+      <ScreenHeader
+        title={dict.community.title}
+        subtitle={dict.community.subtitle}
+        right={
+          <div className="relative">
+            <IconButton icon={<Bell size={18} />} onClick={toggleNotifications} />
+            {unreadCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
+        }
+      />
+
+      {notificationsOpen && (
+        <Card className="animate-fade-in-up space-y-2">
+          <p className="font-semibold text-text-primary">{dict.community.notificationsTitle}</p>
+          {!notifications || notifications.length === 0 ? (
+            <p className="text-sm text-text-muted">{dict.community.notificationsEmpty}</p>
+          ) : (
+            <div className="space-y-2">
+              {notifications.map((n) => (
+                <div key={n.id} className={clsx("rounded-2xl p-3 text-sm", n.isRead ? "bg-surface-muted" : "bg-primary-light/40")}>
+                  <p className="font-medium text-text-primary">
+                    {dict.community.notificationCommentText(n.actorName ?? dict.community.anonymousAuthor)}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-text-secondary">&ldquo;{n.postExcerpt}&rdquo;</p>
+                  <p className="mt-1 text-[11px] text-text-muted">{formatRelativeTime(n.createdAt, dict)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       {stats && (
         <div className="animate-fade-in-up grid grid-cols-3 gap-3">

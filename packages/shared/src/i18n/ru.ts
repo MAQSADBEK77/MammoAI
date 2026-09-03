@@ -55,11 +55,11 @@ const ru: Dictionary = {
   auth: {
     createAccount: "Создать аккаунт",
     haveAccount: "У меня уже есть аккаунт",
-    identifierLabel: "Номер телефона или email",
-    createIdentifierTitle: "Введите номер телефона или email для создания аккаунта",
-    loginIdentifierTitle: "Введите номер телефона или email для входа в аккаунт",
-    identifierPlaceholder: "+998901234567 или email@example.com",
-    invalidIdentifier: "Введите корректный номер телефона или email",
+    identifierLabel: "Номер телефона",
+    createIdentifierTitle: "Введите номер телефона для создания аккаунта",
+    loginIdentifierTitle: "Введите номер телефона для входа в аккаунт",
+    identifierPlaceholder: "+998901234567",
+    invalidIdentifier: "Введите корректный номер телефона",
     welcomeBackMessage: "С возвращением! Ваш аккаунт найден.",
   },
 
@@ -73,7 +73,7 @@ const ru: Dictionary = {
     noSelling:
       "Ваши данные не продаются третьим лицам. В любой момент вы можете экспортировать все свои данные в разделе «Профиль».",
     accountSecurity:
-      "Ваш аккаунт создаётся по номеру телефона или email без кода подтверждения — поэтому рекомендуем не делиться своим идентификатором (телефон/email) с другими.",
+      "Ваш аккаунт создаётся по номеру телефона без кода подтверждения — поэтому рекомендуем не делиться своим номером телефона с другими.",
     operator:
       "Это приложение (Ayollar salomatligi / MammoAI) разрабатывается и управляется независимым разработчиком — Максадбеком Усмоновым.",
     contact:
@@ -426,6 +426,10 @@ const ru: Dictionary = {
     shareLinkCopied: "Скопировано",
     postTooShort: "Напишите хотя бы несколько слов",
     loadMoreButton: "Загрузить ещё",
+    notificationsTitle: "Уведомления",
+    notificationCommentText: (name: string) => `${name} прокомментировал(а) ваш пост`,
+    notificationsEmpty: "Уведомлений пока нет",
+    markAllReadButton: "Отметить всё как прочитанное",
   },
 
   profile: {
@@ -461,6 +465,27 @@ const ru: Dictionary = {
     shareAppButton: "Поделиться приложением",
     shareAppMessage: "Здоровье женщины — приложение для отслеживания цикла, беременности и здоровья.",
     shareAppLinkCopied: "Ссылка скопирована",
+    editButton: "Редактировать",
+    doneButton: "Готово",
+    avatarUploadLabel: "Изменить фото",
+    modeTitle: "Выберите режим",
+    modes: {
+      cycle: "Цикл",
+      pregnancy: "Беременность",
+      planning_pregnancy: "Подготовка",
+    },
+    modeChangeConfirm: "Подтвердить смену режима?",
+    personalInfoTitle: "Личные данные",
+    ageLabel: "Возраст",
+    heightLabel: "Рост",
+    weightLabel: "Вес",
+    ageUnit: (n: number) => `${n} лет`,
+    heightUnit: (n: number) => `${n} см`,
+    weightUnit: (n: number) => `${n} кг`,
+    bloodTypeLabel: "Группа крови",
+    bloodTypeUnknown: "Не указано",
+    bloodTypeUnknownOption: "Не знаю",
+    notSet: "Не указано",
   },
 };
 

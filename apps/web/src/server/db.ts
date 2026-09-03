@@ -60,7 +60,8 @@ async function initSchema() {
         high_contrast BOOLEAN NOT NULL DEFAULT FALSE,
         notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
         token_version INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        avatar_url TEXT
       )
     `,
     sql`
@@ -106,7 +107,8 @@ async function initSchema() {
         health_conditions TEXT NOT NULL DEFAULT '[]',
         health_conditions_other TEXT,
         height_cm DOUBLE PRECISION,
-        weight_kg DOUBLE PRECISION
+        weight_kg DOUBLE PRECISION,
+        blood_type TEXT
       )
     `,
     sql`
@@ -202,6 +204,14 @@ async function initSchema() {
     `,
   ]);
 
+  // 1.5-bosqich: eski (allaqachon mavjud) jadvallarga yangi ustunlar qo'shish —
+  // `CREATE TABLE IF NOT EXISTS` yangi ustunlarni qo'shmaydi, shuning uchun
+  // productionda avval yaratilgan jadvallar uchun alohida `ALTER TABLE` kerak.
+  await Promise.all([
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`,
+    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
+  ]);
+
   // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.
   await Promise.all([
     sql`
@@ -234,6 +244,22 @@ async function initSchema() {
     `,
   ]);
 
+  // 2.5-bosqich: community_comments'ga bog'liq (izoh qoldirilganda post
+  // muallifiga bildirishnoma yuboriladi — repo.ts:addCommunityComment).
+  await sql`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      actor_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      post_id TEXT REFERENCES community_posts(id) ON DELETE CASCADE,
+      comment_id TEXT REFERENCES community_comments(id) ON DELETE CASCADE,
+      is_anonymous_actor BOOLEAN NOT NULL DEFAULT FALSE,
+      is_read BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TEXT NOT NULL
+    )
+  `;
+
   // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
   await Promise.all([
     sql`CREATE INDEX IF NOT EXISTS idx_cycle_logs_user ON cycle_logs(user_id)`,
@@ -242,6 +268,7 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_community_posts_tag ON community_posts(tag, created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)`,
   ]);
 }
 

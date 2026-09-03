@@ -271,6 +271,7 @@ export default function OnboardingScreen() {
         healthConditionsOther: survey.healthConditionsOther || null,
         heightCm: survey.heightCm ? Number(survey.heightCm) : null,
         weightKg: survey.weightKg ? Number(survey.weightKg) : null,
+        bloodType: null,
         notificationsEnabled: !!survey.notificationsEnabled,
       });
       applyMeResponse(res);
@@ -395,6 +396,7 @@ export default function OnboardingScreen() {
                 value={survey.identifier}
                 onChangeText={(v) => setSurvey((s) => ({ ...s, identifier: v }))}
                 placeholder={dict.auth.identifierPlaceholder}
+                keyboardType="phone-pad"
                 icon={<Lock size={18} color="#9CA3AF" />}
               />
               {errorMessage && <Text className="text-sm text-danger">{errorMessage}</Text>}

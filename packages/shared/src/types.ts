@@ -24,7 +24,12 @@ export interface User {
   highContrast: boolean;
   notificationsEnabled: boolean;
   createdAt: string;
+  /** Foydalanuvchi yuklagan profil surati — kichik rasm sifatida base64 data URI. */
+  avatarUrl: string | null;
 }
+
+export const BLOOD_TYPES = ["O(I) Rh+", "O(I) Rh-", "A(II) Rh+", "A(II) Rh-", "B(III) Rh+", "B(III) Rh-", "AB(IV) Rh+", "AB(IV) Rh-"] as const;
+export type BloodType = (typeof BLOOD_TYPES)[number];
 
 export type CycleRegularity = "regular" | "irregular" | "unknown";
 
@@ -61,6 +66,8 @@ export interface OnboardingProfile {
   healthConditionsOther: string | null;
   heightCm: number | null;
   weightKg: number | null;
+  /** Ixtiyoriy — foydalanuvchi o'zi kiritadi, tibbiy tashxis manbai emas. */
+  bloodType: BloodType | null;
 }
 
 export type FlowLevel = "spotting" | "light" | "medium" | "heavy";
@@ -266,4 +273,22 @@ export interface CommunityStats {
   totalMembers: number;
   totalPosts: number;
   postsToday: number;
+}
+
+// ---------------------------------------------------------------------------
+// Bildirishnomalar — hozircha faqat "postingizga izoh qoldirildi" turi.
+// ---------------------------------------------------------------------------
+
+export type NotificationType = "comment_on_post";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  /** Anonim izoh bo'lsa `null` — jamoat lentasidagi kabi anonimlik shu yerda ham hurmat qilinadi. */
+  actorName: string | null;
+  postId: string;
+  /** Kontekst uchun — postning qisqartirilgan matni. */
+  postExcerpt: string;
+  isRead: boolean;
+  createdAt: string;
 }

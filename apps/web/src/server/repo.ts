@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "./db";
 import { ApiError } from "./api-utils";
 import type {
+  AppNotification,
   Article,
   ArticleCategory,
+  BloodType,
   ChecklistItem,
   ChecklistItemType,
   Clinic,
@@ -52,6 +54,7 @@ interface UserRow {
   notifications_enabled: boolean;
   token_version: number;
   created_at: string;
+  avatar_url: string | null;
 }
 
 function userFromRow(row: UserRow): User {
@@ -66,6 +69,7 @@ function userFromRow(row: UserRow): User {
     highContrast: !!row.high_contrast,
     notificationsEnabled: !!row.notifications_enabled,
     createdAt: row.created_at,
+    avatarUrl: row.avatar_url,
   };
 }
 
@@ -86,30 +90,23 @@ export async function createAnonymousUser(language: Language): Promise<{ user: U
       highContrast: false,
       notificationsEnabled: true,
       createdAt,
+      avatarUrl: null,
     },
     tokenVersion: 0,
   };
 }
 
-/** Telefon raqammi yoki emailmi — oddiy tekshirish (App.pdf §2). */
-export function isEmailIdentifier(identifier: string): boolean {
-  return identifier.includes("@");
-}
-
 export async function findUserByIdentifier(identifier: string): Promise<(User & { tokenVersion: number }) | null> {
   await ensureSchema();
-  const isEmail = isEmailIdentifier(identifier);
-  const rows = (isEmail
-    ? await sql`SELECT * FROM users WHERE email = ${identifier}`
-    : await sql`SELECT * FROM users WHERE phone = ${identifier}`) as unknown as UserRow[];
+  const rows = (await sql`SELECT * FROM users WHERE phone = ${identifier}`) as unknown as UserRow[];
   const row = rows[0];
   return row ? { ...userFromRow(row), tokenVersion: row.token_version } : null;
 }
 
 /**
- * Yangi akkaunt — telefon/email bilan, SMS/parolsiz (App.pdf §2: "SMS kelishi shart
- * emas"). Xavfsizlik pasayadi (identifikator bilishning o'zi kirish uchun yetarli),
- * lekin bu ongli tanlangan tezkor-ro'yxatdan o'tish yechimi.
+ * Yangi akkaunt — faqat telefon raqam bilan, SMS/parolsiz (App.pdf §2: "SMS
+ * kelishi shart emas"). Xavfsizlik pasayadi (identifikator bilishning o'zi
+ * kirish uchun yetarli), lekin bu ongli tanlangan tezkor-ro'yxatdan o'tish yechimi.
  */
 export async function createUserWithIdentifier(
   identifier: string,
@@ -118,15 +115,13 @@ export async function createUserWithIdentifier(
   await ensureSchema();
   const id = randomUUID();
   const createdAt = now();
-  const isEmail = isEmailIdentifier(identifier);
-  const phone = isEmail ? null : identifier;
-  const email = isEmail ? identifier : null;
-  await sql`INSERT INTO users (id, phone, email, language, created_at) VALUES (${id}, ${phone}, ${email}, ${language}, ${createdAt})`;
+  const phone = identifier;
+  await sql`INSERT INTO users (id, phone, language, created_at) VALUES (${id}, ${phone}, ${language}, ${createdAt})`;
   return {
     user: {
       id,
       phone,
-      email,
+      email: null,
       name: null,
       region: null,
       language,
@@ -134,6 +129,7 @@ export async function createUserWithIdentifier(
       highContrast: false,
       notificationsEnabled: true,
       createdAt,
+      avatarUrl: null,
     },
     tokenVersion: 0,
   };
@@ -149,7 +145,7 @@ export async function getUserById(id: string): Promise<(User & { tokenVersion: n
 
 export async function updateUser(
   id: string,
-  patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled">>
+  patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "avatarUrl">>
 ): Promise<User> {
   await ensureSchema();
   const current = await getUserById(id);
@@ -159,7 +155,7 @@ export async function updateUser(
     UPDATE users SET
       name = ${merged.name}, phone = ${merged.phone}, language = ${merged.language},
       font_scale = ${merged.fontScale}, high_contrast = ${merged.highContrast},
-      notifications_enabled = ${merged.notificationsEnabled}
+      notifications_enabled = ${merged.notificationsEnabled}, avatar_url = ${merged.avatarUrl}
     WHERE id = ${id}
   `;
   return merged;
@@ -185,6 +181,7 @@ interface OnboardingRow {
   health_conditions_other: string | null;
   height_cm: number | null;
   weight_kg: number | null;
+  blood_type: BloodType | null;
 }
 
 function onboardingFromRow(row: OnboardingRow): OnboardingProfile {
@@ -204,6 +201,7 @@ function onboardingFromRow(row: OnboardingRow): OnboardingProfile {
     healthConditionsOther: row.health_conditions_other,
     heightCm: row.height_cm,
     weightKg: row.weight_kg,
+    bloodType: row.blood_type,
   };
 }
 
@@ -214,13 +212,13 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
   await sql`
     INSERT INTO onboarding_profiles (
       user_id, name, age, is_pregnant, cycle_regularity, family_history, last_checkup, primary_goal,
-      heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg
+      heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg, blood_type
     )
     VALUES (
       ${profile.userId}, ${profile.name}, ${profile.age}, ${profile.isPregnant}, ${profile.cycleRegularity},
       ${profile.familyHistory}, ${profile.lastCheckup}, ${profile.primaryGoal}, ${profile.heardAboutUs},
       ${typicalSymptoms}, ${profile.periodAttitude}, ${healthConditions}, ${profile.healthConditionsOther},
-      ${profile.heightCm}, ${profile.weightKg}
+      ${profile.heightCm}, ${profile.weightKg}, ${profile.bloodType}
     )
     ON CONFLICT (user_id) DO UPDATE SET
       name = EXCLUDED.name, age = EXCLUDED.age, is_pregnant = EXCLUDED.is_pregnant,
@@ -229,7 +227,7 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
       heard_about_us = EXCLUDED.heard_about_us, typical_symptoms = EXCLUDED.typical_symptoms,
       period_attitude = EXCLUDED.period_attitude,
       health_conditions = EXCLUDED.health_conditions, health_conditions_other = EXCLUDED.health_conditions_other,
-      height_cm = EXCLUDED.height_cm, weight_kg = EXCLUDED.weight_kg
+      height_cm = EXCLUDED.height_cm, weight_kg = EXCLUDED.weight_kg, blood_type = EXCLUDED.blood_type
   `;
 }
 
@@ -238,6 +236,23 @@ export async function getOnboardingProfile(userId: string): Promise<OnboardingPr
   const rows = (await sql`SELECT * FROM onboarding_profiles WHERE user_id = ${userId}`) as unknown as OnboardingRow[];
   const row = rows[0];
   return row ? onboardingFromRow(row) : null;
+}
+
+/**
+ * Rejim almashtirish (Profil, "REJIMNI TANLANG") va shaxsiy ma'lumotlarni
+ * (yosh/bo'y/vazn/qon guruhi) qisman yangilash — to'liq onboarding'ni qayta
+ * topshirish shart emas.
+ */
+export async function updateOnboardingProfile(
+  userId: string,
+  patch: Partial<Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType">>
+): Promise<OnboardingProfile> {
+  await ensureSchema();
+  const current = await getOnboardingProfile(userId);
+  if (!current) throw new ApiError(404, "Onboarding profili topilmadi");
+  const merged = { ...current, ...patch };
+  await saveOnboardingProfile(merged);
+  return merged;
 }
 
 // ---------------------------------------------------------------------------
@@ -1072,8 +1087,9 @@ export async function addCommunityComment(
   payload: { body: string; isAnonymous: boolean }
 ): Promise<CommunityComment> {
   await ensureSchema();
-  const postExists = (await sql`SELECT 1 FROM community_posts WHERE id = ${postId}`) as unknown as unknown[];
-  if (postExists.length === 0) throw new ApiError(404, "Post topilmadi");
+  const postRows = (await sql`SELECT user_id FROM community_posts WHERE id = ${postId}`) as unknown as { user_id: string }[];
+  const post = postRows[0];
+  if (!post) throw new ApiError(404, "Post topilmadi");
   const id = randomUUID();
   const createdAt = now();
   await sql`
@@ -1081,6 +1097,13 @@ export async function addCommunityComment(
     VALUES (${id}, ${postId}, ${userId}, ${payload.body}, ${payload.isAnonymous}, ${createdAt})
   `;
   await sql`UPDATE community_posts SET comments_count = comments_count + 1 WHERE id = ${postId}`;
+  // Post muallifiga bildirishnoma — o'ziga o'zi izoh qoldirsa yuborilmaydi.
+  if (post.user_id !== userId) {
+    await sql`
+      INSERT INTO notifications (id, user_id, actor_user_id, type, post_id, comment_id, is_anonymous_actor, created_at)
+      VALUES (${randomUUID()}, ${post.user_id}, ${userId}, 'comment_on_post', ${postId}, ${id}, ${payload.isAnonymous}, ${now()})
+    `;
+  }
   const author = await getUserById(userId);
   return {
     id,
@@ -1101,4 +1124,60 @@ export async function getCommunityStats(): Promise<CommunityStats> {
     sql`SELECT count(*)::int as count FROM community_posts WHERE (created_at)::timestamptz >= now() - interval '1 day'`,
   ])) as unknown as [{ count: number }[], { count: number }[], { count: number }[]];
   return { totalMembers, totalPosts, postsToday };
+}
+
+// ---------------------------------------------------------------------------
+// Bildirishnomalar — hozircha faqat "postingizga izoh qoldirildi" (repo.ts
+// addCommunityComment shu yerda yozadi).
+// ---------------------------------------------------------------------------
+
+interface NotificationRow {
+  id: string;
+  type: AppNotification["type"];
+  post_id: string;
+  is_anonymous_actor: boolean;
+  is_read: boolean;
+  created_at: string;
+  actor_name: string | null;
+  post_body: string | null;
+}
+
+const POST_EXCERPT_LENGTH = 80;
+
+function notificationFromRow(row: NotificationRow): AppNotification {
+  const body = row.post_body ?? "";
+  return {
+    id: row.id,
+    type: row.type,
+    actorName: row.is_anonymous_actor ? null : row.actor_name,
+    postId: row.post_id,
+    postExcerpt: body.length > POST_EXCERPT_LENGTH ? `${body.slice(0, POST_EXCERPT_LENGTH)}…` : body,
+    isRead: row.is_read,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listNotifications(
+  userId: string,
+  limit = 30
+): Promise<{ notifications: AppNotification[]; unreadCount: number }> {
+  await ensureSchema();
+  const [rows, unreadRows] = (await Promise.all([
+    sql`
+      SELECT n.*, u.name as actor_name, p.body as post_body
+      FROM notifications n
+      LEFT JOIN users u ON u.id = n.actor_user_id
+      LEFT JOIN community_posts p ON p.id = n.post_id
+      WHERE n.user_id = ${userId}
+      ORDER BY n.created_at DESC
+      LIMIT ${limit}
+    `,
+    sql`SELECT count(*)::int as count FROM notifications WHERE user_id = ${userId} AND is_read = FALSE`,
+  ])) as unknown as [NotificationRow[], { count: number }[]];
+  return { notifications: rows.map(notificationFromRow), unreadCount: unreadRows[0].count };
+}
+
+export async function markAllNotificationsRead(userId: string): Promise<void> {
+  await ensureSchema();
+  await sql`UPDATE notifications SET is_read = TRUE WHERE user_id = ${userId} AND is_read = FALSE`;
 }

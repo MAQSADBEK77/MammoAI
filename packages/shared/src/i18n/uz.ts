@@ -59,11 +59,11 @@ const uz = {
   auth: {
     createAccount: "Akkaunt yarataman",
     haveAccount: "Menda akkaunt bor",
-    identifierLabel: "Telefon raqam yoki email",
-    createIdentifierTitle: "Akkaunt yaratish uchun telefon raqam yoki email kiriting",
-    loginIdentifierTitle: "Akkauntingizga kirish uchun telefon raqam yoki emailni kiriting",
-    identifierPlaceholder: "+998901234567 yoki email@masalan.com",
-    invalidIdentifier: "To'g'ri telefon raqam yoki email kiriting",
+    identifierLabel: "Telefon raqam",
+    createIdentifierTitle: "Akkaunt yaratish uchun telefon raqamingizni kiriting",
+    loginIdentifierTitle: "Akkauntingizga kirish uchun telefon raqamingizni kiriting",
+    identifierPlaceholder: "+998901234567",
+    invalidIdentifier: "To'g'ri telefon raqam kiriting",
     welcomeBackMessage: "Xush kelibsiz! Akkauntingiz topildi.",
   },
 
@@ -77,7 +77,7 @@ const uz = {
     noSelling:
       "Ma'lumotlaringiz uchinchi shaxslarga sotilmaydi. Xohlagan vaqtingizda Profil bo'limidan barcha ma'lumotlaringizni eksport qilishingiz mumkin.",
     accountSecurity:
-      "Akkauntingiz telefon raqami yoki email orqali, tasdiqlash kodisiz yaratiladi — shuning uchun identifikatoringizni (telefon/email) boshqalar bilan baham ko'rmaslikni tavsiya qilamiz.",
+      "Akkauntingiz telefon raqamingiz orqali, tasdiqlash kodisiz yaratiladi — shuning uchun telefon raqamingizni boshqalar bilan baham ko'rmaslikni tavsiya qilamiz.",
     operator:
       "Ushbu ilovani (Ayollar salomatligi / MammoAI) mustaqil dasturchi sifatida Maqsadbek Usmonov ishlab chiqmoqda va boshqaradi.",
     contact:
@@ -432,6 +432,10 @@ const uz = {
     shareLinkCopied: "Nusxalandi",
     postTooShort: "Kamida bir necha so'z yozing",
     loadMoreButton: "Ko'proq yuklash",
+    notificationsTitle: "Bildirishnomalar",
+    notificationCommentText: (name: string) => `${name} postingizga izoh qoldirdi`,
+    notificationsEmpty: "Hozircha bildirishnoma yo'q",
+    markAllReadButton: "Barchasini o'qilgan deb belgilash",
   },
 
   profile: {
@@ -467,6 +471,27 @@ const uz = {
     shareAppButton: "Ilovani ulashish",
     shareAppMessage: "Ayollar salomatligi — hayz sikli, homiladorlik va sog'liqni kuzatish ilovasi.",
     shareAppLinkCopied: "Havola nusxalandi",
+    editButton: "Tahrirlash",
+    doneButton: "Tayyor",
+    avatarUploadLabel: "Suratni o'zgartirish",
+    modeTitle: "Rejimni tanlang",
+    modes: {
+      cycle: "Hayz",
+      pregnancy: "Homiladorlik",
+      planning_pregnancy: "Tayyorgarlik",
+    },
+    modeChangeConfirm: "Rejimni almashtirishni tasdiqlaysizmi?",
+    personalInfoTitle: "Shaxsiy ma'lumotlar",
+    ageLabel: "Yosh",
+    heightLabel: "Bo'y",
+    weightLabel: "Vazn",
+    ageUnit: (n: number) => `${n} yosh`,
+    heightUnit: (n: number) => `${n} sm`,
+    weightUnit: (n: number) => `${n} kg`,
+    bloodTypeLabel: "Qon guruhi",
+    bloodTypeUnknown: "Kiritilmagan",
+    bloodTypeUnknownOption: "Bilmayman",
+    notSet: "Kiritilmagan",
   },
 };
 

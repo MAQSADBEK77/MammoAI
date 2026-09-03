@@ -1,31 +1,70 @@
 import { useEffect, useState } from "react";
-import { ScrollView, View, Text, Pressable, Share, Alert } from "react-native";
+import { ScrollView, View, Text, Pressable, Share, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import * as ImagePicker from "expo-image-picker";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import type { Language } from "@mammoai/shared";
-import { goalToLandingTab, gradientStops, colors, gradients } from "@mammoai/shared";
+import type { BloodType, CycleSettings, Goal, Language } from "@mammoai/shared";
+import { BLOOD_TYPES, gradientStops, colors, gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, Card, TextField } from "@/components/ui";
-import { Type, Eye, CalendarClock, NotebookPen, type LucideIcon } from "lucide-react-native";
+import { Camera, Check, Pencil, Type, Eye, CalendarClock, NotebookPen, type LucideIcon } from "lucide-react-native";
+
+const MODES: { goal: Goal; icon: string }[] = [
+  { goal: "cycle", icon: "🌸" },
+  { goal: "pregnancy", icon: "🤰" },
+  { goal: "planning_pregnancy", icon: "🌱" },
+];
 
 export default function ProfileScreen() {
   const { dict, language, setLanguage } = useI18n();
   const { user, onboardingProfile, refresh } = useSession();
+
+  const [editingHeader, setEditingHeader] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
+
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [age, setAge] = useState(String(onboardingProfile?.age ?? ""));
+  const [heightCm, setHeightCm] = useState(String(onboardingProfile?.heightCm ?? ""));
+  const [weightKg, setWeightKg] = useState(String(onboardingProfile?.weightKg ?? ""));
+  const [bloodType, setBloodType] = useState<BloodType | "">(onboardingProfile?.bloodType ?? "");
+  const [bloodTypePickerOpen, setBloodTypePickerOpen] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [logsCount, setLogsCount] = useState<number | null>(null);
+  const [cycleSettings, setCycleSettings] = useState<CycleSettings | null>(null);
 
   useEffect(() => {
-    api.cycle.get().then((res) => setLogsCount(res.logs.length));
+    api.cycle.get().then((res) => {
+      setLogsCount(res.logs.length);
+      setCycleSettings(res.settings);
+    });
   }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setName(user?.name ?? "");
+      setPhone(user?.phone ?? "");
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [user?.name, user?.phone]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setAge(String(onboardingProfile?.age ?? ""));
+      setHeightCm(String(onboardingProfile?.heightCm ?? ""));
+      setWeightKg(String(onboardingProfile?.weightKg ?? ""));
+      setBloodType(onboardingProfile?.bloodType ?? "");
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [onboardingProfile?.age, onboardingProfile?.heightCm, onboardingProfile?.weightKg, onboardingProfile?.bloodType]);
 
   if (!user) return null;
 
@@ -39,61 +78,245 @@ export default function ProfileScreen() {
     }
   }
 
-  const modeIcon = onboardingProfile
-    ? goalToLandingTab(onboardingProfile.primaryGoal) === "pregnancy"
-      ? "🤰"
-      : goalToLandingTab(onboardingProfile.primaryGoal) === "checkups"
-        ? "🩺"
-        : "🩸"
-    : null;
+  async function saveHeader() {
+    await save({ name: name.trim() || null, phone: phone.trim() || null });
+    setEditingHeader(false);
+  }
+
+  async function pickAvatar() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+    if (result.canceled || !result.assets?.[0]?.base64) return;
+    await save({ avatarUrl: `data:image/jpeg;base64,${result.assets[0].base64}` });
+  }
+
+  function changeMode(goal: Goal) {
+    if (goal === onboardingProfile?.primaryGoal) return;
+    Alert.alert(dict.profile.modeTitle, dict.profile.modeChangeConfirm, [
+      { text: dict.common.cancel, style: "cancel" },
+      {
+        text: dict.common.continueButton,
+        onPress: async () => {
+          setSaving(true);
+          try {
+            await api.onboarding.update({ primaryGoal: goal, isPregnant: goal === "pregnancy" });
+            await refresh();
+          } finally {
+            setSaving(false);
+          }
+        },
+      },
+    ]);
+  }
+
+  async function saveInfo() {
+    setSaving(true);
+    try {
+      await api.onboarding.update({
+        age: Number(age) || onboardingProfile?.age,
+        heightCm: heightCm ? Number(heightCm) : null,
+        weightKg: weightKg ? Number(weightKg) : null,
+        bloodType: bloodType || null,
+      });
+      await refresh();
+      setEditingInfo(false);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
   const daysActive = Math.max(0, Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / 86400000));
+  const isCycleMode = onboardingProfile?.primaryGoal === "cycle";
 
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
-        {/* Profil "shaxsiy" kartasi — pushti→binafsha gradient, avatar, maqsad
-            yorlig'i va haqiqiy foydalanish statistikasi. */}
+        {/* Profil "shaxsiy" kartasi — Figma referens dizayniga moslab pushti gradient,
+            yuklanadigan avatar va tahrirlanadigan ism/telefon. */}
         <Animated.View entering={FadeInUp.duration(450)}>
-        <LinearGradient colors={gradients.profile} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 32, padding: 22, gap: 16 }}>
-          <View className="flex-row items-center gap-3.5">
-            <View className="h-16 w-16 items-center justify-center rounded-full bg-white/20">
-              <Text className="text-2xl font-extrabold text-white">{initials}</Text>
-            </View>
-            <View className="flex-1 gap-1.5">
-              <Text className="text-xl font-extrabold text-white" numberOfLines={1}>
-                {user.name?.trim() || dict.profile.noNameFallback}
-              </Text>
-              {modeIcon && onboardingProfile && (
-                <View className="flex-row">
-                  <View className="flex-row items-center gap-1 rounded-full bg-white/20 px-3 py-1">
-                    <Text className="text-xs">{modeIcon}</Text>
-                    <Text className="text-xs font-semibold text-white">{dict.onboarding.goals[onboardingProfile.primaryGoal]}</Text>
-                  </View>
+          <LinearGradient colors={gradients.profile} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 32, padding: 22, gap: 16 }}>
+            <View className="flex-row items-center gap-3.5">
+              <Pressable onPress={pickAvatar} className="h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/20">
+                {user.avatarUrl ? (
+                  <Image source={{ uri: user.avatarUrl }} className="h-full w-full" />
+                ) : (
+                  <Text className="text-2xl font-extrabold text-white">{initials}</Text>
+                )}
+                <View className="absolute bottom-0 right-0 h-6 w-6 items-center justify-center rounded-full bg-nav">
+                  <Camera size={12} color="#FFFFFF" />
                 </View>
-              )}
+              </Pressable>
+
+              <View className="flex-1 gap-1.5">
+                {editingHeader ? (
+                  <>
+                    <TextField value={name} onChangeText={setName} placeholder={dict.profile.nameLabel} />
+                    <TextField value={phone} onChangeText={setPhone} placeholder={dict.profile.phoneLabel} keyboardType="phone-pad" />
+                  </>
+                ) : (
+                  <>
+                    <Text className="text-xl font-extrabold text-white" numberOfLines={1}>
+                      {user.name?.trim() || dict.profile.noNameFallback}
+                    </Text>
+                    <Text className="text-sm text-white/80" numberOfLines={1}>
+                      {user.phone || dict.profile.phonePlaceholder}
+                    </Text>
+                  </>
+                )}
+              </View>
+
+              <Pressable
+                onPress={() => (editingHeader ? saveHeader() : setEditingHeader(true))}
+                disabled={saving}
+                className="h-9 w-9 items-center justify-center rounded-full bg-white/20 active:scale-95"
+              >
+                {editingHeader ? <Check size={16} color="#FFFFFF" /> : <Pencil size={16} color="#FFFFFF" />}
+              </Pressable>
             </View>
+
+            <View className="flex-row gap-3">
+              <View className="flex-1 flex-row items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
+                <CalendarClock size={18} color="#FFFFFF" />
+                <View>
+                  <Text className="text-sm font-extrabold text-white">{dict.profile.statsDaysValue(daysActive)}</Text>
+                  <Text className="text-[11px] text-white/75">{dict.profile.statsDaysLabel}</Text>
+                </View>
+              </View>
+              <View className="flex-1 flex-row items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
+                <NotebookPen size={18} color="#FFFFFF" />
+                <View>
+                  <Text className="text-sm font-extrabold text-white">{logsCount ?? 0}</Text>
+                  <Text className="text-[11px] text-white/75">{dict.profile.statsLogsLabel}</Text>
+                </View>
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {onboardingProfile && (
+          <Card className="gap-3">
+            <Text className="text-xs font-bold uppercase tracking-wide text-text-muted">{dict.profile.modeTitle}</Text>
+            <View className="flex-row gap-2">
+              {MODES.map(({ goal, icon }) => {
+                const active = onboardingProfile.primaryGoal === goal;
+                return (
+                  <Pressable
+                    key={goal}
+                    onPress={() => changeMode(goal)}
+                    disabled={saving}
+                    className={clsx(
+                      "flex-1 items-center gap-1.5 rounded-2xl border-2 px-2 py-3 active:scale-95",
+                      active ? "border-primary bg-primary-light/40" : "border-border bg-surface"
+                    )}
+                  >
+                    <Text style={{ fontSize: 20, lineHeight: 24 }}>{icon}</Text>
+                    <Text className={clsx("text-xs font-semibold", active ? "text-primary-dark" : "text-text-secondary")}>
+                      {dict.profile.modes[goal as keyof typeof dict.profile.modes]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Card>
+        )}
+
+        <Card className="gap-1">
+          <View className="mb-1 flex-row items-center justify-between">
+            <Text className="text-sm font-semibold text-text-secondary">{dict.profile.personalInfoTitle}</Text>
+            <Pressable
+              onPress={() => (editingInfo ? saveInfo() : setEditingInfo(true))}
+              disabled={saving}
+              className="flex-row items-center gap-1 rounded-full px-2.5 py-1 active:opacity-60"
+            >
+              {editingInfo ? <Check size={14} color={colors.primaryDark} /> : <Pencil size={14} color={colors.primaryDark} />}
+              <Text className="text-xs font-semibold" style={{ color: colors.primaryDark }}>
+                {editingInfo ? dict.profile.doneButton : dict.profile.editButton}
+              </Text>
+            </Pressable>
           </View>
 
-          <View className="flex-row gap-3">
-            <View className="flex-1 flex-row items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
-              <CalendarClock size={18} color="#FFFFFF" />
-              <View>
-                <Text className="text-sm font-extrabold text-white">{dict.profile.statsDaysValue(daysActive)}</Text>
-                <Text className="text-[11px] text-white/75">{dict.profile.statsDaysLabel}</Text>
+          <SettingsRow icon="🎂" label={dict.profile.ageLabel}>
+            {editingInfo ? (
+              <View className="w-20">
+                <TextField value={age} onChangeText={setAge} keyboardType="numeric" />
               </View>
-            </View>
-            <View className="flex-1 flex-row items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
-              <NotebookPen size={18} color="#FFFFFF" />
-              <View>
-                <Text className="text-sm font-extrabold text-white">{logsCount ?? 0}</Text>
-                <Text className="text-[11px] text-white/75">{dict.profile.statsLogsLabel}</Text>
+            ) : (
+              <Text className="text-sm text-text-secondary">
+                {onboardingProfile?.age ? dict.profile.ageUnit(onboardingProfile.age) : dict.profile.notSet}
+              </Text>
+            )}
+          </SettingsRow>
+
+          <SettingsRow icon="📏" label={dict.profile.heightLabel}>
+            {editingInfo ? (
+              <View className="w-20">
+                <TextField value={heightCm} onChangeText={setHeightCm} keyboardType="numeric" />
               </View>
+            ) : (
+              <Text className="text-sm text-text-secondary">
+                {onboardingProfile?.heightCm ? dict.profile.heightUnit(onboardingProfile.heightCm) : dict.profile.notSet}
+              </Text>
+            )}
+          </SettingsRow>
+
+          <SettingsRow icon="⚖️" label={dict.profile.weightLabel}>
+            {editingInfo ? (
+              <View className="w-20">
+                <TextField value={weightKg} onChangeText={setWeightKg} keyboardType="numeric" />
+              </View>
+            ) : (
+              <Text className="text-sm text-text-secondary">
+                {onboardingProfile?.weightKg ? dict.profile.weightUnit(onboardingProfile.weightKg) : dict.profile.notSet}
+              </Text>
+            )}
+          </SettingsRow>
+
+          <SettingsRow icon="🩸" label={dict.profile.bloodTypeLabel} last={!isCycleMode && !editingInfo}>
+            {editingInfo ? (
+              <Pressable onPress={() => setBloodTypePickerOpen((v) => !v)} className="rounded-xl border border-border bg-surface px-3 py-2">
+                <Text className="text-sm text-text-primary">{bloodType || dict.profile.bloodTypeUnknownOption}</Text>
+              </Pressable>
+            ) : (
+              <Text className="text-sm text-text-secondary">{onboardingProfile?.bloodType || dict.profile.bloodTypeUnknown}</Text>
+            )}
+          </SettingsRow>
+
+          {editingInfo && bloodTypePickerOpen && (
+            <View className="flex-row flex-wrap gap-2 border-b border-border py-2.5">
+              {BLOOD_TYPES.map((bt) => (
+                <Pressable
+                  key={bt}
+                  onPress={() => {
+                    setBloodType(bt);
+                    setBloodTypePickerOpen(false);
+                  }}
+                  className={clsx("rounded-full border px-3 py-1.5", bloodType === bt ? "border-primary bg-primary" : "border-border bg-surface")}
+                >
+                  <Text className={clsx("text-xs font-medium", bloodType === bt ? "text-white" : "text-text-secondary")}>{bt}</Text>
+                </Pressable>
+              ))}
             </View>
-          </View>
-        </LinearGradient>
-        </Animated.View>
+          )}
+
+          {isCycleMode && cycleSettings && (
+            <>
+              <SettingsRow icon="📅" label={dict.cycle.cycleLengthLabel}>
+                <Text className="text-sm text-text-secondary">{dict.cycle.daysUnit(cycleSettings.averageCycleLength)}</Text>
+              </SettingsRow>
+              <SettingsRow icon="🩹" label={dict.cycle.periodLengthLabel} last>
+                <Text className="text-sm text-text-secondary">{dict.cycle.daysUnit(cycleSettings.averagePeriodLength)}</Text>
+              </SettingsRow>
+            </>
+          )}
+        </Card>
 
         <Card className="gap-3">
           <Text className="text-sm font-semibold text-text-secondary">{dict.profile.languageLabel}</Text>
@@ -116,16 +339,6 @@ export default function ProfileScreen() {
               </Pressable>
             ))}
           </View>
-        </Card>
-
-        <Card className="gap-3">
-          <Text className="text-sm font-semibold text-text-secondary">{dict.profile.nameLabel}</Text>
-          <TextField value={name} onChangeText={setName} />
-          <Text className="text-sm font-semibold text-text-secondary">{dict.profile.phoneLabel}</Text>
-          <TextField value={phone} onChangeText={setPhone} placeholder={dict.profile.phonePlaceholder} keyboardType="phone-pad" />
-          <Button disabled={saving} onPress={() => save({ name: name || null, phone: phone || null })}>
-            {dict.common.save}
-          </Button>
         </Card>
 
         <Card className="gap-1">

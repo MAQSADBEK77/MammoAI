@@ -3,7 +3,9 @@
 // Backend — apps/web/src/app/api ichida, ikkalasiga ham xizmat qiladi (spec §8).
 
 import type {
+  AppNotification,
   Article,
+  BloodType,
   ChecklistItem,
   Clinic,
   CommunityComment,
@@ -54,7 +56,7 @@ export interface MeResponse {
 }
 
 export interface AuthStartPayload {
-  identifier: string; // telefon yoki email (App.pdf §2)
+  identifier: string; // telefon raqam
   language: Language;
 }
 
@@ -99,6 +101,7 @@ export interface OnboardingPayload {
   healthConditionsOther: string | null;
   heightCm: number | null;
   weightKg: number | null;
+  bloodType: BloodType | null;
   notificationsEnabled: boolean;
 }
 
@@ -136,7 +139,7 @@ export function createApiClient(config: ApiClientConfig) {
 
   return {
     auth: {
-      /** App.pdf §2 — telefon/email bilan akkaunt yaratish yoki mavjudiga kirish. */
+      /** Telefon raqam bilan akkaunt yaratish yoki mavjudiga kirish. */
       start: (payload: AuthStartPayload) =>
         request<AuthStartResponse>("/api/auth/start", { method: "POST", body: JSON.stringify(payload) }),
     },
@@ -146,11 +149,15 @@ export function createApiClient(config: ApiClientConfig) {
           method: "POST",
           body: JSON.stringify(payload),
         }),
+      /** Rejim almashtirish va shaxsiy ma'lumotlarni (yosh/bo'y/vazn/qon guruhi) qisman yangilash. */
+      update: (
+        patch: Partial<Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType">>
+      ) => request<{ onboardingProfile: OnboardingProfile }>("/api/onboarding", { method: "PATCH", body: JSON.stringify(patch) }),
     },
     me: {
       get: () => request<MeResponse>("/api/me"),
       update: (
-        patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled">>
+        patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "avatarUrl">>
       ) => request<MeResponse>("/api/me", { method: "PATCH", body: JSON.stringify(patch) }),
       exportData: () => request<Record<string, unknown>>("/api/me/export"),
     },
@@ -208,6 +215,10 @@ export function createApiClient(config: ApiClientConfig) {
       listComments: (postId: string) => request<CommunityComment[]>(`/api/community/posts/${postId}/comments`),
       addComment: (postId: string, payload: { body: string; isAnonymous: boolean }) =>
         request<CommunityComment>(`/api/community/posts/${postId}/comments`, { method: "POST", body: JSON.stringify(payload) }),
+    },
+    notifications: {
+      list: () => request<{ notifications: AppNotification[]; unreadCount: number }>("/api/notifications"),
+      markAllRead: () => request<{ ok: true }>("/api/notifications/read-all", { method: "POST" }),
     },
   };
 }
