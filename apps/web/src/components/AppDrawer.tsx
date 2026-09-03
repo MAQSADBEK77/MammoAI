@@ -14,15 +14,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import {
-  Menu as MenuIcon,
-  HomeOutlined,
-  GroupsOutlined,
-  FactCheckOutlined,
-  PersonOutlined,
-  LockOutlined,
-  Close,
-} from "@mui/icons-material";
+import { Menu as MenuIcon, PersonOutlined, LockOutlined, Close } from "@mui/icons-material";
 import clsx from "clsx";
 import type { Language } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -64,10 +56,10 @@ export function AppDrawer() {
 
   const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
 
+  // Asosiy/Jamiyat/Tekshiruvlar pastki menyuda allaqachon bor — bu yerda
+  // takrorlanmaydi. Profil endi FAQAT shu burger menyu orqali ochiladi
+  // (foydalanuvchi so'rovi).
   const navItems = [
-    { href: "/asosiy", label: dict.nav.home, icon: <HomeOutlined /> },
-    { href: "/jamiyat", label: dict.nav.community, icon: <GroupsOutlined /> },
-    { href: "/tekshiruvlar", label: dict.nav.checklist, icon: <FactCheckOutlined /> },
     { href: "/profil", label: dict.nav.profile, icon: <PersonOutlined /> },
     { href: "/maxfiylik", label: dict.profile.securityTitle, icon: <LockOutlined /> },
   ];

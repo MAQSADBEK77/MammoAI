@@ -58,17 +58,17 @@ export function AppDrawer() {
     await refresh();
   }
 
-  function go(href: "/(tabs)/asosiy" | "/(tabs)/jamiyat" | "/(tabs)/tekshiruvlar" | "/(tabs)/profil" | "/maxfiylik") {
+  function go(href: "/(tabs)/profil" | "/maxfiylik") {
     close();
     router.push(href);
   }
 
   const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
 
+  // Asosiy/Jamiyat/Tekshiruvlar pastki tab panelida allaqachon bor — bu yerda
+  // takrorlanmaydi. Profil endi FAQAT shu burger menyu orqali ochiladi
+  // (foydalanuvchi so'rovi).
   const navItems: { href: Parameters<typeof go>[0]; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
-    { href: "/(tabs)/asosiy", label: dict.nav.home, icon: "home-outline" },
-    { href: "/(tabs)/jamiyat", label: dict.nav.community, icon: "account-group-outline" },
-    { href: "/(tabs)/tekshiruvlar", label: dict.nav.checklist, icon: "clipboard-check-outline" },
     { href: "/(tabs)/profil", label: dict.nav.profile, icon: "account-circle-outline" },
     { href: "/maxfiylik", label: dict.profile.securityTitle, icon: "lock-outline" },
   ];

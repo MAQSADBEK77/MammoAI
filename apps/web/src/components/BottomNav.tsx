@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, HomeOutlined, FactCheck, FactCheckOutlined, Groups, GroupsOutlined, Person, PersonOutlined } from "@mui/icons-material";
+import { Home, HomeOutlined, FactCheck, FactCheckOutlined, Groups, GroupsOutlined } from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 
@@ -11,14 +11,14 @@ export function BottomNav() {
   const { dict } = useI18n();
 
   // "Asosiy" — Tsikl/Homiladorlik (rejimga qarab) + Klinikalar birlashtirilgan
-  // yagona bosh sahifa (foydalanuvchi so'roviga ko'ra 4 ta bo'limga siqildi).
-  // Har bir bandda ikkita ikonka bor — faol bo'lmasa "outlined", faol bo'lsa
-  // "filled" (Material Design'ning navigatsiya konvensiyasi).
+  // yagona bosh sahifa. Profil endi pastki menyuda emas — faqat chap burger
+  // menyusi orqali ochiladi (foydalanuvchi so'rovi: pastki menyu 3 ta bo'lim,
+  // Profil burger menyuga ko'chirildi). Har bir bandda ikkita ikonka bor —
+  // faol bo'lmasa "outlined", faol bo'lsa "filled" (Material konvensiyasi).
   const items = [
     { href: "/asosiy", label: dict.nav.home, Icon: Home, IconOutline: HomeOutlined },
     { href: "/jamiyat", label: dict.nav.community, Icon: Groups, IconOutline: GroupsOutlined },
     { href: "/tekshiruvlar", label: dict.nav.checklist, Icon: FactCheck, IconOutline: FactCheckOutlined },
-    { href: "/profil", label: dict.nav.profile, Icon: Person, IconOutline: PersonOutlined },
   ];
 
   return (
