@@ -303,11 +303,10 @@ export function IconChip({
  * .loader), joriy rejim rangida (--color-primary'dan avtomatik olinadi).
  * Butun ekranni xira-shaffof va blur fon bilan qoplaydi, spinner markazda.
  */
-export function LoadingSpinner({ label }: { label?: string }) {
+export function LoadingSpinner({ label: _label }: { label?: string }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background/30 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/30 backdrop-blur-md">
       <span className="loader" />
-      {label && <p className="text-sm font-medium text-text-secondary">{label}</p>}
     </div>
   );
 }

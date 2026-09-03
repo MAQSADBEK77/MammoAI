@@ -392,18 +392,17 @@ function OrbitDot({ index, color }: { index: number; color: string }) {
  * rangida (Hayz/Homiladorlik/Tayyorgarlik). Butun ekranni blur fon bilan
  * qoplaydi, spinner markazda suzadi.
  */
-export function LoadingSpinner({ label }: { label?: string }) {
+export function LoadingSpinner({ label: _label }: { label?: string }) {
   const accent = useModeAccent();
   return (
     <View style={StyleSheet.absoluteFill}>
       <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
-      <View className="flex-1 items-center justify-center gap-4">
+      <View className="flex-1 items-center justify-center">
         <View style={{ width: ORBIT_RADIUS * 2, height: ORBIT_RADIUS * 2 }}>
           {Array.from({ length: ORBIT_DOT_COUNT }).map((_, i) => (
             <OrbitDot key={i} index={i} color={accent.primary} />
           ))}
         </View>
-        {label && <Text className="text-sm font-medium text-text-secondary">{label}</Text>}
       </View>
     </View>
   );
