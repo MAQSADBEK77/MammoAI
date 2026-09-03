@@ -106,10 +106,11 @@ export function MonthCalendar({
           const phaseBg = !marker && phase && phase !== "menstrual" ? PHASE_BG[phase] : null;
           // Hayz davri (haqiqiy yoki bashorat qilingan) — border bilan boshqa
           // fazalar (yumshoq fon rangi)dan ajralib turadi. Bugungi kun esa
-          // bitta qalin, yorqin (amber) border bilan — hayz kunining borderi
-          // bilan bir vaqtda ikkita border ko'rinib chalkashtirmasligi uchun
-          // "bugungi kun" ustuvor (ikkalasi bir vaqtda chizilmaydi). Tashqi
-          // halqa endi faqat "tanlangan kun" uchun ishlatiladi.
+          // begona rang emas, xuddi shu brend rangida, lekin "ilon izi"
+          // (dashed) border bilan — hayz kunining birlik (solid) borderidan
+          // uslub jihatdan ajralib turadi, ikkalasi bir vaqtda chizilmaydi
+          // ("bugungi kun" ustuvor). Tashqi halqa endi faqat "tanlangan kun"
+          // uchun ishlatiladi.
           const isMenstrualDay = marker === "period" || marker === "predicted" || (!marker && phase === "menstrual");
           return (
             <View key={date} className="h-9 w-[14.28%] items-center justify-center">
@@ -127,7 +128,7 @@ export function MonthCalendar({
                     marker === "predicted" && "bg-primary-light",
                     !marker && !phaseBg && phase === "menstrual" && "bg-primary-light",
                     !marker && phaseBg,
-                    isToday ? "border-[3px] border-warning" : isMenstrualDay && "border-2 border-primary-dark"
+                    isToday ? "border-2 border-dashed border-primary-dark" : isMenstrualDay && "border-2 border-primary-dark"
                   )}
                 >
                   <Text className={clsx("text-sm font-medium", marker === "period" ? "text-white" : "text-text-secondary")}>
