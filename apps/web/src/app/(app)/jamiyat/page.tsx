@@ -212,10 +212,21 @@ export default function CommunityPage() {
             <div className="space-y-2">
               {notifications.map((n) => (
                 <div key={n.id} className={clsx("rounded-2xl p-3 text-sm", n.isRead ? "bg-surface-muted" : "bg-primary-light/40")}>
-                  <p className="font-medium text-text-primary">
-                    {dict.community.notificationCommentText(n.actorName ?? dict.community.anonymousAuthor)}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-text-secondary">&ldquo;{n.postExcerpt}&rdquo;</p>
+                  {n.type === "partner_message" ? (
+                    <>
+                      <p className="font-medium text-text-primary">
+                        {n.actorName ?? dict.partner.roleLabel}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-text-secondary">&ldquo;{n.message}&rdquo;</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-text-primary">
+                        {dict.community.notificationCommentText(n.actorName ?? dict.community.anonymousAuthor)}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-text-secondary">&ldquo;{n.postExcerpt}&rdquo;</p>
+                    </>
+                  )}
                   <p className="mt-1 text-[11px] text-text-muted">{formatRelativeTime(n.createdAt, dict)}</p>
                 </div>
               ))}

@@ -21,6 +21,8 @@ import type {
   Language,
   Mood,
   OnboardingProfile,
+  PartnerShareSettings,
+  PartnerStatusResponse,
   PeriodAttitude,
   PregnancyProfile,
   PregnancyVisitLog,
@@ -33,7 +35,7 @@ import type {
   Symptom,
   User,
 } from "@mammoai/shared";
-import { CHECKLIST_ITEM_IS_FREE, DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from "@mammoai/shared";
+import { CHECKLIST_ITEM_IS_FREE, DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH, getPregnancyStatus } from "@mammoai/shared";
 
 const now = () => new Date().toISOString();
 const today = () => now().slice(0, 10);
@@ -1134,7 +1136,8 @@ export async function getCommunityStats(): Promise<CommunityStats> {
 interface NotificationRow {
   id: string;
   type: AppNotification["type"];
-  post_id: string;
+  post_id: string | null;
+  message: string | null;
   is_anonymous_actor: boolean;
   is_read: boolean;
   created_at: string;
@@ -1151,7 +1154,8 @@ function notificationFromRow(row: NotificationRow): AppNotification {
     type: row.type,
     actorName: row.is_anonymous_actor ? null : row.actor_name,
     postId: row.post_id,
-    postExcerpt: body.length > POST_EXCERPT_LENGTH ? `${body.slice(0, POST_EXCERPT_LENGTH)}…` : body,
+    postExcerpt: row.post_id ? (body.length > POST_EXCERPT_LENGTH ? `${body.slice(0, POST_EXCERPT_LENGTH)}…` : body) : null,
+    message: row.message,
     isRead: row.is_read,
     createdAt: row.created_at,
   };
@@ -1180,4 +1184,167 @@ export async function listNotifications(
 export async function markAllNotificationsRead(userId: string): Promise<void> {
   await ensureSchema();
   await sql`UPDATE notifications SET is_read = TRUE WHERE user_id = ${userId} AND is_read = FALSE`;
+}
+
+// ---------------------------------------------------------------------------
+// Hamkor (Partner) — kod orqali ikkita akkauntni bog'lash (Figma referens:
+// "Hamkor" bo'limi). Har bir foydalanuvchi o'z ulashish sozlamalarini
+// mustaqil boshqaradi — `partner_links.user_a_shares`/`user_b_shares`.
+// ---------------------------------------------------------------------------
+
+const PARTNER_INVITE_TTL_HOURS = 24;
+const DEFAULT_PARTNER_SHARING: PartnerShareSettings = { pregnancy: true, checkups: true, mood: true, period: false };
+
+function randomPartnerCode(): string {
+  const digits = Math.floor(1000 + Math.random() * 9000);
+  return `MAMMO-${digits}`;
+}
+
+interface PartnerLinkRow {
+  id: string;
+  user_a_id: string;
+  user_b_id: string;
+  user_a_shares: string;
+  user_b_shares: string;
+  created_at: string;
+}
+
+async function findPartnerLink(userId: string): Promise<PartnerLinkRow | null> {
+  const rows = (await sql`
+    SELECT * FROM partner_links WHERE user_a_id = ${userId} OR user_b_id = ${userId} LIMIT 1
+  `) as unknown as PartnerLinkRow[];
+  return rows[0] ?? null;
+}
+
+/** Joriy foydalanuvchi uchun ulashish kodi — muddati o'tmagan mavjud kodi
+ * bo'lsa o'shani qaytaradi, aks holda yangisini yaratadi. */
+export async function createPartnerInviteCode(userId: string): Promise<string> {
+  await ensureSchema();
+  const existing = (await sql`
+    SELECT code FROM partner_invites
+    WHERE inviter_user_id = ${userId} AND (expires_at)::timestamptz > now()
+    ORDER BY created_at DESC LIMIT 1
+  `) as unknown as { code: string }[];
+  if (existing[0]) return existing[0].code;
+
+  let code = randomPartnerCode();
+  for (let i = 0; i < 5; i++) {
+    const clash = (await sql`SELECT 1 FROM partner_invites WHERE code = ${code}`) as unknown as unknown[];
+    if (clash.length === 0) break;
+    code = randomPartnerCode();
+  }
+  const expiresAt = new Date(Date.now() + PARTNER_INVITE_TTL_HOURS * 3600 * 1000).toISOString();
+  await sql`
+    INSERT INTO partner_invites (id, code, inviter_user_id, created_at, expires_at)
+    VALUES (${randomUUID()}, ${code}, ${userId}, ${now()}, ${expiresAt})
+  `;
+  return code;
+}
+
+export async function connectPartnerByCode(userId: string, rawCode: string): Promise<void> {
+  await ensureSchema();
+  const code = rawCode.trim().toUpperCase();
+  const invites = (await sql`
+    SELECT id, inviter_user_id FROM partner_invites WHERE code = ${code} AND (expires_at)::timestamptz > now()
+  `) as unknown as { id: string; inviter_user_id: string }[];
+  const invite = invites[0];
+  if (!invite) throw new ApiError(404, "Kod topilmadi yoki muddati o'tgan");
+  if (invite.inviter_user_id === userId) throw new ApiError(400, "O'zingizning kodingizni kirita olmaysiz");
+
+  if (await findPartnerLink(userId)) throw new ApiError(400, "Siz allaqachon hamkorga ulangansiz");
+  if (await findPartnerLink(invite.inviter_user_id)) throw new ApiError(400, "Bu foydalanuvchi allaqachon boshqa hamkorga ulangan");
+
+  await sql`
+    INSERT INTO partner_links (id, user_a_id, user_b_id, user_a_shares, user_b_shares, created_at)
+    VALUES (
+      ${randomUUID()}, ${invite.inviter_user_id}, ${userId},
+      ${JSON.stringify(DEFAULT_PARTNER_SHARING)}, ${JSON.stringify(DEFAULT_PARTNER_SHARING)}, ${now()}
+    )
+  `;
+  await sql`DELETE FROM partner_invites WHERE inviter_user_id = ${invite.inviter_user_id}`;
+}
+
+export async function disconnectPartner(userId: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM partner_links WHERE user_a_id = ${userId} OR user_b_id = ${userId}`;
+}
+
+export async function updatePartnerSharing(userId: string, settings: PartnerShareSettings): Promise<void> {
+  await ensureSchema();
+  const link = await findPartnerLink(userId);
+  if (!link) throw new ApiError(404, "Hamkor topilmadi");
+  if (link.user_a_id === userId) {
+    await sql`UPDATE partner_links SET user_a_shares = ${JSON.stringify(settings)} WHERE id = ${link.id}`;
+  } else {
+    await sql`UPDATE partner_links SET user_b_shares = ${JSON.stringify(settings)} WHERE id = ${link.id}`;
+  }
+}
+
+export async function sendPartnerMessage(userId: string, text: string): Promise<void> {
+  await ensureSchema();
+  const link = await findPartnerLink(userId);
+  if (!link) throw new ApiError(404, "Hamkor topilmadi");
+  const partnerId = link.user_a_id === userId ? link.user_b_id : link.user_a_id;
+  await sql`
+    INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
+    VALUES (${randomUUID()}, ${partnerId}, ${userId}, 'partner_message', ${text}, ${now()})
+  `;
+}
+
+export async function getPartnerStatus(userId: string): Promise<PartnerStatusResponse> {
+  await ensureSchema();
+  const link = await findPartnerLink(userId);
+  if (!link) {
+    const inviteRows = (await sql`
+      SELECT code FROM partner_invites
+      WHERE inviter_user_id = ${userId} AND (expires_at)::timestamptz > now()
+      ORDER BY created_at DESC LIMIT 1
+    `) as unknown as { code: string }[];
+    return { linked: false, partner: null, mySharing: null, partnerData: null, linkedSince: null, myInviteCode: inviteRows[0]?.code ?? null };
+  }
+
+  const isA = link.user_a_id === userId;
+  const partnerId = isA ? link.user_b_id : link.user_a_id;
+  const mySharing = JSON.parse(isA ? link.user_a_shares : link.user_b_shares) as PartnerShareSettings;
+  const partnerSharing = JSON.parse(isA ? link.user_b_shares : link.user_a_shares) as PartnerShareSettings;
+
+  const partnerUser = await getUserById(partnerId);
+
+  let pregnancyWeek: number | null = null;
+  let nextCheckup: { type: ChecklistItemType; date: string } | null = null;
+  let todayMood: Mood | null = null;
+  let cycleDay: number | null = null;
+
+  if (partnerSharing.pregnancy) {
+    const profile = await getPregnancyProfile(partnerId);
+    if (profile) pregnancyWeek = getPregnancyStatus(profile)?.currentWeek ?? null;
+  }
+  if (partnerSharing.checkups) {
+    const items = await listChecklistItems(partnerId);
+    const next = items.find((i) => i.status !== "done" && i.dueDate);
+    if (next?.dueDate) nextCheckup = { type: next.type, date: next.dueDate };
+  }
+  if (partnerSharing.mood) {
+    const rows = (await sql`SELECT mood FROM cycle_logs WHERE user_id = ${partnerId} AND date = ${today()}`) as unknown as {
+      mood: Mood | null;
+    }[];
+    todayMood = rows[0]?.mood ?? null;
+  }
+  if (partnerSharing.period) {
+    const settings = await getCycleSettings(partnerId);
+    if (settings.lastPeriodStart) {
+      const diff = Math.round((new Date(today()).getTime() - new Date(settings.lastPeriodStart).getTime()) / 86400000);
+      const cycleLen = settings.averageCycleLength || DEFAULT_CYCLE_LENGTH;
+      cycleDay = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
+    }
+  }
+
+  return {
+    linked: true,
+    partner: partnerUser ? { id: partnerUser.id, name: partnerUser.name, avatarUrl: partnerUser.avatarUrl } : null,
+    mySharing,
+    partnerData: { pregnancyWeek, nextCheckup, todayMood, cycleDay },
+    linkedSince: link.created_at,
+    myInviteCode: null,
+  };
 }

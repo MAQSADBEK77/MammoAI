@@ -19,6 +19,8 @@ import type {
   HeardAboutUs,
   Language,
   OnboardingProfile,
+  PartnerShareSettings,
+  PartnerStatusResponse,
   PeriodAttitude,
   PregnancyProfile,
   PregnancyVisitLog,
@@ -219,6 +221,15 @@ export function createApiClient(config: ApiClientConfig) {
     notifications: {
       list: () => request<{ notifications: AppNotification[]; unreadCount: number }>("/api/notifications"),
       markAllRead: () => request<{ ok: true }>("/api/notifications/read-all", { method: "POST" }),
+    },
+    partner: {
+      status: () => request<PartnerStatusResponse>("/api/partner"),
+      generateCode: () => request<PartnerStatusResponse>("/api/partner/code", { method: "POST" }),
+      connect: (code: string) => request<PartnerStatusResponse>("/api/partner/connect", { method: "POST", body: JSON.stringify({ code }) }),
+      updateSettings: (settings: PartnerShareSettings) =>
+        request<PartnerStatusResponse>("/api/partner/settings", { method: "PATCH", body: JSON.stringify(settings) }),
+      sendMessage: (text: string) => request<{ ok: true }>("/api/partner/message", { method: "POST", body: JSON.stringify({ text }) }),
+      disconnect: () => request<PartnerStatusResponse>("/api/partner", { method: "DELETE" }),
     },
   };
 }

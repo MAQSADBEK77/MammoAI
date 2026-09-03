@@ -140,6 +140,29 @@ async function initSchema() {
         UNIQUE(user_id, date)
       )
     `,
+    // Hamkor (Partner) — kod orqali ulanish. `partner_invites` vaqtinchalik
+    // (24 soat amal qiladi), ulangandan keyin `partner_links` yaratiladi va
+    // invite o'chiriladi. Har ikkala foydalanuvchi o'z ulashish sozlamalarini
+    // mustaqil boshqaradi (user_a_shares/user_b_shares — JSON).
+    sql`
+      CREATE TABLE IF NOT EXISTS partner_invites (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        inviter_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS partner_links (
+        id TEXT PRIMARY KEY,
+        user_a_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user_b_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user_a_shares TEXT NOT NULL DEFAULT '{"pregnancy":true,"checkups":true,"mood":true,"period":false}',
+        user_b_shares TEXT NOT NULL DEFAULT '{"pregnancy":true,"checkups":true,"mood":true,"period":false}',
+        created_at TEXT NOT NULL
+      )
+    `,
     sql`
       CREATE TABLE IF NOT EXISTS pregnancy_profiles (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -210,6 +233,9 @@ async function initSchema() {
   await Promise.all([
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`,
     sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
+    // Hamkor "Xabar" (tezkor eslatma) tugmasi shu ustunni ishlatadi —
+    // izoh-bildirishnomalaridan farqli o'laroq, erkin matn saqlaydi.
+    sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS message TEXT`,
   ]);
 
   // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.
@@ -269,6 +295,9 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_community_posts_tag ON community_posts(tag, created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_partner_invites_code ON partner_invites(code)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_partner_links_a ON partner_links(user_a_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_partner_links_b ON partner_links(user_b_id)`,
   ]);
 }
 

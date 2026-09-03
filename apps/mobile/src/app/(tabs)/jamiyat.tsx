@@ -225,12 +225,23 @@ export default function CommunityScreen() {
             ) : (
               notifications.map((n) => (
                 <View key={n.id} className={clsx("rounded-2xl p-3", n.isRead ? "bg-surface-muted" : "bg-primary-light/40")}>
-                  <Text className="text-sm font-medium text-text-primary">
-                    {dict.community.notificationCommentText(n.actorName ?? dict.community.anonymousAuthor)}
-                  </Text>
-                  <Text className="mt-0.5 text-xs text-text-secondary" numberOfLines={1}>
-                    &ldquo;{n.postExcerpt}&rdquo;
-                  </Text>
+                  {n.type === "partner_message" ? (
+                    <>
+                      <Text className="text-sm font-medium text-text-primary">{n.actorName ?? dict.partner.roleLabel}</Text>
+                      <Text className="mt-0.5 text-xs text-text-secondary" numberOfLines={1}>
+                        &ldquo;{n.message}&rdquo;
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text className="text-sm font-medium text-text-primary">
+                        {dict.community.notificationCommentText(n.actorName ?? dict.community.anonymousAuthor)}
+                      </Text>
+                      <Text className="mt-0.5 text-xs text-text-secondary" numberOfLines={1}>
+                        &ldquo;{n.postExcerpt}&rdquo;
+                      </Text>
+                    </>
+                  )}
                   <Text className="mt-1 text-[11px] text-text-muted">{formatRelativeTime(n.createdAt, dict)}</Text>
                 </View>
               ))

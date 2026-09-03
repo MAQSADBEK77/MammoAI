@@ -279,16 +279,51 @@ export interface CommunityStats {
 // Bildirishnomalar — hozircha faqat "postingizga izoh qoldirildi" turi.
 // ---------------------------------------------------------------------------
 
-export type NotificationType = "comment_on_post";
+export type NotificationType = "comment_on_post" | "partner_message";
 
 export interface AppNotification {
   id: string;
   type: NotificationType;
   /** Anonim izoh bo'lsa `null` — jamoat lentasidagi kabi anonimlik shu yerda ham hurmat qilinadi. */
   actorName: string | null;
-  postId: string;
-  /** Kontekst uchun — postning qisqartirilgan matni. */
-  postExcerpt: string;
+  postId: string | null;
+  /** Kontekst uchun — postning qisqartirilgan matni ("comment_on_post" uchun). */
+  postExcerpt: string | null;
+  /** Hamkordan kelgan erkin matnli xabar ("partner_message" uchun). */
+  message: string | null;
   isRead: boolean;
   createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Hamkor (Partner) — kod orqali ikkita akkauntni bog'lash, har biri o'z
+// ulashish sozlamalarini mustaqil boshqaradi (Figma referens: "Hamkor" bo'limi).
+// ---------------------------------------------------------------------------
+
+export interface PartnerShareSettings {
+  pregnancy: boolean;
+  checkups: boolean;
+  mood: boolean;
+  period: boolean;
+}
+
+export interface PartnerSharedData {
+  pregnancyWeek: number | null;
+  /** `type` — checklist elementi turi, mijoz tomonda dict.checklist.items[type] orqali sarlavha topiladi. */
+  nextCheckup: { type: ChecklistItemType; date: string } | null;
+  todayMood: Mood | null;
+  cycleDay: number | null;
+}
+
+export interface PartnerStatusResponse {
+  linked: boolean;
+  partner: { id: string; name: string | null; avatarUrl: string | null } | null;
+  /** Joriy foydalanuvchining hamkoriga ulashayotgan sozlamalari. */
+  mySharing: PartnerShareSettings | null;
+  /** Hamkorning ulashgan (ruxsat berilgan) ma'lumotlari — faqat ulanган bo'lsa. */
+  partnerData: PartnerSharedData | null;
+  /** Ulanish sanasi — "N kun oldin ulandingiz" kabi ko'rsatish uchun (mijoz i18n bilan formatlaydi). */
+  linkedSince: string | null;
+  /** Hali ulanmagan bo'lsa va kod so'ralgan bo'lsa — shu foydalanuvchi ulashishi mumkin bo'lgan kod. */
+  myInviteCode: string | null;
 }
