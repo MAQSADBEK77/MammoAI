@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { BloodType, CycleResponse, Goal, Language } from "@mammoai/shared";
-import { BLOOD_TYPES, cssGradient, colors } from "@mammoai/shared";
+import { BLOOD_TYPES, getModeAccentColors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -275,18 +275,22 @@ export default function ProfilePage() {
           <div className="grid grid-cols-3 gap-2">
             {MODES.map(({ goal, icon }) => {
               const active = onboardingProfile.primaryGoal === goal;
+              // Har bir karta o'z rejimining rangida faollashadi (Hayz=pushti,
+              // Homiladorlik=binafsha, Tayyorgarlik=moviy-yashil) — Figma referens.
+              const accent = getModeAccentColors(goal);
               return (
                 <button
                   key={goal}
                   onClick={() => changeMode(goal)}
                   disabled={saving}
-                  className={clsx(
-                    "flex flex-col items-center gap-1.5 rounded-2xl border-2 px-2 py-3 text-center transition active:scale-95",
-                    active ? "border-primary bg-primary-light/40" : "border-border bg-surface hover:border-primary-light"
-                  )}
+                  className="flex flex-col items-center gap-1.5 rounded-2xl border-2 px-2 py-3 text-center transition active:scale-95"
+                  style={{
+                    borderColor: active ? accent.primary : "var(--color-border)",
+                    backgroundColor: active ? `${accent.primaryLight}66` : "var(--color-surface)",
+                  }}
                 >
                   <span className="text-xl leading-none">{icon}</span>
-                  <span className={clsx("text-xs font-semibold", active ? "text-primary-dark" : "text-text-secondary")}>
+                  <span className="text-xs font-semibold" style={{ color: active ? accent.primaryDark : "var(--color-text-secondary)" }}>
                     {dict.profile.modes[goal as keyof typeof dict.profile.modes]}
                   </span>
                 </button>
@@ -508,10 +512,7 @@ function SettingsRow({
   return (
     <div className={clsx("flex items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <div className="flex items-center gap-3">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-full text-lg shadow-sm"
-          style={{ background: cssGradient(colors.primary) }}
-        >
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark text-lg shadow-sm">
           {Icon ? <Icon size={18} className="text-white" /> : (icon as string)}
         </div>
         <span className="font-medium text-text-primary">{label}</span>

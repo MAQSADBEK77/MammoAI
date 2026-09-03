@@ -61,7 +61,7 @@ export default function RiskQuizPage() {
           <h2 className="text-xl font-bold text-text-primary">{dict.riskQuiz.resultTitle}</h2>
           <p className="text-text-secondary">{dict.riskQuiz.levels[shown.level].description}</p>
           {shown.level !== "low" && (
-            <Button className="w-full" onClick={() => router.push("/klinikalar")}>
+            <Button className="w-full" onClick={() => router.push("/asosiy")}>
               {dict.riskQuiz.findClinicButton}
             </Button>
           )}

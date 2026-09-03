@@ -48,6 +48,7 @@ const uz = {
   },
 
   nav: {
+    home: "Asosiy",
     cycle: "Tsikl",
     pregnancy: "Homiladorlik",
     checklist: "Tekshiruvlar",

@@ -19,7 +19,7 @@ export default function RootPage() {
       return;
     }
     const tab = goalToLandingTab(onboardingProfile.primaryGoal);
-    router.replace(tab === "cycle" ? "/tsikl" : tab === "pregnancy" ? "/homiladorlik" : "/tekshiruvlar");
+    router.replace(tab === "checkups" ? "/tekshiruvlar" : "/asosiy");
   }, [status, onboardingProfile, router]);
 
   return (

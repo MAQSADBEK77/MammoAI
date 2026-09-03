@@ -148,7 +148,7 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
 
 function landingPath(goal: Goal): string {
   const tab = goalToLandingTab(goal);
-  return tab === "cycle" ? "/tsikl" : tab === "pregnancy" ? "/homiladorlik" : "/tekshiruvlar";
+  return tab === "checkups" ? "/tekshiruvlar" : "/asosiy";
 }
 
 const SYMPTOM_OPTIONS: Symptom[] = [

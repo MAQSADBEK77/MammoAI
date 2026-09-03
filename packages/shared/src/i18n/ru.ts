@@ -44,6 +44,7 @@ const ru: Dictionary = {
   },
 
   nav: {
+    home: "Главная",
     cycle: "Цикл",
     pregnancy: "Беременность",
     checklist: "Обследования",

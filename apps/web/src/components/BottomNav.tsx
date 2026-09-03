@@ -2,27 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, Baby, ListChecks, Users, MapPin, User } from "lucide-react";
+import { House, ListChecks, Users, User } from "lucide-react";
 import clsx from "clsx";
-import { goalToLandingTab } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
-import { useSession } from "@/lib/session";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { dict } = useI18n();
-  const { onboardingProfile } = useSession();
-  // Homiladorlik rejimida "Tsikl" tabi keraksiz — Homiladorlik alohida bor.
-  const isPregnancyMode = onboardingProfile ? goalToLandingTab(onboardingProfile.primaryGoal) === "pregnancy" : false;
 
+  // "Asosiy" — Tsikl/Homiladorlik (rejimga qarab) + Klinikalar birlashtirilgan
+  // yagona bosh sahifa (foydalanuvchi so'roviga ko'ra 4 ta bo'limga siqildi).
   const items = [
-    !isPregnancyMode && { href: "/tsikl", label: dict.nav.cycle, icon: Calendar },
+    { href: "/asosiy", label: dict.nav.home, icon: House },
     { href: "/jamiyat", label: dict.nav.community, icon: Users },
-    { href: "/homiladorlik", label: dict.nav.pregnancy, icon: Baby },
     { href: "/tekshiruvlar", label: dict.nav.checklist, icon: ListChecks },
-    { href: "/klinikalar", label: dict.nav.clinics, icon: MapPin },
     { href: "/profil", label: dict.nav.profile, icon: User },
-  ].filter((item): item is { href: string; label: string; icon: typeof Calendar } => Boolean(item));
+  ];
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]">

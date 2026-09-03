@@ -65,7 +65,7 @@ export default function RiskQuizScreen() {
             <Text className="text-xl font-bold text-text-primary">{dict.riskQuiz.resultTitle}</Text>
             <Text className="text-text-secondary">{dict.riskQuiz.levels[shown.level].description}</Text>
             {shown.level !== "low" && (
-              <Button onPress={() => router.push("/(tabs)/klinikalar")}>{dict.riskQuiz.findClinicButton}</Button>
+              <Button onPress={() => router.push("/(tabs)/asosiy")}>{dict.riskQuiz.findClinicButton}</Button>
             )}
             <Button
               variant="ghost"

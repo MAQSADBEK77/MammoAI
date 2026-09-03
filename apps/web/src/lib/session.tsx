@@ -60,6 +60,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     document.documentElement.dataset.highContrast = user?.highContrast ? "true" : "false";
   }, [user?.fontScale, user?.highContrast]);
 
+  // Rejim bo'yicha brend rangi — Profil'da "REJIMNI TANLANG" o'zgarganda butun
+  // ilova rangi (primary tokeni) shunga mos o'zgaradi (Figma referens uslubi).
+  useEffect(() => {
+    document.documentElement.dataset.mode = onboardingProfile?.primaryGoal ?? "cycle";
+  }, [onboardingProfile?.primaryGoal]);
+
   const value = useMemo<SessionContextValue>(
     () => ({ status, user, onboardingProfile, refresh, applyMeResponse }),
     [status, user, onboardingProfile, refresh, applyMeResponse]

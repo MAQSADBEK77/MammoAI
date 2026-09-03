@@ -13,7 +13,8 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { gradientStops, colors, glass, gradients } from "@mammoai/shared";
+import { colors, glass, gradients } from "@mammoai/shared";
+import { useModeAccent } from "@/lib/theme";
 
 type Variant = "primary" | "secondary" | "ghost" | "dark";
 
@@ -34,7 +35,9 @@ export function Button({
   const v = VARIANT_CLASSES[variant];
   const content = typeof children === "string" ? <Text className={clsx("text-base font-semibold", v.text)}>{children}</Text> : children;
 
-  // Primary tugma — gradient fon (manba bundle'ida topilgan diagonal gradient naqshi).
+  // Primary tugma — gradient fon, rangi joriy rejimga qarab butunlay o'zgaradi
+  // (Figma referens: Hayz=pushti, Homiladorlik=binafsha, Tayyorgarlik=moviy-yashil).
+  const accent = useModeAccent();
   if (variant === "primary") {
     return (
       <Pressable
@@ -43,7 +46,7 @@ export function Button({
         {...props}
       >
         <LinearGradient
-          colors={gradientStops(colors.primary)}
+          colors={[accent.primary, accent.primaryDark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 24 }}

@@ -111,7 +111,7 @@ export default function ChecklistScreen() {
                   </Button>
                   <Button
                     variant="ghost"
-                    onPress={() => router.push({ pathname: "/(tabs)/klinikalar", params: { checklistItemId: item.id } })}
+                    onPress={() => router.push({ pathname: "/(tabs)/asosiy", params: { checklistItemId: item.id } })}
                   >
                     {dict.checklist.findClinicButton}
                   </Button>

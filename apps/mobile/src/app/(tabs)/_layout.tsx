@@ -1,20 +1,17 @@
 import { useEffect } from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { Tabs, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Calendar, Baby, ListChecks, Users, MapPin, User } from "lucide-react-native";
-import { goalToLandingTab } from "@mammoai/shared";
+import { House, ListChecks, Users, User } from "lucide-react-native";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 import { TabBarBackground, TabIcon } from "@/components/TabBar";
 import { LoadingSpinner } from "@/components/ui";
 
 export default function TabsLayout() {
-  const { status, onboardingProfile } = useSession();
+  const { status } = useSession();
   const { dict } = useI18n();
   const insets = useSafeAreaInsets();
-  // Homiladorlik rejimida "Tsikl" tabi keraksiz — Homiladorlik alohida bor.
-  const isPregnancyMode = onboardingProfile ? goalToLandingTab(onboardingProfile.primaryGoal) === "pregnancy" : false;
 
   useEffect(() => {
     if (status === "anonymous") router.replace("/onboarding");
@@ -57,14 +54,15 @@ export default function TabsLayout() {
         tabBarBackground: () => <TabBarBackground />,
       }}
     >
+      {/* "Asosiy" — Tsikl/Homiladorlik (rejimga qarab) + Klinikalar birlashtirilgan
+          yagona bosh tab (foydalanuvchi so'roviga ko'ra 4 ta bo'limga siqildi). */}
       <Tabs.Screen
-        name="tsikl"
+        name="asosiy"
         options={{
-          title: dict.nav.cycle,
-          href: isPregnancyMode ? null : undefined,
+          title: dict.nav.home,
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon focused={focused}>
-              <Calendar color={color} size={size} />
+              <House color={color} size={size} />
             </TabIcon>
           ),
         }}
@@ -81,34 +79,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="homiladorlik"
-        options={{
-          title: dict.nav.pregnancy,
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon focused={focused}>
-              <Baby color={color} size={size} />
-            </TabIcon>
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="tekshiruvlar"
         options={{
           title: dict.nav.checklist,
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon focused={focused}>
               <ListChecks color={color} size={size} />
-            </TabIcon>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="klinikalar"
-        options={{
-          title: dict.nav.clinics,
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon focused={focused}>
-              <MapPin color={color} size={size} />
             </TabIcon>
           ),
         }}

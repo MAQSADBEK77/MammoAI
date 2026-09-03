@@ -46,6 +46,22 @@
   --font-scale: 1.18;
 }
 
+/* Rejimga qarab butun ilova rangi — Figma referens: har bir rejim o'z brend
+   rangiga ega ("primary" tokeni almashadi, shu orqali barcha `bg-primary`,
+   `text-primary`, gradientlar va h.k. avtomatik qayta rangланadi). Qiymatlar
+   allaqachon mavjud rangdan olingan (secondary/accent), yangi palitra emas. */
+[data-mode="pregnancy"] {
+  --color-primary: #7c3aed;
+  --color-primary-dark: #4c1d95;
+  --color-primary-light: #c4b5fd;
+}
+
+[data-mode="planning_pregnancy"] {
+  --color-primary: #0d9488;
+  --color-primary-dark: #0f766e;
+  --color-primary-light: #5eead4;
+}
+
 [data-high-contrast="true"] {
   --color-background: #ffffff;
   --color-text-primary: #000000;

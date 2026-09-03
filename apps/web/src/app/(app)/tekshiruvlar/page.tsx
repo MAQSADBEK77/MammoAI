@@ -88,7 +88,7 @@ export default function ChecklistPage() {
                 </Button>
                 <Button
                   variant="ghost"
-                  onClick={() => router.push(`/klinikalar?checklistItemId=${item.id}`)}
+                  onClick={() => router.push(`/asosiy?checklistItemId=${item.id}`)}
                 >
                   {dict.checklist.findClinicButton}
                 </Button>

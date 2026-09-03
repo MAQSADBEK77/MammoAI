@@ -9,7 +9,7 @@ import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import type { BloodType, CycleSettings, Goal, Language } from "@mammoai/shared";
-import { BLOOD_TYPES, gradientStops, colors, gradients } from "@mammoai/shared";
+import { BLOOD_TYPES, getModeAccentColors, gradientStops, colors, gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -142,7 +142,12 @@ export default function ProfileScreen() {
         {/* Profil "shaxsiy" kartasi — Figma referens dizayniga moslab pushti gradient,
             yuklanadigan avatar va tahrirlanadigan ism/telefon. */}
         <Animated.View entering={FadeInUp.duration(450)}>
-          <LinearGradient colors={gradients.profile} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 32, padding: 22, gap: 16 }}>
+          <LinearGradient
+            colors={onboardingProfile ? [getModeAccentColors(onboardingProfile.primaryGoal).primary, getModeAccentColors(onboardingProfile.primaryGoal).primaryDark] : gradients.profile}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ borderRadius: 32, padding: 22, gap: 16 }}
+          >
             <View className="flex-row items-center gap-3.5">
               <Pressable onPress={pickAvatar} className="h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/20">
                 {user.avatarUrl ? (
@@ -207,18 +212,22 @@ export default function ProfileScreen() {
             <View className="flex-row gap-2">
               {MODES.map(({ goal, icon }) => {
                 const active = onboardingProfile.primaryGoal === goal;
+                // Har bir karta o'z rejimining rangida faollashadi (Hayz=pushti,
+                // Homiladorlik=binafsha, Tayyorgarlik=moviy-yashil) — Figma referens.
+                const accent = getModeAccentColors(goal);
                 return (
                   <Pressable
                     key={goal}
                     onPress={() => changeMode(goal)}
                     disabled={saving}
-                    className={clsx(
-                      "flex-1 items-center gap-1.5 rounded-2xl border-2 px-2 py-3 active:scale-95",
-                      active ? "border-primary bg-primary-light/40" : "border-border bg-surface"
-                    )}
+                    className="flex-1 items-center gap-1.5 rounded-2xl border-2 px-2 py-3 active:scale-95"
+                    style={{
+                      borderColor: active ? accent.primary : colors.border,
+                      backgroundColor: active ? `${accent.primaryLight}66` : colors.surface,
+                    }}
                   >
                     <Text style={{ fontSize: 20, lineHeight: 24 }}>{icon}</Text>
-                    <Text className={clsx("text-xs font-semibold", active ? "text-primary-dark" : "text-text-secondary")}>
+                    <Text className="text-xs font-semibold" style={{ color: active ? accent.primaryDark : colors.textSecondary }}>
                       {dict.profile.modes[goal as keyof typeof dict.profile.modes]}
                     </Text>
                   </Pressable>

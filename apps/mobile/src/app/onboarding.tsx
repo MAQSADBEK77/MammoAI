@@ -180,9 +180,9 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   notifications: colors.primary,
 };
 
-function landingPath(goal: Goal): "/(tabs)/tsikl" | "/(tabs)/homiladorlik" | "/(tabs)/tekshiruvlar" {
+function landingPath(goal: Goal): "/(tabs)/asosiy" | "/(tabs)/tekshiruvlar" {
   const tab = goalToLandingTab(goal);
-  return tab === "cycle" ? "/(tabs)/tsikl" : tab === "pregnancy" ? "/(tabs)/homiladorlik" : "/(tabs)/tekshiruvlar";
+  return tab === "checkups" ? "/(tabs)/tekshiruvlar" : "/(tabs)/asosiy";
 }
 
 export default function OnboardingScreen() {
