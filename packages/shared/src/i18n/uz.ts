@@ -61,6 +61,12 @@ const uz = {
       "Ma'lumotlaringiz uchinchi shaxslarga sotilmaydi. Xohlagan vaqtingizda Profil bo'limidan barcha ma'lumotlaringizni eksport qilishingiz mumkin.",
     accountSecurity:
       "Akkauntingiz telefon raqami yoki email orqali, tasdiqlash kodisiz yaratiladi — shuning uchun identifikatoringizni (telefon/email) boshqalar bilan baham ko'rmaslikni tavsiya qilamiz.",
+    operator:
+      "Ushbu ilovani (Ayollar salomatligi / MammoAI) mustaqil dasturchi sifatida Maqsadbek Usmonov ishlab chiqmoqda va boshqaradi.",
+    contact:
+      "Savollaringiz, shikoyatlaringiz yoki ma'lumotlaringiz bo'yicha so'rovlaringiz uchun: maqsadbekusmonov8@gmail.com",
+    deletion:
+      "Ma'lumotlaringizni istalgan vaqt Profil bo'limidan eksport qilishingiz mumkin. Akkauntingizni va unga tegishli barcha ma'lumotlarni butunlay o'chirishni so'rash uchun yuqoridagi email manzilga murojaat qiling — so'rovingiz 30 kun ichida bajariladi.",
   },
 
   onboarding: {
