@@ -98,7 +98,7 @@ export default function ChecklistScreen() {
                   </View>
                   <Text className="flex-1 pt-1 font-semibold text-text-primary">{info.title}</Text>
                 </View>
-                <View className="items-end gap-1">
+                <View className="items-end gap-2">
                   <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
                   <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>
                 </View>

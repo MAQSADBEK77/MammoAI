@@ -72,7 +72,7 @@ export default function ChecklistPage() {
                 </span>
                 <span className="pt-1">{info.title}</span>
               </p>
-              <div className="flex flex-col items-end gap-1">
+              <div className="flex shrink-0 flex-col items-end gap-2">
                 <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
                 <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>
               </div>

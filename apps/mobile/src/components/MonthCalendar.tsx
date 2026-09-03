@@ -104,25 +104,37 @@ export function MonthCalendar({
           const isOvulation = date === ovulationDate;
           const isSelected = date === selectedDate;
           const phaseBg = !marker && phase && phase !== "menstrual" ? PHASE_BG[phase] : null;
+          // Hayz davri (haqiqiy yoki bashorat qilingan) — border bilan boshqa
+          // fazalar (yumshoq fon rangi)dan ajralib turadi. Bugungi kun belgisi
+          // tashqi halqa sifatida, qasddan boshqa (neytral) rangda — aks holda
+          // ikkalasi bir xil pushti bo'lib, hayz kuni bugun bo'lganda
+          // chalkashib ketardi.
+          const isMenstrualDay = marker === "period" || marker === "predicted" || (!marker && phase === "menstrual");
           return (
             <View key={date} className="h-9 w-[14.28%] items-center justify-center">
-              <Pressable
-                onPress={() => onSelectDate?.(date)}
+              <View
                 className={clsx(
-                  "h-8 w-8 items-center justify-center rounded-full",
-                  marker === "period" && "bg-primary",
-                  marker === "predicted" && "bg-primary-light",
-                  !marker && !phaseBg && phase === "menstrual" && "bg-primary-light",
-                  !marker && phaseBg,
-                  isToday && !marker && !isSelected && "border-2 border-primary",
-                  isSelected && "border-2 border-primary-dark"
+                  "h-9 w-9 items-center justify-center rounded-full",
+                  isSelected ? "border-2 border-primary-dark" : isToday ? "border-2 border-text-primary" : "border-2 border-transparent"
                 )}
               >
-                <Text className={clsx("text-sm font-medium", marker === "period" ? "text-white" : "text-text-secondary")}>
-                  {Number(date.slice(-2))}
-                </Text>
-                {isOvulation && <View className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-accent" />}
-              </Pressable>
+                <Pressable
+                  onPress={() => onSelectDate?.(date)}
+                  className={clsx(
+                    "h-8 w-8 items-center justify-center rounded-full",
+                    marker === "period" && "bg-primary",
+                    marker === "predicted" && "bg-primary-light",
+                    !marker && !phaseBg && phase === "menstrual" && "bg-primary-light",
+                    !marker && phaseBg,
+                    isMenstrualDay && "border-2 border-primary-dark"
+                  )}
+                >
+                  <Text className={clsx("text-sm font-medium", marker === "period" ? "text-white" : "text-text-secondary")}>
+                    {Number(date.slice(-2))}
+                  </Text>
+                  {isOvulation && <View className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-accent" />}
+                </Pressable>
+              </View>
             </View>
           );
         })}
