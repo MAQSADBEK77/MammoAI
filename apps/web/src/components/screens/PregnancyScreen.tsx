@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
 import type { PregnancyResponse, VitalType } from "@mammoai/shared";
-import { getMilestoneForWeek, getVitalTone, localDateStr } from "@mammoai/shared";
+import { getMilestoneForWeek, getVitalTone, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -313,7 +313,7 @@ export function PregnancyScreen() {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-text-primary">{v.label}</p>
                 <p className="text-sm text-text-secondary">
-                  {v.date}
+                  {formatDateDisplay(v.date)}
                   {v.clinicName ? ` · ${v.clinicName}` : ""}
                 </p>
               </div>

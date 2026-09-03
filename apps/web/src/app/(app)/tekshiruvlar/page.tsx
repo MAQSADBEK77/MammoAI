@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ChecklistItem } from "@mammoai/shared";
+import { formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
@@ -79,7 +80,7 @@ export default function ChecklistPage() {
             </div>
             <p className="text-sm text-text-secondary">{info.why}</p>
             {item.dueDate && item.status !== "done" && (
-              <p className="text-xs text-text-muted">{item.dueDate}</p>
+              <p className="text-xs text-text-muted">{formatDateDisplay(item.dueDate)}</p>
             )}
             {item.status !== "done" && (
               <div className="flex gap-2 pt-1">

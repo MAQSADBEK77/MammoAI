@@ -105,17 +105,18 @@ export function MonthCalendar({
           const isSelected = date === selectedDate;
           const phaseBg = !marker && phase && phase !== "menstrual" ? PHASE_BG[phase] : null;
           // Hayz davri (haqiqiy yoki bashorat qilingan) — border bilan boshqa
-          // fazalar (yumshoq fon rangi)dan ajralib turadi. Bugungi kun belgisi
-          // tashqi halqa sifatida, qasddan boshqa (neytral) rangda — aks holda
-          // ikkalasi bir xil pushti bo'lib, hayz kuni bugun bo'lganda
-          // chalkashib ketardi.
+          // fazalar (yumshoq fon rangi)dan ajralib turadi. Bugungi kun esa
+          // bitta qalin, yorqin (amber) border bilan — hayz kunining borderi
+          // bilan bir vaqtda ikkita border ko'rinib chalkashtirmasligi uchun
+          // "bugungi kun" ustuvor (ikkalasi bir vaqtda chizilmaydi). Tashqi
+          // halqa endi faqat "tanlangan kun" uchun ishlatiladi.
           const isMenstrualDay = marker === "period" || marker === "predicted" || (!marker && phase === "menstrual");
           return (
             <View key={date} className="h-9 w-[14.28%] items-center justify-center">
               <View
                 className={clsx(
                   "h-9 w-9 items-center justify-center rounded-full",
-                  isSelected ? "border-2 border-primary-dark" : isToday ? "border-2 border-text-primary" : "border-2 border-transparent"
+                  isSelected ? "border-2 border-primary-dark" : "border-2 border-transparent"
                 )}
               >
                 <Pressable
@@ -126,7 +127,7 @@ export function MonthCalendar({
                     marker === "predicted" && "bg-primary-light",
                     !marker && !phaseBg && phase === "menstrual" && "bg-primary-light",
                     !marker && phaseBg,
-                    isMenstrualDay && "border-2 border-primary-dark"
+                    isToday ? "border-[3px] border-warning" : isMenstrualDay && "border-2 border-primary-dark"
                   )}
                 >
                   <Text className={clsx("text-sm font-medium", marker === "period" ? "text-white" : "text-text-secondary")}>

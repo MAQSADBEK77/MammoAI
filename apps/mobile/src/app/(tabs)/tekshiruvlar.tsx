@@ -6,6 +6,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
+import { useDrawer } from "@/lib/drawer";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import HealthyLifestyleIllustration from "../../../assets/illustrations/healthy-lifestyle.svg";
@@ -15,6 +16,7 @@ const STATUS_ICON_COLOR = { pending: "#9CA3AF", done: "#57B894", overdue: "#E050
 
 export default function ChecklistScreen() {
   const { dict } = useI18n();
+  const { openDrawer } = useDrawer();
   const [items, setItems] = useState<ChecklistItem[] | null>(null);
 
   useEffect(() => {
@@ -47,6 +49,9 @@ export default function ChecklistScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-32">
+        <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
+          <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+        </Pressable>
         <ScreenHeader title={dict.checklist.title} />
 
         <View className="items-center">

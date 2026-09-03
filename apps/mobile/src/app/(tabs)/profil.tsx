@@ -13,6 +13,7 @@ import { BLOOD_TYPES, getModeAccentColors, gradientStops, colors, gradients, for
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
+import { useDrawer } from "@/lib/drawer";
 import { Button, Card, TextField } from "@/components/ui";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -35,6 +36,7 @@ const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
 export default function ProfileScreen() {
   const { dict, language, setLanguage } = useI18n();
   const { user, onboardingProfile, refresh } = useSession();
+  const { openDrawer } = useDrawer();
 
   const [editingHeader, setEditingHeader] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
@@ -150,6 +152,9 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
+        <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
+          <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+        </Pressable>
         {/* Profil "shaxsiy" kartasi — Figma referens dizayniga moslab pushti gradient,
             yuklanadigan avatar va tahrirlanadigan ism/telefon. */}
         <Animated.View entering={FadeInUp.duration(450)}>

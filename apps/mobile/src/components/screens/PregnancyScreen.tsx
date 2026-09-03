@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { PregnancyResponse, VitalType } from "@mammoai/shared";
-import { getMilestoneForWeek, getVitalTone, gradients, localDateStr } from "@mammoai/shared";
+import { getMilestoneForWeek, getVitalTone, gradients, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -288,7 +288,7 @@ export function PregnancyScreen() {
             <View className="flex-1">
               <Text className="font-semibold text-text-primary">{v.label}</Text>
               <Text className="text-sm text-text-secondary">
-                {v.date}
+                {formatDateDisplay(v.date)}
                 {v.clinicName ? ` · ${v.clinicName}` : ""}
               </Text>
             </View>

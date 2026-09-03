@@ -7,6 +7,7 @@ import clsx from "clsx";
 import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
+import { useDrawer } from "@/lib/drawer";
 import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@/components/ui";
 
 const TAGS: CommunityTag[] = ["cycle", "pregnancy", "checkups", "general"];
@@ -44,6 +45,7 @@ function Toggle({ checked, onPress }: { checked: boolean; onPress: () => void })
 
 export default function CommunityScreen() {
   const { dict } = useI18n();
+  const { openDrawer } = useDrawer();
 
   const [stats, setStats] = useState<CommunityStats | null>(null);
   const [posts, setPosts] = useState<CommunityPost[] | null>(null);
@@ -197,6 +199,9 @@ export default function CommunityScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-32">
+        <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
+          <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+        </Pressable>
         <ScreenHeader
           title={dict.community.title}
           subtitle={dict.community.subtitle}

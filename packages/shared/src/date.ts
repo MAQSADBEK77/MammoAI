@@ -9,3 +9,13 @@ export function localDateStr(d: Date = new Date()): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+/** "YYYY-MM-DD" (yoki shu bilan boshlanuvchi ISO) sanani foydalanuvchiga
+ * ko'rsatish uchun "DD.MM.YYYY" formatiga o'giradi — App bo'ylab yagona sana
+ * ko'rinishi (foydalanuvchi so'rovi: "sanalar hamma joyda shu formatda"). */
+export function formatDateDisplay(dateStr: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+  if (!match) return dateStr;
+  const [, year, month, day] = match;
+  return `${day}.${month}.${year}`;
+}
