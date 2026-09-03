@@ -22,6 +22,16 @@ const MODES: { goal: Goal; icon: string }[] = [
   { goal: "planning_pregnancy", icon: "🌱" },
 ];
 
+// Til tanlash — qon guruhi kabi oddiy "bos va ochil" ro'yxat (App.pdf'dan
+// tashqari, foydalanuvchi so'roviga ko'ra: "krillcha va ingliz tili qo'shilsin,
+// til o'zgartirish qon guruhini o'zgartirish kabi sodda bo'lsin").
+const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
+  { value: "uz", label: "O'zbekcha (lotin)" },
+  { value: "uz-cyrl", label: "Ўзбекча (кирилл)" },
+  { value: "ru", label: "Русский" },
+  { value: "en", label: "English" },
+];
+
 export default function ProfileScreen() {
   const { dict, language, setLanguage } = useI18n();
   const { user, onboardingProfile, refresh } = useSession();
@@ -36,6 +46,7 @@ export default function ProfileScreen() {
   const [weightKg, setWeightKg] = useState(String(onboardingProfile?.weightKg ?? ""));
   const [bloodType, setBloodType] = useState<BloodType | "">(onboardingProfile?.bloodType ?? "");
   const [bloodTypePickerOpen, setBloodTypePickerOpen] = useState(false);
+  const [languagePickerOpen, setLanguagePickerOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [logsCount, setLogsCount] = useState<number | null>(null);
@@ -331,23 +342,28 @@ export default function ProfileScreen() {
           <Text className="mb-1 text-sm font-semibold text-text-secondary">{dict.profile.accessibilityTitle}</Text>
 
           <SettingsRow icon="🌐" label={dict.profile.languageLabel}>
-            <View className="flex-row gap-2">
-              {(["uz", "ru"] as Language[]).map((lang) => (
+            <Pressable onPress={() => setLanguagePickerOpen((v) => !v)} className="rounded-xl border border-border bg-surface px-3 py-2">
+              <Text className="text-sm text-text-primary">{LANGUAGE_OPTIONS.find((o) => o.value === language)?.label}</Text>
+            </Pressable>
+          </SettingsRow>
+
+          {languagePickerOpen && (
+            <View className="flex-row flex-wrap gap-2 border-b border-border py-2.5">
+              {LANGUAGE_OPTIONS.map((opt) => (
                 <Pressable
-                  key={lang}
+                  key={opt.value}
                   onPress={() => {
-                    setLanguage(lang);
-                    save({ language: lang });
+                    setLanguage(opt.value);
+                    save({ language: opt.value });
+                    setLanguagePickerOpen(false);
                   }}
-                  className={clsx("min-h-[40px] rounded-full px-4 justify-center", language === lang ? "bg-primary" : "bg-surface-muted")}
+                  className={clsx("rounded-full border px-3 py-1.5", language === opt.value ? "border-primary bg-primary" : "border-border bg-surface")}
                 >
-                  <Text className={clsx("text-sm font-semibold", language === lang ? "text-white" : "text-text-secondary")}>
-                    {lang === "uz" ? "UZ" : "RU"}
-                  </Text>
+                  <Text className={clsx("text-xs font-medium", language === opt.value ? "text-white" : "text-text-secondary")}>{opt.label}</Text>
                 </Pressable>
               ))}
             </View>
-          </SettingsRow>
+          )}
 
           <SettingsRow icon={Type} label={dict.profile.fontSizeLabel}>
             <View className="flex-row gap-2">

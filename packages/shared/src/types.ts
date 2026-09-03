@@ -1,7 +1,7 @@
 // Umumiy domen tiplari — CTO texnik hujjati §6 "Ma'lumotlar modeli"ga asoslangan.
 // Ham backend (apps/web/src/server), ham ikkala frontend shu tiplardan foydalanadi.
 
-export type Language = "uz" | "ru";
+export type Language = "uz" | "uz-cyrl" | "ru" | "en";
 
 // App.pdf §5 — 18+ ayollar uchun 5 ta, 18 yoshgacha bo'lganlar uchun 3 ta maqsad.
 export type Goal =

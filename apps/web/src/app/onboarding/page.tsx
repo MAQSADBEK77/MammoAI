@@ -381,8 +381,10 @@ export default function OnboardingPage() {
         {step === "language" && (
           <div className="flex h-full flex-col items-center justify-center gap-4">
             <h2 className="text-center mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</h2>
-            <LangOption label="O'zbekcha" active={language === "uz"} onClick={() => setLanguage("uz")} />
+            <LangOption label="O'zbekcha (lotin)" active={language === "uz"} onClick={() => setLanguage("uz")} />
+            <LangOption label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onClick={() => setLanguage("uz-cyrl")} />
             <LangOption label="Русский" active={language === "ru"} onClick={() => setLanguage("ru")} />
+            <LangOption label="English" active={language === "en"} onClick={() => setLanguage("en")} />
           </div>
         )}
 

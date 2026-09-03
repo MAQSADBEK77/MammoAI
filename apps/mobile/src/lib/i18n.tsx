@@ -17,7 +17,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (stored === "ru" || stored === "uz") setLanguageState(stored);
+      if (stored && stored in dictionaries) setLanguageState(stored as Language);
     });
   }, []);
 

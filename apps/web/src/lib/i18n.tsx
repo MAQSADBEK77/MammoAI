@@ -16,7 +16,7 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 function readStoredLanguage(): Language {
   if (typeof window === "undefined") return "uz";
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === "ru" ? "ru" : "uz";
+  return stored && stored in dictionaries ? (stored as Language) : "uz";
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {

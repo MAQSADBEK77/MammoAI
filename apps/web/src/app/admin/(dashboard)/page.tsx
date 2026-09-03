@@ -15,7 +15,7 @@ const GOAL_LABELS: Record<string, string> = {
   skin: "Terini yaxshilash",
 };
 
-const LANGUAGE_LABELS: Record<string, string> = { uz: "O'zbekcha", ru: "Ruscha" };
+const LANGUAGE_LABELS: Record<string, string> = { uz: "O'zbekcha (lotin)", "uz-cyrl": "O'zbekcha (kirill)", ru: "Ruscha", en: "Inglizcha" };
 
 function StatCard({ icon, label, value, hint }: { icon: string; label: string; value: string | number; hint?: string }) {
   return (

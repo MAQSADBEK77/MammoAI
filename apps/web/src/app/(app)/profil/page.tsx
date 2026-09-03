@@ -19,6 +19,16 @@ const MODES: { goal: Goal; icon: string }[] = [
   { goal: "planning_pregnancy", icon: "🌱" },
 ];
 
+// Til tanlash — qon guruhi kabi oddiy dropdown (App.pdf'dan tashqari, foydalanuvchi
+// so'roviga ko'ra: "krillcha va ingliz tili qo'shilsin, til o'zgartirish qon
+// guruhini o'zgartirish kabi sodda bo'lsin").
+const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
+  { value: "uz", label: "O'zbekcha (lotin)" },
+  { value: "uz-cyrl", label: "Ўзбекча (кирилл)" },
+  { value: "ru", label: "Русский" },
+  { value: "en", label: "English" },
+];
+
 const AVATAR_SIZE = 256;
 
 /** Rasmni kichik kvadrat (256x256) JPEG'ga siqib, base64 data URI qaytaradi —
@@ -391,23 +401,21 @@ export default function ProfilePage() {
         <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.profile.accessibilityTitle}</p>
 
         <SettingsRow icon="🌐" label={dict.profile.languageLabel}>
-          <div className="flex gap-2">
-            {(["uz", "ru"] as Language[]).map((lang) => (
-              <button
-                key={lang}
-                onClick={() => {
-                  setLanguage(lang);
-                  save({ language: lang });
-                }}
-                className={clsx(
-                  "tap-target rounded-full px-4 text-sm font-semibold",
-                  language === lang ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
-                )}
-              >
-                {lang === "uz" ? "UZ" : "RU"}
-              </button>
+          <select
+            value={language}
+            onChange={(e) => {
+              const lang = e.target.value as Language;
+              setLanguage(lang);
+              save({ language: lang });
+            }}
+            className="tap-target rounded-xl border border-border bg-surface px-2 text-sm text-text-primary outline-none focus:border-primary"
+          >
+            {LANGUAGE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
-          </div>
+          </select>
         </SettingsRow>
 
         <SettingsRow icon={Type} label={dict.profile.fontSizeLabel}>

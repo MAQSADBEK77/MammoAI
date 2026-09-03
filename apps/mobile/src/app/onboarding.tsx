@@ -371,8 +371,10 @@ export default function OnboardingScreen() {
           {step === "language" && (
             <View className="items-center gap-4">
               <Text className="text-center mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</Text>
-              <LangOption label="O'zbekcha" active={language === "uz"} onPress={() => setLanguage("uz")} />
+              <LangOption label="O'zbekcha (lotin)" active={language === "uz"} onPress={() => setLanguage("uz")} />
+              <LangOption label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onPress={() => setLanguage("uz-cyrl")} />
               <LangOption label="Русский" active={language === "ru"} onPress={() => setLanguage("ru")} />
+              <LangOption label="English" active={language === "en"} onPress={() => setLanguage("en")} />
             </View>
           )}
 

@@ -127,7 +127,9 @@ export default function AdminUsersPage() {
                       <div className="text-xs text-text-muted">{u.phone ?? u.email ?? u.id}</div>
                     </td>
                     <td className="px-5 py-3">
-                      <Badge tone="muted">{u.language === "ru" ? "RU" : "UZ"}</Badge>
+                      <Badge tone="muted">
+                        {u.language === "ru" ? "RU" : u.language === "en" ? "EN" : u.language === "uz-cyrl" ? "UZ (кирилл)" : "UZ"}
+                      </Badge>
                     </td>
                     <td className="px-5 py-3 text-text-secondary">{u.primaryGoal ? (GOAL_LABELS[u.primaryGoal] ?? u.primaryGoal) : "—"}</td>
                     <td className="px-5 py-3 text-text-secondary">{u.cycleLogsCount}</td>
