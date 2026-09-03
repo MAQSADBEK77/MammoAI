@@ -29,14 +29,14 @@ export function TabBarBackground() {
 export function TabIcon({ focused, children }: { focused: boolean; children: ReactNode }) {
   const accent = useModeAccent();
   if (!focused) {
-    return <View style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>{children}</View>;
+    return <View style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>{children}</View>;
   }
   return (
     <LinearGradient
       colors={[accent.primary, accent.primaryDark]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" }}
+      style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" }}
     >
       {children}
     </LinearGradient>

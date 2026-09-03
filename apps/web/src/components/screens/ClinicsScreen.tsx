@@ -3,8 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { NavigationOutlined as NavigationIcon, PlaceOutlined, VerifiedUserOutlined } from "@mui/icons-material";
+import {
+  NavigationOutlined as NavigationIcon,
+  PlaceOutlined,
+  VerifiedUserOutlined,
+  Star,
+  AccessTimeOutlined,
+  PhoneOutlined,
+} from "@mui/icons-material";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
+import { getClinicRating, getClinicHours, isTopClinic } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Card, LinkButton, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
@@ -102,45 +110,65 @@ export function ClinicsScreen() {
         <ClinicsMap clinics={filtered} onSelect={(c) => track(c, "view")} />
       ) : (
         <div className="space-y-3">
-          {filtered.map((clinic) => (
-            <Card key={clinic.id} className="space-y-2" onMouseEnter={() => track(clinic, "view")}>
-              <div className="flex items-start justify-between gap-2">
-                <p className="flex items-start gap-2.5 font-semibold text-text-primary">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-base">🏥</span>
-                  <span className="pt-1.5">{clinic.name}</span>
-                </p>
+          {filtered.map((clinic) => {
+            const rating = getClinicRating(clinic.id);
+            const isTop = isTopClinic(rating);
+            return (
+              <Card key={clinic.id} className="space-y-3" onMouseEnter={() => track(clinic, "view")}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1.5">
+                    {isTop && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary-light/60 px-2.5 py-1 text-xs font-bold text-primary-dark">
+                        <Star sx={{ fontSize: 14 }} /> {dict.clinics.topClinicBadge}
+                      </span>
+                    )}
+                    <p className="font-bold text-text-primary">{clinic.name}</p>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1 pt-1 text-sm font-bold text-text-primary">
+                    <Star sx={{ fontSize: 16 }} className="text-warning" /> {rating.toFixed(1)}
+                  </span>
+                </div>
+
                 {clinic.freeScreening && <Badge tone="success">{dict.clinics.freeScreeningBadge}</Badge>}
-              </div>
-              <p className="flex items-start gap-1.5 text-sm text-text-secondary">
-                <span className="mt-0.5 shrink-0">📍</span> {clinic.address}
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {clinic.specialties.map((s) => (
-                  <Badge key={s}>{dict.clinics.specialties[s]}</Badge>
-                ))}
-              </div>
-              <div className="flex gap-2 pt-1">
-                <LinkButton
-                  href={`tel:${clinic.phone}`}
-                  onClick={() => track(clinic, "call")}
-                  variant="secondary"
-                  className="flex-1"
-                >
-                  📞 {dict.clinics.callButton}
-                </LinkButton>
-                <LinkButton
-                  href={`https://www.openstreetmap.org/directions?to=${clinic.lat}%2C${clinic.lng}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => track(clinic, "directions")}
-                  variant="ghost"
-                  className="flex-1"
-                >
-                  <NavigationIcon sx={{ fontSize: 16 }} /> {dict.clinics.directionsButton}
-                </LinkButton>
-              </div>
-            </Card>
-          ))}
+
+                <div className="space-y-1">
+                  <p className="flex items-center gap-1.5 text-sm text-text-secondary">
+                    <PlaceOutlined sx={{ fontSize: 16 }} className="shrink-0 text-text-muted" /> {clinic.address}
+                  </p>
+                  <p className="flex items-center gap-1.5 text-sm text-text-secondary">
+                    <AccessTimeOutlined sx={{ fontSize: 16 }} className="shrink-0 text-text-muted" /> {getClinicHours(clinic.id)}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {clinic.specialties.map((s) => (
+                    <Badge key={s}>{dict.clinics.specialties[s]}</Badge>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <LinkButton
+                    href={`tel:${clinic.phone}`}
+                    onClick={() => track(clinic, "call")}
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    <PhoneOutlined sx={{ fontSize: 18 }} /> {dict.clinics.callButton}
+                  </LinkButton>
+                  <LinkButton
+                    href={`https://www.openstreetmap.org/directions?to=${clinic.lat}%2C${clinic.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => track(clinic, "directions")}
+                    variant="primary"
+                    className="flex-1"
+                  >
+                    <NavigationIcon sx={{ fontSize: 18 }} /> {dict.clinics.directionsButton}
+                  </LinkButton>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

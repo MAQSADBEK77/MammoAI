@@ -367,6 +367,7 @@ const en: Dictionary = {
       laparoscopy: "Laparoscopy",
     },
     freeScreeningBadge: "Free screening",
+    topClinicBadge: "Top clinic",
     callButton: "Call",
     directionsButton: "Directions",
     seedDataNotice: "Sample data — the real clinic database is still being filled in.",

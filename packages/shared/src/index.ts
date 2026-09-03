@@ -7,6 +7,7 @@ export * from "./logic/pregnancy";
 export * from "./logic/checklist-rules";
 export * from "./logic/risk-quiz";
 export * from "./logic/goal";
+export * from "./logic/clinic-display";
 export * from "./api-client";
 export * from "./i18n";
 export * from "./emoji";

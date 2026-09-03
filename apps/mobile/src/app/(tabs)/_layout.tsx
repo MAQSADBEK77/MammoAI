@@ -60,9 +60,9 @@ export default function TabsLayout() {
         name="asosiy"
         options={{
           title: dict.nav.home,
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <TabIcon focused={focused}>
-              <MaterialCommunityIcons name={focused ? "home" : "home-outline"} color={color} size={size} />
+              <MaterialCommunityIcons name={focused ? "home" : "home-outline"} color={color} size={26} />
             </TabIcon>
           ),
         }}
@@ -71,9 +71,9 @@ export default function TabsLayout() {
         name="jamiyat"
         options={{
           title: dict.nav.community,
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <TabIcon focused={focused}>
-              <MaterialCommunityIcons name={focused ? "account-group" : "account-group-outline"} color={color} size={size} />
+              <MaterialCommunityIcons name={focused ? "account-group" : "account-group-outline"} color={color} size={26} />
             </TabIcon>
           ),
         }}
@@ -82,9 +82,9 @@ export default function TabsLayout() {
         name="tekshiruvlar"
         options={{
           title: dict.nav.checklist,
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <TabIcon focused={focused}>
-              <MaterialCommunityIcons name={focused ? "clipboard-check" : "clipboard-check-outline"} color={color} size={size} />
+              <MaterialCommunityIcons name={focused ? "clipboard-check" : "clipboard-check-outline"} color={color} size={26} />
             </TabIcon>
           ),
         }}
@@ -93,9 +93,9 @@ export default function TabsLayout() {
         name="profil"
         options={{
           title: dict.nav.profile,
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <TabIcon focused={focused}>
-              <MaterialCommunityIcons name={focused ? "account-circle" : "account-circle-outline"} color={color} size={size} />
+              <MaterialCommunityIcons name={focused ? "account-circle" : "account-circle-outline"} color={color} size={26} />
             </TabIcon>
           ),
         }}

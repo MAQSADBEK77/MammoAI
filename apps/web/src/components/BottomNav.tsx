@@ -35,11 +35,11 @@ export function BottomNav() {
             >
               <span
                 className={clsx(
-                  "flex h-10 w-10 items-center justify-center rounded-full transition",
+                  "flex h-11 w-11 items-center justify-center rounded-full transition",
                   active && "bg-gradient-to-br from-primary to-secondary"
                 )}
               >
-                <IconComponent sx={{ fontSize: 20 }} className={active ? "text-white" : "text-white/50"} />
+                <IconComponent sx={{ fontSize: 26 }} className={active ? "text-white" : "text-white/50"} />
               </span>
               <span className={active ? "text-white" : "text-white/50"}>{label}</span>
             </Link>

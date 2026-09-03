@@ -365,6 +365,7 @@ const ru: Dictionary = {
       laparoscopy: "Лапароскопия",
     },
     freeScreeningBadge: "Бесплатный скрининг",
+    topClinicBadge: "Топ клиника",
     callButton: "Позвонить",
     directionsButton: "Маршрут",
     seedDataNotice: "Демонстрационные данные — реальная база клиник ещё пополняется.",
