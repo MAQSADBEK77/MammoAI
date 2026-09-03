@@ -2,7 +2,6 @@
 
 import { type AnchorHTMLAttributes, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from "react";
 import clsx from "clsx";
-import { colors } from "@mammoai/shared";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "dark";
 
@@ -299,41 +298,16 @@ export function IconChip({
   );
 }
 
-const BLOOM_PETAL_COUNT = 6;
-const BLOOM_PETAL_COLORS = [colors.primary, colors.secondary, colors.accent, colors.primary, colors.secondary, colors.accent];
-const BLOOM_DURATION = 2.4;
-// Uzunchoq, uchlari yumshoq barg shakli (0,0) dan (0,-32) gacha — LottieFiles
-// "Flower Loader" havolasidagi barg proporsiyasiga yaqin, lekin o'zimizga
-// tegishli (chizilgan) shakl.
-const BLOOM_PETAL_PATH = "M0,0 C-9,-11 -7,-25 0,-32 C7,-25 9,-11 0,0 Z";
-
 /**
- * Brendlangan yuklash indikatori — 🌸 gul ochilishi: kurtak yopiq holatdan
- * boshlanadi, har bir bargi navbat bilan (kechikish bilan) katta bo'lib ochiladi,
- * to'liq ochilgach yig'ilib, qaytadan boshlanadi (tinimsiz sikl).
+ * Brendlangan yuklash indikatori — 8 nuqtali "orbit" spinner (globals.css
+ * .loader), joriy rejim rangida (--color-primary'dan avtomatik olinadi).
+ * Butun ekranni xira-shaffof va blur fon bilan qoplaydi, spinner markazda.
  */
 export function LoadingSpinner({ label }: { label?: string }) {
   return (
-    <div className="relative flex min-h-[50vh] flex-1 flex-col items-center justify-center gap-4">
-      {/* Orqa fondagi xira, aylanuvchi rangli nur — "blur" atmosferasi. */}
-      <div
-        className="animate-bloom-glow pointer-events-none absolute h-56 w-56 rounded-full blur-3xl"
-        style={{ background: `radial-gradient(circle, ${colors.primary}, ${colors.secondary})` }}
-      />
-      <svg width={72} height={72} viewBox="-40 -40 80 80" className="relative z-10">
-        {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
-          <g key={i} transform={`rotate(${(360 / BLOOM_PETAL_COUNT) * i})`}>
-            <path
-              d={BLOOM_PETAL_PATH}
-              fill={BLOOM_PETAL_COLORS[i % BLOOM_PETAL_COLORS.length]}
-              className="animate-bloom-petal"
-              style={{ transformOrigin: "0px 0px", animationDelay: `${(i * BLOOM_DURATION) / BLOOM_PETAL_COUNT}s` }}
-            />
-          </g>
-        ))}
-        <circle r={6} fill={colors.warning} />
-      </svg>
-      {label && <p className="relative z-10 text-sm font-medium text-text-secondary">{label}</p>}
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background/30 backdrop-blur-md">
+      <span className="loader" />
+      {label && <p className="text-sm font-medium text-text-secondary">{label}</p>}
     </div>
   );
 }

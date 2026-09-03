@@ -1,19 +1,10 @@
-import { Image, Pressable, Text, TextInput, View, type PressableProps, type ViewProps } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TextInput, View, type PressableProps, type ViewProps } from "react-native";
 import { useEffect, type ReactNode } from "react";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle, Defs, G, Path, RadialGradient, Stop } from "react-native-svg";
-import Animated, {
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
-import { colors, glass, gradients } from "@mammoai/shared";
+import { BlurView } from "expo-blur";
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
+import { glass, gradients } from "@mammoai/shared";
 import { useModeAccent } from "@/lib/theme";
 
 type Variant = "primary" | "secondary" | "ghost" | "dark";
@@ -345,27 +336,26 @@ export function TextField({
   );
 }
 
-const BLOOM_PETAL_COUNT = 6;
-const BLOOM_PETAL_COLORS = [colors.primary, colors.secondary, colors.accent, colors.primary, colors.secondary, colors.accent];
-const BLOOM_DURATION = 2400;
-// Uzunchoq, uchlari yumshoq barg shakli — LottieFiles "Flower Loader"
-// havolasidagi barg proporsiyasiga yaqin, lekin o'zimizga tegishli chizilgan.
-const BLOOM_PETAL_PATH = "M0,0 C-9,-11 -7,-25 0,-32 C7,-25 9,-11 0,0 Z";
-const AnimatedG = Animated.createAnimatedComponent(G);
+const ORBIT_DOT_COUNT = 8;
+const ORBIT_DURATION = 1100;
+const ORBIT_RADIUS = 26;
+const ORBIT_DOT_SIZE = 10;
 
-/** Bitta gul bargi — markazdan (0,0) boshlab kattalashib ochiladi, so'ng yig'iladi. */
-function BloomPetal({ index }: { index: number }) {
-  const progress = useSharedValue(0);
+/** Bitta "orbit" nuqtasi — o'z navbatida yorqin (to'liq brend rang) bo'lib
+ * yonadi, so'ng xiralashib, navbat boshqa nuqtaga o'tguncha shunday turadi
+ * (kometa dumi effekti). Rangi joriy rejimga qarab avtomatik almashadi. */
+function OrbitDot({ index, color }: { index: number; color: string }) {
+  const progress = useSharedValue(0.15);
 
   useEffect(() => {
-    const delay = (index * BLOOM_DURATION) / BLOOM_PETAL_COUNT;
+    const delay = (index * ORBIT_DURATION) / ORBIT_DOT_COUNT;
     progress.value = withDelay(
       delay,
       withRepeat(
         withSequence(
-          withTiming(1, { duration: BLOOM_DURATION * 0.35, easing: Easing.out(Easing.ease) }),
-          withTiming(1, { duration: BLOOM_DURATION * 0.3 }),
-          withTiming(0, { duration: BLOOM_DURATION * 0.35, easing: Easing.in(Easing.ease) })
+          withTiming(1, { duration: ORBIT_DURATION * 0.125, easing: Easing.linear }),
+          withTiming(0.15, { duration: ORBIT_DURATION * 0.375, easing: Easing.linear }),
+          withTiming(0.15, { duration: ORBIT_DURATION * 0.5 })
         ),
         -1
       )
@@ -373,69 +363,48 @@ function BloomPetal({ index }: { index: number }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const animatedProps = useAnimatedProps(() => ({ scale: progress.value }) as never);
-  const angle = (360 / BLOOM_PETAL_COUNT) * index;
+  const angle = ((index * 360) / ORBIT_DOT_COUNT) * (Math.PI / 180);
+  const x = ORBIT_RADIUS * Math.sin(angle);
+  const y = -ORBIT_RADIUS * Math.cos(angle);
+
+  const style = useAnimatedStyle(() => ({ opacity: progress.value }));
 
   return (
-    <G rotation={angle} origin="0,0">
-      <AnimatedG animatedProps={animatedProps}>
-        <Path d={BLOOM_PETAL_PATH} fill={BLOOM_PETAL_COLORS[index % BLOOM_PETAL_COLORS.length]} />
-      </AnimatedG>
-    </G>
-  );
-}
-
-/** Orqa fondagi xira, "nafas oluvchi" rangli nur — expo-blur'siz taqlid qilingan blur atmosferasi. */
-function BloomGlow() {
-  const pulse = useSharedValue(0);
-
-  useEffect(() => {
-    pulse.value = withRepeat(withSequence(withTiming(1, { duration: 1800 }), withTiming(0, { duration: 1800 })), -1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const glowStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 0.9 + pulse.value * 0.25 }],
-    opacity: 0.35 + pulse.value * 0.2,
-  }));
-
-  return (
-    <Animated.View style={[{ position: "absolute", width: 220, height: 220 }, glowStyle]}>
-      <Svg width={220} height={220} viewBox="0 0 220 220">
-        <Defs>
-          <RadialGradient id="glow" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={colors.primary} stopOpacity={0.9} />
-            <Stop offset="60%" stopColor={colors.secondary} stopOpacity={0.4} />
-            <Stop offset="100%" stopColor={colors.secondary} stopOpacity={0} />
-          </RadialGradient>
-        </Defs>
-        <Circle cx={110} cy={110} r={110} fill="url(#glow)" />
-      </Svg>
-    </Animated.View>
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          width: ORBIT_DOT_SIZE,
+          height: ORBIT_DOT_SIZE,
+          borderRadius: ORBIT_DOT_SIZE / 2,
+          backgroundColor: color,
+          left: ORBIT_RADIUS + x - ORBIT_DOT_SIZE / 2,
+          top: ORBIT_RADIUS + y - ORBIT_DOT_SIZE / 2,
+        },
+        style,
+      ]}
+    />
   );
 }
 
 /**
- * Brendlangan yuklash indikatori — 🌸 gul ochilishi: kurtak yopiq holatdan
- * boshlanadi, har bir bargi navbat bilan (kechikish bilan) katta bo'lib ochiladi,
- * to'liq ochilgach yig'ilib, qaytadan boshlanadi (tinimsiz sikl). Xira rangli nur
- * fonida, hech qanday to'rtburchak karta bo'lmasdan, to'g'ridan-to'g'ri suzadi.
+ * Brendlangan yuklash indikatori — 8 nuqtali "orbit" spinneri, joriy rejim
+ * rangida (Hayz/Homiladorlik/Tayyorgarlik). Butun ekranni blur fon bilan
+ * qoplaydi, spinner markazda suzadi.
  */
 export function LoadingSpinner({ label }: { label?: string }) {
+  const accent = useModeAccent();
   return (
-    <View className="flex-1 items-center justify-center gap-4">
-      <BloomGlow />
-      <Svg width={72} height={72} viewBox="-40 -40 80 80" style={{ zIndex: 1 }}>
-        {Array.from({ length: BLOOM_PETAL_COUNT }).map((_, i) => (
-          <BloomPetal key={i} index={i} />
-        ))}
-        <Circle r={6} fill={colors.warning} />
-      </Svg>
-      {label && (
-        <Text className="text-sm font-medium text-text-secondary" style={{ zIndex: 1 }}>
-          {label}
-        </Text>
-      )}
+    <View style={StyleSheet.absoluteFill}>
+      <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
+      <View className="flex-1 items-center justify-center gap-4">
+        <View style={{ width: ORBIT_RADIUS * 2, height: ORBIT_RADIUS * 2 }}>
+          {Array.from({ length: ORBIT_DOT_COUNT }).map((_, i) => (
+            <OrbitDot key={i} index={i} color={accent.primary} />
+          ))}
+        </View>
+        {label && <Text className="text-sm font-medium text-text-secondary">{label}</Text>}
+      </View>
     </View>
   );
 }
