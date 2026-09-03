@@ -226,3 +226,44 @@ export interface Article {
   /** Bu haqiqiy tibbiy kontent manbai emas — namunaviy/seed yozuv. */
   isSeedData: true;
 }
+
+// ---------------------------------------------------------------------------
+// Jamiyat (Community) — foydalanuvchilar bir-biri bilan tajriba almashadigan
+// post-lenta. Har bir post xohlagan mavzuga ("tag") tegishli bo'ladi va
+// muallif xohlasa anonim sifatida joylashi mumkin (sog'liq mavzusi nozik
+// bo'lgani uchun — Flo/Clue kabi ilovalarda ham bu odatiy amaliyot).
+// ---------------------------------------------------------------------------
+
+export type CommunityTag = "cycle" | "pregnancy" | "checkups" | "general";
+
+export interface CommunityPost {
+  id: string;
+  tag: CommunityTag;
+  body: string;
+  isAnonymous: boolean;
+  /** Anonim post yoki ismi kiritilmagan foydalanuvchi uchun `null`. */
+  authorName: string | null;
+  likesCount: number;
+  commentsCount: number;
+  /** Joriy foydalanuvchi shu postni allaqachon yoqtirganmi. */
+  viewerLiked: boolean;
+  /** Joriy foydalanuvchi shu postning muallifimi (o'chirish tugmasini ko'rsatish uchun). */
+  isOwn: boolean;
+  createdAt: string;
+}
+
+export interface CommunityComment {
+  id: string;
+  postId: string;
+  body: string;
+  isAnonymous: boolean;
+  authorName: string | null;
+  isOwn: boolean;
+  createdAt: string;
+}
+
+export interface CommunityStats {
+  totalMembers: number;
+  totalPosts: number;
+  postsToday: number;
+}

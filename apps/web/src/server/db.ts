@@ -186,19 +186,53 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // Jamiyat (Community) — post-lenta. `is_anonymous` true bo'lsa, muallif
+    // nomi API darajasida ham yashiriladi (repo.ts).
+    sql`
+      CREATE TABLE IF NOT EXISTS community_posts (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        tag TEXT NOT NULL,
+        body TEXT NOT NULL,
+        is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
+        likes_count INTEGER NOT NULL DEFAULT 0,
+        comments_count INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      )
+    `,
   ]);
 
-  // 2-bosqich: users + clinics + checklist_items'ga bog'liq.
-  await sql`
-    CREATE TABLE IF NOT EXISTS referral_events (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      clinic_id TEXT NOT NULL REFERENCES clinics(id),
-      checklist_item_id TEXT REFERENCES checklist_items(id),
-      action TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    )
-  `;
+  // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.
+  await Promise.all([
+    sql`
+      CREATE TABLE IF NOT EXISTS referral_events (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        clinic_id TEXT NOT NULL REFERENCES clinics(id),
+        checklist_item_id TEXT REFERENCES checklist_items(id),
+        action TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS community_post_likes (
+        post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (post_id, user_id)
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS community_comments (
+        id TEXT PRIMARY KEY,
+        post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        body TEXT NOT NULL,
+        is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TEXT NOT NULL
+      )
+    `,
+  ]);
 
   // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
   await Promise.all([
@@ -206,6 +240,8 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_community_posts_tag ON community_posts(tag, created_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
   ]);
 }
 

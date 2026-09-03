@@ -7,6 +7,10 @@ import type {
   ChecklistItem,
   ChecklistItemType,
   Clinic,
+  CommunityComment,
+  CommunityPost,
+  CommunityStats,
+  CommunityTag,
   CycleLog,
   CycleSettings,
   FlowLevel,
@@ -916,4 +920,185 @@ export async function getAdminStats(): Promise<AdminStats> {
     },
     signupsByDay: signupsByDayRows,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Jamiyat (Community) — post-lenta, sharh va yoqtirishlar.
+// ---------------------------------------------------------------------------
+
+interface CommunityPostRow {
+  id: string;
+  user_id: string;
+  tag: CommunityTag;
+  body: string;
+  is_anonymous: boolean;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  author_name: string | null;
+  viewer_liked: boolean;
+}
+
+function communityPostFromRow(row: CommunityPostRow, viewerId: string): CommunityPost {
+  return {
+    id: row.id,
+    tag: row.tag,
+    body: row.body,
+    isAnonymous: row.is_anonymous,
+    authorName: row.is_anonymous ? null : row.author_name,
+    likesCount: row.likes_count,
+    commentsCount: row.comments_count,
+    viewerLiked: row.viewer_liked,
+    isOwn: row.user_id === viewerId,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listCommunityPosts(
+  viewerId: string,
+  params: { tag?: CommunityTag; limit?: number; offset?: number }
+): Promise<{ posts: CommunityPost[]; total: number }> {
+  await ensureSchema();
+  const limit = params.limit ?? 20;
+  const offset = params.offset ?? 0;
+  const tagFilter = params.tag ? sql`WHERE p.tag = ${params.tag}` : sql``;
+  const rows = (await sql`
+    SELECT p.*, u.name as author_name,
+      EXISTS(SELECT 1 FROM community_post_likes l WHERE l.post_id = p.id AND l.user_id = ${viewerId}) as viewer_liked
+    FROM community_posts p
+    JOIN users u ON u.id = p.user_id
+    ${tagFilter}
+    ORDER BY p.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `) as unknown as CommunityPostRow[];
+  const [{ count }] = (await sql`SELECT count(*)::int as count FROM community_posts p ${tagFilter}`) as unknown as { count: number }[];
+  return { posts: rows.map((row) => communityPostFromRow(row, viewerId)), total: count };
+}
+
+export async function createCommunityPost(
+  userId: string,
+  payload: { tag: CommunityTag; body: string; isAnonymous: boolean }
+): Promise<CommunityPost> {
+  await ensureSchema();
+  const id = randomUUID();
+  const createdAt = now();
+  await sql`
+    INSERT INTO community_posts (id, user_id, tag, body, is_anonymous, created_at)
+    VALUES (${id}, ${userId}, ${payload.tag}, ${payload.body}, ${payload.isAnonymous}, ${createdAt})
+  `;
+  const author = await getUserById(userId);
+  return {
+    id,
+    tag: payload.tag,
+    body: payload.body,
+    isAnonymous: payload.isAnonymous,
+    authorName: payload.isAnonymous ? null : (author?.name ?? null),
+    likesCount: 0,
+    commentsCount: 0,
+    viewerLiked: false,
+    isOwn: true,
+    createdAt,
+  };
+}
+
+export async function deleteCommunityPost(userId: string, postId: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`SELECT user_id FROM community_posts WHERE id = ${postId}`) as unknown as { user_id: string }[];
+  const row = rows[0];
+  if (!row) throw new ApiError(404, "Post topilmadi");
+  if (row.user_id !== userId) throw new ApiError(403, "Bu postni faqat muallifi o'chira oladi");
+  await sql`DELETE FROM community_posts WHERE id = ${postId}`;
+}
+
+export async function toggleCommunityLike(userId: string, postId: string): Promise<{ liked: boolean; likesCount: number }> {
+  await ensureSchema();
+  const existing = (await sql`SELECT 1 FROM community_post_likes WHERE post_id = ${postId} AND user_id = ${userId}`) as unknown as unknown[];
+  let liked: boolean;
+  if (existing.length > 0) {
+    await sql`DELETE FROM community_post_likes WHERE post_id = ${postId} AND user_id = ${userId}`;
+    await sql`UPDATE community_posts SET likes_count = GREATEST(likes_count - 1, 0) WHERE id = ${postId}`;
+    liked = false;
+  } else {
+    await sql`
+      INSERT INTO community_post_likes (post_id, user_id, created_at) VALUES (${postId}, ${userId}, ${now()})
+      ON CONFLICT (post_id, user_id) DO NOTHING
+    `;
+    await sql`UPDATE community_posts SET likes_count = likes_count + 1 WHERE id = ${postId}`;
+    liked = true;
+  }
+  const rows = (await sql`SELECT likes_count FROM community_posts WHERE id = ${postId}`) as unknown as { likes_count: number }[];
+  const row = rows[0];
+  if (!row) throw new ApiError(404, "Post topilmadi");
+  return { liked, likesCount: row.likes_count };
+}
+
+interface CommunityCommentRow {
+  id: string;
+  post_id: string;
+  user_id: string;
+  body: string;
+  is_anonymous: boolean;
+  created_at: string;
+  author_name: string | null;
+}
+
+function communityCommentFromRow(row: CommunityCommentRow, viewerId: string): CommunityComment {
+  return {
+    id: row.id,
+    postId: row.post_id,
+    body: row.body,
+    isAnonymous: row.is_anonymous,
+    authorName: row.is_anonymous ? null : row.author_name,
+    isOwn: row.user_id === viewerId,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listCommunityComments(postId: string, viewerId: string): Promise<CommunityComment[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT c.*, u.name as author_name
+    FROM community_comments c
+    JOIN users u ON u.id = c.user_id
+    WHERE c.post_id = ${postId}
+    ORDER BY c.created_at ASC
+  `) as unknown as CommunityCommentRow[];
+  return rows.map((row) => communityCommentFromRow(row, viewerId));
+}
+
+export async function addCommunityComment(
+  userId: string,
+  postId: string,
+  payload: { body: string; isAnonymous: boolean }
+): Promise<CommunityComment> {
+  await ensureSchema();
+  const postExists = (await sql`SELECT 1 FROM community_posts WHERE id = ${postId}`) as unknown as unknown[];
+  if (postExists.length === 0) throw new ApiError(404, "Post topilmadi");
+  const id = randomUUID();
+  const createdAt = now();
+  await sql`
+    INSERT INTO community_comments (id, post_id, user_id, body, is_anonymous, created_at)
+    VALUES (${id}, ${postId}, ${userId}, ${payload.body}, ${payload.isAnonymous}, ${createdAt})
+  `;
+  await sql`UPDATE community_posts SET comments_count = comments_count + 1 WHERE id = ${postId}`;
+  const author = await getUserById(userId);
+  return {
+    id,
+    postId,
+    body: payload.body,
+    isAnonymous: payload.isAnonymous,
+    authorName: payload.isAnonymous ? null : (author?.name ?? null),
+    isOwn: true,
+    createdAt,
+  };
+}
+
+export async function getCommunityStats(): Promise<CommunityStats> {
+  await ensureSchema();
+  const [[{ count: totalMembers }], [{ count: totalPosts }], [{ count: postsToday }]] = (await Promise.all([
+    sql`SELECT count(*)::int as count FROM users`,
+    sql`SELECT count(*)::int as count FROM community_posts`,
+    sql`SELECT count(*)::int as count FROM community_posts WHERE (created_at)::timestamptz >= now() - interval '1 day'`,
+  ])) as unknown as [{ count: number }[], { count: number }[], { count: number }[]];
+  return { totalMembers, totalPosts, postsToday };
 }

@@ -6,6 +6,10 @@ import type {
   Article,
   ChecklistItem,
   Clinic,
+  CommunityComment,
+  CommunityPost,
+  CommunityStats,
+  CommunityTag,
   CycleLog,
   CycleSettings,
   Goal,
@@ -186,6 +190,24 @@ export function createApiClient(config: ApiClientConfig) {
     articles: {
       list: () => request<Article[]>("/api/articles"),
       get: (slug: string) => request<Article>(`/api/articles/${slug}`),
+    },
+    community: {
+      stats: () => request<CommunityStats>("/api/community/stats"),
+      listPosts: (params?: { tag?: CommunityTag; limit?: number; offset?: number }) => {
+        const q = new URLSearchParams();
+        if (params?.tag) q.set("tag", params.tag);
+        if (params?.limit) q.set("limit", String(params.limit));
+        if (params?.offset) q.set("offset", String(params.offset));
+        const qs = q.toString();
+        return request<{ posts: CommunityPost[]; total: number }>(`/api/community/posts${qs ? `?${qs}` : ""}`);
+      },
+      createPost: (payload: { tag: CommunityTag; body: string; isAnonymous: boolean }) =>
+        request<CommunityPost>("/api/community/posts", { method: "POST", body: JSON.stringify(payload) }),
+      deletePost: (id: string) => request<{ ok: true }>(`/api/community/posts/${id}`, { method: "DELETE" }),
+      toggleLike: (id: string) => request<{ liked: boolean; likesCount: number }>(`/api/community/posts/${id}/like`, { method: "POST" }),
+      listComments: (postId: string) => request<CommunityComment[]>(`/api/community/posts/${postId}/comments`),
+      addComment: (postId: string, payload: { body: string; isAnonymous: boolean }) =>
+        request<CommunityComment>(`/api/community/posts/${postId}/comments`, { method: "POST", body: JSON.stringify(payload) }),
     },
   };
 }

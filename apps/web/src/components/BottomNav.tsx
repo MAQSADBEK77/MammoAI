@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, Baby, ListChecks, MapPin, User } from "lucide-react";
+import { Calendar, Baby, ListChecks, Users, MapPin, User } from "lucide-react";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 
@@ -12,6 +12,7 @@ export function BottomNav() {
 
   const items = [
     { href: "/tsikl", label: dict.nav.cycle, icon: Calendar },
+    { href: "/jamiyat", label: dict.nav.community, icon: Users },
     { href: "/homiladorlik", label: dict.nav.pregnancy, icon: Baby },
     { href: "/tekshiruvlar", label: dict.nav.checklist, icon: ListChecks },
     { href: "/klinikalar", label: dict.nav.clinics, icon: MapPin },

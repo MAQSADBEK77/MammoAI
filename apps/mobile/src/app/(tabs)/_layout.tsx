@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { View, Text } from "react-native";
 import { Tabs, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Calendar, Baby, ListChecks, MapPin, User } from "lucide-react-native";
+import { Calendar, Baby, ListChecks, Users, MapPin, User } from "lucide-react-native";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 import { TabBarBackground, TabIcon } from "@/components/TabBar";
@@ -61,6 +61,17 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon focused={focused}>
               <Calendar color={color} size={size} />
+            </TabIcon>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="jamiyat"
+        options={{
+          title: dict.nav.community,
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon focused={focused}>
+              <Users color={color} size={size} />
             </TabIcon>
           ),
         }}
