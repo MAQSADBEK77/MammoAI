@@ -141,7 +141,7 @@ export default function CyclePage() {
 
       {phase && <PhaseCard phase={phase} />}
 
-      <Card>
+      <Card className="rounded-[20px]!">
         <MonthCalendar monthDate={new Date()} markers={markers} ovulationDate={data.prediction?.ovulationDay ?? null} today={today} />
       </Card>
 

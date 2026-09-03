@@ -145,7 +145,7 @@ export default function CycleScreen() {
           </Animated.View>
         )}
 
-        <Card>
+        <Card style={{ borderRadius: 20 }}>
           <MonthCalendar monthDate={new Date()} markers={markers} ovulationDate={data.prediction?.ovulationDay ?? null} today={today} />
         </Card>
 
