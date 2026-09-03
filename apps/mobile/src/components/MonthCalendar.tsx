@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { localDateStr, type CyclePhase } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 
@@ -59,13 +59,13 @@ export function MonthCalendar({
     <View>
       <View className="mb-3 flex-row items-center justify-between">
         <Pressable onPress={onPrevMonth} disabled={!onPrevMonth} className="h-8 w-8 items-center justify-center rounded-full active:bg-surface-muted">
-          {onPrevMonth && <ChevronLeft size={18} color="#4B5563" />}
+          {onPrevMonth && <MaterialCommunityIcons name="chevron-left" size={18} color="#4B5563" />}
         </Pressable>
         <Text className="font-bold text-text-primary">
           {dict.common.months[month]} {year}
         </Text>
         <Pressable onPress={onNextMonth} disabled={!onNextMonth} className="h-8 w-8 items-center justify-center rounded-full active:bg-surface-muted">
-          {onNextMonth && <ChevronRight size={18} color="#4B5563" />}
+          {onNextMonth && <MaterialCommunityIcons name="chevron-right" size={18} color="#4B5563" />}
         </Pressable>
       </View>
 

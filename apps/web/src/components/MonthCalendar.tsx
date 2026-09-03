@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { localDateStr, type CyclePhase } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 
@@ -66,7 +66,7 @@ export function MonthCalendar({
           disabled={!onPrevMonth}
           className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface-muted disabled:opacity-0"
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft sx={{ fontSize: 18 }} />
         </button>
         <p className="font-bold text-text-primary">
           {dict.common.months[month]} {year}
@@ -77,7 +77,7 @@ export function MonthCalendar({
           disabled={!onNextMonth}
           className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface-muted disabled:opacity-0"
         >
-          <ChevronRight size={18} />
+          <ChevronRight sx={{ fontSize: 18 }} />
         </button>
       </div>
 

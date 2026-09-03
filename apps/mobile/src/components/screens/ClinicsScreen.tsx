@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ScrollView, View, Text, Pressable, Linking } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { Navigation as NavigationIcon, MapPin, ShieldCheck } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import clsx from "clsx";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -65,9 +65,9 @@ export function ClinicsScreen() {
       />
 
       <Animated.View entering={FadeInUp.duration(450)} className="flex-row gap-3">
-        <StatTile icon={<MapPin size={16} color="#FFFFFF" />} label={dict.clinics.foundCountLabel} value={String(filtered.length)} tone="secondary" active />
+        <StatTile icon={<MaterialCommunityIcons name="map-marker-outline" size={16} color="#FFFFFF" />} label={dict.clinics.foundCountLabel} value={String(filtered.length)} tone="secondary" active />
         <StatTile
-          icon={<ShieldCheck size={16} color="#FFFFFF" />}
+          icon={<MaterialCommunityIcons name="shield-check-outline" size={16} color="#FFFFFF" />}
           label={dict.clinics.freeScreeningBadge}
           value={String(filtered.filter((c) => c.freeScreening).length)}
           tone="accent"
@@ -135,7 +135,7 @@ export function ClinicsScreen() {
                     Linking.openURL(`https://www.openstreetmap.org/directions?to=${clinic.lat}%2C${clinic.lng}`);
                   }}
                 >
-                  <NavigationIcon size={16} color="#4B5563" />
+                  <MaterialCommunityIcons name="navigation-outline" size={16} color="#4B5563" />
                   <Text className="text-sm font-semibold text-text-secondary">{dict.clinics.directionsButton}</Text>
                 </Button>
               </View>

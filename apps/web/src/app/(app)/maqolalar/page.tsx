@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@mui/icons-material";
 import type { Article, ArticleCategory } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
@@ -37,7 +37,7 @@ export default function ArticlesPage() {
               <p className="font-semibold text-text-primary">{article.title}</p>
               <p className="line-clamp-2 text-sm text-text-secondary">{article.excerpt}</p>
             </div>
-            <ChevronRight size={18} className="mt-1 shrink-0 text-text-muted" />
+            <ChevronRight sx={{ fontSize: 18 }} className="mt-1 shrink-0 text-text-muted" />
           </Card>
         </Link>
       ))}

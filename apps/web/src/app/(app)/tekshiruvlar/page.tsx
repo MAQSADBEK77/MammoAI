@@ -6,9 +6,9 @@ import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
-import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { CheckCircleOutlined, AccessTimeOutlined, ErrorOutlineOutlined } from "@mui/icons-material";
 
-const STATUS_ICON = { pending: Clock, done: CheckCircle2, overdue: AlertCircle } as const;
+const STATUS_ICON = { pending: AccessTimeOutlined, done: CheckCircleOutlined, overdue: ErrorOutlineOutlined } as const;
 const STATUS_ICON_COLOR = { pending: "text-text-muted", done: "text-success", overdue: "text-danger" } as const;
 
 export default function ChecklistPage() {
@@ -47,9 +47,9 @@ export default function ChecklistPage() {
       </div>
 
       <div className="animate-fade-in-up flex gap-2.5">
-        <StatTile icon={<CheckCircle2 size={16} />} label={statusLabel.done} value={String(doneCount)} tone="accent" active />
-        <StatTile icon={<Clock size={16} />} label={statusLabel.pending} value={String(pendingCount)} tone="secondary" active />
-        <StatTile icon={<AlertCircle size={16} />} label={statusLabel.overdue} value={String(overdueCount)} tone="primary" active />
+        <StatTile icon={<CheckCircleOutlined sx={{ fontSize: 16 }} />} label={statusLabel.done} value={String(doneCount)} tone="accent" active />
+        <StatTile icon={<AccessTimeOutlined sx={{ fontSize: 16 }} />} label={statusLabel.pending} value={String(pendingCount)} tone="secondary" active />
+        <StatTile icon={<ErrorOutlineOutlined sx={{ fontSize: 16 }} />} label={statusLabel.overdue} value={String(overdueCount)} tone="primary" active />
       </div>
 
       <button onClick={() => router.push("/xavf-testi")} className="block w-full text-left">
@@ -68,7 +68,7 @@ export default function ChecklistPage() {
             <div className="flex items-start justify-between gap-3">
               <p className="flex items-start gap-2.5 font-semibold text-text-primary">
                 <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-current/10 ${STATUS_ICON_COLOR[item.status]}`}>
-                  <StatusIcon size={16} />
+                  <StatusIcon sx={{ fontSize: 16 }} />
                 </span>
                 <span className="pt-1">{info.title}</span>
               </p>

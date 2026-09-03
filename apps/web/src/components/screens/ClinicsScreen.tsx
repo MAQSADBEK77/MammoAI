@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { Navigation as NavigationIcon, MapPin, ShieldCheck } from "lucide-react";
+import { NavigationOutlined as NavigationIcon, PlaceOutlined, VerifiedUserOutlined } from "@mui/icons-material";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
@@ -72,9 +72,9 @@ export function ClinicsScreen() {
       </div>
 
       <div className="animate-fade-in-up grid grid-cols-2 gap-3">
-        <StatTile icon={<MapPin size={16} />} label={dict.clinics.foundCountLabel} value={String(filtered.length)} tone="secondary" active />
+        <StatTile icon={<PlaceOutlined sx={{ fontSize: 16 }} />} label={dict.clinics.foundCountLabel} value={String(filtered.length)} tone="secondary" active />
         <StatTile
-          icon={<ShieldCheck size={16} />}
+          icon={<VerifiedUserOutlined sx={{ fontSize: 16 }} />}
           label={dict.clinics.freeScreeningBadge}
           value={String(filtered.filter((c) => c.freeScreening).length)}
           tone="accent"
@@ -136,7 +136,7 @@ export function ClinicsScreen() {
                   variant="ghost"
                   className="flex-1"
                 >
-                  <NavigationIcon size={16} /> {dict.clinics.directionsButton}
+                  <NavigationIcon sx={{ fontSize: 16 }} /> {dict.clinics.directionsButton}
                 </LinkButton>
               </div>
             </Card>

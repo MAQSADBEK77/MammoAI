@@ -1,40 +1,52 @@
-import { Image, Pressable, StyleSheet, Text, TextInput, View, type PressableProps, type ViewProps } from "react-native";
+import { Image, StyleSheet, Text, View, type PressableProps, type ViewProps } from "react-native";
 import { useEffect, type ReactNode } from "react";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
+import {
+  Button as PaperButton,
+  IconButton as PaperIconButton,
+  Card as PaperCard,
+  Chip as PaperChip,
+  SegmentedButtons,
+  ProgressBar as PaperProgressBar,
+  TextInput as PaperTextInput,
+  TouchableRipple,
+} from "react-native-paper";
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
 import { glass, gradients } from "@mammoai/shared";
 import { useModeAccent } from "@/lib/theme";
 
-type Variant = "primary" | "secondary" | "ghost" | "dark";
+// Foydalanuvchi so'roviga ko'ra ("hamma joyga Material UI ishlat — iconlardan
+// tortib buttonlargacha hammasiga 100%") — mobil UI-kit qatlami endi
+// react-native-paper (React Native uchun Material Design) ustiga qurilgan.
+// Eski komponent nomlari/prop shakllari saqlab qolindi (haqiqiy MD ripple,
+// soya, tipografiya endi ostida ishlaydi). Brend gradienti (pushti/binafsha/
+// moviy-yashil) asosiy tugma va kartalarda saqlanadi — lib/paper-theme.tsx.
 
-const VARIANT_CLASSES: Record<Variant, { bg: string; text: string }> = {
-  primary: { bg: "bg-primary", text: "text-white" },
-  secondary: { bg: "bg-secondary-light", text: "text-text-primary" },
-  ghost: { bg: "bg-transparent", text: "text-text-secondary" },
-  dark: { bg: "bg-nav", text: "text-white" },
-};
+type Variant = "primary" | "secondary" | "ghost" | "dark";
 
 export function Button({
   variant = "primary",
   children,
   className,
   disabled,
-  ...props
+  onPress,
 }: PressableProps & { variant?: Variant; children: React.ReactNode; className?: string }) {
-  const v = VARIANT_CLASSES[variant];
-  const content = typeof children === "string" ? <Text className={clsx("text-base font-semibold", v.text)}>{children}</Text> : children;
+  const content = typeof children === "string" ? <Text className={clsx("text-base font-semibold", variant === "primary" || variant === "dark" ? "text-white" : "text-text-primary")}>{children}</Text> : children;
 
-  // Primary tugma — gradient fon, rangi joriy rejimga qarab butunlay o'zgaradi
-  // (Figma referens: Hayz=pushti, Homiladorlik=binafsha, Tayyorgarlik=moviy-yashil).
+  // Asosiy tugma — gradient fon (rangi joriy rejimga qarab butunlay o'zgaradi:
+  // Hayz=pushti, Homiladorlik=binafsha, Tayyorgarlik=moviy-yashil), haqiqiy
+  // Material bosish effekti uchun TouchableRipple ichida.
   const accent = useModeAccent();
   if (variant === "primary") {
     return (
-      <Pressable
-        disabled={disabled}
-        className={clsx("overflow-hidden rounded-full active:scale-[0.98]", disabled && "opacity-50", className)}
-        {...props}
+      <TouchableRipple
+        disabled={disabled ?? undefined}
+        onPress={onPress as () => void}
+        borderless
+        className={clsx("overflow-hidden rounded-full", disabled && "opacity-50", className)}
+        style={{ borderRadius: 999 }}
       >
         <LinearGradient
           colors={[accent.primary, accent.primaryDark]}
@@ -44,23 +56,24 @@ export function Button({
         >
           {content}
         </LinearGradient>
-      </Pressable>
+      </TouchableRipple>
     );
   }
 
   return (
-    <Pressable
-      disabled={disabled}
-      className={clsx(
-        "min-h-[48px] flex-row items-center justify-center gap-2 rounded-full px-6 active:scale-[0.98]",
-        v.bg,
-        disabled && "opacity-50",
-        className
-      )}
-      {...props}
+    <PaperButton
+      mode={variant === "dark" ? "contained" : variant === "ghost" ? "text" : "contained"}
+      disabled={disabled ?? undefined}
+      onPress={onPress as () => void}
+      className={className}
+      buttonColor={variant === "dark" ? "#241127" : variant === "secondary" ? "#C4B5FD" : undefined}
+      textColor={variant === "secondary" ? "#1F2937" : variant === "ghost" ? "#4B5563" : undefined}
+      contentStyle={{ minHeight: 48 }}
+      style={{ borderRadius: 999, justifyContent: "center" }}
+      labelStyle={{ fontWeight: "600", fontSize: 16 }}
     >
-      {content}
-    </Pressable>
+      {children}
+    </PaperButton>
   );
 }
 
@@ -79,16 +92,16 @@ export function IconButton({
   tone?: "surface" | "glass" | "dark" | "primary";
   size?: number;
 }) {
-  const toneClass =
-    tone === "surface" ? "bg-surface" : tone === "dark" ? "bg-nav" : tone === "primary" ? "bg-primary" : "bg-white/70 border border-white/60";
+  const bg =
+    tone === "surface" ? "#FFFFFF" : tone === "dark" ? "#241127" : tone === "primary" ? "#F43F7F" : "rgba(255,255,255,0.7)";
   return (
-    <Pressable
+    <PaperIconButton
+      icon={() => icon}
       onPress={onPress}
-      className={clsx("items-center justify-center rounded-full active:scale-95", toneClass)}
-      style={{ width: size, height: size, ...shadowStyle("card") }}
-    >
-      {icon}
-    </Pressable>
+      size={size * 0.45}
+      containerColor={bg}
+      style={{ width: size, height: size, margin: 0, ...shadowStyle("card") }}
+    />
   );
 }
 
@@ -103,13 +116,14 @@ export function Card({
 }: ViewProps & { className?: string; variant?: CardVariant }) {
   const variantClass = variant === "flat" ? "bg-surface-muted" : variant === "glass" ? "bg-white/60 border border-white/70" : "bg-surface";
   return (
-    <View
+    <PaperCard
+      mode="contained"
       className={clsx("rounded-[28px] p-5", variantClass, className)}
-      style={[variant === "flat" ? undefined : shadowStyle("card"), style]}
+      style={[{ borderRadius: 28 }, variant === "flat" ? undefined : shadowStyle("card"), style]}
       {...props}
     >
       {children}
-    </View>
+    </PaperCard>
   );
 }
 
@@ -169,19 +183,24 @@ export function ScreenHeader({
   );
 }
 
-const BADGE_TONES: Record<string, string> = {
-  muted: "bg-surface-muted text-text-secondary",
-  success: "bg-success/15 text-success",
-  warning: "bg-warning/15 text-warning",
-  danger: "bg-danger/15 text-danger",
-  primary: "bg-primary-light text-primary-dark",
+const BADGE_TONES: Record<string, { bg: string; text: string }> = {
+  muted: { bg: "#F3F4F6", text: "#4B5563" },
+  success: { bg: "#57B89426", text: "#57B894" },
+  warning: { bg: "#E7A83F26", text: "#E7A83F" },
+  danger: { bg: "#E0506F26", text: "#E0506F" },
+  primary: { bg: "#FFB3CB", text: "#D62A63" },
 };
 
 export function Badge({ tone = "muted", children }: { tone?: keyof typeof BADGE_TONES; children: string }) {
+  const t = BADGE_TONES[tone];
   return (
-    <View className={clsx("self-start rounded-full px-3 py-1", BADGE_TONES[tone])}>
-      <Text className="text-xs font-semibold">{children}</Text>
-    </View>
+    <PaperChip
+      compact
+      style={{ backgroundColor: t.bg, alignSelf: "flex-start", height: 26 }}
+      textStyle={{ color: t.text, fontSize: 12, fontWeight: "700", lineHeight: 14 }}
+    >
+      {children}
+    </PaperChip>
   );
 }
 
@@ -256,28 +275,20 @@ export function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <View className="flex-row gap-1.5 rounded-full bg-surface-muted p-1.5">
-      {options.map((opt) => {
-        const active = opt.value === value;
-        return (
-          <Pressable
-            key={opt.value}
-            onPress={() => onChange(opt.value)}
-            className={clsx("min-h-[36px] flex-1 items-center justify-center rounded-full px-3", active ? "bg-primary" : "bg-transparent")}
-          >
-            <Text className={clsx("text-xs font-semibold", active ? "text-white" : "text-text-secondary")}>{opt.label}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <SegmentedButtons
+      value={value}
+      onValueChange={(v) => onChange(v as T)}
+      buttons={options.map((opt) => ({ value: opt.value, label: opt.label, style: { borderRadius: 999 } }))}
+      style={{ borderRadius: 999 }}
+    />
   );
 }
 
 export function ProgressBar({ value, tone = "primary" }: { value: number; tone?: "primary" | "secondary" | "accent" }) {
-  const barClass = tone === "secondary" ? "bg-secondary" : tone === "accent" ? "bg-accent" : "bg-primary";
+  const barColor = tone === "secondary" ? "#7C3AED" : tone === "accent" ? "#0D9488" : "#F43F7F";
   return (
-    <View className="h-3 w-full overflow-hidden rounded-full bg-surface-muted">
-      <View className={clsx("h-full rounded-full", barClass)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+    <View className="overflow-hidden rounded-full">
+      <PaperProgressBar progress={Math.min(100, Math.max(0, value)) / 100} color={barColor} style={{ height: 12, borderRadius: 999, backgroundColor: "#F3F4F6" }} />
     </View>
   );
 }
@@ -294,16 +305,14 @@ export function IconChip({
   onPress?: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      className={clsx(
-        "min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 py-3 active:scale-95",
-        active ? "bg-primary" : "bg-surface-muted"
-      )}
-    >
-      {icon && <Text className="text-xl leading-none">{icon}</Text>}
-      <Text className={clsx("text-center text-xs font-medium leading-tight", active ? "text-white" : "text-text-secondary")}>{label}</Text>
-    </Pressable>
+    <TouchableRipple onPress={onPress} borderless style={{ borderRadius: 18, flex: 1 }}>
+      <View
+        className={clsx("min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 py-3", active ? "bg-primary" : "bg-surface-muted")}
+      >
+        {icon && <Text className="text-xl leading-none">{icon}</Text>}
+        <Text className={clsx("text-center text-xs font-medium leading-tight", active ? "text-white" : "text-text-secondary")}>{label}</Text>
+      </View>
+    </TouchableRipple>
   );
 }
 
@@ -322,17 +331,17 @@ export function TextField({
   icon?: ReactNode;
 }) {
   return (
-    <View className="relative justify-center">
-      {icon && <View className="absolute left-4 z-10">{icon}</View>}
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-        className={clsx("min-h-[48px] rounded-2xl border border-border bg-surface pr-4 text-base text-text-primary", icon ? "pl-11" : "pl-4")}
-        placeholderTextColor="#9CA3AF"
-      />
-    </View>
+    <PaperTextInput
+      mode="outlined"
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      keyboardType={keyboardType}
+      left={icon ? <PaperTextInput.Icon icon={() => icon} /> : undefined}
+      outlineStyle={{ borderRadius: 16, borderColor: "#E5E7EB" }}
+      style={{ minHeight: 48, backgroundColor: "#FFFFFF" }}
+      contentStyle={{ fontSize: 16, color: "#1F2937" }}
+    />
   );
 }
 
@@ -388,9 +397,10 @@ function OrbitDot({ index, color }: { index: number; color: string }) {
 }
 
 /**
- * Brendlangan yuklash indikatori — 8 nuqtali "orbit" spinneri, joriy rejim
- * rangida (Hayz/Homiladorlik/Tayyorgarlik). Butun ekranni blur fon bilan
- * qoplaydi, spinner markazda suzadi.
+ * Brendlangan yuklash indikatori — foydalanuvchi ilgari aynan shu 8 nuqtali
+ * "orbit" dizaynni so'ragan, shuning uchun Material UI'ga o'tishda ham
+ * saqlab qolindi (joriy rejim rangida, Hayz/Homiladorlik/Tayyorgarlik).
+ * Butun ekranni blur fon bilan qoplaydi, spinner markazda suzadi.
  */
 export function LoadingSpinner({ label: _label }: { label?: string }) {
   const accent = useModeAccent();

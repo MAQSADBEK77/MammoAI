@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable, TextInput, Share, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { Bell, Heart, MessageCircle, Share2, Trash2, UserRound, VenetianMask } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import clsx from "clsx";
 import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -202,7 +202,7 @@ export default function CommunityScreen() {
           subtitle={dict.community.subtitle}
           right={
             <View>
-              <IconButton icon={<Bell size={18} color="#1F2937" />} onPress={toggleNotifications} />
+              <IconButton icon={<MaterialCommunityIcons name="bell-outline" size={18} color="#1F2937" />} onPress={toggleNotifications} />
               {unreadCount > 0 && (
                 <View className="absolute -right-0.5 -top-0.5 h-4 w-4 items-center justify-center rounded-full bg-danger">
                   <Text className="text-[10px] font-bold text-white">{unreadCount > 9 ? "9+" : unreadCount}</Text>
@@ -319,7 +319,7 @@ export default function CommunityScreen() {
                           post.isAnonymous ? "bg-nav" : "bg-primary"
                         )}
                       >
-                        {post.isAnonymous ? <VenetianMask size={16} color="#FFFFFF" /> : <UserRound size={16} color="#FFFFFF" />}
+                        {post.isAnonymous ? <MaterialCommunityIcons name="incognito" size={16} color="#FFFFFF" /> : <MaterialCommunityIcons name="account-outline" size={16} color="#FFFFFF" />}
                       </View>
                       <View className="flex-1">
                         <Text className="text-sm font-semibold text-text-primary" numberOfLines={1}>
@@ -335,20 +335,24 @@ export default function CommunityScreen() {
 
                   <View className="flex-row items-center gap-1 border-t border-border pt-2">
                     <Pressable onPress={() => toggleLike(post)} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl py-2 active:scale-95">
-                      <Heart size={16} color={post.viewerLiked ? "#E0506F" : "#4B5563"} fill={post.viewerLiked ? "#E0506F" : "none"} />
+                      <MaterialCommunityIcons
+                        name={post.viewerLiked ? "heart" : "heart-outline"}
+                        size={16}
+                        color={post.viewerLiked ? "#E0506F" : "#4B5563"}
+                      />
                       <Text className={clsx("text-xs font-semibold", post.viewerLiked ? "text-danger" : "text-text-secondary")}>{post.likesCount}</Text>
                     </Pressable>
                     <Pressable onPress={() => toggleComments(post)} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl py-2 active:scale-95">
-                      <MessageCircle size={16} color="#4B5563" />
+                      <MaterialCommunityIcons name="message-outline" size={16} color="#4B5563" />
                       <Text className="text-xs font-semibold text-text-secondary">{post.commentsCount}</Text>
                     </Pressable>
                     <Pressable onPress={() => sharePost(post)} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl py-2 active:scale-95">
-                      <Share2 size={16} color="#4B5563" />
+                      <MaterialCommunityIcons name="share-variant-outline" size={16} color="#4B5563" />
                       <Text className="text-xs font-semibold text-text-secondary">{dict.community.shareButton}</Text>
                     </Pressable>
                     {post.isOwn && (
                       <Pressable onPress={() => removePost(post)} className="items-center justify-center rounded-xl px-3 py-2 active:scale-95">
-                        <Trash2 size={16} color="#E0506F" />
+                        <MaterialCommunityIcons name="trash-can-outline" size={16} color="#E0506F" />
                       </Pressable>
                     )}
                   </View>
@@ -360,7 +364,7 @@ export default function CommunityScreen() {
                       {comments.map((c) => (
                         <View key={c.id} className="flex-row items-start gap-2">
                           <View className="mt-0.5 h-6 w-6 items-center justify-center rounded-full bg-surface-muted">
-                            {c.isAnonymous ? <VenetianMask size={12} color="#4B5563" /> : <UserRound size={12} color="#4B5563" />}
+                            {c.isAnonymous ? <MaterialCommunityIcons name="incognito" size={12} color="#4B5563" /> : <MaterialCommunityIcons name="account-outline" size={12} color="#4B5563" />}
                           </View>
                           <View className="flex-1 rounded-2xl bg-surface-muted px-3 py-2">
                             <Text className="text-[11px] font-semibold text-text-secondary">

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MapPin, ChevronRight } from "lucide-react";
+import { PlaceOutlined, ChevronRight } from "@mui/icons-material";
 import { goalToLandingTab } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -40,13 +40,13 @@ export default function AsosiyPage() {
           <button type="button" className="w-full text-left" onClick={() => setClinicsOpen(true)}>
             <Card interactive className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/10">
-                <MapPin size={20} className="text-accent" />
+                <PlaceOutlined sx={{ fontSize: 20 }} className="text-accent" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-bold text-text-primary">{dict.clinics.title}</p>
                 <p className="text-sm text-text-secondary">{dict.clinics.seedDataNotice}</p>
               </div>
-              <ChevronRight size={18} className="shrink-0 text-text-muted" />
+              <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
             </Card>
           </button>
         )}

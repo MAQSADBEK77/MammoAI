@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { View } from "react-native";
 import { Tabs, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { House, ListChecks, Users, User } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 import { TabBarBackground, TabIcon } from "@/components/TabBar";
@@ -62,7 +62,7 @@ export default function TabsLayout() {
           title: dict.nav.home,
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon focused={focused}>
-              <House color={color} size={size} />
+              <MaterialCommunityIcons name={focused ? "home" : "home-outline"} color={color} size={size} />
             </TabIcon>
           ),
         }}
@@ -73,7 +73,7 @@ export default function TabsLayout() {
           title: dict.nav.community,
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon focused={focused}>
-              <Users color={color} size={size} />
+              <MaterialCommunityIcons name={focused ? "account-group" : "account-group-outline"} color={color} size={size} />
             </TabIcon>
           ),
         }}
@@ -84,7 +84,7 @@ export default function TabsLayout() {
           title: dict.nav.checklist,
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon focused={focused}>
-              <ListChecks color={color} size={size} />
+              <MaterialCommunityIcons name={focused ? "clipboard-check" : "clipboard-check-outline"} color={color} size={size} />
             </TabIcon>
           ),
         }}
@@ -95,7 +95,7 @@ export default function TabsLayout() {
           title: dict.nav.profile,
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon focused={focused}>
-              <User color={color} size={size} />
+              <MaterialCommunityIcons name={focused ? "account-circle" : "account-circle-outline"} color={color} size={size} />
             </TabIcon>
           ),
         }}

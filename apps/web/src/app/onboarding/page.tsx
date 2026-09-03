@@ -27,7 +27,8 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar } from "@/components/ui";
-import { Lock } from "lucide-react";
+import { Select, MenuItem } from "@mui/material";
+import { LockOutlined } from "@mui/icons-material";
 import clsx from "clsx";
 
 type Step =
@@ -415,7 +416,7 @@ export default function OnboardingPage() {
               {survey.accountChoice === "login" ? dict.auth.loginIdentifierTitle : dict.auth.createIdentifierTitle}
             </h2>
             <div className="relative">
-              <Lock size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+              <LockOutlined sx={{ fontSize: 18 }} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
                 type="tel"
                 inputMode="tel"
@@ -463,20 +464,22 @@ export default function OnboardingPage() {
         {step === "age" && (
           <div className="flex h-full flex-col justify-center gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.ageLabel}</h2>
-            <select
+            <Select
               value={survey.age}
               onChange={(e) => setSurvey((s) => ({ ...s, age: e.target.value }))}
-              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
+              displayEmpty
+              sx={{ borderRadius: "16px", fontSize: "1.125rem" }}
+              MenuProps={{ slotProps: { paper: { sx: { maxHeight: 320 } } } }}
             >
-              <option value="" disabled>
+              <MenuItem value="" disabled>
                 —
-              </option>
+              </MenuItem>
               {Array.from({ length: 88 }, (_, i) => i + 13).map((n) => (
-                <option key={n} value={n}>
+                <MenuItem key={n} value={n}>
                   {n}
-                </option>
+                </MenuItem>
               ))}
-            </select>
+            </Select>
           </div>
         )}
 

@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Animated, { FadeInUp, FadeIn } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { Lock } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import clsx from "clsx";
 import type {
   CycleRegularity,
@@ -410,7 +410,7 @@ export default function OnboardingScreen() {
                 onChangeText={(v) => setSurvey((s) => ({ ...s, identifier: formatUzPhoneInput(v) }))}
                 placeholder={dict.auth.identifierPlaceholder}
                 keyboardType="phone-pad"
-                icon={<Lock size={18} color="#9CA3AF" />}
+                icon={<MaterialCommunityIcons name="lock-outline" size={18} color="#9CA3AF" />}
               />
               {errorMessage && <Text className="text-sm text-danger">{errorMessage}</Text>}
             </View>

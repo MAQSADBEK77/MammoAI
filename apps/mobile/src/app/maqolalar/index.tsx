@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { ChevronRight } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { Article, ArticleCategory } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
@@ -45,7 +45,7 @@ export default function ArticlesScreen() {
                   {article.excerpt}
                 </Text>
               </View>
-              <ChevronRight size={18} color="#9CA3AF" style={{ marginTop: 4 }} />
+              <MaterialCommunityIcons name="chevron-right" size={18} color="#9CA3AF" style={{ marginTop: 4 }} />
             </Card>
           </Pressable>
         ))}

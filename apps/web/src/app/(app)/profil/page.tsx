@@ -8,8 +8,9 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, Card } from "@/components/ui";
+import { Switch, Select, MenuItem } from "@mui/material";
 import clsx from "clsx";
-import { Camera, Check, Pencil, Type, Eye, CalendarClock, NotebookPen } from "lucide-react";
+import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, VisibilityOutlined as Eye, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen } from "@mui/icons-material";
 
 // Profil "REJIMNI TANLANG" — App.pdf §5 dagi 7 ta maqsaddan uchtasi shu yerdan
 // tezkor almashtiriladi (qolganlari faqat onboarding'da tanlanadi).
@@ -220,7 +221,7 @@ export default function ProfilePage() {
               initials
             )}
             <span className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100">
-              <Camera size={18} className="text-white" />
+              <Camera sx={{ fontSize: 18 }} className="text-white" />
             </span>
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
@@ -264,20 +265,20 @@ export default function ProfilePage() {
             disabled={saving}
             className="tap-target flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30 active:scale-95"
           >
-            {editingHeader ? <Check size={16} /> : <Pencil size={16} />}
+            {editingHeader ? <Check sx={{ fontSize: 16 }} /> : <Pencil sx={{ fontSize: 16 }} />}
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
-            <CalendarClock size={18} className="text-white" />
+            <CalendarClock sx={{ fontSize: 18 }} className="text-white" />
             <div>
               <p className="text-sm font-extrabold text-white">{dict.profile.statsDaysValue(daysActive)}</p>
               <p className="text-[11px] text-white/75">{dict.profile.statsDaysLabel}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
-            <NotebookPen size={18} className="text-white" />
+            <NotebookPen sx={{ fontSize: 18 }} className="text-white" />
             <div>
               <p className="text-sm font-extrabold text-white">{logsCount ?? 0}</p>
               <p className="text-[11px] text-white/75">{dict.profile.statsLogsLabel}</p>
@@ -325,7 +326,7 @@ export default function ProfilePage() {
             disabled={saving}
             className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-primary-dark transition hover:bg-primary-light/30"
           >
-            {editingInfo ? <Check size={14} /> : <Pencil size={14} />}
+            {editingInfo ? <Check sx={{ fontSize: 14 }} /> : <Pencil sx={{ fontSize: 14 }} />}
             {editingInfo ? dict.profile.doneButton : dict.profile.editButton}
           </button>
         </div>
@@ -375,18 +376,19 @@ export default function ProfilePage() {
 
         <SettingsRow icon="🩸" label={dict.profile.bloodTypeLabel} last={!isCycleMode}>
           {editingInfo ? (
-            <select
+            <Select
               value={bloodType}
               onChange={(e) => setBloodType(e.target.value as BloodType)}
-              className="tap-target rounded-xl border border-border bg-surface px-2 text-sm text-text-primary outline-none focus:border-primary"
+              size="small"
+              sx={{ minWidth: 110, borderRadius: "12px", fontSize: "0.875rem" }}
             >
-              <option value="">{dict.profile.bloodTypeUnknownOption}</option>
+              <MenuItem value="">{dict.profile.bloodTypeUnknownOption}</MenuItem>
               {BLOOD_TYPES.map((bt) => (
-                <option key={bt} value={bt}>
+                <MenuItem key={bt} value={bt}>
                   {bt}
-                </option>
+                </MenuItem>
               ))}
-            </select>
+            </Select>
           ) : (
             <span className="text-sm text-text-secondary">{onboardingProfile?.bloodType || dict.profile.bloodTypeUnknown}</span>
           )}
@@ -408,21 +410,22 @@ export default function ProfilePage() {
         <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.profile.accessibilityTitle}</p>
 
         <SettingsRow icon="🌐" label={dict.profile.languageLabel}>
-          <select
+          <Select
             value={language}
             onChange={(e) => {
               const lang = e.target.value as Language;
               setLanguage(lang);
               save({ language: lang });
             }}
-            className="tap-target rounded-xl border border-border bg-surface px-2 text-sm text-text-primary outline-none focus:border-primary"
+            size="small"
+            sx={{ minWidth: 160, borderRadius: "12px", fontSize: "0.875rem" }}
           >
             {LANGUAGE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
+              <MenuItem key={opt.value} value={opt.value}>
                 {opt.label}
-              </option>
+              </MenuItem>
             ))}
-          </select>
+          </Select>
         </SettingsRow>
 
         <SettingsRow icon={Type} label={dict.profile.fontSizeLabel}>
@@ -529,7 +532,7 @@ function SettingsRow({
     <div className={clsx("flex items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark text-lg shadow-sm">
-          {Icon ? <Icon size={18} className="text-white" /> : (icon as string)}
+          {Icon ? <Icon sx={{ fontSize: 18 }} className="text-white" /> : (icon as string)}
         </div>
         <span className="font-medium text-text-primary">{label}</span>
       </div>
@@ -540,8 +543,13 @@ function SettingsRow({
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
-    <button onClick={onChange} className={clsx("tap-target w-14 rounded-full transition", checked ? "bg-primary" : "bg-surface-muted")}>
-      <span className={clsx("block h-6 w-6 rounded-full bg-white shadow transition-transform", checked ? "translate-x-7" : "translate-x-1")} />
-    </button>
+    <Switch
+      checked={checked}
+      onChange={onChange}
+      sx={{
+        "& .MuiSwitch-switchBase.Mui-checked": { color: "#fff" },
+        "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "var(--color-primary)", opacity: 1 },
+      }}
+    />
   );
 }

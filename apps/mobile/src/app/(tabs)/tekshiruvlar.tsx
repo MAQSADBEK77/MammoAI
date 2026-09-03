@@ -7,10 +7,10 @@ import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
-import { CheckCircle2, Clock, AlertCircle } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import HealthyLifestyleIllustration from "../../../assets/illustrations/healthy-lifestyle.svg";
 
-const STATUS_ICON = { pending: Clock, done: CheckCircle2, overdue: AlertCircle } as const;
+const STATUS_ICON: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = { pending: "clock-outline", done: "check-circle-outline", overdue: "alert-circle-outline" };
 const STATUS_ICON_COLOR = { pending: "#9CA3AF", done: "#57B894", overdue: "#E0506F" } as const;
 
 export default function ChecklistScreen() {
@@ -55,21 +55,21 @@ export default function ChecklistScreen() {
 
         <Animated.View entering={FadeInUp.duration(450)} className="flex-row gap-2.5">
           <StatTile
-            icon={<CheckCircle2 size={16} color="#FFFFFF" />}
+            icon={<MaterialCommunityIcons name="check-circle-outline" size={16} color="#FFFFFF" />}
             label={statusLabel.done}
             value={String(doneCount)}
             tone="accent"
             active
           />
           <StatTile
-            icon={<Clock size={16} color="#FFFFFF" />}
+            icon={<MaterialCommunityIcons name="clock-outline" size={16} color="#FFFFFF" />}
             label={statusLabel.pending}
             value={String(pendingCount)}
             tone="secondary"
             active
           />
           <StatTile
-            icon={<AlertCircle size={16} color="#FFFFFF" />}
+            icon={<MaterialCommunityIcons name="alert-circle-outline" size={16} color="#FFFFFF" />}
             label={statusLabel.overdue}
             value={String(overdueCount)}
             tone="primary"
@@ -94,7 +94,7 @@ export default function ChecklistScreen() {
                     className="h-8 w-8 items-center justify-center rounded-full"
                     style={{ backgroundColor: `${STATUS_ICON_COLOR[item.status]}1A` }}
                   >
-                    <StatusIcon size={16} color={STATUS_ICON_COLOR[item.status]} />
+                    <MaterialCommunityIcons name={StatusIcon} size={16} color={STATUS_ICON_COLOR[item.status]} />
                   </View>
                   <Text className="flex-1 pt-1 font-semibold text-text-primary">{info.title}</Text>
                 </View>

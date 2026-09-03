@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
-import { Bell, Heart, MessageCircle, Share2, Trash2, UserRound, VenetianMask } from "lucide-react";
+import { NotificationsNoneOutlined as Bell, Favorite, FavoriteBorderOutlined, ChatBubbleOutlineOutlined as MessageCircle, ShareOutlined as Share2, DeleteOutlined as Trash2, PersonOutlined as UserRound, VisibilityOffOutlined as VenetianMask } from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
@@ -193,7 +193,7 @@ export default function CommunityPage() {
         subtitle={dict.community.subtitle}
         right={
           <div className="relative">
-            <IconButton icon={<Bell size={18} />} onClick={toggleNotifications} />
+            <IconButton icon={<Bell sx={{ fontSize: 18 }} />} onClick={toggleNotifications} />
             {unreadCount > 0 && (
               <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white">
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -309,7 +309,7 @@ export default function CommunityPage() {
                         post.isAnonymous ? "bg-nav" : "bg-gradient-to-br from-primary to-secondary"
                       )}
                     >
-                      {post.isAnonymous ? <VenetianMask size={16} /> : <UserRound size={16} />}
+                      {post.isAnonymous ? <VenetianMask sx={{ fontSize: 16 }} /> : <UserRound sx={{ fontSize: 16 }} />}
                     </span>
                     <div>
                       <p className="text-sm font-semibold text-text-primary">
@@ -331,19 +331,19 @@ export default function CommunityPage() {
                       post.viewerLiked ? "text-danger" : "text-text-secondary hover:bg-surface-muted"
                     )}
                   >
-                    <Heart size={16} fill={post.viewerLiked ? "currentColor" : "none"} /> {post.likesCount}
+                    {post.viewerLiked ? <Favorite sx={{ fontSize: 16 }} /> : <FavoriteBorderOutlined sx={{ fontSize: 16 }} />} {post.likesCount}
                   </button>
                   <button
                     onClick={() => toggleComments(post)}
                     className="tap-target flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-text-secondary transition hover:bg-surface-muted active:scale-95"
                   >
-                    <MessageCircle size={16} /> {post.commentsCount}
+                    <MessageCircle sx={{ fontSize: 16 }} /> {post.commentsCount}
                   </button>
                   <button
                     onClick={() => sharePost(post)}
                     className="tap-target flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-text-secondary transition hover:bg-surface-muted active:scale-95"
                   >
-                    <Share2 size={16} /> {dict.community.shareButton}
+                    <Share2 sx={{ fontSize: 16 }} /> {dict.community.shareButton}
                   </button>
                   {post.isOwn && (
                     <button
@@ -351,7 +351,7 @@ export default function CommunityPage() {
                       className="tap-target flex items-center justify-center rounded-xl px-3 py-2 text-danger transition hover:bg-danger/10 active:scale-95"
                       aria-label={dict.community.deletePostButton}
                     >
-                      <Trash2 size={16} />
+                      <Trash2 sx={{ fontSize: 16 }} />
                     </button>
                   )}
                 </div>
@@ -363,7 +363,7 @@ export default function CommunityPage() {
                     {comments.map((c) => (
                       <div key={c.id} className="flex items-start gap-2">
                         <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-muted text-text-secondary">
-                          {c.isAnonymous ? <VenetianMask size={12} /> : <UserRound size={12} />}
+                          {c.isAnonymous ? <VenetianMask sx={{ fontSize: 12 }} /> : <UserRound sx={{ fontSize: 12 }} />}
                         </span>
                         <div className="min-w-0 flex-1 rounded-2xl bg-surface-muted px-3 py-2">
                           <p className="text-[11px] font-semibold text-text-secondary">

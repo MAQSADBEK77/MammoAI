@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
-import { MapPin, ChevronRight } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { goalToLandingTab } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -45,13 +45,13 @@ export default function AsosiyScreen() {
             <Pressable className="active:scale-[0.98]" onPress={() => setClinicsOpen(true)}>
               <Card className="flex-row items-center gap-3">
                 <View className="h-11 w-11 items-center justify-center rounded-2xl bg-accent/10">
-                  <MapPin size={20} color="#0D9488" />
+                  <MaterialCommunityIcons name="map-marker-outline" size={20} color="#0D9488" />
                 </View>
                 <View className="min-w-0 flex-1">
                   <Text className="font-bold text-text-primary">{dict.clinics.title}</Text>
                   <Text className="text-sm text-text-secondary">{dict.clinics.seedDataNotice}</Text>
                 </View>
-                <ChevronRight size={18} color="#9CA3AF" />
+                <MaterialCommunityIcons name="chevron-right" size={18} color="#9CA3AF" />
               </Card>
             </Pressable>
           )}

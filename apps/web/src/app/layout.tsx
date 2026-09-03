@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n";
 import { SessionProvider } from "@/lib/session";
+import { MuiThemeProvider } from "@/lib/mui-theme";
 
 // Iliq, yumaloq shrift — o'zbek (lotin) va rus (kirill) ikkalasini ham qamrab oladi.
 const nunito = Nunito({ subsets: ["latin", "cyrillic"], variable: "--font-body" });
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="uz" className={nunito.variable}>
       <body>
         <I18nProvider>
-          <SessionProvider>{children}</SessionProvider>
+          <SessionProvider>
+            <MuiThemeProvider>{children}</MuiThemeProvider>
+          </SessionProvider>
         </I18nProvider>
       </body>
     </html>

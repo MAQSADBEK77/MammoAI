@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText, ChevronRight } from "lucide-react";
+import { WaterDropOutlined, MedicalServicesOutlined, DateRangeOutlined, GppMaybeOutlined, MenuBookOutlined, ChevronRight } from "@mui/icons-material";
 import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -183,12 +183,12 @@ export function CycleScreen() {
 
         <div className="mt-4 flex justify-center gap-3">
           <FloatingTag
-            icon={<CalendarRange size={18} className="text-primary" />}
+            icon={<DateRangeOutlined sx={{ fontSize: 18 }} className="text-primary" />}
             value={dict.cycle.daysUnit(data.settings.averageCycleLength)}
             label={dict.cycle.cycleLengthLabel}
           />
           <FloatingTag
-            icon={<Droplet size={18} className="text-primary" />}
+            icon={<WaterDropOutlined sx={{ fontSize: 18 }} className="text-primary" />}
             value={dict.cycle.daysUnit(data.settings.averagePeriodLength)}
             label={dict.cycle.periodLengthLabel}
           />
@@ -222,14 +222,14 @@ export function CycleScreen() {
         <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.detailedLogButton}</p>
         <div className="grid grid-cols-2 gap-2.5">
           <QuickCard
-            icon={<Droplet size={20} />}
+            icon={<WaterDropOutlined sx={{ fontSize: 20 }} />}
             tone="primary"
             label={dict.cycle.flowCardLabel}
             value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
             onClick={() => openLogging(today, todayLog)}
           />
           <QuickCard
-            icon={<Stethoscope size={20} />}
+            icon={<MedicalServicesOutlined sx={{ fontSize: 20 }} />}
             tone="accent"
             label={dict.cycle.symptomsCardLabel}
             value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}
@@ -325,7 +325,7 @@ export function CycleScreen() {
         <button onClick={() => router.push("/xavf-testi")} className="text-left">
           <Card interactive className="h-full space-y-2.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-warning/15">
-              <ShieldAlert size={20} className="text-warning" />
+              <GppMaybeOutlined sx={{ fontSize: 20 }} className="text-warning" />
             </span>
             <p className="font-semibold text-text-primary">{dict.cycle.riskQuizCardTitle}</p>
             <p className="text-xs text-text-secondary">{dict.cycle.riskQuizCardSubtitle}</p>
@@ -334,7 +334,7 @@ export function CycleScreen() {
         <button onClick={() => router.push("/maqolalar")} className="text-left">
           <Card interactive className="h-full space-y-2.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary/15">
-              <BookOpenText size={20} className="text-secondary" />
+              <MenuBookOutlined sx={{ fontSize: 20 }} className="text-secondary" />
             </span>
             <p className="font-semibold text-text-primary">{dict.cycle.articlesCardTitle}</p>
           </Card>
@@ -379,7 +379,7 @@ export function CycleScreen() {
                       <p className="font-semibold text-text-primary">{dateLabel}</p>
                       {subtitleParts.length > 0 && <p className="truncate text-xs text-text-secondary">{subtitleParts.join(" · ")}</p>}
                     </div>
-                    <ChevronRight size={18} className="shrink-0 text-text-muted" />
+                    <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
                   </Card>
                 </button>
               );

@@ -3,7 +3,7 @@ import { Pressable, View, Text } from "react-native";
 import { router } from "expo-router";
 import clsx from "clsx";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { Droplet, Stethoscope, CalendarRange, ShieldAlert, BookOpenText, ChevronRight } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { CycleLog, CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -177,12 +177,12 @@ export function CycleScreen() {
 
           <View className="mt-4 flex-row gap-3">
             <FloatingTag
-              icon={<CalendarRange size={18} color="#F43F7F" />}
+              icon={<MaterialCommunityIcons name="calendar-range-outline" size={18} color="#F43F7F" />}
               value={dict.cycle.daysUnit(data.settings.averageCycleLength)}
               label={dict.cycle.cycleLengthLabel}
             />
             <FloatingTag
-              icon={<Droplet size={18} color="#F43F7F" />}
+              icon={<MaterialCommunityIcons name="water-outline" size={18} color="#F43F7F" />}
               value={dict.cycle.daysUnit(data.settings.averagePeriodLength)}
               label={dict.cycle.periodLengthLabel}
             />
@@ -221,14 +221,14 @@ export function CycleScreen() {
         <Text className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.detailedLogButton}</Text>
         <View className="flex-row gap-2.5">
           <QuickCard
-            icon={<Droplet size={20} color={todayLog?.flow ? "#FFFFFF" : "#F43F7F"} />}
+            icon={<MaterialCommunityIcons name="water-outline" size={20} color={todayLog?.flow ? "#FFFFFF" : "#F43F7F"} />}
             tone="primary"
             label={dict.cycle.flowCardLabel}
             value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
             onPress={() => openLogging(today, todayLog)}
           />
           <QuickCard
-            icon={<Stethoscope size={20} color={todayLog?.symptoms.length ? "#FFFFFF" : "#0D9488"} />}
+            icon={<MaterialCommunityIcons name="stethoscope" size={20} color={todayLog?.symptoms.length ? "#FFFFFF" : "#0D9488"} />}
             tone="accent"
             label={dict.cycle.symptomsCardLabel}
             value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}
@@ -324,7 +324,7 @@ export function CycleScreen() {
         <Pressable className="flex-1 active:scale-[0.98]" onPress={() => router.push("/xavf-testi")}>
           <Card className="gap-2.5">
             <View className="h-10 w-10 items-center justify-center rounded-2xl bg-warning/15">
-              <ShieldAlert size={20} color="#E7A83F" />
+              <MaterialCommunityIcons name="shield-alert-outline" size={20} color="#E7A83F" />
             </View>
             <Text className="font-semibold text-text-primary">{dict.cycle.riskQuizCardTitle}</Text>
             <Text className="text-xs text-text-secondary">{dict.cycle.riskQuizCardSubtitle}</Text>
@@ -333,7 +333,7 @@ export function CycleScreen() {
         <Pressable className="flex-1 active:scale-[0.98]" onPress={() => router.push("/maqolalar")}>
           <Card className="gap-2.5">
             <View className="h-10 w-10 items-center justify-center rounded-2xl bg-secondary/15">
-              <BookOpenText size={20} color="#7C3AED" />
+              <MaterialCommunityIcons name="book-open-page-variant-outline" size={20} color="#7C3AED" />
             </View>
             <Text className="font-semibold text-text-primary">{dict.cycle.articlesCardTitle}</Text>
           </Card>
@@ -384,7 +384,7 @@ export function CycleScreen() {
                         </Text>
                       )}
                     </View>
-                    <ChevronRight size={18} color="#9CA3AF" />
+                    <MaterialCommunityIcons name="chevron-right" size={18} color="#9CA3AF" />
                   </Card>
                 </Pressable>
               );

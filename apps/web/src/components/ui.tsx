@@ -2,18 +2,58 @@
 
 import { type AnchorHTMLAttributes, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from "react";
 import clsx from "clsx";
+import {
+  Button as MuiButton,
+  IconButton as MuiIconButton,
+  Card as MuiCard,
+  Chip as MuiChip,
+  LinearProgress,
+  Backdrop,
+  ToggleButtonGroup,
+  ToggleButton,
+  Avatar,
+} from "@mui/material";
+
+// Foydalanuvchi so'roviga ko'ra ("hamma joyga Material UI ishlat — iconlardan
+// tortib buttonlargacha hammasiga 100%") — ilovaning umumiy UI-kit qatlami
+// endi to'g'ridan-to'g'ri @mui/material komponentlari ustiga qurilgan. Eski
+// komponent nomlari/prop shakllari saqlab qolindi, shunda ularni chaqiruvchi
+// o'nlab ekranlarni o'zgartirish shart bo'lmadi — faqat shu faylning ICHKI
+// implementatsiyasi MUI'ga o'tdi (haqiqiy Material bosish effekti, soya,
+// tipografiya). Brend ranglari (pushti/binafsha/moviy-yashil) MUI temasi
+// orqali saqlanadi — lib/mui-theme.tsx'ga qarang.
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "dark";
 
-function buttonClasses(variant: ButtonVariant, className?: string) {
-  return clsx(
-    "tap-target inline-flex items-center justify-center gap-2 rounded-full px-6 font-semibold transition active:scale-[0.98] disabled:opacity-50",
-    variant === "primary" && "bg-gradient-to-br from-primary to-primary-dark text-white shadow-md shadow-primary/25 hover:brightness-105",
-    variant === "secondary" && "bg-secondary-light text-text-primary hover:brightness-95",
-    variant === "ghost" && "bg-transparent text-text-secondary hover:bg-surface-muted",
-    variant === "dark" && "bg-nav text-white hover:brightness-110",
-    className
-  );
+function buttonSx(variant: ButtonVariant) {
+  switch (variant) {
+    case "primary":
+      return {
+        background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)",
+        color: "#fff",
+        boxShadow: "0 8px 20px -6px color-mix(in srgb, var(--color-primary) 45%, transparent)",
+        "&:hover": { filter: "brightness(1.05)", boxShadow: "0 8px 20px -6px color-mix(in srgb, var(--color-primary) 55%, transparent)" },
+      };
+    case "secondary":
+      return {
+        backgroundColor: "var(--color-secondary-light)",
+        color: "var(--color-text-primary)",
+        "&:hover": { filter: "brightness(0.97)" },
+      };
+    case "dark":
+      return {
+        backgroundColor: "var(--color-nav)",
+        color: "#fff",
+        "&:hover": { filter: "brightness(1.1)" },
+      };
+    case "ghost":
+    default:
+      return {
+        backgroundColor: "transparent",
+        color: "var(--color-text-secondary)",
+        "&:hover": { backgroundColor: "var(--color-surface-muted)" },
+      };
+  }
 }
 
 export function Button({
@@ -21,11 +61,16 @@ export function Button({
   className,
   children,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
+}: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color"> & { variant?: ButtonVariant }) {
   return (
-    <button className={buttonClasses(variant, className)} {...props}>
+    <MuiButton
+      disableElevation
+      className={clsx("tap-target", className)}
+      sx={{ fontWeight: 700, borderRadius: 999, px: 3, ...buttonSx(variant) }}
+      {...(props as object)}
+    >
       {children}
-    </button>
+    </MuiButton>
   );
 }
 
@@ -35,11 +80,17 @@ export function LinkButton({
   className,
   children,
   ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { variant?: ButtonVariant }) {
+}: Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "color"> & { variant?: ButtonVariant }) {
   return (
-    <a className={buttonClasses(variant, className)} {...props}>
+    <MuiButton
+      component="a"
+      disableElevation
+      className={clsx("tap-target", className)}
+      sx={{ fontWeight: 700, borderRadius: 999, px: 3, display: "inline-flex", ...buttonSx(variant) }}
+      {...(props as object)}
+    >
       {children}
-    </a>
+    </MuiButton>
   );
 }
 
@@ -57,23 +108,18 @@ export function IconButton({
   size?: number;
   className?: string;
 }) {
-  const toneClass =
+  const toneSx =
     tone === "surface"
-      ? "bg-surface shadow-md shadow-text-primary/5 hover:bg-surface-muted"
+      ? { backgroundColor: "var(--color-surface)", boxShadow: "0 4px 14px color-mix(in srgb, var(--color-text-primary) 6%, transparent)", "&:hover": { backgroundColor: "var(--color-surface-muted)" } }
       : tone === "dark"
-        ? "bg-nav text-white hover:brightness-110"
+        ? { backgroundColor: "var(--color-nav)", color: "#fff", "&:hover": { filter: "brightness(1.1)" } }
         : tone === "primary"
-          ? "bg-primary text-white hover:brightness-105"
-          : "floating-tag hover:bg-white/90";
+          ? { backgroundColor: "var(--color-primary)", color: "#fff", "&:hover": { filter: "brightness(1.05)" } }
+          : { backgroundColor: "var(--glass-light-strong)", border: "1px solid var(--glass-border)", backdropFilter: "blur(10px)", "&:hover": { backgroundColor: "rgba(255,255,255,0.9)" } };
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={clsx("inline-flex items-center justify-center rounded-full transition active:scale-95", toneClass, className)}
-      style={{ width: size, height: size }}
-    >
+    <MuiIconButton onClick={onClick} className={className} sx={{ width: size, height: size, ...toneSx }}>
       {icon}
-    </button>
+    </MuiIconButton>
   );
 }
 
@@ -89,17 +135,24 @@ export function Card({
   ...props
 }: HTMLAttributes<HTMLDivElement> & { variant?: CardVariant; interactive?: boolean }) {
   return (
-    <div
-      className={clsx(
-        "rounded-[28px] p-5 transition-all duration-200",
-        variant === "flat" ? "bg-surface-muted" : variant === "glass" ? "glass-card" : "bg-surface shadow-md shadow-text-primary/5",
-        interactive && "cursor-pointer hover:-translate-y-0.5 hover:shadow-xl hover:shadow-text-primary/10 active:translate-y-0 active:scale-[0.99]",
-        className
-      )}
+    <MuiCard
+      className={clsx(interactive && "cursor-pointer active:scale-[0.99]", className)}
+      sx={{
+        borderRadius: "28px",
+        p: 2.5,
+        transition: "all 200ms",
+        backgroundColor: variant === "flat" ? "var(--color-surface-muted)" : variant === "glass" ? "var(--glass-light)" : "var(--color-surface)",
+        border: variant === "glass" ? "1px solid var(--glass-border)" : "none",
+        backdropFilter: variant === "glass" ? "blur(16px)" : "none",
+        boxShadow: variant === "default" ? "0 4px 16px color-mix(in srgb, var(--color-text-primary) 5%, transparent)" : "none",
+        ...(interactive && {
+          "&:hover": { transform: "translateY(-2px)", boxShadow: "0 12px 28px color-mix(in srgb, var(--color-text-primary) 10%, transparent)" },
+        }),
+      }}
       {...props}
     >
       {children}
-    </div>
+    </MuiCard>
   );
 }
 
@@ -119,14 +172,9 @@ export function ScreenHeader({
       <div className="mb-5 flex items-center justify-between gap-3">
         <div className="flex flex-1 items-center gap-3">
           {avatarUri !== undefined && (
-            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary-light">
-              {avatarUri ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUri} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-lg">👋</span>
-              )}
-            </div>
+            <Avatar src={avatarUri ?? undefined} sx={{ width: 48, height: 48, bgcolor: "var(--color-primary-light)" }}>
+              {!avatarUri && "👋"}
+            </Avatar>
           )}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-bold text-text-primary">{title}</h1>
@@ -153,17 +201,19 @@ export function Badge({
   tone?: "muted" | "success" | "warning" | "danger" | "primary";
   children: ReactNode;
 }) {
-  const toneClasses: Record<string, string> = {
-    muted: "bg-surface-muted text-text-secondary",
-    success: "bg-success/15 text-success",
-    warning: "bg-warning/15 text-warning",
-    danger: "bg-danger/15 text-danger",
-    primary: "bg-primary-light text-primary-dark",
+  const toneSx: Record<string, object> = {
+    muted: { backgroundColor: "var(--color-surface-muted)", color: "var(--color-text-secondary)" },
+    success: { backgroundColor: "color-mix(in srgb, var(--color-success) 15%, transparent)", color: "var(--color-success)" },
+    warning: { backgroundColor: "color-mix(in srgb, var(--color-warning) 15%, transparent)", color: "var(--color-warning)" },
+    danger: { backgroundColor: "color-mix(in srgb, var(--color-danger) 15%, transparent)", color: "var(--color-danger)" },
+    primary: { backgroundColor: "var(--color-primary-light)", color: "var(--color-primary-dark)" },
   };
   return (
-    <span className={clsx("inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold", toneClasses[tone])}>
-      {children}
-    </span>
+    <MuiChip
+      label={children}
+      size="small"
+      sx={{ height: "auto", py: 0.5, fontWeight: 700, fontSize: "0.75rem", "& .MuiChip-label": { px: 1.5 }, ...toneSx[tone] }}
+    />
   );
 }
 
@@ -201,33 +251,34 @@ export function StatTile({
 }) {
   const toneBg = active
     ? tone === "primary"
-      ? "bg-primary"
+      ? "var(--color-primary)"
       : tone === "secondary"
-        ? "bg-secondary"
+        ? "var(--color-secondary)"
         : tone === "accent"
-          ? "bg-accent"
-          : "bg-nav"
-    : "bg-surface shadow-md shadow-text-primary/5";
-  const textTone = active ? "text-white" : "text-text-primary";
-  const subTone = active ? "text-white/75" : "text-text-secondary";
+          ? "var(--color-accent)"
+          : "var(--color-nav)"
+    : "var(--color-surface)";
   return (
-    <div
-      className={clsx(
-        "flex-1 rounded-3xl p-4 transition-all duration-200",
-        toneBg,
-        active && "shadow-lg shadow-nav/20",
-        interactive && "cursor-pointer hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-[0.98]"
-      )}
+    <MuiCard
+      className={clsx("flex-1", interactive && "cursor-pointer active:scale-[0.98]")}
+      sx={{
+        borderRadius: "24px",
+        p: 2,
+        transition: "all 200ms",
+        backgroundColor: toneBg,
+        boxShadow: active ? "0 8px 20px color-mix(in srgb, var(--color-nav) 20%, transparent)" : "0 4px 16px color-mix(in srgb, var(--color-text-primary) 5%, transparent)",
+        ...(interactive && { "&:hover": { transform: "translateY(-2px)", filter: "brightness(1.03)" } }),
+      }}
     >
-      <div className={clsx("flex items-center gap-1.5 text-xs font-semibold", subTone)}>
+      <div className={clsx("flex items-center gap-1.5 text-xs font-semibold", active ? "text-white/75" : "text-text-secondary")}>
         {icon}
         {label}
       </div>
-      <div className={clsx("mt-3 text-2xl font-extrabold", textTone)}>
+      <div className={clsx("mt-3 text-2xl font-extrabold", active ? "text-white" : "text-text-primary")}>
         {value}
-        {unit && <span className={clsx("text-sm font-semibold", subTone)}> {unit}</span>}
+        {unit && <span className={clsx("text-sm font-semibold", active ? "text-white/75" : "text-text-secondary")}> {unit}</span>}
       </div>
-    </div>
+    </MuiCard>
   );
 }
 
@@ -242,33 +293,51 @@ export function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex gap-1.5 rounded-full bg-surface-muted p-1.5">
-      {options.map((opt) => {
-        const active = opt.value === value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={clsx(
-              "tap-target flex-1 rounded-full px-3 text-xs font-semibold transition active:scale-95",
-              active ? "bg-primary text-white shadow" : "bg-transparent text-text-secondary hover:bg-white/70 hover:text-text-primary"
-            )}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
+    <ToggleButtonGroup
+      value={value}
+      exclusive
+      onChange={(_, v) => v && onChange(v)}
+      sx={{
+        backgroundColor: "var(--color-surface-muted)",
+        borderRadius: "999px",
+        p: 0.5,
+        gap: 0.5,
+        width: "100%",
+        "& .MuiToggleButtonGroup-grouped": { border: 0, borderRadius: "999px !important", flex: 1 },
+      }}
+    >
+      {options.map((opt) => (
+        <ToggleButton
+          key={opt.value}
+          value={opt.value}
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: "0.75rem",
+            color: "var(--color-text-secondary)",
+            "&.Mui-selected": { backgroundColor: "var(--color-primary)", color: "#fff", "&:hover": { backgroundColor: "var(--color-primary)" } },
+          }}
+        >
+          {opt.label}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
   );
 }
 
 export function ProgressBar({ value, tone = "primary" }: { value: number; tone?: "primary" | "secondary" | "accent" }) {
-  const barClass = tone === "secondary" ? "bg-secondary" : tone === "accent" ? "bg-accent" : "bg-primary";
+  const barColor = tone === "secondary" ? "var(--color-secondary)" : tone === "accent" ? "var(--color-accent)" : "var(--color-primary)";
   return (
-    <div className="h-3 w-full overflow-hidden rounded-full bg-surface-muted">
-      <div className={clsx("h-full rounded-full transition-all", barClass)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
-    </div>
+    <LinearProgress
+      variant="determinate"
+      value={Math.min(100, Math.max(0, value))}
+      sx={{
+        height: 12,
+        borderRadius: 999,
+        backgroundColor: "var(--color-surface-muted)",
+        "& .MuiLinearProgress-bar": { borderRadius: 999, backgroundColor: barColor },
+      }}
+    />
   );
 }
 
@@ -284,29 +353,55 @@ export function IconChip({
   onClick?: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={clsx(
-        "tap-target flex flex-col items-center gap-1.5 rounded-2xl px-3 py-3 text-xs font-medium transition",
-        active ? "bg-primary text-white shadow-md shadow-primary/25" : "bg-surface-muted text-text-secondary hover:bg-primary-light/40"
-      )}
+    <ToggleButton
+      value={label}
+      selected={!!active}
+      onChange={() => onClick?.()}
+      sx={{
+        flexDirection: "column",
+        gap: 0.5,
+        borderRadius: "18px !important",
+        border: "none",
+        px: 1.5,
+        py: 1.5,
+        textTransform: "none",
+        fontSize: "0.75rem",
+        fontWeight: 500,
+        color: "var(--color-text-secondary)",
+        backgroundColor: "var(--color-surface-muted)",
+        "&.Mui-selected": {
+          backgroundColor: "var(--color-primary)",
+          color: "#fff",
+          boxShadow: "0 6px 16px color-mix(in srgb, var(--color-primary) 30%, transparent)",
+          "&:hover": { backgroundColor: "var(--color-primary)" },
+        },
+      }}
     >
       {icon && <span className="text-xl leading-none">{icon}</span>}
       <span className="text-center leading-tight">{label}</span>
-    </button>
+    </ToggleButton>
   );
 }
 
 /**
- * Brendlangan yuklash indikatori — 8 nuqtali "orbit" spinner (globals.css
- * .loader), joriy rejim rangida (--color-primary'dan avtomatik olinadi).
- * Butun ekranni xira-shaffof va blur fon bilan qoplaydi, spinner markazda.
+ * Brendlangan yuklash indikatori — foydalanuvchi ilgari aynan shu 8 nuqtali
+ * "orbit" dizaynni so'ragan (globals.css .loader), shuning uchun MUI'ga
+ * o'tishda ham saqlab qolindi — faqat orqa fon endi MUI Backdrop orqali
+ * (haqiqiy Material modal-fon xatti-harakati bilan).
  */
 export function LoadingSpinner({ label: _label }: { label?: string }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/30 backdrop-blur-md">
+    <Backdrop
+      open
+      sx={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        backgroundColor: "color-mix(in srgb, var(--color-background) 30%, transparent)",
+        backdropFilter: "blur(12px)",
+      }}
+    >
       <span className="loader" />
-    </div>
+    </Backdrop>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarClock, CalendarDays, ChevronRight, Hourglass, Stethoscope, Heart, Activity, Scale, Thermometer } from "lucide-react";
+import { AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
 import type { PregnancyResponse, VitalType } from "@mammoai/shared";
 import { getMilestoneForWeek, getVitalTone, localDateStr } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -121,8 +121,8 @@ export function PregnancyScreen() {
         </div>
 
         <div className="flex justify-center gap-3">
-          <FloatingTag icon={<CalendarClock size={18} className="text-secondary" />} value={String(status.currentWeek)} label={dict.pregnancy.completedWeekLabel} />
-          <FloatingTag icon={<Hourglass size={18} className="text-secondary" />} value={String(weeksRemaining)} label={dict.pregnancy.remainingWeekLabel} />
+          <FloatingTag icon={<CalendarClock sx={{ fontSize: 18 }} className="text-secondary" />} value={String(status.currentWeek)} label={dict.pregnancy.completedWeekLabel} />
+          <FloatingTag icon={<Hourglass sx={{ fontSize: 18 }} className="text-secondary" />} value={String(weeksRemaining)} label={dict.pregnancy.remainingWeekLabel} />
         </div>
 
         <div className="space-y-2">
@@ -157,7 +157,7 @@ export function PregnancyScreen() {
                 <Card interactive className="h-full space-y-3">
                   <div className="flex items-center justify-between">
                     <span className={`flex h-9 w-9 items-center justify-center rounded-full ${VITAL_TINT[type]}`}>
-                      <Icon size={18} />
+                      <Icon sx={{ fontSize: 18 }} />
                     </span>
                     {type === "weight" && data.weightDeltaKg !== null ? (
                       <Badge tone="primary">{dict.pregnancy.vitalsWeightChange(data.weightDeltaKg)}</Badge>
@@ -208,7 +208,7 @@ export function PregnancyScreen() {
       <button type="button" className="w-full text-left" onClick={() => setAddingVisit(true)}>
         <Card interactive className="flex items-center gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/10">
-            <CalendarDays size={20} className="text-secondary" />
+            <CalendarDays sx={{ fontSize: 20 }} className="text-secondary" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-text-secondary">{dict.pregnancy.nextCheckupTitle}</p>
@@ -223,7 +223,7 @@ export function PregnancyScreen() {
               <p className="text-sm text-text-muted">{dict.pregnancy.nextCheckupNone}</p>
             )}
           </div>
-          <ChevronRight size={18} className="shrink-0 text-text-muted" />
+          <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
         </Card>
       </button>
 
@@ -308,7 +308,7 @@ export function PregnancyScreen() {
           {data.visits.map((v) => (
             <Card key={v.id} className="flex items-center gap-3 py-3">
               <span className="bg-aurora-pregnancy flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
-                <Stethoscope size={20} className="text-white" />
+                <Stethoscope sx={{ fontSize: 20 }} className="text-white" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-text-primary">{v.label}</p>

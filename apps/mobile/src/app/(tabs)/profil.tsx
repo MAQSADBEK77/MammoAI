@@ -14,7 +14,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, Card, TextField } from "@/components/ui";
-import { Camera, Check, Pencil, Type, Eye, CalendarClock, NotebookPen, type LucideIcon } from "lucide-react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const MODES: { goal: Goal; icon: string }[] = [
   { goal: "cycle", icon: "🌸" },
@@ -167,7 +167,7 @@ export default function ProfileScreen() {
                   <Text className="text-2xl font-extrabold text-white">{initials}</Text>
                 )}
                 <View className="absolute bottom-0 right-0 h-6 w-6 items-center justify-center rounded-full bg-nav">
-                  <Camera size={12} color="#FFFFFF" />
+                  <MaterialCommunityIcons name="camera-outline" size={12} color="#FFFFFF" />
                 </View>
               </Pressable>
 
@@ -206,20 +206,20 @@ export default function ProfileScreen() {
                 disabled={saving}
                 className="h-9 w-9 items-center justify-center rounded-full bg-white/20 active:scale-95"
               >
-                {editingHeader ? <Check size={16} color="#FFFFFF" /> : <Pencil size={16} color="#FFFFFF" />}
+                {editingHeader ? <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" /> : <MaterialCommunityIcons name="pencil-outline" size={16} color="#FFFFFF" />}
               </Pressable>
             </View>
 
             <View className="flex-row gap-3">
               <View className="flex-1 flex-row items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
-                <CalendarClock size={18} color="#FFFFFF" />
+                <MaterialCommunityIcons name="clock-time-eight-outline" size={18} color="#FFFFFF" />
                 <View>
                   <Text className="text-sm font-extrabold text-white">{dict.profile.statsDaysValue(daysActive)}</Text>
                   <Text className="text-[11px] text-white/75">{dict.profile.statsDaysLabel}</Text>
                 </View>
               </View>
               <View className="flex-1 flex-row items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
-                <NotebookPen size={18} color="#FFFFFF" />
+                <MaterialCommunityIcons name="notebook-edit-outline" size={18} color="#FFFFFF" />
                 <View>
                   <Text className="text-sm font-extrabold text-white">{logsCount ?? 0}</Text>
                   <Text className="text-[11px] text-white/75">{dict.profile.statsLogsLabel}</Text>
@@ -268,7 +268,7 @@ export default function ProfileScreen() {
               disabled={saving}
               className="flex-row items-center gap-1 rounded-full px-2.5 py-1 active:opacity-60"
             >
-              {editingInfo ? <Check size={14} color={colors.primaryDark} /> : <Pencil size={14} color={colors.primaryDark} />}
+              {editingInfo ? <MaterialCommunityIcons name="check" size={14} color={colors.primaryDark} /> : <MaterialCommunityIcons name="pencil-outline" size={14} color={colors.primaryDark} />}
               <Text className="text-xs font-semibold" style={{ color: colors.primaryDark }}>
                 {editingInfo ? dict.profile.doneButton : dict.profile.editButton}
               </Text>
@@ -377,7 +377,7 @@ export default function ProfileScreen() {
             </View>
           )}
 
-          <SettingsRow icon={Type} label={dict.profile.fontSizeLabel}>
+          <SettingsRow icon="format-size" label={dict.profile.fontSizeLabel}>
             <View className="flex-row gap-2">
               <Pressable
                 onPress={() => save({ fontScale: "normal" })}
@@ -398,7 +398,7 @@ export default function ProfileScreen() {
             </View>
           </SettingsRow>
 
-          <SettingsRow icon={Eye} label={dict.profile.highContrastLabel}>
+          <SettingsRow icon="eye-outline" label={dict.profile.highContrastLabel}>
             <Toggle checked={user.highContrast} onPress={() => save({ highContrast: !user.highContrast })} />
           </SettingsRow>
 
@@ -475,14 +475,15 @@ function SettingsRow({
   children,
   last,
 }: {
-  /** Lucide komponenti (aniq mos emoji topilmagan holatlar uchun) yoki manba
-   * ilovadagi ("Uzbek Women's Health Tracker" — src/App.tsx) aynan emoji. */
-  icon: LucideIcon | string;
+  /** Material Community Icons nomi (masalan "format-size") yoki manba
+   * ilovadagi ("Uzbek Women's Health Tracker" — src/App.tsx) aynan emoji —
+   * ikkalasi ham string, kebab-case bo'lsa ikonka nomi deb hisoblanadi. */
+  icon: string;
   label: string;
   children?: React.ReactNode;
   last?: boolean;
 }) {
-  const Icon = typeof icon === "string" ? null : icon;
+  const isIconName = /^[a-z0-9-]+$/.test(icon);
   return (
     <View className={clsx("flex-row items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <View className="flex-row items-center gap-3">
@@ -492,7 +493,11 @@ function SettingsRow({
           end={{ x: 1, y: 1 }}
           style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" }}
         >
-          {Icon ? <Icon size={18} color="#FFFFFF" /> : <Text style={{ fontSize: 16 }}>{icon as string}</Text>}
+          {isIconName ? (
+            <MaterialCommunityIcons name={icon as never} size={18} color="#FFFFFF" />
+          ) : (
+            <Text style={{ fontSize: 16 }}>{icon}</Text>
+          )}
         </LinearGradient>
         <Text className="font-medium text-text-primary">{label}</Text>
       </View>
