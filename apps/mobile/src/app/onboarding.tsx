@@ -605,25 +605,25 @@ export default function OnboardingScreen() {
             <Text className="text-base font-bold text-primary-dark">{dict.onboarding.startButton}</Text>
           </Pressable>
         ) : step !== "analyzing" ? (
-          <View className="mt-4 flex-row items-center gap-3">
-            {stepIndex > 0 && (
+          <View className="mt-4 flex-row items-center justify-between gap-3">
+            {stepIndex > 0 ? (
               <Button variant="ghost" onPress={goBack} disabled={submitting}>
                 {dict.common.back}
               </Button>
+            ) : (
+              <View />
             )}
-            <View className="ml-auto">
-              {step === "account_identifier" ? (
-                <Button onPress={submitIdentifier} disabled={submitting || !canProceed()}>
-                  {dict.common.continueButton}
-                </Button>
-              ) : step === "privacy" ? (
-                <Button onPress={goNext}>{dict.privacy.agreeButton}</Button>
-              ) : (
-                <Button onPress={goNext} disabled={!canProceed()}>
-                  {dict.common.next}
-                </Button>
-              )}
-            </View>
+            {step === "account_identifier" ? (
+              <Button onPress={submitIdentifier} disabled={submitting || !canProceed()}>
+                {dict.common.continueButton}
+              </Button>
+            ) : step === "privacy" ? (
+              <Button onPress={goNext}>{dict.privacy.agreeButton}</Button>
+            ) : (
+              <Button onPress={goNext} disabled={!canProceed()}>
+                {dict.common.next}
+              </Button>
+            )}
           </View>
         ) : null}
       </KeyboardAvoidingView>

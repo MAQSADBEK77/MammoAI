@@ -654,22 +654,22 @@ export default function OnboardingPage() {
       </div>
 
       {step !== "welcome" && step !== "analyzing" && (
-        <div className="mt-8 flex items-center gap-3">
-          {stepIndex > 0 && (
+        <div className="mt-8 flex items-center justify-between gap-3">
+          {stepIndex > 0 ? (
             <Button variant="ghost" onClick={goBack} disabled={submitting}>
               {dict.common.back}
             </Button>
+          ) : (
+            <span />
           )}
           {step === "account_identifier" ? (
-            <Button className="ml-auto" onClick={submitIdentifier} disabled={submitting || !canProceed()}>
+            <Button onClick={submitIdentifier} disabled={submitting || !canProceed()}>
               {dict.common.continueButton}
             </Button>
           ) : step === "privacy" ? (
-            <Button className="ml-auto" onClick={goNext}>
-              {dict.privacy.agreeButton}
-            </Button>
+            <Button onClick={goNext}>{dict.privacy.agreeButton}</Button>
           ) : (
-            <Button className="ml-auto" onClick={goNext} disabled={!canProceed()}>
+            <Button onClick={goNext} disabled={!canProceed()}>
               {dict.common.next}
             </Button>
           )}
