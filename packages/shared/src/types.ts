@@ -250,6 +250,8 @@ export interface CommunityPost {
   isAnonymous: boolean;
   /** Anonim post yoki ismi kiritilmagan foydalanuvchi uchun `null`. */
   authorName: string | null;
+  /** Anonim post uchun `null` — authorName bilan bir xil mantiq. */
+  authorAvatarUrl: string | null;
   likesCount: number;
   commentsCount: number;
   /** Joriy foydalanuvchi shu postni allaqachon yoqtirganmi. */
@@ -265,6 +267,16 @@ export interface CommunityComment {
   body: string;
   isAnonymous: boolean;
   authorName: string | null;
+  authorAvatarUrl: string | null;
+  isOwn: boolean;
+  createdAt: string;
+}
+
+/** Hamkor bilan haqiqiy (ikki tomonlama) suhbat xabari. */
+export interface PartnerChatMessage {
+  id: string;
+  body: string;
+  /** Joriy foydalanuvchi yuborganmi (chap/o'ng pufakcha uchun). */
   isOwn: boolean;
   createdAt: string;
 }

@@ -498,6 +498,7 @@ const uz = {
     emptyComments: "Hozircha izoh yo'q — birinchi bo'ling",
     deletePostConfirm: "Bu postni butunlay o'chirishni tasdiqlaysizmi?",
     deletePostButton: "O'chirish",
+    deleteCommentConfirm: "Bu izohni o'chirishni tasdiqlaysizmi?",
     justNow: "Hozirgina",
     minutesAgo: (n: number) => `${n} daqiqa oldin`,
     hoursAgo: (n: number) => `${n} soat oldin`,
@@ -514,7 +515,7 @@ const uz = {
 
   // Hamkor — kod orqali ikkita akkauntni bog'lash (Figma referens: "Hamkor" bo'limi).
   partner: {
-    title: "Hamkor",
+    title: "Juft",
     subtitle: "Sevgilini sayohatingizga qo'shing",
     heroTitle: "Birgalikda kuzating",
     heroDescription: "Eringiz yoki yaqiningiz sog'liq ma'lumotlaringizni ko'ra olsin va sayohatingizda qo'llab-quvvatlasin",
@@ -536,7 +537,7 @@ const uz = {
     connectSubmitButton: "Ulash ✓",
     connecting: "Ulanmoqda...",
     roleLabel: "Hamkor",
-    messageButton: "Xabar",
+    messageButton: "Suhbat",
     statsButton: "Ko'rsatkichlar",
     canSeeTitle: "Hamkoringiz ko'rishi mumkin",
     shareTogglePregnancy: "Homiladorlik haftalari",
@@ -547,10 +548,8 @@ const uz = {
     connectedDaysAgo: (n: number) => `${n} kun oldin ulandingiz`,
     disconnectButton: "Hamkordan uzilish",
     disconnectConfirm: "Hamkordan uzilishni tasdiqlaysizmi? Ulashish tarixi o'chiriladi.",
-    messageModalTitle: "Hamkoringizga xabar",
-    messagePlaceholder: "Xabaringizni yozing...",
-    messageSendButton: "Yuborish",
-    messageSent: "Xabar yuborildi",
+    messagePlaceholder: "Xabar yozing...",
+    chatEmpty: "Hali xabar yo'q — birinchi bo'lib yozing!",
     statsModalTitle: "Hamkoringiz ulashgan ma'lumotlar",
     statPregnancyWeek: (n: number) => `Homiladorlik: ${n}-hafta`,
     statNextCheckupLabel: "Keyingi ko'rik",

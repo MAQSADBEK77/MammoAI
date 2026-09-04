@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, View, Text, Pressable, TextInput, Share, Alert } from "react-native";
+import { ScrollView, View, Text, Pressable, TextInput, Share, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -169,6 +169,21 @@ export default function CommunityScreen() {
     setPosts((prev) => (prev ? prev.map((p) => (p.id === post.id ? { ...p, commentsCount: p.commentsCount + 1 } : p)) : prev));
   }
 
+  function removeComment(post: CommunityPost, comment: CommunityComment) {
+    Alert.alert(dict.community.deletePostButton, dict.community.deleteCommentConfirm, [
+      { text: dict.common.cancel, style: "cancel" },
+      {
+        text: dict.community.deletePostButton,
+        style: "destructive",
+        onPress: async () => {
+          await api.community.deleteComment(post.id, comment.id);
+          setOpenComments((prev) => ({ ...prev, [post.id]: (prev[post.id] ?? []).filter((c) => c.id !== comment.id) }));
+          setPosts((prev) => (prev ? prev.map((p) => (p.id === post.id ? { ...p, commentsCount: Math.max(0, p.commentsCount - 1) } : p)) : prev));
+        },
+      },
+    ]);
+  }
+
   function removePost(post: CommunityPost) {
     Alert.alert(dict.community.deletePostButton, dict.community.deletePostConfirm, [
       { text: dict.common.cancel, style: "cancel" },
@@ -331,11 +346,17 @@ export default function CommunityScreen() {
                     <View className="flex-1 flex-row items-center gap-2.5">
                       <View
                         className={clsx(
-                          "h-9 w-9 items-center justify-center rounded-full",
+                          "h-9 w-9 items-center justify-center overflow-hidden rounded-full",
                           post.isAnonymous ? "bg-nav" : "bg-primary"
                         )}
                       >
-                        {post.isAnonymous ? <MaterialCommunityIcons name="incognito" size={16} color="#FFFFFF" /> : <MaterialCommunityIcons name="account-outline" size={16} color="#FFFFFF" />}
+                        {!post.isAnonymous && post.authorAvatarUrl ? (
+                          <Image source={{ uri: post.authorAvatarUrl }} className="h-full w-full" />
+                        ) : post.isAnonymous ? (
+                          <MaterialCommunityIcons name="incognito" size={16} color="#FFFFFF" />
+                        ) : (
+                          <MaterialCommunityIcons name="account-outline" size={16} color="#FFFFFF" />
+                        )}
                       </View>
                       <View className="flex-1">
                         <Text className="text-sm font-semibold text-text-primary" numberOfLines={1}>
@@ -379,8 +400,14 @@ export default function CommunityScreen() {
                       {comments.length === 0 && <Text className="text-xs text-text-muted">{dict.community.emptyComments}</Text>}
                       {comments.map((c) => (
                         <View key={c.id} className="flex-row items-start gap-2">
-                          <View className="mt-0.5 h-6 w-6 items-center justify-center rounded-full bg-surface-muted">
-                            {c.isAnonymous ? <MaterialCommunityIcons name="incognito" size={12} color="#4B5563" /> : <MaterialCommunityIcons name="account-outline" size={12} color="#4B5563" />}
+                          <View className="mt-0.5 h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-surface-muted">
+                            {!c.isAnonymous && c.authorAvatarUrl ? (
+                              <Image source={{ uri: c.authorAvatarUrl }} className="h-full w-full" />
+                            ) : c.isAnonymous ? (
+                              <MaterialCommunityIcons name="incognito" size={12} color="#4B5563" />
+                            ) : (
+                              <MaterialCommunityIcons name="account-outline" size={12} color="#4B5563" />
+                            )}
                           </View>
                           <View className="flex-1 rounded-2xl bg-surface-muted px-3 py-2">
                             <Text className="text-[11px] font-semibold text-text-secondary">
@@ -388,6 +415,11 @@ export default function CommunityScreen() {
                             </Text>
                             <Text className="text-sm text-text-primary">{c.body}</Text>
                           </View>
+                          {(c.isOwn || post.isOwn) && (
+                            <Pressable onPress={() => removeComment(post, c)} className="mt-0.5 h-6 w-6 items-center justify-center rounded-lg active:opacity-60">
+                              <MaterialCommunityIcons name="trash-can-outline" size={13} color="#9CA3AF" />
+                            </Pressable>
+                          )}
                         </View>
                       ))}
                       <View className="flex-row items-center gap-2">

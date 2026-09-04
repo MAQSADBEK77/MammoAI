@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
 import { Button, Card, LoadingSpinner, ScreenHeader, Badge } from "@/components/ui";
+import { PartnerChatModal } from "@/components/screens/PartnerChatModal";
 
 /**
  * "Hamkor" ekrani — Figma referens (https://www.figma.com/make/M7nwCcQDmwjZsaadesxS88)
@@ -24,9 +25,7 @@ export default function HamkorScreen() {
   const [codeInput, setCodeInput] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
-  const [messageOpen, setMessageOpen] = useState(false);
-  const [messageText, setMessageText] = useState("");
-  const [sending, setSending] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -81,18 +80,6 @@ export default function HamkorScreen() {
       { text: dict.common.cancel, style: "cancel" },
       { text: dict.partner.disconnectButton, style: "destructive", onPress: async () => setStatus(await api.partner.disconnect()) },
     ]);
-  }
-
-  async function sendMessage() {
-    setSending(true);
-    try {
-      await api.partner.sendMessage(messageText);
-      setMessageText("");
-      setMessageOpen(false);
-      Alert.alert(dict.partner.messageSent);
-    } finally {
-      setSending(false);
-    }
   }
 
   async function copyCode() {
@@ -170,7 +157,7 @@ export default function HamkorScreen() {
               </View>
               <View className="flex-row gap-2">
                 <View className="flex-1">
-                  <Button variant="secondary" onPress={() => setMessageOpen(true)}>
+                  <Button variant="secondary" onPress={() => setChatOpen(true)}>
                     <MaterialCommunityIcons name="chat-outline" size={16} color="#1F2937" />
                     <Text className="text-sm font-semibold text-text-primary"> {dict.partner.messageButton}</Text>
                   </Button>
@@ -258,24 +245,6 @@ export default function HamkorScreen() {
           </Dialog.Content>
         </Dialog>
 
-        <Dialog visible={messageOpen} onDismiss={() => setMessageOpen(false)} style={{ borderRadius: 24 }}>
-          <Dialog.Title>{dict.partner.messageModalTitle}</Dialog.Title>
-          <Dialog.Content className="gap-3">
-            <TextInput
-              value={messageText}
-              onChangeText={setMessageText}
-              placeholder={dict.partner.messagePlaceholder}
-              multiline
-              numberOfLines={3}
-              className="min-h-[80px] rounded-2xl border border-border bg-surface px-4 py-3 text-base text-text-primary"
-              placeholderTextColor="#9CA3AF"
-            />
-            <Button onPress={sendMessage} disabled={!messageText.trim() || sending}>
-              {dict.partner.messageSendButton}
-            </Button>
-          </Dialog.Content>
-        </Dialog>
-
         <Dialog visible={statsOpen} onDismiss={() => setStatsOpen(false)} style={{ borderRadius: 24 }}>
           <Dialog.Title>{dict.partner.statsModalTitle}</Dialog.Title>
           <Dialog.Content className="gap-2">
@@ -311,6 +280,14 @@ export default function HamkorScreen() {
           </Dialog.Content>
         </Dialog>
       </Portal>
+
+      {/* Hamkor bilan to'liq suhbat — Telegram uslubidagi chat. */}
+      <PartnerChatModal
+        visible={chatOpen}
+        onClose={() => setChatOpen(false)}
+        partnerName={status.partner?.name || dict.profile.noNameFallback}
+        partnerAvatarUrl={status.partner?.avatarUrl ?? null}
+      />
     </SafeAreaView>
   );
 }

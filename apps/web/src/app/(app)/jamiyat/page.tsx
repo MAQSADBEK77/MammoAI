@@ -166,6 +166,13 @@ export default function CommunityPage() {
     setPosts((prev) => (prev ? prev.map((p) => (p.id === post.id ? { ...p, commentsCount: p.commentsCount + 1 } : p)) : prev));
   }
 
+  async function removeComment(post: CommunityPost, comment: CommunityComment) {
+    if (!window.confirm(dict.community.deleteCommentConfirm)) return;
+    await api.community.deleteComment(post.id, comment.id);
+    setOpenComments((prev) => ({ ...prev, [post.id]: (prev[post.id] ?? []).filter((c) => c.id !== comment.id) }));
+    setPosts((prev) => (prev ? prev.map((p) => (p.id === post.id ? { ...p, commentsCount: Math.max(0, p.commentsCount - 1) } : p)) : prev));
+  }
+
   async function removePost(post: CommunityPost) {
     if (!window.confirm(dict.community.deletePostConfirm)) return;
     await api.community.deletePost(post.id);
@@ -316,11 +323,18 @@ export default function CommunityPage() {
                   <div className="flex items-center gap-2.5">
                     <span
                       className={clsx(
-                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white",
+                        "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-white",
                         post.isAnonymous ? "bg-nav" : "bg-gradient-to-br from-primary to-secondary"
                       )}
                     >
-                      {post.isAnonymous ? <VenetianMask sx={{ fontSize: 16 }} /> : <UserRound sx={{ fontSize: 16 }} />}
+                      {!post.isAnonymous && post.authorAvatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- kichik base64 avatar, next/image shart emas
+                        <img src={post.authorAvatarUrl} alt="" className="h-full w-full object-cover" />
+                      ) : post.isAnonymous ? (
+                        <VenetianMask sx={{ fontSize: 16 }} />
+                      ) : (
+                        <UserRound sx={{ fontSize: 16 }} />
+                      )}
                     </span>
                     <div>
                       <p className="text-sm font-semibold text-text-primary">
@@ -373,8 +387,15 @@ export default function CommunityPage() {
                     {comments.length === 0 && <p className="text-xs text-text-muted">{dict.community.emptyComments}</p>}
                     {comments.map((c) => (
                       <div key={c.id} className="flex items-start gap-2">
-                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-muted text-text-secondary">
-                          {c.isAnonymous ? <VenetianMask sx={{ fontSize: 12 }} /> : <UserRound sx={{ fontSize: 12 }} />}
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-muted text-text-secondary">
+                          {!c.isAnonymous && c.authorAvatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- kichik base64 avatar, next/image shart emas
+                            <img src={c.authorAvatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : c.isAnonymous ? (
+                            <VenetianMask sx={{ fontSize: 12 }} />
+                          ) : (
+                            <UserRound sx={{ fontSize: 12 }} />
+                          )}
                         </span>
                         <div className="min-w-0 flex-1 rounded-2xl bg-surface-muted px-3 py-2">
                           <p className="text-[11px] font-semibold text-text-secondary">
@@ -382,6 +403,15 @@ export default function CommunityPage() {
                           </p>
                           <p className="text-sm text-text-primary">{c.body}</p>
                         </div>
+                        {(c.isOwn || post.isOwn) && (
+                          <button
+                            onClick={() => removeComment(post, c)}
+                            className="tap-target mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-text-muted transition hover:bg-danger/10 hover:text-danger"
+                            aria-label={dict.community.deletePostButton}
+                          >
+                            <Trash2 sx={{ fontSize: 13 }} />
+                          </button>
+                        )}
                       </div>
                     ))}
                     <div className="flex gap-2">

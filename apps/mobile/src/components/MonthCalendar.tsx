@@ -7,12 +7,12 @@ import { useI18n } from "@/lib/i18n";
 export type DayMarker = "period" | "predicted";
 
 // Har bir tsikl fazasi uchun fon rangi — PhaseCard bilan bir xil palitra
-// (menstrual=primary, follicular=secondary, ovulation=accent, luteal=success),
-// shunda kalendar pastidagi faza kartasi bilan ranglar mos keladi.
+// (menstrual=primary, follicular=secondary, ovulation=accent, luteal=warning —
+// avval "success" edi, accent bilan deyarli bir xil ko'rinib ajratib bo'lmasdi).
 const PHASE_BG: Record<Exclude<CyclePhase, "menstrual">, string> = {
   follicular: "bg-secondary/15",
   ovulation: "bg-accent/15",
-  luteal: "bg-success/15",
+  luteal: "bg-warning/15",
 };
 
 export function MonthCalendar({
@@ -83,7 +83,7 @@ export function MonthCalendar({
           <Text className="text-[11px] font-medium text-text-secondary">{dict.cycle.calendarLegendOvulation}</Text>
         </View>
         <View className="flex-row items-center gap-1.5">
-          <View className="h-2 w-2 rounded-full bg-success" />
+          <View className="h-2 w-2 rounded-full bg-warning" />
           <Text className="text-[11px] font-medium text-text-secondary">{dict.cycle.calendarLegendLuteal}</Text>
         </View>
       </View>

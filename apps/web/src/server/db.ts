@@ -268,6 +268,17 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // Hamkor bilan haqiqiy suhbat (Telegram uslubida) — avvalgi "Xabar" faqat
+    // bir martalik bildirishnoma edi, endi to'liq tarix bilan ikki tomonlama chat.
+    sql`
+      CREATE TABLE IF NOT EXISTS partner_messages (
+        id TEXT PRIMARY KEY,
+        partner_link_id TEXT NOT NULL REFERENCES partner_links(id) ON DELETE CASCADE,
+        sender_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        body TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `,
   ]);
 
   // 2.5-bosqich: community_comments'ga bog'liq (izoh qoldirilganda post
@@ -298,6 +309,7 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_partner_invites_code ON partner_invites(code)`,
     sql`CREATE INDEX IF NOT EXISTS idx_partner_links_a ON partner_links(user_a_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_partner_links_b ON partner_links(user_b_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_partner_messages_link ON partner_messages(partner_link_id, created_at ASC)`,
   ]);
 }
 

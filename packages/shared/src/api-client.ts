@@ -19,6 +19,7 @@ import type {
   HeardAboutUs,
   Language,
   OnboardingProfile,
+  PartnerChatMessage,
   PartnerShareSettings,
   PartnerStatusResponse,
   PeriodAttitude,
@@ -223,6 +224,9 @@ export function createApiClient(config: ApiClientConfig) {
       listComments: (postId: string) => request<CommunityComment[]>(`/api/community/posts/${postId}/comments`),
       addComment: (postId: string, payload: { body: string; isAnonymous: boolean }) =>
         request<CommunityComment>(`/api/community/posts/${postId}/comments`, { method: "POST", body: JSON.stringify(payload) }),
+      /** Izoh muallifi yoki post egasi o'chira oladi. */
+      deleteComment: (postId: string, commentId: string) =>
+        request<{ ok: true }>(`/api/community/posts/${postId}/comments/${commentId}`, { method: "DELETE" }),
     },
     notifications: {
       list: () => request<{ notifications: AppNotification[]; unreadCount: number }>("/api/notifications"),
@@ -234,7 +238,10 @@ export function createApiClient(config: ApiClientConfig) {
       connect: (code: string) => request<PartnerStatusResponse>("/api/partner/connect", { method: "POST", body: JSON.stringify({ code }) }),
       updateSettings: (settings: PartnerShareSettings) =>
         request<PartnerStatusResponse>("/api/partner/settings", { method: "PATCH", body: JSON.stringify(settings) }),
-      sendMessage: (text: string) => request<{ ok: true }>("/api/partner/message", { method: "POST", body: JSON.stringify({ text }) }),
+      /** To'liq suhbat tarixi (Telegram uslubidagi chat). */
+      chatMessages: () => request<{ messages: PartnerChatMessage[] }>("/api/partner/messages"),
+      sendChatMessage: (body: string) =>
+        request<{ message: PartnerChatMessage }>("/api/partner/messages", { method: "POST", body: JSON.stringify({ body }) }),
       disconnect: () => request<PartnerStatusResponse>("/api/partner", { method: "DELETE" }),
     },
   };

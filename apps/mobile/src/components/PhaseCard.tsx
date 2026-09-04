@@ -10,7 +10,9 @@ const PHASE_COLOR: Record<CyclePhase, string> = {
   menstrual: colors.primary,
   follicular: colors.secondary,
   ovulation: colors.accent,
-  luteal: colors.success,
+  // Avval "success" (yashil) edi — accent (moviy-yashil) bilan deyarli bir
+  // xil ko'rinib, ajratib bo'lmasdi (foydalanuvchi fikri) — endi "warning".
+  luteal: colors.warning,
 };
 
 export function PhaseCard({ phase }: { phase: CyclePhase }) {

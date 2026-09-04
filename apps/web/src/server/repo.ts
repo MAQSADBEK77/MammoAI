@@ -21,6 +21,7 @@ import type {
   Language,
   Mood,
   OnboardingProfile,
+  PartnerChatMessage,
   PartnerShareSettings,
   PartnerStatusResponse,
   PeriodAttitude,
@@ -964,6 +965,7 @@ interface CommunityPostRow {
   comments_count: number;
   created_at: string;
   author_name: string | null;
+  author_avatar_url: string | null;
   viewer_liked: boolean;
 }
 
@@ -974,6 +976,7 @@ function communityPostFromRow(row: CommunityPostRow, viewerId: string): Communit
     body: row.body,
     isAnonymous: row.is_anonymous,
     authorName: row.is_anonymous ? null : row.author_name,
+    authorAvatarUrl: row.is_anonymous ? null : row.author_avatar_url,
     likesCount: row.likes_count,
     commentsCount: row.comments_count,
     viewerLiked: row.viewer_liked,
@@ -991,7 +994,7 @@ export async function listCommunityPosts(
   const offset = params.offset ?? 0;
   const tagFilter = params.tag ? sql`WHERE p.tag = ${params.tag}` : sql``;
   const rows = (await sql`
-    SELECT p.*, u.name as author_name,
+    SELECT p.*, u.name as author_name, u.avatar_url as author_avatar_url,
       EXISTS(SELECT 1 FROM community_post_likes l WHERE l.post_id = p.id AND l.user_id = ${viewerId}) as viewer_liked
     FROM community_posts p
     JOIN users u ON u.id = p.user_id
@@ -1021,6 +1024,7 @@ export async function createCommunityPost(
     body: payload.body,
     isAnonymous: payload.isAnonymous,
     authorName: payload.isAnonymous ? null : (author?.name ?? null),
+    authorAvatarUrl: payload.isAnonymous ? null : (author?.avatarUrl ?? null),
     likesCount: 0,
     commentsCount: 0,
     viewerLiked: false,
@@ -1068,6 +1072,7 @@ interface CommunityCommentRow {
   is_anonymous: boolean;
   created_at: string;
   author_name: string | null;
+  author_avatar_url: string | null;
 }
 
 function communityCommentFromRow(row: CommunityCommentRow, viewerId: string): CommunityComment {
@@ -1077,6 +1082,7 @@ function communityCommentFromRow(row: CommunityCommentRow, viewerId: string): Co
     body: row.body,
     isAnonymous: row.is_anonymous,
     authorName: row.is_anonymous ? null : row.author_name,
+    authorAvatarUrl: row.is_anonymous ? null : row.author_avatar_url,
     isOwn: row.user_id === viewerId,
     createdAt: row.created_at,
   };
@@ -1085,7 +1091,7 @@ function communityCommentFromRow(row: CommunityCommentRow, viewerId: string): Co
 export async function listCommunityComments(postId: string, viewerId: string): Promise<CommunityComment[]> {
   await ensureSchema();
   const rows = (await sql`
-    SELECT c.*, u.name as author_name
+    SELECT c.*, u.name as author_name, u.avatar_url as author_avatar_url
     FROM community_comments c
     JOIN users u ON u.id = c.user_id
     WHERE c.post_id = ${postId}
@@ -1124,9 +1130,29 @@ export async function addCommunityComment(
     body: payload.body,
     isAnonymous: payload.isAnonymous,
     authorName: payload.isAnonymous ? null : (author?.name ?? null),
+    authorAvatarUrl: payload.isAnonymous ? null : (author?.avatarUrl ?? null),
     isOwn: true,
     createdAt,
   };
+}
+
+/** Izohni o'chiradi — izoh muallifi YOKI postning egasi (o'z posti ostidagi
+ * izohlarni boshqarish uchun) o'chira oladi. */
+export async function deleteCommunityComment(userId: string, postId: string, commentId: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT c.user_id as comment_user_id, p.user_id as post_user_id
+    FROM community_comments c
+    JOIN community_posts p ON p.id = c.post_id
+    WHERE c.id = ${commentId} AND c.post_id = ${postId}
+  `) as unknown as { comment_user_id: string; post_user_id: string }[];
+  const row = rows[0];
+  if (!row) throw new ApiError(404, "Izoh topilmadi");
+  if (row.comment_user_id !== userId && row.post_user_id !== userId) {
+    throw new ApiError(403, "Bu izohni faqat muallifi yoki post egasi o'chira oladi");
+  }
+  await sql`DELETE FROM community_comments WHERE id = ${commentId}`;
+  await sql`UPDATE community_posts SET comments_count = GREATEST(comments_count - 1, 0) WHERE id = ${postId}`;
 }
 
 export async function getCommunityStats(): Promise<CommunityStats> {
@@ -1291,15 +1317,46 @@ export async function updatePartnerSharing(userId: string, settings: PartnerShar
   }
 }
 
-export async function sendPartnerMessage(userId: string, text: string): Promise<void> {
+interface PartnerMessageRow {
+  id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+}
+
+function partnerMessageFromRow(row: PartnerMessageRow, viewerId: string): PartnerChatMessage {
+  return { id: row.id, body: row.body, isOwn: row.sender_id === viewerId, createdAt: row.created_at };
+}
+
+/** Hamkor bilan to'liq (ikki tomonlama) suhbat tarixi — Telegram uslubidagi chat. */
+export async function listPartnerChatMessages(userId: string): Promise<PartnerChatMessage[]> {
+  await ensureSchema();
+  const link = await findPartnerLink(userId);
+  if (!link) throw new ApiError(404, "Hamkor topilmadi");
+  const rows = (await sql`
+    SELECT * FROM partner_messages WHERE partner_link_id = ${link.id} ORDER BY created_at ASC
+  `) as unknown as PartnerMessageRow[];
+  return rows.map((row) => partnerMessageFromRow(row, userId));
+}
+
+/** Xabar yuboradi (chat tarixiga yoziladi) va hamkorga bildirishnoma qoldiradi
+ * (bildirishnomalar ro'yxatida "yangi xabor bor" sifatida ko'rinishi uchun). */
+export async function sendPartnerChatMessage(userId: string, body: string): Promise<PartnerChatMessage> {
   await ensureSchema();
   const link = await findPartnerLink(userId);
   if (!link) throw new ApiError(404, "Hamkor topilmadi");
   const partnerId = link.user_a_id === userId ? link.user_b_id : link.user_a_id;
+  const id = randomUUID();
+  const createdAt = now();
+  await sql`
+    INSERT INTO partner_messages (id, partner_link_id, sender_id, body, created_at)
+    VALUES (${id}, ${link.id}, ${userId}, ${body}, ${createdAt})
+  `;
   await sql`
     INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
-    VALUES (${randomUUID()}, ${partnerId}, ${userId}, 'partner_message', ${text}, ${now()})
+    VALUES (${randomUUID()}, ${partnerId}, ${userId}, 'partner_message', ${body}, ${createdAt})
   `;
+  return { id, body, isOwn: true, createdAt };
 }
 
 export async function getPartnerStatus(userId: string): Promise<PartnerStatusResponse> {
