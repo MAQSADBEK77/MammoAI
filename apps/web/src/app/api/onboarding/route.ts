@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { OnboardingProfile } from "@mammoai/shared";
 import { jsonError, requireUser } from "@/server/api-utils";
-import { getOnboardingProfile, saveOnboardingProfile, updateOnboardingProfile, updateUser } from "@/server/repo";
+import { saveOnboardingProfile, updateOnboardingProfile, updateUser } from "@/server/repo";
 import { syncChecklistForUser } from "@/server/checklist-sync";
 
 type OnboardingBody = Omit<OnboardingProfile, "userId"> & { notificationsEnabled: boolean };
@@ -9,6 +9,13 @@ type OnboardingBody = Omit<OnboardingProfile, "userId"> & { notificationsEnabled
 /**
  * Onboarding so'rovnomasini yakunlaydi — App.pdf §2 bo'yicha akkaunt allaqachon
  * `/api/auth/start`da yaratilgan/topilgan, bu route faqat profilni to'ldiradi.
+ *
+ * MUHIM (tezlik): bu yerda ilgari 4 ta yozuv/o'qish ketma-ket bajarilar edi
+ * (saqlash → foydalanuvchi yangilash → checklist → profilni QAYTA o'qish) —
+ * oxirgisi butunlay ortiqcha edi (`profile` obyekti allaqachon qo'lda bor,
+ * saqlash uni o'zgartirmaydi). Mustaqil ikkitasi (foydalanuvchi yangilash,
+ * checklist) endi parallel — "tahlil qilinmoqda" ekranida sezilarli osilib
+ * qolishning asosiy sababi shu ketma-ketlik edi.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -20,13 +27,12 @@ export async function POST(request: NextRequest) {
 
     const profile: OnboardingProfile = { userId: user.id, ...body };
     await saveOnboardingProfile(profile);
-    await updateUser(user.id, { name: body.name, notificationsEnabled: body.notificationsEnabled });
-    await syncChecklistForUser(user.id);
+    const [updatedUser] = await Promise.all([
+      updateUser(user.id, { name: body.name, notificationsEnabled: body.notificationsEnabled }),
+      syncChecklistForUser(user.id, profile),
+    ]);
 
-    return NextResponse.json({
-      user: { ...user, name: body.name, notificationsEnabled: body.notificationsEnabled },
-      onboardingProfile: await getOnboardingProfile(user.id),
-    });
+    return NextResponse.json({ user: updatedUser, onboardingProfile: profile });
   } catch (error) {
     return jsonError(error);
   }

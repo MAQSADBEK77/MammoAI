@@ -25,6 +25,12 @@ import {
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "dark";
 
+// MUI'ning standart `.Mui-disabled` uslubi background/matn rangini ikkalasini
+// ham mustaqil kulrang tusga almashtiradi — natijada ba'zi variantlarda ikkalasi
+// bir-biriga juda yaqinlashib, matn deyarli o'qilmay qoladi ("background bilan
+// text rangi bir xil bo'lib qolgan" xatosi). Tuzatish: disabled holatda ham ASL
+// rang juftligi saqlanadi, faqat butun tugma birga xiralashadi (opacity) — bu
+// matn/fon orasidagi nisbiy kontrastni har doim saqlaydi.
 function buttonSx(variant: ButtonVariant) {
   switch (variant) {
     case "primary":
@@ -33,18 +39,26 @@ function buttonSx(variant: ButtonVariant) {
         color: "#fff",
         boxShadow: "0 8px 20px -6px color-mix(in srgb, var(--color-primary) 45%, transparent)",
         "&:hover": { filter: "brightness(1.05)", boxShadow: "0 8px 20px -6px color-mix(in srgb, var(--color-primary) 55%, transparent)" },
+        "&.Mui-disabled": {
+          background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)",
+          color: "#fff",
+          opacity: 0.45,
+          boxShadow: "none",
+        },
       };
     case "secondary":
       return {
         backgroundColor: "var(--color-secondary-light)",
         color: "var(--color-text-primary)",
         "&:hover": { filter: "brightness(0.97)" },
+        "&.Mui-disabled": { backgroundColor: "var(--color-secondary-light)", color: "var(--color-text-primary)", opacity: 0.5 },
       };
     case "dark":
       return {
         backgroundColor: "var(--color-nav)",
         color: "#fff",
         "&:hover": { filter: "brightness(1.1)" },
+        "&.Mui-disabled": { backgroundColor: "var(--color-nav)", color: "#fff", opacity: 0.45 },
       };
     case "ghost":
     default:
@@ -52,6 +66,7 @@ function buttonSx(variant: ButtonVariant) {
         backgroundColor: "transparent",
         color: "var(--color-text-secondary)",
         "&:hover": { backgroundColor: "var(--color-surface-muted)" },
+        "&.Mui-disabled": { backgroundColor: "transparent", color: "var(--color-text-secondary)", opacity: 0.5 },
       };
   }
 }

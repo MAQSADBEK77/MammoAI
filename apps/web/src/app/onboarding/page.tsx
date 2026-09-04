@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type {
@@ -18,7 +18,6 @@ import {
   goalToLandingTab,
   needsCycleInfo,
   needsHeightWeight,
-  cssGradient,
   colors,
   formatUzPhoneInput,
   extractUzPhoneDigits,
@@ -27,9 +26,21 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar } from "@/components/ui";
-import { Select, MenuItem } from "@mui/material";
-import { LockOutlined } from "@mui/icons-material";
+import { Lottie } from "lottie-react";
+import {
+  LockOutlined,
+  PersonOutlined,
+  ShieldOutlined,
+  EditOutlined,
+  CakeOutlined,
+  AutorenewOutlined,
+  SickOutlined,
+  FamilyRestroomOutlined,
+  MonitorWeightOutlined,
+} from "@mui/icons-material";
 import clsx from "clsx";
+
+type StepIconComponent = typeof LockOutlined;
 
 type Step =
   | "welcome"
@@ -37,7 +48,6 @@ type Step =
   | "account_choice"
   | "account_identifier"
   | "privacy"
-  | "heard_about_us"
   | "name"
   | "age"
   | "goal"
@@ -56,37 +66,51 @@ type Step =
 interface SurveyState {
   accountChoice: "create" | "login" | null;
   identifier: string;
+  /** Ommaviy oferta shartlariga rozilik — "privacy" bosqichidagi katagcha. */
+  agreedToOffer: boolean;
   heardAboutUs: HeardAboutUs | null;
   name: string;
-  age: string;
+  /** Foydalanuvchi endi yosh emas, tug'ilgan yilni tanlaydi (wheel-picker) — yosh shundan hisoblanadi. */
+  birthYear: number;
   primaryGoal: Goal | null;
   cycleRegularity: CycleRegularity | null;
   averageCycleLength: string;
   averagePeriodLength: string;
   lastPeriodDate: string;
+  /** "Bilmayman" bosilganda true — sana kiritish shart emasligini bildiradi. */
+  lastPeriodUnknown: boolean;
   typicalSymptoms: Symptom[];
+  /** "Bilmayman" bosilganda true — typicalSymptoms bo'sh saqlanadi. */
+  typicalSymptomsUnknown: boolean;
   periodAttitude: PeriodAttitude | null;
   healthConditions: HealthCondition[];
   healthConditionsOther: string;
-  familyHistory: boolean | null;
+  familyHistory: boolean | "unknown" | null;
   lastCheckup: OnboardingProfile["lastCheckup"] | null;
   heightCm: string;
   weightKg: string;
   notificationsEnabled: boolean | null;
 }
 
+const CURRENT_YEAR = new Date().getFullYear();
+// Yosh o'rniga tug'ilgan yil so'raladi (wheel-picker) — 13-100 yosh oralig'iga mos yillar.
+const BIRTH_YEARS = Array.from({ length: 88 }, (_, i) => CURRENT_YEAR - 100 + i);
+
 const INITIAL_SURVEY: SurveyState = {
   accountChoice: null,
   identifier: "+998",
+  agreedToOffer: false,
   heardAboutUs: null,
   name: "",
-  age: "",
+  birthYear: 2005,
   primaryGoal: null,
   cycleRegularity: null,
   averageCycleLength: "28",
   averagePeriodLength: "5",
   lastPeriodDate: "",
+  lastPeriodUnknown: false,
   typicalSymptoms: [],
+  typicalSymptomsUnknown: false,
   periodAttitude: null,
   healthConditions: [],
   healthConditionsOther: "",
@@ -97,27 +121,22 @@ const INITIAL_SURVEY: SurveyState = {
   notificationsEnabled: null,
 };
 
-// Har bir savol bosqichi uchun emoji ikona + rang — "registratsiya juda quruq
+// Har bir savol bosqichi uchun ikona + rang — "registratsiya juda quruq
 // ko'rinadi" degan fikrdan keyin har bir ekranga bittadan vizual urg'u qo'shish
 // uchun (welcome/analyzing o'zining maxsus ko'rinishiga ega, shu yerda kerak emas).
-const STEP_ICON: Partial<Record<Step, string>> = {
-  account_choice: "👤",
-  account_identifier: "🔐",
-  privacy: "🛡️",
-  heard_about_us: "💬",
-  name: "✍️",
-  age: "🎂",
-  goal: "🎯",
-  cycle_regularity: "🔄",
-  cycle_lengths: "📏",
-  last_period: "🩸",
-  typical_symptoms: "🤒",
-  period_attitude: "💭",
-  health_conditions: "🩺",
-  family_history: "🧬",
-  last_checkup: "🗓️",
-  height_weight: "⚖️",
-  notifications: "🔔",
+// MUI ikonlari ishlatiladi (emoji emas — platformalar orasida bir xil, saytning
+// qolgan qismi bilan bir xil uslubda ko'rinadi). To'liq illyustratsiyasi bor
+// bosqichlar (STEP_ILLUSTRATION) bu yerga kiritilmagan — ular ustunroq ko'rsatiladi.
+const STEP_ICON: Partial<Record<Step, StepIconComponent>> = {
+  account_choice: PersonOutlined,
+  account_identifier: LockOutlined,
+  privacy: ShieldOutlined,
+  name: EditOutlined,
+  age: CakeOutlined,
+  cycle_regularity: AutorenewOutlined,
+  typical_symptoms: SickOutlined,
+  family_history: FamilyRestroomOutlined,
+  height_weight: MonitorWeightOutlined,
 };
 
 // Har bir bosqich uchun to'liq illyustratsiya (unDraw, litsenziyasiz-erkin, tijorat
@@ -139,7 +158,6 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   account_choice: colors.secondary,
   account_identifier: colors.secondary,
   privacy: colors.secondary,
-  heard_about_us: colors.secondary,
   name: colors.secondary,
   age: colors.secondary,
   goal: colors.primary,
@@ -154,6 +172,13 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   height_weight: colors.accent,
   notifications: colors.primary,
 };
+
+/** STEP_ICON_COLOR'dagi rang qiymatini public/animations/aura-*.json fayl nomiga o'giradi. */
+function auraName(color: string): "primary" | "secondary" | "accent" {
+  if (color === colors.secondary) return "secondary";
+  if (color === colors.accent) return "accent";
+  return "primary";
+}
 
 function landingPath(goal: Goal): string {
   const tab = goalToLandingTab(goal);
@@ -182,6 +207,32 @@ const HEALTH_CONDITION_OPTIONS: HealthCondition[] = [
   "none",
 ];
 
+// Har bir alomat/holat chipiga tezkor vizual belgi ("juda quruq matn" fikridan keyin).
+const SYMPTOM_ICON: Record<Symptom, string> = {
+  cramps: "🤕",
+  headache: "🤯",
+  bloating: "🎈",
+  acne: "🔴",
+  back_pain: "🦴",
+  nausea: "🤢",
+  breast_tenderness: "💗",
+  insomnia: "🌙",
+  fatigue: "😴",
+  irritability: "😠",
+  difficulty_concentrating: "💭",
+};
+
+const HEALTH_CONDITION_ICON: Record<HealthCondition, string> = {
+  yeast_infection: "🍄",
+  uti: "💧",
+  bacterial_vaginosis: "🦠",
+  pcos: "⭕",
+  endometriosis: "🔴",
+  fibroids: "🟣",
+  unknown: "🤷",
+  none: "✅",
+};
+
 export default function OnboardingPage() {
   const { dict, language, setLanguage } = useI18n();
   const { applyMeResponse } = useSession();
@@ -191,8 +242,15 @@ export default function OnboardingPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // "Analyzing" effekti React StrictMode'da (dev rejimida) ataylab ikki marta
+  // ishga tushirilishi mumkin — bu ref shu tufayli `finish()` ikki marta (parallel
+  // ravishda) chaqirilib, onboarding ikki marta yuborilishi va natijada redirect
+  // "yarim yo'lda" osilib qolishining oldini oladi ("tahlil qilinmoqda"da abadiy
+  // qolib ketish xatosi shundan edi).
+  const finishStartedRef = useRef(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
 
-  const age = Number(survey.age);
+  const age = CURRENT_YEAR - survey.birthYear;
   const isMinor = age > 0 && age < 18;
 
   // Bosqichlar ro'yxati maqsad/yoshga qarab dinamik shakllanadi (App.pdf §7-10).
@@ -203,7 +261,6 @@ export default function OnboardingPage() {
       "account_choice",
       "account_identifier",
       "privacy",
-      "heard_about_us",
       "name",
       "age",
       "goal",
@@ -255,6 +312,7 @@ export default function OnboardingPage() {
 
   async function finish() {
     setSubmitting(true);
+    setFinishError(null);
     try {
       if (survey.primaryGoal && needsCycleInfo(survey.primaryGoal) && survey.lastPeriodDate) {
         await api.cycle.updateSettings({
@@ -268,7 +326,7 @@ export default function OnboardingPage() {
         age,
         isPregnant: survey.primaryGoal === "pregnancy",
         cycleRegularity: survey.cycleRegularity ?? "unknown",
-        familyHistory: !!survey.familyHistory,
+        familyHistory: survey.familyHistory === true,
         lastCheckup: survey.lastCheckup ?? "unknown",
         primaryGoal: survey.primaryGoal!,
         heardAboutUs: survey.heardAboutUs ?? "other",
@@ -283,6 +341,11 @@ export default function OnboardingPage() {
       });
       applyMeResponse(res);
       router.replace(landingPath(survey.primaryGoal!));
+    } catch {
+      // Xatolik bo'lsa foydalanuvchi "tahlil qilinmoqda" ekranida abadiy
+      // osilib qolmasin — xato ko'rsatiladi va qayta urinish imkoni beriladi.
+      finishStartedRef.current = false;
+      setFinishError(dict.common.errorGeneric);
     } finally {
       setSubmitting(false);
     }
@@ -292,8 +355,9 @@ export default function OnboardingPage() {
   // fetch" naqshi emas, balki foydalanuvchi shu bosqichga yetganda bir martalik
   // yakunlovchi amal, shuning uchun ataylab qoldirilgan.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (step === "analyzing") finish();
+    if (step !== "analyzing" || finishStartedRef.current) return;
+    finishStartedRef.current = true;
+    finish();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
@@ -303,8 +367,6 @@ export default function OnboardingPage() {
         return survey.accountChoice !== null;
       case "account_identifier":
         return extractUzPhoneDigits(survey.identifier) !== null;
-      case "heard_about_us":
-        return survey.heardAboutUs !== null;
       case "name":
         return survey.name.trim().length > 0;
       case "age":
@@ -314,7 +376,7 @@ export default function OnboardingPage() {
       case "cycle_regularity":
         return survey.cycleRegularity !== null;
       case "last_period":
-        return survey.lastPeriodDate.length > 0;
+        return survey.lastPeriodDate.length > 0 || survey.lastPeriodUnknown;
       case "period_attitude":
         return survey.periodAttitude !== null;
       case "family_history":
@@ -335,42 +397,64 @@ export default function OnboardingPage() {
   return (
     <div
       className={clsx(
-        "mx-auto flex min-h-dvh max-w-md flex-col px-6 py-8",
-        step === "welcome" ? "bg-aurora-cycle justify-center" : "bg-background justify-between"
+        "mx-auto flex max-w-md flex-col px-6 py-8",
+        // "welcome"da Orqaga/Keyingi tugmasi yo'q, shuning uchun oddiy markazlashgan
+        // (min-h-dvh) joylashuv yetarli. Qolgan bosqichlarda esa balandlik viewport'ga
+        // QATʼIY tenglashtiriladi (h-dvh) va faqat o'rtadagi savol matni ichida scroll
+        // qilinadi — shu orqali Orqaga/Keyingi tugmasi savol matni qanchalik uzun
+        // bo'lishidan qatʼiy nazar doim ekranning eng pastida, ilova bo'ylab hamma
+        // joydagi kabi "yopishgan" holda qoladi (avval min-h-dvh + justify-between
+        // uzun savollarda tugmani sahifa oxiriga, ko'rinmas joyga surib yuborardi).
+        step === "welcome" ? "min-h-dvh justify-center bg-aurora-cycle" : "h-dvh bg-background"
       )}
     >
       {step !== "welcome" && step !== "analyzing" && (
-        <div className="mb-6">
+        <div className="mb-6 shrink-0">
           <ProgressBar value={(stepIndex / (steps.length - 1)) * 100} />
         </div>
       )}
 
-      <div key={step} className={clsx("animate-fade-in-up", step !== "welcome" && "flex-1")}>
+      <div key={step} className={clsx("animate-fade-in-up", step !== "welcome" && "flex flex-1 flex-col overflow-y-auto")}>
         {STEP_ILLUSTRATION[step] ? (
           <div className="mb-4 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-            <img src={`/illustrations/${STEP_ILLUSTRATION[step]}.svg`} alt="" className="h-36 w-auto" />
+            <img
+              src={`/illustrations/${STEP_ILLUSTRATION[step]}.svg`}
+              alt=""
+              className={clsx("w-auto", step === "last_period" ? "h-24" : "h-36")}
+            />
           </div>
         ) : (
           STEP_ICON[step] && (
             <div className="mb-5 flex justify-center">
-              <div
-                className="flex h-16 w-16 items-center justify-center rounded-full text-3xl shadow-lg"
-                style={{ background: cssGradient(STEP_ICON_COLOR[step]!) }}
-              >
-                {STEP_ICON[step]}
+              <div className="relative flex h-44 w-44 items-center justify-center">
+                {/* O'zimiz yasagan Lottie ("nafas olayotgan" halqa-animatsiya) —
+                    uchinchi tomon fayl emas, generatori: apps/web/scripts/
+                    generate-onboarding-animations.py. Rang STEP_ICON_COLOR'ga mos. */}
+                {/* MUHIM: `className="absolute inset-0"` emas — lottie-react o'zining
+                    ".lottie-display{position:relative}" qoidasini Tailwind'ning
+                    ".absolute"idan KEYIN yuklaydi va uni bekor qiladi, natijada bu
+                    flex ichida ODDIY qatorga aylanib, ikonkani chetga surib yuborardi.
+                    Inline `style` har doim g'olib chiqadi — shuning uchun shu yerda. */}
+                <Lottie
+                  src={`/animations/aura-${auraName(STEP_ICON_COLOR[step]!)}.json`}
+                  loop
+                  autoplay
+                  style={{ position: "absolute", inset: 0 }}
+                />
+                {(() => {
+                  const StepIcon = STEP_ICON[step]!;
+                  return <StepIcon sx={{ fontSize: 42, color: "#fff", position: "relative" }} />;
+                })()}
               </div>
             </div>
           )
         )}
         {step === "welcome" && (
           <div className="flex flex-col items-center gap-6 text-center">
-            {/* logo.svg o'zining pushti foni bilan keladi (alohida "brend karta" sifatida
-                chizilgan) — shuning uchun uni shaffof belgidek emas, ozgina buralgan
-                soyali kartadek ko'rsatamiz, tashqi rangdosh "halqa" bilan o'rab emas. */}
-            <div className="animate-hero-badge overflow-hidden rounded-[28px] shadow-2xl shadow-black/20 ring-4 ring-white/20">
-              <Image src="/logo.svg" alt="Logo" width={140} height={79} priority />
-            </div>
+            {/* logo.svg — shaffof fonli belgi, hech qanday karta/soya/animatsiyasiz,
+                shunchaki fon gradienti ustida turadi. */}
+            <Image src="/logo.svg" alt="Logo" width={200} height={112} priority />
             <h1 className="animate-hero-title text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</h1>
             <p className="animate-hero-subtitle max-w-xs text-white/85">{dict.onboarding.welcomeSubtitle}</p>
             <div className="animate-fade-in-up rounded-[32px] bg-white/15 p-4" style={{ animationDelay: "0.5s" }}>
@@ -388,7 +472,7 @@ export default function OnboardingPage() {
         )}
 
         {step === "language" && (
-          <div className="flex h-full flex-col items-center justify-center gap-4">
+          <div className="flex flex-1 flex-col items-center justify-start gap-4">
             <h2 className="text-center mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</h2>
             <LangOption flag="🇺🇿" label="O'zbekcha (lotin)" active={language === "uz"} onClick={() => setLanguage("uz")} />
             <LangOption flag="🇺🇿" label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onClick={() => setLanguage("uz-cyrl")} />
@@ -409,7 +493,7 @@ export default function OnboardingPage() {
         )}
 
         {step === "account_identifier" && (
-          <div className="flex h-full flex-col justify-center gap-4">
+          <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">
               {survey.accountChoice === "login" ? dict.auth.loginIdentifierTitle : dict.auth.createIdentifierTitle}
             </h2>
@@ -429,26 +513,35 @@ export default function OnboardingPage() {
         )}
 
         {step === "privacy" && (
-          <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.privacy.title}</h2>
-            <p className="text-sm leading-relaxed text-text-secondary">{dict.privacy.body}</p>
+          <div className="flex flex-1 flex-col justify-start gap-4">
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.privacy.offerTitle}</h2>
+            <p className="text-sm leading-relaxed text-text-secondary">{dict.privacy.offerIntro}</p>
+            <div className="space-y-4 rounded-2xl border border-border bg-surface p-4">
+              {dict.privacy.offerSections.map((section) => (
+                <div key={section.title}>
+                  <p className="mb-1 text-sm font-bold text-text-primary">{section.title}</p>
+                  {section.body.split("\n").map((line, i) => (
+                    <p key={i} className="text-sm leading-relaxed text-text-secondary">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <label className="tap-target flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-border bg-surface px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-primary-light/30">
+              <input
+                type="checkbox"
+                checked={survey.agreedToOffer}
+                onChange={(e) => setSurvey((s) => ({ ...s, agreedToOffer: e.target.checked }))}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-primary"
+              />
+              <span className="text-sm font-medium text-text-primary">{dict.privacy.offerCheckboxLabel}</span>
+            </label>
           </div>
         )}
 
-        {step === "heard_about_us" && (
-          <ChoiceStep
-            title={dict.onboarding.heardAboutUsTitle}
-            options={(["social_media", "friend", "doctor", "app_store", "other"] as HeardAboutUs[]).map((v) => ({
-              label: dict.onboarding.heardAboutUs[v],
-              value: v,
-              onClick: () => setSurvey((s) => ({ ...s, heardAboutUs: v })),
-            }))}
-            selected={survey.heardAboutUs}
-          />
-        )}
-
         {step === "name" && (
-          <div className="flex h-full flex-col justify-center gap-4">
+          <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.nameQuestion}</h2>
             <input
               value={survey.name}
@@ -460,24 +553,9 @@ export default function OnboardingPage() {
         )}
 
         {step === "age" && (
-          <div className="flex h-full flex-col justify-center gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.ageLabel}</h2>
-            <Select
-              value={survey.age}
-              onChange={(e) => setSurvey((s) => ({ ...s, age: e.target.value }))}
-              displayEmpty
-              sx={{ borderRadius: "16px", fontSize: "1.125rem" }}
-              MenuProps={{ slotProps: { paper: { sx: { maxHeight: 320 } } } }}
-            >
-              <MenuItem value="" disabled>
-                —
-              </MenuItem>
-              {Array.from({ length: 88 }, (_, i) => i + 13).map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
+          <div className="flex flex-1 flex-col justify-start gap-4">
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.birthYearLabel}</h2>
+            <WheelPicker options={BIRTH_YEARS} value={survey.birthYear} onChange={(v) => setSurvey((s) => ({ ...s, birthYear: v }))} />
           </div>
         )}
 
@@ -506,7 +584,7 @@ export default function OnboardingPage() {
         )}
 
         {step === "cycle_lengths" && (
-          <div className="flex h-full flex-col justify-center gap-4">
+          <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
             <input
               type="number"
@@ -525,29 +603,51 @@ export default function OnboardingPage() {
         )}
 
         {step === "last_period" && (
-          <div className="flex h-full flex-col justify-center gap-4">
+          <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
             <input
               type="date"
               value={survey.lastPeriodDate}
+              disabled={survey.lastPeriodUnknown}
               onChange={(e) => setSurvey((s) => ({ ...s, lastPeriodDate: e.target.value }))}
-              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
+              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary disabled:opacity-50"
             />
+            <button
+              type="button"
+              onClick={() =>
+                setSurvey((s) => ({ ...s, lastPeriodUnknown: !s.lastPeriodUnknown, lastPeriodDate: s.lastPeriodUnknown ? s.lastPeriodDate : "" }))
+              }
+              className={clsx(
+                "tap-target w-full rounded-2xl border-2 px-5 py-3 text-center text-base font-medium transition",
+                survey.lastPeriodUnknown ? "border-primary bg-primary-light text-primary-dark" : "border-border bg-surface text-text-primary"
+              )}
+            >
+              {dict.common.dontKnow}
+            </button>
           </div>
         )}
 
         {step === "typical_symptoms" && (
-          <div className="flex h-full flex-col justify-center gap-4">
+          <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</h2>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {SYMPTOM_OPTIONS.map((sym) => (
                 <IconChip
                   key={sym}
                   label={dict.cycle.symptoms[sym]}
+                  icon={SYMPTOM_ICON[sym]}
                   active={survey.typicalSymptoms.includes(sym)}
-                  onClick={() => setSurvey((s) => ({ ...s, typicalSymptoms: toggleArrayValue(s.typicalSymptoms, sym) }))}
+                  onClick={() =>
+                    setSurvey((s) => ({ ...s, typicalSymptoms: toggleArrayValue(s.typicalSymptoms, sym), typicalSymptomsUnknown: false }))
+                  }
                 />
               ))}
+              <IconChip
+                label={dict.common.dontKnow}
+                icon="🤷"
+                active={survey.typicalSymptomsUnknown}
+                onClick={() => setSurvey((s) => ({ ...s, typicalSymptomsUnknown: !s.typicalSymptomsUnknown, typicalSymptoms: [] }))}
+              />
             </div>
           </div>
         )}
@@ -565,13 +665,14 @@ export default function OnboardingPage() {
         )}
 
         {step === "health_conditions" && (
-          <div className="flex h-full flex-col justify-center gap-4">
+          <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.healthConditionsQuestion}</h2>
             <div className="grid grid-cols-2 gap-2">
               {HEALTH_CONDITION_OPTIONS.map((cond) => (
                 <IconChip
                   key={cond}
                   label={dict.onboarding.healthConditions[cond]}
+                  icon={HEALTH_CONDITION_ICON[cond]}
                   active={survey.healthConditions.includes(cond)}
                   onClick={() => setSurvey((s) => ({ ...s, healthConditions: toggleArrayValue(s.healthConditions, cond) }))}
                 />
@@ -594,8 +695,9 @@ export default function OnboardingPage() {
             options={[
               { label: dict.common.yes, value: "yes", onClick: () => setSurvey((s) => ({ ...s, familyHistory: true })) },
               { label: dict.common.no, value: "no", onClick: () => setSurvey((s) => ({ ...s, familyHistory: false })) },
+              { label: dict.common.dontKnow, value: "unknown", onClick: () => setSurvey((s) => ({ ...s, familyHistory: "unknown" })) },
             ]}
-            selected={survey.familyHistory === null ? null : survey.familyHistory ? "yes" : "no"}
+            selected={survey.familyHistory === null ? null : survey.familyHistory === "unknown" ? "unknown" : survey.familyHistory ? "yes" : "no"}
           />
         )}
 
@@ -613,7 +715,7 @@ export default function OnboardingPage() {
         )}
 
         {step === "height_weight" && (
-          <div className="flex h-full flex-col justify-center gap-4">
+          <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
             <label className="text-sm font-semibold text-text-secondary">{dict.onboarding.heightLabel}</label>
             <input
@@ -644,17 +746,33 @@ export default function OnboardingPage() {
         )}
 
         {step === "analyzing" && (
-          <div className="flex h-full flex-col items-center justify-center gap-4 text-center animate-fade-in-up">
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center animate-fade-in-up">
             {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-            <img src="/illustrations/well-done.svg" alt="" className="h-40 w-auto animate-pulse" />
-            <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.analyzingTitle}</h2>
-            <p className="text-text-secondary">{dict.onboarding.analyzingSubtitle}</p>
+            <img src="/illustrations/well-done.svg" alt="" className={clsx("h-40 w-auto", !finishError && "animate-pulse")} />
+            {finishError ? (
+              <>
+                <h2 className="text-xl font-bold text-text-primary">{finishError}</h2>
+                <Button
+                  onClick={() => {
+                    finishStartedRef.current = true;
+                    finish();
+                  }}
+                >
+                  {dict.common.retryButton}
+                </Button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.analyzingTitle}</h2>
+                <p className="text-text-secondary">{dict.onboarding.analyzingSubtitle}</p>
+              </>
+            )}
           </div>
         )}
       </div>
 
       {step !== "welcome" && step !== "analyzing" && (
-        <div className="mt-8 flex items-center justify-between gap-3">
+        <div className="mt-8 flex shrink-0 items-center justify-between gap-3">
           {stepIndex > 0 ? (
             <Button variant="ghost" onClick={goBack} disabled={submitting}>
               {dict.common.back}
@@ -667,7 +785,9 @@ export default function OnboardingPage() {
               {dict.common.continueButton}
             </Button>
           ) : step === "privacy" ? (
-            <Button onClick={goNext}>{dict.privacy.agreeButton}</Button>
+            <Button onClick={goNext} disabled={!survey.agreedToOffer}>
+              {dict.privacy.agreeButton}
+            </Button>
           ) : (
             <Button onClick={goNext} disabled={!canProceed()}>
               {dict.common.next}
@@ -676,6 +796,82 @@ export default function OnboardingPage() {
         </div>
       )}
 
+    </div>
+  );
+}
+
+// "Tug'ilgan yil" uchun — iOS'dagi "wheel" pastga-tepaga varaqlanadigan tanlagichga
+// o'xshab, scroll-snap orqali. Uchinchi tomon kutubxonasiz — CSS scroll-snap +
+// scroll tugagach markazdagi qatorni aniqlash orqali ishlaydi.
+const WHEEL_ITEM_HEIGHT = 48;
+const WHEEL_VISIBLE_ROWS = 5;
+
+function WheelPicker({ options, value, onChange }: { options: number[]; value: number; onChange: (value: number) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const settleTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
+
+  // Faqat birinchi renderda — tashqi `value`ga mos qatorga scroll qilamiz
+  // (keyingi o'zgarishlar esa foydalanuvchining o'zi scroll qilishidan keladi).
+  useEffect(() => {
+    const idx = options.indexOf(value);
+    if (idx === -1 || !containerRef.current) return;
+    containerRef.current.scrollTop = idx * WHEEL_ITEM_HEIGHT;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function settle() {
+    const el = containerRef.current;
+    if (!el) return;
+    const idx = Math.min(Math.max(Math.round(el.scrollTop / WHEEL_ITEM_HEIGHT), 0), options.length - 1);
+    el.scrollTo({ top: idx * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
+    const picked = options[idx];
+    if (picked !== value) onChange(picked);
+  }
+
+  function handleScroll() {
+    if (settleTimeout.current) clearTimeout(settleTimeout.current);
+    settleTimeout.current = setTimeout(settle, 120);
+  }
+
+  // Zamonaviy brauzerlarda `scrollend` — debounce'dan aniqroq va tezroq.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !("onscrollend" in window)) return;
+    el.addEventListener("scrollend", settle);
+    return () => el.removeEventListener("scrollend", settle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return (
+    <div className="relative mx-auto w-full max-w-xs" style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
+      {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-1/2 z-10 -translate-y-1/2 rounded-2xl border-2 border-primary bg-primary-light/15"
+        style={{ height: WHEEL_ITEM_HEIGHT }}
+      />
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="tap-target h-full overflow-y-auto scroll-smooth"
+        style={{
+          scrollSnapType: "y mandatory",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
+          maskImage: "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
+        }}
+      >
+        <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
+        {options.map((opt) => (
+          <div
+            key={opt}
+            className="flex items-center justify-center text-lg font-semibold text-text-primary"
+            style={{ height: WHEEL_ITEM_HEIGHT, scrollSnapAlign: "center" }}
+          >
+            {opt}
+          </div>
+        ))}
+        <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
+      </div>
     </div>
   );
 }
@@ -705,7 +901,7 @@ function ChoiceStep({
   selected: string | null;
 }) {
   return (
-    <div className="flex h-full flex-col justify-center gap-3">
+    <div className="flex flex-1 flex-col justify-start gap-3">
       <h2 className="mb-2 text-xl font-bold text-text-primary">{title}</h2>
       {options.map((opt) => (
         <button
