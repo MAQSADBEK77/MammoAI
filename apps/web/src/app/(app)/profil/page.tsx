@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { BloodType, CycleResponse, Goal, Language } from "@mammoai/shared";
 import { BLOOD_TYPES, getModeAccentColors, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { Switch, Select, MenuItem } from "@mui/material";
 import clsx from "clsx";
 import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, VisibilityOutlined as Eye, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen } from "@mui/icons-material";
@@ -58,6 +59,7 @@ function resizeImageToDataUri(file: File): Promise<string> {
 export default function ProfilePage() {
   const { dict, language, setLanguage } = useI18n();
   const { user, onboardingProfile, refresh } = useSession();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editingHeader, setEditingHeader] = useState(false);
@@ -73,6 +75,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [logsCount, setLogsCount] = useState<number | null>(null);
   const [cycleSettings, setCycleSettings] = useState<CycleResponse["settings"] | null>(null);
   const [actionFlash, setActionFlash] = useState<string | null>(null);
@@ -176,6 +180,33 @@ export default function ProfilePage() {
       URL.revokeObjectURL(url);
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function logout() {
+    if (!window.confirm(dict.profile.logoutConfirmMessage)) return;
+    setLoggingOut(true);
+    try {
+      await api.auth.logout();
+      await refresh();
+      router.replace("/onboarding");
+    } catch {
+      setLoggingOut(false);
+      flash(dict.profile.logoutError);
+    }
+  }
+
+  async function deleteAccount() {
+    if (!window.confirm(dict.profile.deleteAccountConfirmMessage)) return;
+    if (!window.confirm(dict.profile.deleteAccountConfirmButton)) return;
+    setDeleting(true);
+    try {
+      await api.me.deleteAccount();
+      await refresh();
+      router.replace("/onboarding");
+    } catch {
+      setDeleting(false);
+      flash(dict.profile.deleteAccountError);
     }
   }
 
@@ -501,9 +532,40 @@ export default function ProfilePage() {
         </button>
       </Card>
 
-      <Button variant="secondary" className="w-full" onClick={exportData} disabled={exporting}>
-        {dict.profile.exportButton}
-      </Button>
+      {/* Profil "og'irlik darajasi bo'yicha" harakatlar — eksport (neytral) →
+          chiqish (neytral) → o'chirish (qizil), bir xil chegaralangan-pill
+          uslubda (variant="secondary"ning tasodifiy binafsha rangi bu
+          ekranning pushti mavzusiga mos kelmasdi — mobil bilan bir xil tuzatish). */}
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={exportData}
+          disabled={exporting}
+          className="tap-target w-full rounded-2xl border border-border bg-surface py-3 text-center text-sm font-semibold text-text-primary transition hover:bg-surface-muted disabled:opacity-50"
+        >
+          {dict.profile.exportButton}
+        </button>
+
+        <button
+          type="button"
+          onClick={logout}
+          disabled={loggingOut}
+          className="tap-target w-full rounded-2xl border border-border bg-surface py-3 text-center text-sm font-semibold text-text-primary transition hover:bg-surface-muted disabled:opacity-50"
+        >
+          {dict.profile.logoutButton}
+        </button>
+
+        {/* Play Store "akkauntni o'chirish" talabi — App.pdf'dan tashqari, foydalanuvchi
+            hech qanday tashqi murojaatsiz akkauntini butunlay o'chira olishi shart. */}
+        <button
+          type="button"
+          onClick={deleteAccount}
+          disabled={deleting}
+          className="tap-target w-full rounded-2xl border border-danger/30 py-3 text-center text-sm font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-50"
+        >
+          {dict.profile.deleteAccountButton}
+        </button>
+      </div>
 
       {(saving || savedFlash || actionFlash) && (
         <p className="text-center text-sm text-text-muted">

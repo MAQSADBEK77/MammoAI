@@ -20,6 +20,8 @@ const en: Dictionary = {
     no: "No",
     dontKnow: "I don't know",
     other: "Other",
+    errorGeneric: "Something went wrong. Please try again in a moment.",
+    retryButton: "Try again",
     free: "Free",
     paid: "Paid",
     continueButton: "Continue",
@@ -82,7 +84,57 @@ const en: Dictionary = {
     contact:
       "For questions, complaints, or requests about your data, contact: maqsadbekusmonov8@gmail.com",
     deletion:
-      "You can export your data from the Profile section at any time. To request full deletion of your account and all related data, contact the email address above — your request will be handled within 30 days.",
+      "You can export your data from the Profile section at any time. To permanently delete your account and all related data, use the \"Delete account permanently\" button in the Profile section — deletion happens immediately and cannot be undone. If you can't access the app, you can send the same request to the email address above.",
+    medicalDisclaimer:
+      "This app does not provide medical diagnoses and does not replace professional medical advice — always consult a qualified doctor before making decisions about your health.",
+    notForChildren:
+      "The app is intended for users 18 and older and does not knowingly collect data from children under 13.",
+    offerTitle: "Public Offer Agreement",
+    offerIntro:
+      "This document is a public offer under Article 369 of the Civil Code of the Republic of Uzbekistan and sets out the terms of use of the \"Women's Health\" (MammoAI) app (the \"App\"). Registering or starting to use the App constitutes full and unconditional acceptance of these terms.",
+    offerSections: [
+      {
+        title: "1. General provisions",
+        body: "1.1. The App is operated by independent developer Maqsadbek Usmonov (the \"Operator\").\n1.2. The App is free software intended for personal tracking of the menstrual cycle, pregnancy, and general health.\n1.3. These terms may change as new versions of the App are released — the updated text is published within the App.",
+      },
+      {
+        title: "2. Description of the service",
+        body: "2.1. The App provides: a cycle calendar and prediction, pregnancy tracking, medical checkup reminders, a self-assessment quiz, a community, and similar features.\n2.2. The App does not provide medical diagnoses and does not replace professional medical advice, diagnosis, or treatment. Always consult a qualified doctor before making decisions about your health.",
+      },
+      {
+        title: "3. User rights and obligations",
+        body: "3.1. The user must use the App only for lawful purposes and provide accurate personal information.\n3.2. The App is intended for users 18 and older (not intended for those under 13).\n3.3. The user is responsible for keeping their account details (phone number) confidential.",
+      },
+      {
+        title: "4. Operator rights and obligations",
+        body: "4.1. The Operator makes reasonable efforts to keep the App running reliably but does not guarantee uninterrupted, error-free operation.\n4.2. The Operator processes user data in accordance with the Privacy Policy on this page and does not sell it to third parties.\n4.3. The Operator reserves the right to temporarily or permanently suspend a user's account in case of a violation of these terms.",
+      },
+      {
+        title: "5. Payment terms",
+        body: "5.1. The App's core features are provided free of charge. Additional (Premium) features may be offered on a paid basis in the future — users will be notified in advance.",
+      },
+      {
+        title: "6. Limitation of liability",
+        body: "6.1. Information obtained through the App is advisory in nature and does not constitute a medical diagnosis.\n6.2. The Operator is not liable for adverse consequences that may result from decisions the user makes based on information in the App.",
+      },
+      {
+        title: "7. Intellectual property",
+        body: "7.1. The App's design, code, and content belong to the Operator and are protected under the laws of the Republic of Uzbekistan.",
+      },
+      {
+        title: "8. Termination",
+        body: "8.1. The user may terminate this agreement at any time by permanently deleting their account in the Profile section.",
+      },
+      {
+        title: "9. Dispute resolution",
+        body: "9.1. Disputes arising from this offer are resolved through negotiation; failing agreement, in accordance with the applicable law of the Republic of Uzbekistan.",
+      },
+      {
+        title: "10. Operator details",
+        body: "Independent developer: Maqsadbek Usmonov\nContact: maqsadbekusmonov8@gmail.com",
+      },
+    ],
+    offerCheckboxLabel: "I have read and agree to the terms of the public offer",
   },
 
   onboarding: {
@@ -106,6 +158,7 @@ const en: Dictionary = {
     namePlaceholder: "Your name",
 
     ageLabel: "Your age",
+    birthYearLabel: "Your birth year",
 
     goalTitle: "What's your main goal with the app?",
     goals: {
@@ -514,6 +567,16 @@ const en: Dictionary = {
     fontSizeLarge: "Large",
     highContrastLabel: "High contrast",
     exportButton: "Export data",
+    deleteAccountButton: "Delete account permanently",
+    deleteAccountConfirmTitle: "Delete your account?",
+    deleteAccountConfirmMessage:
+      "Your profile, cycle/pregnancy records, community posts, and all other data will be permanently deleted. This action cannot be undone.",
+    deleteAccountConfirmButton: "Yes, delete permanently",
+    deleteAccountError: "Something went wrong while deleting. Please try again in a moment.",
+    logoutButton: "Log out",
+    logoutConfirmMessage: "Log out of your account? Your data will be kept — you can sign back in anytime using your phone number.",
+    logoutConfirmButton: "Yes, log out",
+    logoutError: "Something went wrong while logging out. Please try again in a moment.",
     savedMessage: "Saved",
     notificationsLabel: "Notifications",
     statsTitle: "My statistics",

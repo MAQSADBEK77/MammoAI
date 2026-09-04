@@ -15,6 +15,11 @@ export default function PrivacyPolicyScreen() {
           <Text className="leading-relaxed text-text-secondary">{dict.privacy.dataCollected}</Text>
           <Text className="leading-relaxed text-text-secondary">{dict.privacy.noSelling}</Text>
           <Text className="leading-relaxed text-text-secondary">{dict.privacy.accountSecurity}</Text>
+          <Text className="leading-relaxed text-text-secondary">{dict.privacy.medicalDisclaimer}</Text>
+          <Text className="leading-relaxed text-text-secondary">{dict.privacy.notForChildren}</Text>
+          <Text className="leading-relaxed text-text-secondary">{dict.privacy.deletion}</Text>
+          <Text className="leading-relaxed text-text-secondary">{dict.privacy.operator}</Text>
+          <Text className="leading-relaxed text-text-secondary">{dict.privacy.contact}</Text>
         </Card>
       </ScrollView>
     </SafeAreaView>

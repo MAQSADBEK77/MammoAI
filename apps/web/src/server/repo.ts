@@ -163,6 +163,17 @@ export async function updateUser(
   return merged;
 }
 
+/** Akkaunt va unga tegishli BARCHA ma'lumotlarni butunlay o'chiradi (Play Store
+ * "hisobni o'chirish" talabi — App.pdf'dan tashqari). Barcha bog'liq jadvallar
+ * `users(id)`ga `ON DELETE CASCADE` bilan bog'langan (db.ts), shuning uchun bitta
+ * qatorni o'chirish tsikl yozuvlari, hamkorlik, jamiyat postlari va h.k.ni ham
+ * avtomatik olib tashlaydi. Qaytarib bo'lmaydigan amal.
+ */
+export async function deleteUser(id: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM users WHERE id = ${id}`;
+}
+
 // ---------------------------------------------------------------------------
 // Onboarding
 // ---------------------------------------------------------------------------

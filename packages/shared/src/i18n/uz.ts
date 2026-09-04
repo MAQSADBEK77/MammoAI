@@ -19,6 +19,8 @@ const uz = {
     no: "Yo'q",
     dontKnow: "Bilmayman",
     other: "Boshqa",
+    errorGeneric: "Nimadir xato ketdi. Birozdan keyin qayta urinib ko'ring.",
+    retryButton: "Qayta urinish",
     free: "Bepul",
     paid: "Pullik",
     continueButton: "Davom etish",
@@ -84,7 +86,57 @@ const uz = {
     contact:
       "Savollaringiz, shikoyatlaringiz yoki ma'lumotlaringiz bo'yicha so'rovlaringiz uchun: maqsadbekusmonov8@gmail.com",
     deletion:
-      "Ma'lumotlaringizni istalgan vaqt Profil bo'limidan eksport qilishingiz mumkin. Akkauntingizni va unga tegishli barcha ma'lumotlarni butunlay o'chirishni so'rash uchun yuqoridagi email manzilga murojaat qiling — so'rovingiz 30 kun ichida bajariladi.",
+      "Ma'lumotlaringizni istalgan vaqt Profil bo'limidan eksport qilishingiz mumkin. Akkauntingizni va unga tegishli barcha ma'lumotlarni butunlay o'chirish uchun Profil bo'limidagi \"Akkauntni butunlay o'chirish\" tugmasidan foydalaning — bu amal darhol va qaytarib bo'lmaydigan tarzda bajariladi. Ilovadan foydalana olmasangiz ham, yuqoridagi email manziliga yozib, xuddi shu so'rovni yuborishingiz mumkin.",
+    medicalDisclaimer:
+      "Ushbu ilova tibbiy tashxis qo'ymaydi va shifokor maslahati o'rnini bosmaydi — sog'lig'ingiz bo'yicha qaror qabul qilishdan oldin har doim malakali shifokorga murojaat qiling.",
+    notForChildren:
+      "Ilova 18 yoshdan katta foydalanuvchilar uchun mo'ljallangan va bolalar (13 yoshgacha)dan ongli ravishda ma'lumot yig'maydi.",
+    offerTitle: "Ommaviy oferta",
+    offerIntro:
+      "Ushbu hujjat O'zbekiston Respublikasi Fuqarolik Kodeksining 369-moddasiga muvofiq ommaviy oferta hisoblanadi va \"Ayollar salomatligi\" (MammoAI) ilovasidan (\"Ilova\") foydalanish shartlarini belgilaydi. Ilovadan ro'yxatdan o'tish yoki undan foydalanishni boshlash ushbu shartlarni to'liq va so'zsiz qabul qilish (aksept) hisoblanadi.",
+    offerSections: [
+      {
+        title: "1. Umumiy qoidalar",
+        body: "1.1. Ilova operatori — mustaqil dasturchi Maqsadbek Usmonov (\"Operator\").\n1.2. Ilova ayollarning hayz sikli, homiladorlik va umumiy sog'lig'ini shaxsiy kuzatish uchun mo'ljallangan bepul dastur ta'minotidir.\n1.3. Ushbu oferta shartlari Ilovaning yangi versiyalari chiqishi bilan o'zgarishi mumkin — yangilangan matn Ilova ichida e'lon qilinadi.",
+      },
+      {
+        title: "2. Xizmat tavsifi",
+        body: "2.1. Ilova quyidagi imkoniyatlarni taqdim etadi: hayz sikli kalendari va bashorati, homiladorlik kuzatuvi, tibbiy tekshiruv eslatmalari, o'z-o'zini baholash testi, foydalanuvchilar hamjamiyati va boshqa shu kabi funksiyalar.\n2.2. Ilova tibbiy tashxis qo'ymaydi va professional tibbiy maslahat, diagnostika yoki davolash o'rnini bosmaydi. Sog'lig'ingizga oid har qanday qaror qabul qilishdan oldin malakali shifokorga murojaat qiling.",
+      },
+      {
+        title: "3. Foydalanuvchining huquq va majburiyatlari",
+        body: "3.1. Foydalanuvchi Ilovadan faqat qonuniy maqsadlarda, o'z shaxsiy ma'lumotlarini to'g'ri kiritgan holda foydalanishga majburdir.\n3.2. Ilova 18 yoshdan katta foydalanuvchilar uchun mo'ljallangan (13 yoshgacha bo'lganlar uchun emas).\n3.3. Foydalanuvchi o'z akkaunt ma'lumotlarining (telefon raqami) maxfiyligini saqlashga mas'uldir.",
+      },
+      {
+        title: "4. Operatorning huquq va majburiyatlari",
+        body: "4.1. Operator Ilovaning barqaror ishlashiga harakat qiladi, biroq uzluksiz va xatosiz ishlashga kafolat bermaydi.\n4.2. Operator foydalanuvchi ma'lumotlarini ushbu sahifadagi Maxfiylik siyosatiga muvofiq qayta ishlaydi va uchinchi shaxslarga sotmaydi.\n4.3. Operator qoidabuzarlik yuz berganda foydalanuvchi akkauntini vaqtincha yoki butunlay to'xtatish huquqini o'zida saqlaydi.",
+      },
+      {
+        title: "5. To'lov shartlari",
+        body: "5.1. Ilovaning asosiy funksiyalari bepul taqdim etiladi. Kelajakda qo'shimcha (Premium) imkoniyatlar pullik asosda taklif etilishi mumkin — bu haqda foydalanuvchiga alohida, oldindan xabar beriladi.",
+      },
+      {
+        title: "6. Javobgarlikni cheklash",
+        body: "6.1. Ilova orqali olingan ma'lumotlar tavsiya xarakteriga ega bo'lib, tibbiy tashxis hisoblanmaydi.\n6.2. Operator foydalanuvchining Ilovadagi ma'lumotlarga asoslanib qabul qilgan qarorlari natijasida yuzaga kelishi mumkin bo'lgan salbiy oqibatlar uchun javobgar emas.",
+      },
+      {
+        title: "7. Intellektual mulk",
+        body: "7.1. Ilovaning dizayni, kodi va kontenti Operatorga tegishli bo'lib, O'zbekiston Respublikasi qonunchiligi bilan himoyalangan.",
+      },
+      {
+        title: "8. Shartnomani bekor qilish",
+        body: "8.1. Foydalanuvchi istalgan vaqtda Profil bo'limidan akkauntini butunlay o'chirish orqali ushbu shartnomani bekor qilishi mumkin.",
+      },
+      {
+        title: "9. Nizolarni hal qilish",
+        body: "9.1. Ushbu oferta yuzasidan kelib chiqadigan nizolar muzokaralar yo'li bilan, kelishuvga erishilmasa — O'zbekiston Respublikasining amaldagi qonunchiligiga muvofiq hal qilinadi.",
+      },
+      {
+        title: "10. Operator rekvizitlari",
+        body: "Mustaqil dasturchi: Maqsadbek Usmonov\nAloqa uchun: maqsadbekusmonov8@gmail.com",
+      },
+    ],
+    offerCheckboxLabel: "Ommaviy oferta shartlari bilan tanishdim va qabul qilaman",
   },
 
   onboarding: {
@@ -108,6 +160,7 @@ const uz = {
     namePlaceholder: "Ismingiz",
 
     ageLabel: "Yoshingiz",
+    birthYearLabel: "Tug'ilgan yilingiz",
 
     goalTitle: "Ilovadan asosiy maqsadingiz nima?",
     goals: {
@@ -519,6 +572,16 @@ const uz = {
     fontSizeLarge: "Katta",
     highContrastLabel: "Yuqori kontrast",
     exportButton: "Ma'lumotlarni eksport qilish",
+    deleteAccountButton: "Akkauntni butunlay o'chirish",
+    deleteAccountConfirmTitle: "Akkauntni o'chirasizmi?",
+    deleteAccountConfirmMessage:
+      "Profilingiz, tsikl/homiladorlik yozuvlari, jamiyat postlaringiz va boshqa barcha ma'lumotlar butunlay o'chiriladi. Bu amalni ortga qaytarib bo'lmaydi.",
+    deleteAccountConfirmButton: "Ha, butunlay o'chirish",
+    deleteAccountError: "O'chirishda xatolik yuz berdi. Birozdan keyin qayta urinib ko'ring.",
+    logoutButton: "Akkauntdan chiqish",
+    logoutConfirmMessage: "Akkauntingizdan chiqasizmi? Ma'lumotlaringiz saqlanib qoladi — telefon raqamingiz orqali istalgan vaqt qayta kirishingiz mumkin.",
+    logoutConfirmButton: "Ha, chiqish",
+    logoutError: "Chiqishda xatolik yuz berdi. Birozdan keyin qayta urinib ko'ring.",
     savedMessage: "Saqlandi",
     notificationsLabel: "Bildirishnomalar",
     statsTitle: "Mening statistikam",

@@ -11,7 +11,9 @@ const nunito = Nunito({ subsets: ["latin", "cyrillic"], variable: "--font-body" 
 export const metadata: Metadata = {
   title: "Ayollar salomatligi",
   description: "Hayz tsikli, homiladorlik va tekshiruv kuzatuvchisi",
-  icons: { icon: "/logo.svg" },
+  // logo.svg endi faqat shaffof (fonsiz) belgi — bryauzer tab fonida ko'rinmasligi
+  // mumkin, shuning uchun favicon uchun brend-fonli PNG ishlatiladi.
+  icons: { icon: "/favicon.png" },
 };
 
 export const viewport: Viewport = {

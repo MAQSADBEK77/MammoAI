@@ -13,8 +13,9 @@ import { BLOOD_TYPES, getModeAccentColors, gradientStops, colors, gradients, for
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
+import { clearToken } from "@/lib/storage";
 import { useDrawer } from "@/lib/drawer";
-import { Button, Card, TextField } from "@/components/ui";
+import { Card, TextField } from "@/components/ui";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const MODES: { goal: Goal; icon: string }[] = [
@@ -51,6 +52,8 @@ export default function ProfileScreen() {
   const [languagePickerOpen, setLanguagePickerOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [logsCount, setLogsCount] = useState<number | null>(null);
   const [cycleSettings, setCycleSettings] = useState<CycleSettings | null>(null);
 
@@ -143,6 +146,54 @@ export default function ProfileScreen() {
     } finally {
       setSaving(false);
     }
+  }
+
+  // Akkauntdan chiqish — mobilda cookie emas, "Bearer" tokeni ishlatilgani
+  // uchun serverga murojaat shart emas, tokenni qurilmadan o'chirish kifoya.
+  // Ma'lumotlar saqlanib qoladi — telefon raqami orqali qayta kirish mumkin.
+  function logout() {
+    Alert.alert(dict.profile.logoutButton, dict.profile.logoutConfirmMessage, [
+      { text: dict.common.cancel, style: "cancel" },
+      {
+        text: dict.profile.logoutConfirmButton,
+        onPress: async () => {
+          setLoggingOut(true);
+          try {
+            await clearToken();
+            await refresh();
+            router.replace("/");
+          } catch {
+            Alert.alert(dict.profile.logoutError);
+          } finally {
+            setLoggingOut(false);
+          }
+        },
+      },
+    ]);
+  }
+
+  // Play Store "akkauntni o'chirish" talabi — App.pdf'dan tashqari, foydalanuvchi
+  // hech qanday tashqi murojaatsiz akkauntini butunlay o'chira olishi shart.
+  function deleteAccount() {
+    Alert.alert(dict.profile.deleteAccountConfirmTitle, dict.profile.deleteAccountConfirmMessage, [
+      { text: dict.common.cancel, style: "cancel" },
+      {
+        text: dict.profile.deleteAccountConfirmButton,
+        style: "destructive",
+        onPress: async () => {
+          setDeleting(true);
+          try {
+            await api.me.deleteAccount();
+            await clearToken();
+            await refresh();
+            router.replace("/");
+          } catch {
+            setDeleting(false);
+            Alert.alert(dict.profile.deleteAccountError);
+          }
+        },
+      },
+    ]);
   }
 
   const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
@@ -456,21 +507,56 @@ export default function ProfileScreen() {
           </Pressable>
         </Card>
 
-        <Button
-          variant="secondary"
-          onPress={async () => {
-            const data = await api.me.exportData();
-            const fileUri = `${FileSystem.cacheDirectory}mammoai-malumotlar.json`;
-            await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(data, null, 2));
-            if (await Sharing.isAvailableAsync()) {
-              await Sharing.shareAsync(fileUri, { mimeType: "application/json" });
-            }
-          }}
-        >
-          {dict.profile.exportButton}
-        </Button>
+        {/* Profil "og'irlik darajasi bo'yicha" harakatlar — eksport (neytral) →
+            chiqish (neytral) → o'chirish (qizil), bir xil chegaralangan-pill
+            uslubda, aniq oraliq bilan (variant="secondary"ning tasodifiy
+            binafsha rangi bu ekranning pushti mavzusiga mos kelmasdi). */}
+        <View className="gap-3">
+          <ProfileActionButton
+            label={dict.profile.exportButton}
+            onPress={async () => {
+              const data = await api.me.exportData();
+              const fileUri = `${FileSystem.cacheDirectory}mammoai-malumotlar.json`;
+              await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(data, null, 2));
+              if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(fileUri, { mimeType: "application/json" });
+              }
+            }}
+          />
+          <ProfileActionButton label={dict.profile.logoutButton} onPress={logout} disabled={loggingOut} />
+          <ProfileActionButton label={dict.profile.deleteAccountButton} onPress={deleteAccount} disabled={deleting} tone="danger" />
+        </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** Profil oxiridagi "hisob harakatlari" (eksport/chiqish/o'chirish) uchun bir xil
+ * chegaralangan-pill tugma — `tone="danger"` faqat rangini qizilga o'zgartiradi. */
+function ProfileActionButton({
+  label,
+  onPress,
+  disabled,
+  tone = "neutral",
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  tone?: "neutral" | "danger";
+}) {
+  const color = tone === "danger" ? colors.danger : colors.textPrimary;
+  const borderColor = tone === "danger" ? `${colors.danger}4D` : colors.border;
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      className="items-center rounded-2xl border bg-surface py-3 active:opacity-60"
+      style={{ borderColor, opacity: disabled ? 0.5 : 1 }}
+    >
+      <Text className="text-sm font-semibold" style={{ color }}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 

@@ -144,6 +144,9 @@ export function createApiClient(config: ApiClientConfig) {
       /** Telefon raqam bilan akkaunt yaratish yoki mavjudiga kirish. */
       start: (payload: AuthStartPayload) =>
         request<AuthStartResponse>("/api/auth/start", { method: "POST", body: JSON.stringify(payload) }),
+      /** Faqat veb uchun — httpOnly sessiya cookie'sini o'chiradi. Mobil o'z
+       * tokenini mahalliy (SecureStore) o'chiradi, bu chaqiruv shart emas. */
+      logout: () => request<{ ok: true }>("/api/auth/logout", { method: "POST" }),
     },
     onboarding: {
       submit: (payload: OnboardingPayload) =>
@@ -162,6 +165,9 @@ export function createApiClient(config: ApiClientConfig) {
         patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "avatarUrl">>
       ) => request<MeResponse>("/api/me", { method: "PATCH", body: JSON.stringify(patch) }),
       exportData: () => request<Record<string, unknown>>("/api/me/export"),
+      /** Play Store "akkauntni o'chirish" talabi — akkaunt va barcha ma'lumotlarni
+       * qaytarib bo'lmaydigan tarzda o'chiradi (backend: CASCADE, repo.ts:deleteUser). */
+      deleteAccount: () => request<{ ok: true }>("/api/me", { method: "DELETE" }),
     },
     cycle: {
       get: () => request<CycleResponse>("/api/cycle"),

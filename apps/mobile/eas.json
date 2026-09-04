@@ -17,6 +17,9 @@
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://mammoai-maqsadbek77s-projects.vercel.app"
       }
     }
   }
