@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import clsx from "clsx";
 import { adminApi, type AdminUserSummary } from "@/lib/admin-api";
 import { Card, Badge, Button } from "@/components/ui";
 
@@ -31,6 +32,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [blockingId, setBlockingId] = useState<string | null>(null);
 
   const load = useCallback((currentSearch: string, currentOffset: number) => {
     setLoading(true);
@@ -53,6 +55,21 @@ export default function AdminUsersPage() {
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  async function handleToggleBlock(user: AdminUserSummary) {
+    const action = user.isBlocked ? "blokdan chiqarishni" : "bloklashni";
+    const confirmed = window.confirm(`${user.name ?? user.phone ?? user.id} foydalanuvchisini ${action} tasdiqlaysizmi?`);
+    if (!confirmed) return;
+    setBlockingId(user.id);
+    try {
+      await adminApi.users.update(user.id, { isBlocked: !user.isBlocked });
+      load(search, offset);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Amalda xatolik");
+    } finally {
+      setBlockingId(null);
+    }
+  }
 
   async function handleDelete(user: AdminUserSummary) {
     const confirmed = window.confirm(`${user.name ?? user.phone ?? user.id} foydalanuvchisini butunlay o'chirishni tasdiqlaysizmi?`);
@@ -101,20 +118,21 @@ export default function AdminUsersPage() {
                 <th className="px-5 py-3">Sikl yozuvlari</th>
                 <th className="px-5 py-3">Oxirgi faollik</th>
                 <th className="px-5 py-3">Ro&apos;yxatdan o&apos;tgan</th>
+                <th className="px-5 py-3">Holat</th>
                 <th className="px-5 py-3 text-right">Amallar</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-text-muted">
+                  <td colSpan={8} className="px-5 py-10 text-center text-text-muted">
                     Yuklanmoqda…
                   </td>
                 </tr>
               )}
               {!loading && users.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-text-muted">
+                  <td colSpan={8} className="px-5 py-10 text-center text-text-muted">
                     Hech narsa topilmadi
                   </td>
                 </tr>
@@ -135,15 +153,31 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3 text-text-secondary">{u.cycleLogsCount}</td>
                     <td className="px-5 py-3 text-text-secondary">{formatDate(u.lastActiveAt)}</td>
                     <td className="px-5 py-3 text-text-secondary">{formatDate(u.createdAt)}</td>
+                    <td className="px-5 py-3">
+                      {u.isBlocked ? <Badge tone="danger">Bloklangan</Badge> : <Badge tone="success">Faol</Badge>}
+                    </td>
                     <td className="px-5 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(u)}
-                        disabled={deletingId === u.id}
-                        className="rounded-full px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-50"
-                      >
-                        {deletingId === u.id ? "O'chirilmoqda…" : "O'chirish"}
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleBlock(u)}
+                          disabled={blockingId === u.id}
+                          className={clsx(
+                            "rounded-full px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50",
+                            u.isBlocked ? "text-success hover:bg-success/10" : "text-warning hover:bg-warning/10"
+                          )}
+                        >
+                          {blockingId === u.id ? "…" : u.isBlocked ? "Blokdan chiqarish" : "Bloklash"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(u)}
+                          disabled={deletingId === u.id}
+                          className="rounded-full px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-50"
+                        >
+                          {deletingId === u.id ? "O'chirilmoqda…" : "O'chirish"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -89,12 +89,41 @@ interface SurveyState {
   lastCheckup: OnboardingProfile["lastCheckup"] | null;
   heightCm: string;
   weightKg: string;
+  /** Bo'y/vazn wheel-picker'i uchun birlik tizimi — true bo'lsa fut/dyuym/funt ko'rsatiladi. */
+  useImperialUnits: boolean;
+  /** Imperial rejimdagi qiymatlar — metrikdan mustaqil saqlanadi (har scroll'da
+   * qayta-qayta o'girishdan kelib chiqadigan "sakrash"ning oldini olish uchun);
+   * birliklar almashtirilganda bir martagina o'giriladi (bu holat + submit paytida). */
+  heightFeet: number;
+  heightInches: number;
+  weightLb: number;
   notificationsEnabled: boolean | null;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
 // Yosh o'rniga tug'ilgan yil so'raladi (wheel-picker) — 13-100 yosh oralig'iga mos yillar.
 const BIRTH_YEARS = Array.from({ length: 88 }, (_, i) => CURRENT_YEAR - 100 + i);
+
+// Bo'y/vazn wheel-picker'lari uchun qiymatlar oralig'i.
+const HEIGHT_CM_OPTIONS = Array.from({ length: 121 }, (_, i) => 100 + i); // 100–220 sm
+const WEIGHT_KG_OPTIONS = Array.from({ length: 171 }, (_, i) => 30 + i); // 30–200 kg
+const HEIGHT_FEET_OPTIONS = Array.from({ length: 5 }, (_, i) => 3 + i); // 3–7 fut
+const HEIGHT_INCHES_OPTIONS = Array.from({ length: 12 }, (_, i) => i); // 0–11 dyuym
+const WEIGHT_LB_OPTIONS = Array.from({ length: 375 }, (_, i) => 66 + i); // 66–440 funt
+
+function cmToFeetInches(cm: number): { feet: number; inches: number } {
+  const totalInches = Math.round(cm / 2.54);
+  return { feet: Math.floor(totalInches / 12), inches: totalInches % 12 };
+}
+function feetInchesToCm(feet: number, inches: number): number {
+  return Math.round((feet * 12 + inches) * 2.54);
+}
+function kgToLb(kg: number): number {
+  return Math.round(kg * 2.20462);
+}
+function lbToKg(lb: number): number {
+  return Math.round(lb / 2.20462);
+}
 
 const INITIAL_SURVEY: SurveyState = {
   accountChoice: null,
@@ -116,8 +145,12 @@ const INITIAL_SURVEY: SurveyState = {
   healthConditionsOther: "",
   familyHistory: null,
   lastCheckup: null,
-  heightCm: "",
-  weightKg: "",
+  heightCm: "165",
+  weightKg: "60",
+  useImperialUnits: false,
+  heightFeet: 5,
+  heightInches: 5,
+  weightLb: 132,
   notificationsEnabled: null,
 };
 
@@ -334,8 +367,8 @@ export default function OnboardingPage() {
         periodAttitude: survey.periodAttitude,
         healthConditions: survey.healthConditions,
         healthConditionsOther: survey.healthConditionsOther || null,
-        heightCm: survey.heightCm ? Number(survey.heightCm) : null,
-        weightKg: survey.weightKg ? Number(survey.weightKg) : null,
+        heightCm: survey.useImperialUnits ? feetInchesToCm(survey.heightFeet, survey.heightInches) : Number(survey.heightCm) || null,
+        weightKg: survey.useImperialUnits ? lbToKg(survey.weightLb) : Number(survey.weightKg) || null,
         bloodType: null,
         notificationsEnabled: !!survey.notificationsEnabled,
       });
@@ -715,34 +748,118 @@ export default function OnboardingPage() {
         )}
 
         {step === "height_weight" && (
-          <div className="flex flex-1 flex-col justify-start gap-4">
+          <div className="flex flex-1 flex-col justify-start gap-5">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
-            <label className="text-sm font-semibold text-text-secondary">{dict.onboarding.heightLabel}</label>
-            <input
-              type="number"
-              value={survey.heightCm}
-              onChange={(e) => setSurvey((s) => ({ ...s, heightCm: e.target.value }))}
-              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
-            />
-            <label className="text-sm font-semibold text-text-secondary">{dict.onboarding.weightLabel}</label>
-            <input
-              type="number"
-              value={survey.weightKg}
-              onChange={(e) => setSurvey((s) => ({ ...s, weightKg: e.target.value }))}
-              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
-            />
+
+            {/* Metrik/Imperial birlik tanlovi — bosilganda joriy qiymat bir martagina
+                boshqa birlikka o'giriladi, keyin har bir tizim o'z holatini saqlaydi. */}
+            <div className="mx-auto flex rounded-full border border-border bg-surface p-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setSurvey((s) =>
+                    s.useImperialUnits
+                      ? { ...s, useImperialUnits: false, heightCm: String(feetInchesToCm(s.heightFeet, s.heightInches)), weightKg: String(lbToKg(s.weightLb)) }
+                      : s
+                  )
+                }
+                className={clsx(
+                  "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
+                  !survey.useImperialUnits ? "bg-primary text-white" : "text-text-secondary"
+                )}
+              >
+                {dict.onboarding.unitsMetric}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setSurvey((s) => {
+                    if (s.useImperialUnits) return s;
+                    const { feet, inches } = cmToFeetInches(Number(s.heightCm) || 165);
+                    return { ...s, useImperialUnits: true, heightFeet: feet, heightInches: inches, weightLb: kgToLb(Number(s.weightKg) || 60) };
+                  })
+                }
+                className={clsx(
+                  "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
+                  survey.useImperialUnits ? "bg-primary text-white" : "text-text-secondary"
+                )}
+              >
+                {dict.onboarding.unitsImperial}
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-center text-sm font-semibold text-text-secondary">{dict.onboarding.heightLabel}</p>
+              {survey.useImperialUnits ? (
+                <div className="mx-auto flex w-full max-w-xs gap-3">
+                  <WheelPicker
+                    compact
+                    options={HEIGHT_FEET_OPTIONS}
+                    value={survey.heightFeet}
+                    suffix={dict.onboarding.unitFeet}
+                    onChange={(feet) => setSurvey((s) => ({ ...s, heightFeet: feet }))}
+                  />
+                  <WheelPicker
+                    compact
+                    options={HEIGHT_INCHES_OPTIONS}
+                    value={survey.heightInches}
+                    suffix={dict.onboarding.unitInches}
+                    onChange={(inches) => setSurvey((s) => ({ ...s, heightInches: inches }))}
+                  />
+                </div>
+              ) : (
+                <WheelPicker
+                  options={HEIGHT_CM_OPTIONS}
+                  value={Number(survey.heightCm) || 165}
+                  suffix={dict.onboarding.unitCm}
+                  onChange={(v) => setSurvey((s) => ({ ...s, heightCm: String(v) }))}
+                />
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-center text-sm font-semibold text-text-secondary">{dict.onboarding.weightLabel}</p>
+              {survey.useImperialUnits ? (
+                <WheelPicker
+                  options={WEIGHT_LB_OPTIONS}
+                  value={survey.weightLb}
+                  suffix={dict.onboarding.unitLb}
+                  onChange={(lb) => setSurvey((s) => ({ ...s, weightLb: lb }))}
+                />
+              ) : (
+                <WheelPicker
+                  options={WEIGHT_KG_OPTIONS}
+                  value={Number(survey.weightKg) || 60}
+                  suffix={dict.onboarding.unitKg}
+                  onChange={(v) => setSurvey((s) => ({ ...s, weightKg: String(v) }))}
+                />
+              )}
+            </div>
           </div>
         )}
 
         {step === "notifications" && (
-          <ChoiceStep
-            title={dict.onboarding.notificationsQuestion}
-            options={[
-              { label: dict.common.yes, value: "yes", onClick: () => setSurvey((s) => ({ ...s, notificationsEnabled: true })) },
-              { label: dict.common.no, value: "no", onClick: () => setSurvey((s) => ({ ...s, notificationsEnabled: false })) },
-            ]}
-            selected={survey.notificationsEnabled === null ? null : survey.notificationsEnabled ? "yes" : "no"}
-          />
+          <div className="flex flex-1 flex-col justify-start gap-3">
+            {/* Namunaviy bildirishnoma kartasi — "bildirishnoma yoqilsa nima ko'rinadi"
+                degan aniq tasavvur berish uchun (App.pdf'dan tashqari, foydalanuvchi
+                so'roviga ko'ra: "qanchalik muhimligini takidla"). */}
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 shadow-md shadow-text-primary/5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light/50 text-lg">🔔</span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-text-muted">{dict.common.appName}</p>
+                <p className="truncate text-sm font-semibold text-text-primary">{dict.onboarding.notificationsSamplePreview}</p>
+              </div>
+            </div>
+            <ChoiceStep
+              title={dict.onboarding.notificationsQuestion}
+              description={dict.onboarding.notificationsImportance}
+              options={[
+                { label: dict.common.yes, value: "yes", onClick: () => setSurvey((s) => ({ ...s, notificationsEnabled: true })) },
+                { label: dict.common.no, value: "no", onClick: () => setSurvey((s) => ({ ...s, notificationsEnabled: false })) },
+              ]}
+              selected={survey.notificationsEnabled === null ? null : survey.notificationsEnabled ? "yes" : "no"}
+            />
+          </div>
         )}
 
         {step === "analyzing" && (
@@ -806,7 +923,22 @@ export default function OnboardingPage() {
 const WHEEL_ITEM_HEIGHT = 48;
 const WHEEL_VISIBLE_ROWS = 5;
 
-function WheelPicker({ options, value, onChange }: { options: number[]; value: number; onChange: (value: number) => void }) {
+function WheelPicker({
+  options,
+  value,
+  onChange,
+  suffix,
+  compact,
+}: {
+  options: number[];
+  value: number;
+  onChange: (value: number) => void;
+  /** Har bir qatorga qo'shiladigan birlik yorlig'i (masalan "sm", "kg", "fut"). */
+  suffix?: string;
+  /** Ikkita ustunni yonma-yon joylashtirish uchun (fut+dyuym) — markazlashtirilgan
+   * `max-w-xs` o'rniga to'liq enini egallaydi, tashqi flex konteyner eni belgilaydi. */
+  compact?: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const settleTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
@@ -844,7 +976,7 @@ function WheelPicker({ options, value, onChange }: { options: number[]; value: n
   }, [value]);
 
   return (
-    <div className="relative mx-auto w-full max-w-xs" style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
+    <div className={clsx("relative w-full", !compact && "mx-auto max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
       {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida. */}
       <div
         className="pointer-events-none absolute inset-x-0 top-1/2 z-10 -translate-y-1/2 rounded-2xl border-2 border-primary bg-primary-light/15"
@@ -868,6 +1000,7 @@ function WheelPicker({ options, value, onChange }: { options: number[]; value: n
             style={{ height: WHEEL_ITEM_HEIGHT, scrollSnapAlign: "center" }}
           >
             {opt}
+            {suffix && <span className="ml-1 text-sm font-normal text-text-muted">{suffix}</span>}
           </div>
         ))}
         <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
@@ -893,16 +1026,20 @@ function LangOption({ flag, label, active, onClick }: { flag: string; label: str
 
 function ChoiceStep({
   title,
+  description,
   options,
   selected,
 }: {
   title: string;
+  /** Ixtiyoriy — savol nima uchun muhimligini tushuntiruvchi qo'shimcha matn (masalan bildirishnomalar bosqichida). */
+  description?: string;
   options: { label: string; value: string; onClick: () => void }[];
   selected: string | null;
 }) {
   return (
     <div className="flex flex-1 flex-col justify-start gap-3">
       <h2 className="mb-2 text-xl font-bold text-text-primary">{title}</h2>
+      {description && <p className="-mt-1 mb-1 text-sm leading-relaxed text-text-secondary">{description}</p>}
       {options.map((opt) => (
         <button
           key={opt.value}

@@ -26,6 +26,8 @@ export interface User {
   createdAt: string;
   /** Foydalanuvchi yuklagan profil surati — kichik rasm sifatida base64 data URI. */
   avatarUrl: string | null;
+  /** Admin panel — moderatsiya uchun bloklangan bo'lsa true (API kirishi rad etiladi). */
+  isBlocked: boolean;
 }
 
 export const BLOOD_TYPES = ["O(I) Rh+", "O(I) Rh-", "A(II) Rh+", "A(II) Rh-", "B(III) Rh+", "B(III) Rh-", "AB(IV) Rh+", "AB(IV) Rh-"] as const;

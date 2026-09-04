@@ -61,7 +61,8 @@ async function initSchema() {
         notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
         token_version INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
-        avatar_url TEXT
+        avatar_url TEXT,
+        is_blocked BOOLEAN NOT NULL DEFAULT FALSE
       )
     `,
     sql`
@@ -232,6 +233,8 @@ async function initSchema() {
   // productionda avval yaratilgan jadvallar uchun alohida `ALTER TABLE` kerak.
   await Promise.all([
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`,
+    // Admin panel — foydalanuvchini bloklash (App.pdf'dan tashqari, moderatsiya uchun).
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE`,
     sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
     // Hamkor "Xabar" (tezkor eslatma) tugmasi shu ustunni ishlatadi —
     // izoh-bildirishnomalaridan farqli o'laroq, erkin matn saqlaydi.

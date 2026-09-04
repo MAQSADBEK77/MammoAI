@@ -207,10 +207,20 @@ const ru: Dictionary = {
     healthConditionsOtherPlaceholder: "При желании опишите подробнее",
 
     heightWeightTitle: "Ваш рост и вес",
-    heightLabel: "Рост (см)",
-    weightLabel: "Вес (кг)",
+    heightLabel: "Рост",
+    weightLabel: "Вес",
+    unitsMetric: "Метрическая",
+    unitsImperial: "Имперская",
+    unitCm: "см",
+    unitKg: "кг",
+    unitFeet: "фут",
+    unitInches: "дюйм",
+    unitLb: "фунт",
 
     notificationsQuestion: "Согласны получать важные напоминания и информацию?",
+    notificationsImportance:
+      "Если уведомления включены, вы заранее узнаете о начале цикла и фертильных днях, о датах осмотров и сообщениях от партнёра. Без них легко пропустить важные моменты.",
+    notificationsSamplePreview: "Ваши месячные ожидаются через 2 дня",
 
     analyzingTitle: "Анализируем ваши данные...",
     analyzingSubtitle: "Готовим программу специально для вас",

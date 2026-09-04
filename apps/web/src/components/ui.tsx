@@ -411,7 +411,13 @@ export function LoadingSpinner({ label: _label }: { label?: string }) {
       sx={{
         position: "fixed",
         inset: 0,
-        zIndex: 50,
+        // BottomNav'dan (z-20) PASTROQ — aks holda sahifa o'z ma'lumotini
+        // yuklayotganda bu Backdrop pastki menyuni ham xira/bosilmas qilib
+        // qo'yardi ("pastki menyu blur tagida qolib qolishi" degan xato
+        // shundan kelib chiqqan edi). Endi pastki menyu har doim ustida —
+        // sahifa hali yuklanayotgan bo'lsa ham darhol boshqa bo'limga o'tish
+        // mumkin, kutish shart emas.
+        zIndex: 15,
         backgroundColor: "color-mix(in srgb, var(--color-background) 30%, transparent)",
         backdropFilter: "blur(12px)",
       }}

@@ -1,12 +1,22 @@
 // Admin panel uchun alohida, sodda API mijozi — oddiy foydalanuvchi `api`
 // mijozidan mustaqil (admin sessiyasi butunlay boshqa cookie/token orqali).
 
-import type { Article, ArticleCategory, Clinic, ClinicSpecialty, Language, OnboardingProfile, User } from "@mammoai/shared";
+import type { Article, ArticleCategory, Clinic, ClinicSpecialty, CommunityComment, CommunityPost, Language, OnboardingProfile, User } from "@mammoai/shared";
 
 export interface AdminUserSummary extends User {
   primaryGoal: OnboardingProfile["primaryGoal"] | null;
   cycleLogsCount: number;
   lastActiveAt: string | null;
+}
+
+export interface AdminCommunityPost extends CommunityPost {
+  authorId: string;
+  authorPhone: string | null;
+}
+
+export interface AdminCommunityComment extends CommunityComment {
+  authorId: string;
+  authorPhone: string | null;
 }
 
 export interface AdminStats {
@@ -68,9 +78,27 @@ export const adminApi = {
     },
     update: (
       id: string,
-      patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled">>
+      patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "isBlocked">>
     ) => request<User>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
     delete: (id: string) => request<{ ok: true }>(`/users/${id}`, { method: "DELETE" }),
+  },
+  community: {
+    posts: {
+      list: (params: { search?: string; limit?: number; offset?: number }) => {
+        const q = new URLSearchParams();
+        if (params.search) q.set("search", params.search);
+        if (params.limit) q.set("limit", String(params.limit));
+        if (params.offset) q.set("offset", String(params.offset));
+        return request<{ posts: AdminCommunityPost[]; total: number }>(`/community/posts?${q.toString()}`);
+      },
+      update: (id: string, body: string) => request<{ ok: true }>(`/community/posts/${id}`, { method: "PATCH", body: JSON.stringify({ body }) }),
+      delete: (id: string) => request<{ ok: true }>(`/community/posts/${id}`, { method: "DELETE" }),
+      comments: {
+        list: (postId: string) => request<AdminCommunityComment[]>(`/community/posts/${postId}/comments`),
+        delete: (postId: string, commentId: string) =>
+          request<{ ok: true }>(`/community/posts/${postId}/comments/${commentId}`, { method: "DELETE" }),
+      },
+    },
   },
   clinics: {
     list: () => request<Clinic[]>("/clinics"),

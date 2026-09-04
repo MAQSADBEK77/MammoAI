@@ -209,10 +209,20 @@ const en: Dictionary = {
     healthConditionsOtherPlaceholder: "Feel free to add more detail",
 
     heightWeightTitle: "Your height and weight",
-    heightLabel: "Height (cm)",
-    weightLabel: "Weight (kg)",
+    heightLabel: "Height",
+    weightLabel: "Weight",
+    unitsMetric: "Metric",
+    unitsImperial: "Imperial",
+    unitCm: "cm",
+    unitKg: "kg",
+    unitFeet: "ft",
+    unitInches: "in",
+    unitLb: "lb",
 
     notificationsQuestion: "Would you like to receive important reminders and updates?",
+    notificationsImportance:
+      "With notifications on, you'll know ahead of time when your period and fertile days are coming, when checkups are due, and when your partner sends a message. Without them, it's easy to miss things that matter.",
+    notificationsSamplePreview: "Your period is expected to start in 2 days",
 
     analyzingTitle: "Analyzing your information...",
     analyzingSubtitle: "Preparing a plan just for you",

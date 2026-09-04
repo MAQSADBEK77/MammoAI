@@ -93,6 +93,13 @@ interface SurveyState {
   lastCheckup: OnboardingProfile["lastCheckup"] | null;
   heightCm: string;
   weightKg: string;
+  /** Bo'y/vazn wheel-picker'i uchun birlik tizimi — true bo'lsa fut/dyuym/funt ko'rsatiladi. */
+  useImperialUnits: boolean;
+  /** Imperial rejimdagi qiymatlar — metrikdan mustaqil saqlanadi; birliklar
+   * almashtirilganda bir martagina o'giriladi (bu holat + submit paytida). */
+  heightFeet: number;
+  heightInches: number;
+  weightLb: number;
   notificationsEnabled: boolean | null;
 }
 
@@ -116,14 +123,39 @@ const INITIAL_SURVEY: SurveyState = {
   healthConditionsOther: "",
   familyHistory: null,
   lastCheckup: null,
-  heightCm: "",
-  weightKg: "",
+  heightCm: "165",
+  weightKg: "60",
+  useImperialUnits: false,
+  heightFeet: 5,
+  heightInches: 5,
+  weightLb: 132,
   notificationsEnabled: null,
 };
 
 const CURRENT_YEAR = new Date().getFullYear();
 // Yosh o'rniga tug'ilgan yil so'raladi (wheel-picker) — 13-100 yosh oralig'iga mos yillar.
 const BIRTH_YEARS = Array.from({ length: 88 }, (_, i) => CURRENT_YEAR - 100 + i);
+
+// Bo'y/vazn wheel-picker'lari uchun qiymatlar oralig'i.
+const HEIGHT_CM_OPTIONS = Array.from({ length: 121 }, (_, i) => 100 + i); // 100–220 sm
+const WEIGHT_KG_OPTIONS = Array.from({ length: 171 }, (_, i) => 30 + i); // 30–200 kg
+const HEIGHT_FEET_OPTIONS = Array.from({ length: 5 }, (_, i) => 3 + i); // 3–7 fut
+const HEIGHT_INCHES_OPTIONS = Array.from({ length: 12 }, (_, i) => i); // 0–11 dyuym
+const WEIGHT_LB_OPTIONS = Array.from({ length: 375 }, (_, i) => 66 + i); // 66–440 funt
+
+function cmToFeetInches(cm: number): { feet: number; inches: number } {
+  const totalInches = Math.round(cm / 2.54);
+  return { feet: Math.floor(totalInches / 12), inches: totalInches % 12 };
+}
+function feetInchesToCm(feet: number, inches: number): number {
+  return Math.round((feet * 12 + inches) * 2.54);
+}
+function kgToLb(kg: number): number {
+  return Math.round(kg * 2.20462);
+}
+function lbToKg(lb: number): number {
+  return Math.round(lb / 2.20462);
+}
 
 const SYMPTOM_OPTIONS: Symptom[] = [
   "cramps",
@@ -314,8 +346,8 @@ export default function OnboardingScreen() {
         periodAttitude: survey.periodAttitude,
         healthConditions: survey.healthConditions,
         healthConditionsOther: survey.healthConditionsOther || null,
-        heightCm: survey.heightCm ? Number(survey.heightCm) : null,
-        weightKg: survey.weightKg ? Number(survey.weightKg) : null,
+        heightCm: survey.useImperialUnits ? feetInchesToCm(survey.heightFeet, survey.heightInches) : Number(survey.heightCm) || null,
+        weightKg: survey.useImperialUnits ? lbToKg(survey.weightLb) : Number(survey.weightKg) || null,
         bloodType: null,
         notificationsEnabled: !!survey.notificationsEnabled,
       });
@@ -652,24 +684,117 @@ export default function OnboardingScreen() {
           )}
 
           {step === "height_weight" && (
-            <View className="gap-4">
+            <View className="gap-5">
               <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</Text>
-              <Text className="text-sm font-semibold text-text-secondary">{dict.onboarding.heightLabel}</Text>
-              <TextField value={survey.heightCm} onChangeText={(v) => setSurvey((s) => ({ ...s, heightCm: v }))} keyboardType="numeric" />
-              <Text className="text-sm font-semibold text-text-secondary">{dict.onboarding.weightLabel}</Text>
-              <TextField value={survey.weightKg} onChangeText={(v) => setSurvey((s) => ({ ...s, weightKg: v }))} keyboardType="numeric" />
+
+              {/* Metrik/Imperial birlik tanlovi — bosilganda joriy qiymat bir martagina
+                  boshqa birlikka o'giriladi, keyin har bir tizim o'z holatini saqlaydi. */}
+              <View className="flex-row self-center rounded-full border border-border bg-surface p-1">
+                <Pressable
+                  onPress={() =>
+                    setSurvey((s) =>
+                      s.useImperialUnits
+                        ? { ...s, useImperialUnits: false, heightCm: String(feetInchesToCm(s.heightFeet, s.heightInches)), weightKg: String(lbToKg(s.weightLb)) }
+                        : s
+                    )
+                  }
+                  className={clsx("rounded-full px-4 py-1.5", !survey.useImperialUnits && "bg-primary")}
+                >
+                  <Text className={clsx("text-sm font-semibold", !survey.useImperialUnits ? "text-white" : "text-text-secondary")}>
+                    {dict.onboarding.unitsMetric}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() =>
+                    setSurvey((s) => {
+                      if (s.useImperialUnits) return s;
+                      const { feet, inches } = cmToFeetInches(Number(s.heightCm) || 165);
+                      return { ...s, useImperialUnits: true, heightFeet: feet, heightInches: inches, weightLb: kgToLb(Number(s.weightKg) || 60) };
+                    })
+                  }
+                  className={clsx("rounded-full px-4 py-1.5", survey.useImperialUnits && "bg-primary")}
+                >
+                  <Text className={clsx("text-sm font-semibold", survey.useImperialUnits ? "text-white" : "text-text-secondary")}>
+                    {dict.onboarding.unitsImperial}
+                  </Text>
+                </Pressable>
+              </View>
+
+              <View className="gap-2">
+                <Text className="text-center text-sm font-semibold text-text-secondary">{dict.onboarding.heightLabel}</Text>
+                {survey.useImperialUnits ? (
+                  <View className="w-full max-w-xs flex-row gap-3 self-center">
+                    <WheelPicker
+                      compact
+                      options={HEIGHT_FEET_OPTIONS}
+                      value={survey.heightFeet}
+                      suffix={dict.onboarding.unitFeet}
+                      onChange={(feet) => setSurvey((s) => ({ ...s, heightFeet: feet }))}
+                    />
+                    <WheelPicker
+                      compact
+                      options={HEIGHT_INCHES_OPTIONS}
+                      value={survey.heightInches}
+                      suffix={dict.onboarding.unitInches}
+                      onChange={(inches) => setSurvey((s) => ({ ...s, heightInches: inches }))}
+                    />
+                  </View>
+                ) : (
+                  <WheelPicker
+                    options={HEIGHT_CM_OPTIONS}
+                    value={Number(survey.heightCm) || 165}
+                    suffix={dict.onboarding.unitCm}
+                    onChange={(v) => setSurvey((s) => ({ ...s, heightCm: String(v) }))}
+                  />
+                )}
+              </View>
+
+              <View className="gap-2">
+                <Text className="text-center text-sm font-semibold text-text-secondary">{dict.onboarding.weightLabel}</Text>
+                {survey.useImperialUnits ? (
+                  <WheelPicker
+                    options={WEIGHT_LB_OPTIONS}
+                    value={survey.weightLb}
+                    suffix={dict.onboarding.unitLb}
+                    onChange={(lb) => setSurvey((s) => ({ ...s, weightLb: lb }))}
+                  />
+                ) : (
+                  <WheelPicker
+                    options={WEIGHT_KG_OPTIONS}
+                    value={Number(survey.weightKg) || 60}
+                    suffix={dict.onboarding.unitKg}
+                    onChange={(v) => setSurvey((s) => ({ ...s, weightKg: String(v) }))}
+                  />
+                )}
+              </View>
             </View>
           )}
 
           {step === "notifications" && (
-            <ChoiceStep
-              title={dict.onboarding.notificationsQuestion}
-              options={[
-                { label: dict.common.yes, value: "yes", onPress: () => setSurvey((s) => ({ ...s, notificationsEnabled: true })) },
-                { label: dict.common.no, value: "no", onPress: () => setSurvey((s) => ({ ...s, notificationsEnabled: false })) },
-              ]}
-              selected={survey.notificationsEnabled === null ? null : survey.notificationsEnabled ? "yes" : "no"}
-            />
+            <View className="gap-3">
+              {/* Namunaviy bildirishnoma kartasi — "yoqilsa nima ko'rinadi" degan
+                  aniq tasavvur berish uchun. */}
+              <View className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+                <View className="h-9 w-9 items-center justify-center rounded-full bg-primary-light/50">
+                  <Text style={{ fontSize: 16 }}>🔔</Text>
+                </View>
+                <View className="min-w-0 flex-1">
+                  <Text className="text-[11px] font-semibold text-text-muted">{dict.common.appName}</Text>
+                  <Text className="text-sm font-semibold text-text-primary" numberOfLines={1}>
+                    {dict.onboarding.notificationsSamplePreview}
+                  </Text>
+                </View>
+              </View>
+              <ChoiceStep
+                title={dict.onboarding.notificationsQuestion}
+                description={dict.onboarding.notificationsImportance}
+                options={[
+                  { label: dict.common.yes, value: "yes", onPress: () => setSurvey((s) => ({ ...s, notificationsEnabled: true })) },
+                  { label: dict.common.no, value: "no", onPress: () => setSurvey((s) => ({ ...s, notificationsEnabled: false })) },
+                ]}
+                selected={survey.notificationsEnabled === null ? null : survey.notificationsEnabled ? "yes" : "no"}
+              />
+            </View>
           )}
 
           {step === "analyzing" && (
@@ -744,7 +869,22 @@ export default function OnboardingScreen() {
 const WHEEL_ITEM_HEIGHT = 48;
 const WHEEL_VISIBLE_ROWS = 5;
 
-function WheelPicker({ options, value, onChange }: { options: number[]; value: number; onChange: (value: number) => void }) {
+function WheelPicker({
+  options,
+  value,
+  onChange,
+  suffix,
+  compact,
+}: {
+  options: number[];
+  value: number;
+  onChange: (value: number) => void;
+  /** Har bir qatorga qo'shiladigan birlik yorlig'i (masalan "sm", "kg", "fut"). */
+  suffix?: string;
+  /** Ikkita ustunni yonma-yon joylashtirish uchun (fut+dyuym) — markazlashtirilgan
+   * `max-w-xs` o'rniga to'liq enini egallaydi, tashqi flex konteyner eni belgilaydi. */
+  compact?: boolean;
+}) {
   const scrollRef = useRef<ScrollView>(null);
   const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
 
@@ -764,7 +904,7 @@ function WheelPicker({ options, value, onChange }: { options: number[]; value: n
   }
 
   return (
-    <View className="relative w-full max-w-xs self-center" style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
+    <View className={clsx("relative w-full self-center", !compact && "max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
       {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida. */}
       <View
         pointerEvents="none"
@@ -791,8 +931,9 @@ function WheelPicker({ options, value, onChange }: { options: number[]; value: n
       >
         <View style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
         {options.map((opt) => (
-          <View key={opt} style={{ height: WHEEL_ITEM_HEIGHT }} className="items-center justify-center">
+          <View key={opt} style={{ height: WHEEL_ITEM_HEIGHT }} className="flex-row items-center justify-center gap-1">
             <Text className="text-lg font-semibold text-text-primary">{opt}</Text>
+            {suffix && <Text className="text-sm font-normal text-text-muted">{suffix}</Text>}
           </View>
         ))}
         <View style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
@@ -823,16 +964,20 @@ function LangOption({ flag, label, active, onPress }: { flag: string; label: str
 
 function ChoiceStep({
   title,
+  description,
   options,
   selected,
 }: {
   title: string;
+  /** Ixtiyoriy — savol nima uchun muhimligini tushuntiruvchi qo'shimcha matn. */
+  description?: string;
   options: { label: string; value: string; onPress: () => void }[];
   selected: string | null;
 }) {
   return (
     <View className="gap-3">
       <Text className="mb-2 text-xl font-bold text-text-primary">{title}</Text>
+      {description && <Text className="-mt-3 mb-1 text-sm leading-relaxed text-text-secondary">{description}</Text>}
       {options.map((opt) => {
         const active = selected === opt.value;
         return (

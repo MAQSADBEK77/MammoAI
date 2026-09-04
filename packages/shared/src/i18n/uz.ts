@@ -211,10 +211,20 @@ const uz = {
     healthConditionsOtherPlaceholder: "Agar xohlasangiz, batafsil yozing",
 
     heightWeightTitle: "Bo'yingiz va vazningiz",
-    heightLabel: "Bo'yi (sm)",
-    weightLabel: "Vazni (kg)",
+    heightLabel: "Bo'yi",
+    weightLabel: "Vazni",
+    unitsMetric: "Metrik",
+    unitsImperial: "Imperial",
+    unitCm: "sm",
+    unitKg: "kg",
+    unitFeet: "fut",
+    unitInches: "dyuym",
+    unitLb: "funt",
 
     notificationsQuestion: "Muhim eslatmalar va ma'lumotlarni olishga rozimisiz?",
+    notificationsImportance:
+      "Bildirishnomalar yoqilgan bo'lsa, hayz boshlanishi va unumdor kunlar oldindan, tekshiruv sanalari va hamkoringizdan xabarlar esa o'z vaqtida yetib boradi. Ular bo'lmasa, muhim daqiqalarni oson o'tkazib yuborishingiz mumkin.",
+    notificationsSamplePreview: "Hayzingiz 2 kundan keyin boshlanishi kutilmoqda",
 
     analyzingTitle: "Ma'lumotlaringiz tahlil qilinmoqda...",
     analyzingSubtitle: "Sizga mos dastur tayyorlanmoqda",

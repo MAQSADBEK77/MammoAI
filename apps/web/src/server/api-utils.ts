@@ -37,5 +37,8 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<(User 
 export async function requireUser(request: NextRequest): Promise<User & { tokenVersion: number }> {
   const user = await getAuthenticatedUser(request);
   if (!user) throw new ApiError(401, "Sessiya topilmadi — onboarding'dan qayta o'ting");
+  // Admin panel orqali bloklangan foydalanuvchi — API'ning hech qaysi qismidan
+  // foydalana olmaydi (moderatsiya: qoidabuzarlik uchun kirishni to'sish).
+  if (user.isBlocked) throw new ApiError(403, "Hisobingiz bloklangan — savollar bo'lsa, qo'llab-quvvatlash xizmatiga murojaat qiling");
   return user;
 }

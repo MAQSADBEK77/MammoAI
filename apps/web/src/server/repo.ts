@@ -58,6 +58,7 @@ interface UserRow {
   token_version: number;
   created_at: string;
   avatar_url: string | null;
+  is_blocked: boolean;
 }
 
 function userFromRow(row: UserRow): User {
@@ -73,6 +74,7 @@ function userFromRow(row: UserRow): User {
     notificationsEnabled: !!row.notifications_enabled,
     createdAt: row.created_at,
     avatarUrl: row.avatar_url,
+    isBlocked: !!row.is_blocked,
   };
 }
 
@@ -94,6 +96,7 @@ export async function createAnonymousUser(language: Language): Promise<{ user: U
       notificationsEnabled: true,
       createdAt,
       avatarUrl: null,
+      isBlocked: false,
     },
     tokenVersion: 0,
   };
@@ -133,6 +136,7 @@ export async function createUserWithIdentifier(
       notificationsEnabled: true,
       createdAt,
       avatarUrl: null,
+      isBlocked: false,
     },
     tokenVersion: 0,
   };
@@ -148,7 +152,9 @@ export async function getUserById(id: string): Promise<(User & { tokenVersion: n
 
 export async function updateUser(
   id: string,
-  patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "avatarUrl">>
+  patch: Partial<
+    Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "avatarUrl" | "isBlocked">
+  >
 ): Promise<User> {
   await ensureSchema();
   const current = await getUserById(id);
@@ -158,7 +164,8 @@ export async function updateUser(
     UPDATE users SET
       name = ${merged.name}, phone = ${merged.phone}, language = ${merged.language},
       font_scale = ${merged.fontScale}, high_contrast = ${merged.highContrast},
-      notifications_enabled = ${merged.notificationsEnabled}, avatar_url = ${merged.avatarUrl}
+      notifications_enabled = ${merged.notificationsEnabled}, avatar_url = ${merged.avatarUrl},
+      is_blocked = ${merged.isBlocked}
     WHERE id = ${id}
   `;
   return merged;
@@ -838,6 +845,101 @@ export async function listUsersAdmin(params: { search?: string; limit?: number; 
 export async function deleteUserAdmin(id: string): Promise<void> {
   await ensureSchema();
   await sql`DELETE FROM users WHERE id = ${id}`;
+}
+
+// ---------------------------------------------------------------------------
+// Admin — hamjamiyat moderatsiyasi (post/izoh o'chirish-tahrirlash, foydalanuvchi
+// bloklash "imkoni bo'lsa yaxshi" so'rovi bo'yicha qo'shildi).
+// ---------------------------------------------------------------------------
+
+export interface AdminCommunityPost extends CommunityPost {
+  authorId: string;
+  authorPhone: string | null;
+}
+
+function adminCommunityPostFromRow(row: CommunityPostRow & { author_id: string; author_phone: string | null }): AdminCommunityPost {
+  return {
+    id: row.id,
+    tag: row.tag,
+    body: row.body,
+    isAnonymous: row.is_anonymous,
+    // Admin uchun muallif har doim ko'rsatiladi — anonim postlarda ham
+    // qoidabuzarlik holatida foydalanuvchini aniqlash imkoni bo'lishi kerak.
+    authorName: row.author_name,
+    authorAvatarUrl: row.author_avatar_url,
+    likesCount: row.likes_count,
+    commentsCount: row.comments_count,
+    viewerLiked: false,
+    isOwn: false,
+    createdAt: row.created_at,
+    authorId: row.author_id,
+    authorPhone: row.author_phone,
+  };
+}
+
+export async function listCommunityPostsAdmin(params: { search?: string; limit?: number; offset?: number }): Promise<{
+  posts: AdminCommunityPost[];
+  total: number;
+}> {
+  await ensureSchema();
+  const limit = params.limit ?? 30;
+  const offset = params.offset ?? 0;
+  const q = params.search?.trim();
+  const searchPattern = q ? `%${q}%` : null;
+  const whereClause = searchPattern ? sql`WHERE p.body ILIKE ${searchPattern} OR u.name ILIKE ${searchPattern}` : sql``;
+
+  const rows = (await sql`
+    SELECT p.*, u.name as author_name, u.avatar_url as author_avatar_url, u.id as author_id, u.phone as author_phone
+    FROM community_posts p
+    JOIN users u ON u.id = p.user_id
+    ${whereClause}
+    ORDER BY p.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `) as unknown as (CommunityPostRow & { author_id: string; author_phone: string | null })[];
+  const [{ count }] = (await sql`
+    SELECT count(*)::int as count FROM community_posts p JOIN users u ON u.id = p.user_id ${whereClause}
+  `) as unknown as { count: number }[];
+
+  return { total: count, posts: rows.map(adminCommunityPostFromRow) };
+}
+
+export async function updateCommunityPostAdmin(postId: string, body: string): Promise<void> {
+  await ensureSchema();
+  await sql`UPDATE community_posts SET body = ${body} WHERE id = ${postId}`;
+}
+
+export async function deleteCommunityPostAdmin(postId: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM community_posts WHERE id = ${postId}`;
+}
+
+export async function listCommunityCommentsAdmin(postId: string): Promise<(CommunityComment & { authorId: string; authorPhone: string | null })[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT c.*, u.name as author_name, u.avatar_url as author_avatar_url, u.id as author_id, u.phone as author_phone
+    FROM community_comments c
+    JOIN users u ON u.id = c.user_id
+    WHERE c.post_id = ${postId}
+    ORDER BY c.created_at ASC
+  `) as unknown as (CommunityCommentRow & { author_id: string; author_phone: string | null })[];
+  return rows.map((row) => ({
+    id: row.id,
+    postId: row.post_id,
+    body: row.body,
+    isAnonymous: row.is_anonymous,
+    authorName: row.author_name,
+    authorAvatarUrl: row.author_avatar_url,
+    isOwn: false,
+    createdAt: row.created_at,
+    authorId: row.author_id,
+    authorPhone: row.author_phone,
+  }));
+}
+
+export async function deleteCommunityCommentAdmin(postId: string, commentId: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM community_comments WHERE id = ${commentId} AND post_id = ${postId}`;
+  await sql`UPDATE community_posts SET comments_count = GREATEST(comments_count - 1, 0) WHERE id = ${postId}`;
 }
 
 // ---------------------------------------------------------------------------
