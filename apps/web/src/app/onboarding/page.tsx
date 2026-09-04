@@ -101,7 +101,6 @@ const INITIAL_SURVEY: SurveyState = {
 // ko'rinadi" degan fikrdan keyin har bir ekranga bittadan vizual urg'u qo'shish
 // uchun (welcome/analyzing o'zining maxsus ko'rinishiga ega, shu yerda kerak emas).
 const STEP_ICON: Partial<Record<Step, string>> = {
-  language: "🌐",
   account_choice: "👤",
   account_identifier: "🔐",
   privacy: "🛡️",
@@ -137,7 +136,6 @@ const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
 };
 
 const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
-  language: colors.secondary,
   account_choice: colors.secondary,
   account_identifier: colors.secondary,
   privacy: colors.secondary,
@@ -392,10 +390,10 @@ export default function OnboardingPage() {
         {step === "language" && (
           <div className="flex h-full flex-col items-center justify-center gap-4">
             <h2 className="text-center mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</h2>
-            <LangOption label="O'zbekcha (lotin)" active={language === "uz"} onClick={() => setLanguage("uz")} />
-            <LangOption label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onClick={() => setLanguage("uz-cyrl")} />
-            <LangOption label="Русский" active={language === "ru"} onClick={() => setLanguage("ru")} />
-            <LangOption label="English" active={language === "en"} onClick={() => setLanguage("en")} />
+            <LangOption flag="🇺🇿" label="O'zbekcha (lotin)" active={language === "uz"} onClick={() => setLanguage("uz")} />
+            <LangOption flag="🇺🇿" label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onClick={() => setLanguage("uz-cyrl")} />
+            <LangOption flag="🇷🇺" label="Русский" active={language === "ru"} onClick={() => setLanguage("ru")} />
+            <LangOption flag="🇺🇸" label="English" active={language === "en"} onClick={() => setLanguage("en")} />
           </div>
         )}
 
@@ -682,15 +680,16 @@ export default function OnboardingPage() {
   );
 }
 
-function LangOption({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function LangOption({ flag, label, active, onClick }: { flag: string; label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className={clsx(
-        "tap-target w-full max-w-xs rounded-3xl border-2 px-6 py-4 text-lg font-semibold transition active:scale-[0.98]",
-        active ? "border-primary bg-primary-light text-primary-dark shadow-lg shadow-primary/20" : "border-border bg-surface text-text-primary"
+        "tap-target flex w-full max-w-xs items-center gap-3 rounded-3xl px-6 py-4 text-lg font-semibold transition active:scale-[0.98]",
+        active ? "bg-primary text-white shadow-lg shadow-primary/30" : "bg-surface text-text-primary shadow-md shadow-text-primary/5 hover:bg-surface-muted"
       )}
     >
+      <span className="text-xl leading-none">{flag}</span>
       {label}
     </button>
   );

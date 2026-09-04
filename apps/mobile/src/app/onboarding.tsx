@@ -137,7 +137,6 @@ const HEALTH_CONDITION_OPTIONS: HealthCondition[] = [
 // Web versiyasi bilan bir xil (apps/web/src/app/onboarding/page.tsx) — har bir
 // savol bosqichi uchun emoji ikona + rang.
 const STEP_ICON: Partial<Record<Step, string>> = {
-  language: "🌐",
   account_choice: "👤",
   account_identifier: "🔐",
   privacy: "🛡️",
@@ -171,7 +170,6 @@ const STEP_ILLUSTRATION: Partial<Record<Step, React.ComponentType<{ width?: numb
 };
 
 const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
-  language: colors.secondary,
   account_choice: colors.secondary,
   account_identifier: colors.secondary,
   privacy: colors.secondary,
@@ -382,10 +380,10 @@ export default function OnboardingScreen() {
           {step === "language" && (
             <View className="items-center gap-4">
               <Text className="text-center mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</Text>
-              <LangOption label="O'zbekcha (lotin)" active={language === "uz"} onPress={() => setLanguage("uz")} />
-              <LangOption label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onPress={() => setLanguage("uz-cyrl")} />
-              <LangOption label="Русский" active={language === "ru"} onPress={() => setLanguage("ru")} />
-              <LangOption label="English" active={language === "en"} onPress={() => setLanguage("en")} />
+              <LangOption flag="🇺🇿" label="O'zbekcha (lotin)" active={language === "uz"} onPress={() => setLanguage("uz")} />
+              <LangOption flag="🇺🇿" label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onPress={() => setLanguage("uz-cyrl")} />
+              <LangOption flag="🇷🇺" label="Русский" active={language === "ru"} onPress={() => setLanguage("ru")} />
+              <LangOption flag="🇺🇸" label="English" active={language === "en"} onPress={() => setLanguage("en")} />
             </View>
           )}
 
@@ -634,14 +632,22 @@ export default function OnboardingScreen() {
   );
 }
 
-function LangOption({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function LangOption({ flag, label, active, onPress }: { flag: string; label: string; active: boolean; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
-      className={clsx("w-full max-w-xs rounded-3xl border-2 px-6 py-4 active:scale-[0.98]", active ? "border-primary bg-primary-light" : "border-border bg-surface")}
-      style={active ? { shadowColor: "#F43F7F", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 } : undefined}
+      className={clsx(
+        "w-full max-w-xs flex-row items-center gap-3 rounded-3xl px-6 py-4 active:scale-[0.98]",
+        active ? "bg-primary" : "bg-surface"
+      )}
+      style={
+        active
+          ? { shadowColor: "#F43F7F", shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 }
+          : { shadowColor: "#1F2937", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 }
+      }
     >
-      <Text className={clsx("text-center text-lg font-semibold", active ? "text-primary-dark" : "text-text-primary")}>{label}</Text>
+      <Text style={{ fontSize: 20, lineHeight: 24 }}>{flag}</Text>
+      <Text className={clsx("text-lg font-semibold", active ? "text-white" : "text-text-primary")}>{label}</Text>
     </Pressable>
   );
 }
