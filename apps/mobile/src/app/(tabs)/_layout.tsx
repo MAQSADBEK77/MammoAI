@@ -89,6 +89,18 @@ export default function TabsLayout() {
           ),
         }}
       />
+      {/* Hamkor — foydalanuvchi so'roviga ko'ra pastki menyuga qo'shildi. */}
+      <Tabs.Screen
+        name="hamkor"
+        options={{
+          title: dict.partner.title,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon focused={focused}>
+              <MaterialCommunityIcons name={focused ? "heart" : "heart-outline"} color={color} size={26} />
+            </TabIcon>
+          ),
+        }}
+      />
       {/* Profil endi pastki menyuda emas — faqat chap burger menyusi orqali
           ochiladi (foydalanuvchi so'rovi). `href: null` marshrutni ishlaydigan
           holda qoldiradi, lekin tab panelidan yashiradi. */}

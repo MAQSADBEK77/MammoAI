@@ -8,6 +8,7 @@ import type { PartnerShareSettings, PartnerStatusResponse } from "@mammoai/share
 import { MOOD_EMOJI, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
+import { useDrawer } from "@/lib/drawer";
 import { Button, Card, LoadingSpinner, ScreenHeader, Badge } from "@/components/ui";
 
 /**
@@ -17,6 +18,7 @@ import { Button, Card, LoadingSpinner, ScreenHeader, Badge } from "@/components/
  */
 export default function HamkorScreen() {
   const { dict } = useI18n();
+  const { openDrawer } = useDrawer();
   const [status, setStatus] = useState<PartnerStatusResponse | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
   const [codeInput, setCodeInput] = useState("");
@@ -104,7 +106,10 @@ export default function HamkorScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
+        <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
+          <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+        </Pressable>
         <ScreenHeader title={dict.partner.title} subtitle={dict.partner.subtitle} />
 
         {!status.linked ? (
