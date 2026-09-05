@@ -1,6 +1,6 @@
 "use client";
 
-import { type AnchorHTMLAttributes, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from "react";
+import { useEffect, useRef, useState, type AnchorHTMLAttributes, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   Button as MuiButton,
@@ -425,5 +425,176 @@ export function LoadingSpinner({ label: _label }: { label?: string }) {
     >
       <span className="loader" />
     </Backdrop>
+  );
+}
+
+// iOS'dagi "wheel" pastga-tepaga varaqlanadigan tanlagichga o'xshab, scroll-snap
+// orqali (yosh/bo'y/vazn/sana kabi raqamli tanlovlar uchun — uchinchi tomon
+// kutubxonasiz). Generic <T> — sonlar (yosh, sm, kg) HAM, oy kabi nomlangan
+// qiymatlar HAM (label orqali) ishlatilishi mumkin.
+const WHEEL_ITEM_HEIGHT = 48;
+const WHEEL_VISIBLE_ROWS = 5;
+
+export function WheelPicker<T>({
+  options,
+  value,
+  onChange,
+  label,
+  suffix,
+  compact,
+}: {
+  options: T[];
+  value: T;
+  onChange: (value: T) => void;
+  /** Har bir qatorda ko'rsatiladigan matn — berilmasa, qiymatning o'zi (String()). */
+  label?: (option: T) => ReactNode;
+  /** Har bir qatorga qo'shiladigan birlik yorlig'i (masalan "sm", "kg", "fut"). */
+  suffix?: string;
+  /** Bir nechta ustunni yonma-yon joylashtirish uchun (fut+dyuym, kun/oy/yil) —
+   * markazlashtirilgan `max-w-xs` o'rniga to'liq enini egallaydi, tashqi flex
+   * konteyner eni belgilaydi. */
+  compact?: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const settleTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
+  const index = options.indexOf(value);
+
+  // Tashqi `value` o'zgarganda (masalan oy almashganda kun ustuni qayta
+  // hisoblanganda) ham mos qatorga scroll qilamiz — faqat birinchi renderdan
+  // tashqari, chunki foydalanuvchi hozir scroll qilayotgan bo'lishi mumkin.
+  useEffect(() => {
+    if (index === -1 || !containerRef.current) return;
+    containerRef.current.scrollTop = index * WHEEL_ITEM_HEIGHT;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.length]);
+
+  function settle() {
+    const el = containerRef.current;
+    if (!el) return;
+    const idx = Math.min(Math.max(Math.round(el.scrollTop / WHEEL_ITEM_HEIGHT), 0), options.length - 1);
+    el.scrollTo({ top: idx * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
+    const picked = options[idx];
+    if (picked !== value) onChange(picked);
+  }
+
+  function handleScroll() {
+    if (settleTimeout.current) clearTimeout(settleTimeout.current);
+    settleTimeout.current = setTimeout(settle, 120);
+  }
+
+  // Zamonaviy brauzerlarda `scrollend` — debounce'dan aniqroq va tezroq.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !("onscrollend" in window)) return;
+    el.addEventListener("scrollend", settle);
+    return () => el.removeEventListener("scrollend", settle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return (
+    <div className={clsx("relative w-full", !compact && "mx-auto max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
+      {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-1/2 z-10 -translate-y-1/2 rounded-2xl border-2 border-primary bg-primary-light/15"
+        style={{ height: WHEEL_ITEM_HEIGHT }}
+      />
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="tap-target h-full overflow-y-auto scroll-smooth"
+        style={{
+          scrollSnapType: "y mandatory",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
+          maskImage: "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
+        }}
+      >
+        <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
+        {options.map((opt, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-center text-lg font-semibold text-text-primary"
+            style={{ height: WHEEL_ITEM_HEIGHT, scrollSnapAlign: "center" }}
+          >
+            {label ? label(opt) : String(opt)}
+            {suffix && <span className="ml-1 text-sm font-normal text-text-muted">{suffix}</span>}
+          </div>
+        ))}
+        <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
+      </div>
+    </div>
+  );
+}
+
+function daysInMonth(year: number, month: number): number {
+  // Oyning 0-kuni — aslida OLDINGI oyning oxirgi kuni (JS Date xususiyati).
+  return new Date(year, month, 0).getDate();
+}
+
+function parseYMD(value: string): { year: number; month: number; day: number } | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!m) return null;
+  return { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
+}
+
+function formatYMD(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/**
+ * "Kun / Oy / Yil" — uchta WheelPicker yonma-yon, iOS'dagi sana tanlagichga
+ * o'xshab (foydalanuvchi so'rovi: "iphonedagidek scroll orqali qilishi kerak
+ * hamma joyida" — avvalgi HTML <input type="date"> o'rnini bosadi). Qiymat
+ * har doim "YYYY-MM-DD" ko'rinishida — mavjud state/API bilan bir xil.
+ */
+export function DateWheelPicker({
+  value,
+  onChange,
+  monthLabels,
+  minYear,
+  maxYear,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  /** 12 ta oy nomi, 0-indeks = Yanvar (dict.common.months). */
+  monthLabels: string[];
+  minYear: number;
+  maxYear: number;
+}) {
+  const today = new Date();
+  const parsed = parseYMD(value);
+  const year = parsed && parsed.year >= minYear && parsed.year <= maxYear ? parsed.year : Math.min(Math.max(today.getFullYear(), minYear), maxYear);
+  const month = parsed?.month ?? today.getMonth() + 1;
+  const maxDay = daysInMonth(year, month);
+  const day = Math.min(parsed?.day ?? today.getDate(), maxDay);
+
+  const years: number[] = [];
+  for (let y = minYear; y <= maxYear; y++) years.push(y);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const days = Array.from({ length: maxDay }, (_, i) => i + 1);
+
+  function update(next: { year?: number; month?: number; day?: number }) {
+    const y = next.year ?? year;
+    const m = next.month ?? month;
+    const d = Math.min(next.day ?? day, daysInMonth(y, m));
+    onChange(formatYMD(y, m, d));
+  }
+
+  // `value` bo'sh (hali umuman tanlanmagan) bo'lsa — g'ildirak baribir BIRON
+  // sanani ko'rsatadi (bugungi kun), shuning uchun tashqi holat ham darhol
+  // shu bilan mos qilinadi (aks holda "Keyingisi" tugmasi foydalanuvchi biror
+  // g'ildirakni chindan siljitmaguncha faollashmay qolardi — ekranda sana
+  // ko'rinib turgani holda).
+  useEffect(() => {
+    if (!parsed) onChange(formatYMD(year, month, day));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="mx-auto flex w-full max-w-xs gap-2">
+      <WheelPicker compact options={days} value={day} onChange={(d) => update({ day: d })} />
+      <WheelPicker compact options={months} value={month} label={(m) => monthLabels[m - 1]} onChange={(m) => update({ month: m })} />
+      <WheelPicker compact options={years} value={year} onChange={(y) => update({ year: y })} />
+    </div>
   );
 }

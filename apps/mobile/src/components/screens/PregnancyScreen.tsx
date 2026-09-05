@@ -9,7 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, FloatingTag, LoadingSpinner, ScreenHeader, TextField } from "@/components/ui";
+import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader, TextField } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
 import { Emoji } from "@/components/Emoji";
 
@@ -72,7 +72,13 @@ export function PregnancyScreen() {
         </LinearGradient>
         <Card className="gap-3">
           <Text className="text-sm text-text-secondary">{dict.onboarding.lastCheckupQuestion}</Text>
-          <TextField value={lmpInput} onChangeText={setLmpInput} placeholder="YYYY-MM-DD" />
+          <DateWheelPicker
+            value={lmpInput}
+            onChange={setLmpInput}
+            monthLabels={dict.common.months}
+            minYear={new Date().getFullYear() - 1}
+            maxYear={new Date().getFullYear()}
+          />
           <Button
             disabled={!lmpInput || saving}
             onPress={async () => {
@@ -246,7 +252,13 @@ export function PregnancyScreen() {
         {addingVisit && (
           <Card className="gap-2">
             <TextField value={visitLabel} onChangeText={setVisitLabel} placeholder={dict.pregnancy.addVisitButton} />
-            <TextField value={visitDate} onChangeText={setVisitDate} placeholder="YYYY-MM-DD" />
+            <DateWheelPicker
+              value={visitDate}
+              onChange={setVisitDate}
+              monthLabels={dict.common.months}
+              minYear={new Date().getFullYear() - 1}
+              maxYear={new Date().getFullYear() + 1}
+            />
             <TextField value={visitClinic} onChangeText={setVisitClinic} placeholder={dict.clinics.title} />
             <View className="flex-row gap-2">
               <Button variant="ghost" onPress={() => setAddingVisit(false)}>

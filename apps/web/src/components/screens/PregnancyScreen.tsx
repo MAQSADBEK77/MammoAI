@@ -9,7 +9,7 @@ import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
@@ -70,11 +70,12 @@ export function PregnancyScreen() {
         </div>
         <Card className="space-y-3">
           <p className="text-sm text-text-secondary">{dict.onboarding.lastCheckupQuestion}</p>
-          <input
-            type="date"
+          <DateWheelPicker
             value={lmpInput}
-            onChange={(e) => setLmpInput(e.target.value)}
-            className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-text-primary outline-none focus:border-primary"
+            onChange={setLmpInput}
+            monthLabels={dict.common.months}
+            minYear={new Date().getFullYear() - 1}
+            maxYear={new Date().getFullYear()}
           />
           <Button
             className="w-full"
@@ -266,11 +267,12 @@ export function PregnancyScreen() {
               placeholder={dict.pregnancy.addVisitButton}
               className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-text-primary outline-none focus:border-primary"
             />
-            <input
-              type="date"
+            <DateWheelPicker
               value={visitDate}
-              onChange={(e) => setVisitDate(e.target.value)}
-              className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-text-primary outline-none focus:border-primary"
+              onChange={setVisitDate}
+              monthLabels={dict.common.months}
+              minYear={new Date().getFullYear() - 1}
+              maxYear={new Date().getFullYear() + 1}
             />
             <input
               value={visitClinic}

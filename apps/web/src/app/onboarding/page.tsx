@@ -27,7 +27,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
-import { Button, IconChip, ProgressBar } from "@/components/ui";
+import { Button, IconChip, ProgressBar, DateWheelPicker, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { Lottie } from "lottie-react";
 import {
@@ -679,13 +679,15 @@ export default function OnboardingPage() {
         {step === "last_period" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
-            <input
-              type="date"
-              value={survey.lastPeriodDate}
-              disabled={survey.lastPeriodUnknown}
-              onChange={(e) => setSurvey((s) => ({ ...s, lastPeriodDate: e.target.value }))}
-              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary disabled:opacity-50"
-            />
+            <div className={clsx(survey.lastPeriodUnknown && "pointer-events-none opacity-50")}>
+              <DateWheelPicker
+                value={survey.lastPeriodDate}
+                onChange={(v) => setSurvey((s) => ({ ...s, lastPeriodDate: v }))}
+                monthLabels={dict.common.months}
+                minYear={CURRENT_YEAR - 1}
+                maxYear={CURRENT_YEAR}
+              />
+            </div>
             <button
               type="button"
               onClick={() =>
@@ -961,97 +963,9 @@ export default function OnboardingPage() {
   );
 }
 
-// "Tug'ilgan yil" uchun — iOS'dagi "wheel" pastga-tepaga varaqlanadigan tanlagichga
-// o'xshab, scroll-snap orqali. Uchinchi tomon kutubxonasiz — CSS scroll-snap +
-// scroll tugagach markazdagi qatorni aniqlash orqali ishlaydi.
-const WHEEL_ITEM_HEIGHT = 48;
-const WHEEL_VISIBLE_ROWS = 5;
-
-function WheelPicker({
-  options,
-  value,
-  onChange,
-  suffix,
-  compact,
-}: {
-  options: number[];
-  value: number;
-  onChange: (value: number) => void;
-  /** Har bir qatorga qo'shiladigan birlik yorlig'i (masalan "sm", "kg", "fut"). */
-  suffix?: string;
-  /** Ikkita ustunni yonma-yon joylashtirish uchun (fut+dyuym) — markazlashtirilgan
-   * `max-w-xs` o'rniga to'liq enini egallaydi, tashqi flex konteyner eni belgilaydi. */
-  compact?: boolean;
-}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const settleTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
-
-  // Faqat birinchi renderda — tashqi `value`ga mos qatorga scroll qilamiz
-  // (keyingi o'zgarishlar esa foydalanuvchining o'zi scroll qilishidan keladi).
-  useEffect(() => {
-    const idx = options.indexOf(value);
-    if (idx === -1 || !containerRef.current) return;
-    containerRef.current.scrollTop = idx * WHEEL_ITEM_HEIGHT;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function settle() {
-    const el = containerRef.current;
-    if (!el) return;
-    const idx = Math.min(Math.max(Math.round(el.scrollTop / WHEEL_ITEM_HEIGHT), 0), options.length - 1);
-    el.scrollTo({ top: idx * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
-    const picked = options[idx];
-    if (picked !== value) onChange(picked);
-  }
-
-  function handleScroll() {
-    if (settleTimeout.current) clearTimeout(settleTimeout.current);
-    settleTimeout.current = setTimeout(settle, 120);
-  }
-
-  // Zamonaviy brauzerlarda `scrollend` — debounce'dan aniqroq va tezroq.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || !("onscrollend" in window)) return;
-    el.addEventListener("scrollend", settle);
-    return () => el.removeEventListener("scrollend", settle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
-
-  return (
-    <div className={clsx("relative w-full", !compact && "mx-auto max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
-      {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida. */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-1/2 z-10 -translate-y-1/2 rounded-2xl border-2 border-primary bg-primary-light/15"
-        style={{ height: WHEEL_ITEM_HEIGHT }}
-      />
-      <div
-        ref={containerRef}
-        onScroll={handleScroll}
-        className="tap-target h-full overflow-y-auto scroll-smooth"
-        style={{
-          scrollSnapType: "y mandatory",
-          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
-          maskImage: "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
-        }}
-      >
-        <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
-        {options.map((opt) => (
-          <div
-            key={opt}
-            className="flex items-center justify-center text-lg font-semibold text-text-primary"
-            style={{ height: WHEEL_ITEM_HEIGHT, scrollSnapAlign: "center" }}
-          >
-            {opt}
-            {suffix && <span className="ml-1 text-sm font-normal text-text-muted">{suffix}</span>}
-          </div>
-        ))}
-        <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
-      </div>
-    </div>
-  );
-}
+// WheelPicker (yosh/bo'y/vazn/sana uchun) — @/components/ui.tsx'ga ko'chirildi,
+// shunda PregnancyScreen kabi boshqa fayllar ham (masalan DateWheelPicker
+// orqali) qayta ishlatishi mumkin.
 
 function LangOption({ flag, label, active, onClick }: { flag: string; label: string; active: boolean; onClick: () => void }) {
   return (

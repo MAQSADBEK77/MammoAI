@@ -1,5 +1,15 @@
-import { Image, StyleSheet, Text, View, type PressableProps, type ViewProps } from "react-native";
-import { useEffect, type ReactNode } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  type PressableProps,
+  type ViewProps,
+} from "react-native";
+import { useEffect, useRef, type ReactNode } from "react";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -14,7 +24,7 @@ import {
   TouchableRipple,
 } from "react-native-paper";
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
-import { glass, gradients } from "@mammoai/shared";
+import { colors, glass, gradients } from "@mammoai/shared";
 import { useModeAccent } from "@/lib/theme";
 import { Emoji } from "@/components/Emoji";
 
@@ -429,3 +439,156 @@ export function LoadingSpinner({ label: _label }: { label?: string }) {
 }
 
 export { gradients, glass };
+
+// iOS'dagi native "wheel" tanlagichga o'xshab, ScrollView'ning `snapToInterval`i
+// orqali (qo'shimcha kutubxonasiz — RN buni o'zi qo'llab-quvvatlaydi). Generic
+// <T> — sonlar (yosh, sm, kg) HAM, oy kabi nomlangan qiymatlar HAM (label
+// orqali) ishlatilishi mumkin.
+const WHEEL_ITEM_HEIGHT = 48;
+const WHEEL_VISIBLE_ROWS = 5;
+
+export function WheelPicker<T>({
+  options,
+  value,
+  onChange,
+  label,
+  suffix,
+  compact,
+}: {
+  options: T[];
+  value: T;
+  onChange: (value: T) => void;
+  /** Har bir qatorda ko'rsatiladigan matn — berilmasa, qiymatning o'zi (String()). */
+  label?: (option: T) => ReactNode;
+  /** Har bir qatorga qo'shiladigan birlik yorlig'i (masalan "sm", "kg", "fut"). */
+  suffix?: string;
+  /** Bir nechta ustunni yonma-yon joylashtirish uchun (fut+dyuym, kun/oy/yil) —
+   * markazlashtirilgan `max-w-xs` o'rniga to'liq enini egallaydi, tashqi flex
+   * konteyner eni belgilaydi. */
+  compact?: boolean;
+}) {
+  const scrollRef = useRef<ScrollView>(null);
+  const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
+  const index = options.indexOf(value);
+
+  // Tashqi `value` o'zgarganda (masalan oy almashganda kun ustuni qayta
+  // hisoblanganda) ham mos qatorga scroll qilamiz.
+  useEffect(() => {
+    if (index === -1) return;
+    const id = requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: index * WHEEL_ITEM_HEIGHT, animated: false }));
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.length]);
+
+  function handleMomentumEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const idx = Math.min(Math.max(Math.round(e.nativeEvent.contentOffset.y / WHEEL_ITEM_HEIGHT), 0), options.length - 1);
+    const picked = options[idx];
+    if (picked !== value) onChange(picked);
+  }
+
+  return (
+    <View className={clsx("relative w-full self-center", !compact && "max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
+      {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida. */}
+      <View
+        pointerEvents="none"
+        className="absolute inset-x-0 z-10 rounded-2xl border-2"
+        style={{ height: WHEEL_ITEM_HEIGHT, top: (WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS) / 2 - WHEEL_ITEM_HEIGHT / 2, borderColor: colors.primary, backgroundColor: `${colors.primaryLight}40` }}
+      />
+      {/* Yuqori/pastki xiralashish — iOS wheel'idagi kabi (LinearGradient, mask-image RN'da yo'q). */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={[colors.background, `${colors.background}00`]}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, height: WHEEL_ITEM_HEIGHT * 1.5, zIndex: 5 }}
+      />
+      <LinearGradient
+        pointerEvents="none"
+        colors={[`${colors.background}00`, colors.background]}
+        style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: WHEEL_ITEM_HEIGHT * 1.5, zIndex: 5 }}
+      />
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={WHEEL_ITEM_HEIGHT}
+        decelerationRate="fast"
+        onMomentumScrollEnd={handleMomentumEnd}
+      >
+        <View style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
+        {options.map((opt, i) => (
+          <View key={i} style={{ height: WHEEL_ITEM_HEIGHT }} className="flex-row items-center justify-center gap-1">
+            <Text className="text-lg font-semibold text-text-primary">{label ? label(opt) : String(opt)}</Text>
+            {suffix && <Text className="text-sm font-normal text-text-muted">{suffix}</Text>}
+          </View>
+        ))}
+        <View style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
+      </ScrollView>
+    </View>
+  );
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+function parseYMD(value: string): { year: number; month: number; day: number } | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!m) return null;
+  return { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
+}
+
+function formatYMD(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/**
+ * "Kun / Oy / Yil" — uchta WheelPicker yonma-yon, iOS'dagi sana tanlagichga
+ * o'xshab (foydalanuvchi so'rovi: "iphonedagidek scroll orqali qilishi kerak
+ * hamma joyida"). Qiymat har doim "YYYY-MM-DD" ko'rinishida.
+ */
+export function DateWheelPicker({
+  value,
+  onChange,
+  monthLabels,
+  minYear,
+  maxYear,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  /** 12 ta oy nomi, 0-indeks = Yanvar (dict.common.months). */
+  monthLabels: string[];
+  minYear: number;
+  maxYear: number;
+}) {
+  const today = new Date();
+  const parsed = parseYMD(value);
+  const year = parsed && parsed.year >= minYear && parsed.year <= maxYear ? parsed.year : Math.min(Math.max(today.getFullYear(), minYear), maxYear);
+  const month = parsed?.month ?? today.getMonth() + 1;
+  const maxDay = daysInMonth(year, month);
+  const day = Math.min(parsed?.day ?? today.getDate(), maxDay);
+
+  const years: number[] = [];
+  for (let y = minYear; y <= maxYear; y++) years.push(y);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const days = Array.from({ length: maxDay }, (_, i) => i + 1);
+
+  function update(next: { year?: number; month?: number; day?: number }) {
+    const y = next.year ?? year;
+    const m = next.month ?? month;
+    const d = Math.min(next.day ?? day, daysInMonth(y, m));
+    onChange(formatYMD(y, m, d));
+  }
+
+  // `value` bo'sh bo'lsa — g'ildirak baribir bugungi kunni ko'rsatadi, shuning
+  // uchun tashqi holat ham darhol shu bilan mos qilinadi.
+  useEffect(() => {
+    if (!parsed) onChange(formatYMD(year, month, day));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <View className="w-full max-w-xs flex-row gap-2 self-center">
+      <WheelPicker compact options={days} value={day} onChange={(d) => update({ day: d })} />
+      <WheelPicker compact options={months} value={month} label={(m) => monthLabels[m - 1]} onChange={(m) => update({ month: m })} />
+      <WheelPicker compact options={years} value={year} onChange={(y) => update({ year: y })} />
+    </View>
+  );
+}

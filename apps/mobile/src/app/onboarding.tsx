@@ -1,5 +1,5 @@
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Animated, { FadeInUp, FadeIn } from "react-native-reanimated";
@@ -33,7 +33,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
-import { Button, IconChip, ProgressBar, TextField } from "@/components/ui";
+import { Button, DateWheelPicker, IconChip, ProgressBar, TextField, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { WelcomeHero } from "@/components/WelcomeHero";
 // unDraw illyustratsiyalari (litsenziyasiz-erkin, tijorat uchun ochiq) — web versiyasi
@@ -603,7 +603,13 @@ export default function OnboardingScreen() {
             <View className="gap-4">
               <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</Text>
               <View style={{ opacity: survey.lastPeriodUnknown ? 0.5 : 1 }} pointerEvents={survey.lastPeriodUnknown ? "none" : "auto"}>
-                <TextField value={survey.lastPeriodDate} onChangeText={(v) => setSurvey((s) => ({ ...s, lastPeriodDate: v }))} placeholder="YYYY-MM-DD" />
+                <DateWheelPicker
+                  value={survey.lastPeriodDate}
+                  onChange={(v) => setSurvey((s) => ({ ...s, lastPeriodDate: v }))}
+                  monthLabels={dict.common.months}
+                  minYear={CURRENT_YEAR - 1}
+                  maxYear={CURRENT_YEAR}
+                />
               </View>
               <Pressable
                 onPress={() =>
@@ -893,83 +899,9 @@ export default function OnboardingScreen() {
   );
 }
 
-// "Tug'ilgan yil" uchun — iOS'dagi native "wheel" tanlagichga o'xshab, ScrollView'ning
-// `snapToInterval`i orqali (qo'shimcha kutubxonasiz — RN buni o'zi qo'llab-quvvatlaydi).
-const WHEEL_ITEM_HEIGHT = 48;
-const WHEEL_VISIBLE_ROWS = 5;
-
-function WheelPicker({
-  options,
-  value,
-  onChange,
-  suffix,
-  compact,
-}: {
-  options: number[];
-  value: number;
-  onChange: (value: number) => void;
-  /** Har bir qatorga qo'shiladigan birlik yorlig'i (masalan "sm", "kg", "fut"). */
-  suffix?: string;
-  /** Ikkita ustunni yonma-yon joylashtirish uchun (fut+dyuym) — markazlashtirilgan
-   * `max-w-xs` o'rniga to'liq enini egallaydi, tashqi flex konteyner eni belgilaydi. */
-  compact?: boolean;
-}) {
-  const scrollRef = useRef<ScrollView>(null);
-  const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
-
-  // Faqat birinchi renderda — tashqi `value`ga mos qatorga scroll qilamiz.
-  useEffect(() => {
-    const idx = options.indexOf(value);
-    if (idx === -1) return;
-    const id = requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: idx * WHEEL_ITEM_HEIGHT, animated: false }));
-    return () => cancelAnimationFrame(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function handleMomentumEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const idx = Math.min(Math.max(Math.round(e.nativeEvent.contentOffset.y / WHEEL_ITEM_HEIGHT), 0), options.length - 1);
-    const picked = options[idx];
-    if (picked !== value) onChange(picked);
-  }
-
-  return (
-    <View className={clsx("relative w-full self-center", !compact && "max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
-      {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida. */}
-      <View
-        pointerEvents="none"
-        className="absolute inset-x-0 z-10 rounded-2xl border-2"
-        style={{ height: WHEEL_ITEM_HEIGHT, top: (WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS) / 2 - WHEEL_ITEM_HEIGHT / 2, borderColor: colors.primary, backgroundColor: `${colors.primaryLight}40` }}
-      />
-      {/* Yuqori/pastki xiralashish — iOS wheel'idagi kabi (LinearGradient, mask-image RN'da yo'q). */}
-      <LinearGradient
-        pointerEvents="none"
-        colors={[colors.background, `${colors.background}00`]}
-        style={{ position: "absolute", top: 0, left: 0, right: 0, height: WHEEL_ITEM_HEIGHT * 1.5, zIndex: 5 }}
-      />
-      <LinearGradient
-        pointerEvents="none"
-        colors={[`${colors.background}00`, colors.background]}
-        style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: WHEEL_ITEM_HEIGHT * 1.5, zIndex: 5 }}
-      />
-      <ScrollView
-        ref={scrollRef}
-        showsVerticalScrollIndicator={false}
-        snapToInterval={WHEEL_ITEM_HEIGHT}
-        decelerationRate="fast"
-        onMomentumScrollEnd={handleMomentumEnd}
-      >
-        <View style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
-        {options.map((opt) => (
-          <View key={opt} style={{ height: WHEEL_ITEM_HEIGHT }} className="flex-row items-center justify-center gap-1">
-            <Text className="text-lg font-semibold text-text-primary">{opt}</Text>
-            {suffix && <Text className="text-sm font-normal text-text-muted">{suffix}</Text>}
-          </View>
-        ))}
-        <View style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
-      </ScrollView>
-    </View>
-  );
-}
+// WheelPicker (yosh/bo'y/vazn/sana uchun) — @/components/ui.tsx'ga ko'chirildi,
+// shunda PregnancyScreen kabi boshqa fayllar ham (DateWheelPicker orqali)
+// qayta ishlatishi mumkin.
 
 function LangOption({ flag, label, active, onPress }: { flag: string; label: string; active: boolean; onPress: () => void }) {
   return (
