@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import clsx from "clsx";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import {
   CalendarMonthOutlined,
@@ -29,6 +31,47 @@ const FEATURE_ICONS = [
 const TRUST_ICONS = [ShieldOutlined, CheckCircleOutlined, TranslateOutlined, LocationOnOutlined];
 
 const HOW_ANCHOR = "qanday-ishlaydi";
+
+// Ilovaning haqiqiy ekranlaridan olingan skrinshotlar (namunaviy ma'lumot bilan) —
+// tsikl, homiladorlik, tekshiruvlar, hamkor va hamjamiyat. Yasama illyustratsiya
+// emas, real UI — bir nechtasi navbat bilan almashinib turadi ("animatsiyaga
+// o'xshab" ochilishi uchun).
+const APP_PREVIEWS = ["/app-preview-1.png", "/app-preview-2.png", "/app-preview-3.png", "/app-preview-4.png", "/app-preview-5.png"];
+const PREVIEW_INTERVAL_MS = 2800;
+
+function AppPreviewCarousel() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setIndex((i) => (i + 1) % APP_PREVIEWS.length), PREVIEW_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="relative mt-2">
+      <div className="bg-primary-light/40 absolute inset-0 -z-10 scale-90 rounded-full blur-3xl" />
+      <div className="relative w-[220px] -rotate-2 overflow-hidden rounded-[2rem] border-[8px] border-[#1f2937] bg-[#1f2937] shadow-2xl">
+        <div className="absolute left-1/2 top-2 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-[#1f2937]" />
+        <div className="relative aspect-[624/1168] w-full">
+          {APP_PREVIEWS.map((src, i) => (
+            // eslint-disable-next-line @next/next/no-img-element -- statik skrinshot, next/image optimizatsiyasi kerak emas
+            <img
+              key={src}
+              src={src}
+              alt=""
+              className={clsx("absolute inset-0 h-full w-full transition-opacity duration-700 ease-in-out", i === index ? "opacity-100" : "opacity-0")}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 flex justify-center gap-1.5">
+        {APP_PREVIEWS.map((_, i) => (
+          <span key={i} className={clsx("h-1.5 rounded-full transition-all duration-500", i === index ? "w-5 bg-primary" : "w-1.5 bg-primary/25")} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /**
  * mammo.uz'ga birinchi marta (anonim, ro'yxatdan o'tmagan holatda) kirilganda
@@ -79,16 +122,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
               <KeyboardArrowDownOutlined fontSize="small" />
             </a>
           </div>
-          {/* Ilovaning haqiqiy ko'rinishi — bosh sahifa (namunaviy ma'lumot bilan),
-              rasm yasama illyustratsiya emas, real UI'dan olingan skrinshot. */}
-          <div className="relative mt-2">
-            <div className="bg-primary-light/40 absolute inset-0 -z-10 scale-90 rounded-full blur-3xl" />
-            <div className="relative w-[220px] -rotate-2 overflow-hidden rounded-[2rem] border-[8px] border-[#1f2937] bg-[#1f2937] shadow-2xl">
-              <div className="absolute left-1/2 top-2 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-[#1f2937]" />
-              {/* eslint-disable-next-line @next/next/no-img-element -- statik skrinshot, next/image optimizatsiyasi kerak emas */}
-              <img src="/app-preview.png" alt="" className="block w-full" />
-            </div>
-          </div>
+          <AppPreviewCarousel />
         </div>
       </section>
 
