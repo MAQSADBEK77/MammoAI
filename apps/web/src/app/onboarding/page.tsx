@@ -436,14 +436,13 @@ export default function OnboardingPage() {
         // qolmasligi uchun. env(safe-area-inset-bottom) PWA/notch'li qurilmada
         // qo'shimcha real bo'shliq beradi, oddiy brauzerda 0 bo'lib, 3rem'ning o'zi qoladi.
         "pb-[calc(env(safe-area-inset-bottom)+3rem)]",
-        // "welcome"da Orqaga/Keyingi tugmasi yo'q, shuning uchun oddiy markazlashgan
-        // (min-h-dvh) joylashuv yetarli. Qolgan bosqichlarda esa balandlik viewport'ga
-        // QATʼIY tenglashtiriladi (h-dvh) va faqat o'rtadagi savol matni ichida scroll
-        // qilinadi — shu orqali Orqaga/Keyingi tugmasi savol matni qanchalik uzun
-        // bo'lishidan qatʼiy nazar doim ekranning eng pastida, ilova bo'ylab hamma
-        // joydagi kabi "yopishgan" holda qoladi (avval min-h-dvh + justify-between
-        // uzun savollarda tugmani sahifa oxiriga, ko'rinmas joyga surib yuborardi).
-        step === "welcome" ? "min-h-dvh justify-center bg-aurora-cycle" : "h-dvh bg-background"
+        // Balandlik hamma bosqichda (shu jumladan "welcome"da ham) viewport'ga QATʼIY
+        // tenglashtiriladi (h-dvh), ichkarida flex-1 orqali taqsimlanadi — shu orqali
+        // "Boshlaymiz"/"Keyingi" tugmasi doim ekranning eng pastida, ilova bo'ylab
+        // hamma joydagi kabi "yopishgan" holda qoladi (avval min-h-dvh + justify-center
+        // tugmani logo/sarlavha bilan bitta ustunga markazlashtirib, ekran o'rtasiga
+        // olib chiqib qo'yardi).
+        step === "welcome" ? "h-dvh bg-aurora-cycle" : "h-dvh bg-background"
       )}
     >
       {step !== "welcome" && step !== "analyzing" && (
@@ -452,7 +451,7 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      <div key={step} className={clsx("animate-fade-in-up", step !== "welcome" && "flex flex-1 flex-col overflow-y-auto")}>
+      <div key={step} className={clsx("animate-fade-in-up flex flex-1 flex-col", step !== "welcome" && "overflow-y-auto")}>
         {STEP_ILLUSTRATION[step] ? (
           <div className="mb-4 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
@@ -489,20 +488,25 @@ export default function OnboardingPage() {
           )
         )}
         {step === "welcome" && (
-          <div className="relative isolate flex flex-col items-center gap-6 text-center">
-            {/* Yasama illyustratsiya olib tashlandi — logo atrofidagi yumshoq nur
-                halqasi (glow) o'rniga chuqurlik beradi, boshqa hech narsaga
-                xalaqit qilmaydi. */}
-            <div className="pointer-events-none absolute -top-4 left-1/2 -z-10 h-64 w-64 -translate-x-1/2 rounded-full bg-white/20 blur-3xl" />
-            {/* logo.svg — shaffof fonli belgi, hech qanday karta/soya/animatsiyasiz,
-                shunchaki fon gradienti ustida turadi. */}
-            <Image src="/logo.svg" alt="Logo" width={220} height={123} priority className="animate-hero-badge" />
-            <h1 className="animate-hero-title text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</h1>
-            <p className="animate-hero-subtitle max-w-xs text-white/85">{dict.onboarding.welcomeSubtitle}</p>
+          // Tugma endi logo/sarlavha bilan bitta markazlashgan ustunda emas — tepadagi
+          // guruh flex-1 bilan qolgan bo'sh joyni egallab, o'zini o'rtaga tekislaydi,
+          // tugma esa doim ekranning pastki qismida (hisoblab) qoladi.
+          <div className="flex flex-1 flex-col items-center">
+            <div className="relative isolate flex flex-1 flex-col items-center justify-center gap-6 text-center">
+              {/* Yasama illyustratsiya olib tashlandi — logo atrofidagi yumshoq nur
+                  halqasi (glow) o'rniga chuqurlik beradi, boshqa hech narsaga
+                  xalaqit qilmaydi. */}
+              <div className="pointer-events-none absolute -top-4 left-1/2 -z-10 h-64 w-64 -translate-x-1/2 rounded-full bg-white/20 blur-3xl" />
+              {/* logo.svg — shaffof fonli belgi, hech qanday karta/soya/animatsiyasiz,
+                  shunchaki fon gradienti ustida turadi. */}
+              <Image src="/logo.svg" alt="Logo" width={220} height={123} priority className="animate-hero-badge" />
+              <h1 className="animate-hero-title text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</h1>
+              <p className="animate-hero-subtitle max-w-xs text-white/85">{dict.onboarding.welcomeSubtitle}</p>
+            </div>
             <button
               type="button"
               onClick={goNext}
-              className="animate-fade-in-up tap-target mt-6 w-full max-w-xs rounded-full bg-white text-base font-bold text-primary-dark shadow-lg transition hover:brightness-95 active:scale-[0.98]"
+              className="animate-fade-in-up tap-target w-full max-w-xs shrink-0 rounded-full bg-white text-base font-bold text-primary-dark shadow-lg transition hover:brightness-95 active:scale-[0.98]"
               style={{ animationDelay: "0.6s" }}
             >
               {dict.onboarding.startButton}
