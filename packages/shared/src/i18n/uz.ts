@@ -634,6 +634,88 @@ const uz = {
     bloodTypeUnknownOption: "Bilmayman",
     notSet: "Kiritilmagan",
   },
+  // ---------------------------------------------------------------------
+  // Landing (marketing bosh sahifa) — mammo.uz'ga birinchi marta kirganda
+  // ko'rsatiladi (faqat anonim, ro'yxatdan o'tmagan tashrifchilarga).
+  // ---------------------------------------------------------------------
+  landing: {
+    navCta: "Boshlash",
+    heroEyebrow: "O'zbek ayollari uchun",
+    heroTitle: "Sog'ligingiz — sizning nazoratingizda",
+    heroSubtitle: "Hayz tsikli, homiladorlik va tibbiy tekshiruvlarni bir joyda kuzating. Oddiy, xavfsiz va butunlay o'zbek tilida.",
+    ctaPrimary: "Bepul sinab ko'rish",
+    ctaSecondary: "Qanday ishlaydi",
+    featuresTitle: "Bitta ilovada — bor narsa",
+    featuresSubtitle: "Sog'lig'ingizning har bir bosqichi uchun kerakli vosita.",
+    features: {
+      cycle: {
+        title: "Tsikl kuzatuvi",
+        desc: "Hayz kunlari, kayfiyat va belgilarni qayd eting — ilova keyingi tsiklni aniq bashorat qiladi.",
+      },
+      pregnancy: {
+        title: "Homiladorlik",
+        desc: "Haftama-hafta rivojlanish, tekshiruv jadvali va tepish hisoblagichi — barchasi bir joyda.",
+      },
+      checkups: {
+        title: "Tekshiruvlar va eslatmalar",
+        desc: "Ginekolog, mammografiya va boshqa muhim tekshiruvlarni unutmaslik uchun shaxsiy eslatmalar.",
+      },
+      community: {
+        title: "Hamjamiyat va Hamkor",
+        desc: "Boshqa ayollar bilan tajriba almashing yoki yaqin insoningizni jarayoningizga hamkor sifatida taklif qiling.",
+      },
+      clinics: {
+        title: "Klinikalar bazasi",
+        desc: "Yaqiningizdagi ginekologiya va mammografiya klinikalarini, jumladan bepul davlat dasturlarini toping.",
+      },
+      articles: {
+        title: "Ta'limiy maqolalar",
+        desc: "Tsikl, homiladorlik va profilaktika bo'yicha tushunarli, ishonchli manbalarga asoslangan maqolalar.",
+      },
+    },
+    howTitle: "Uch qadamda boshlang",
+    howSteps: [
+      { title: "Ro'yxatdan o'ting", desc: "Faqat telefon raqamingiz kerak — parolni yodda tutish shart emas." },
+      { title: "Maqsadingizni tanlang", desc: "Tsikl kuzatuvimi, homiladorlikmi yoki tayyorgarlikmi — ilova sizga moslashadi." },
+      { title: "Kuzating va bilib boring", desc: "Shaxsiy tavsiyalar, eslatmalar va tushunarli statistikalar bilan nazoratni qo'lga oling." },
+    ],
+    trustTitle: "Nega aynan MammoAI?",
+    trustItems: [
+      { title: "Maxfiylik birinchi o'rinda", desc: "Ma'lumotlaringiz shifrlanadi va hech kimga, hatto reklama beruvchilarga ham berilmaydi." },
+      { title: "To'liq bepul", desc: "Barcha asosiy imkoniyatlar hech qanday to'lovsiz mavjud." },
+      { title: "O'zbek tilida", desc: "Interfeys va tavsiyalar o'zbek (lotin/kirill), rus va ingliz tillarida." },
+      { title: "Mahalliy klinikalar", desc: "O'zbekistondagi klinikalar bazasi va bepul mammografiya dasturlari haqida ma'lumot." },
+    ],
+    faqTitle: "Ko'p so'raladigan savollar",
+    faq: [
+      {
+        q: "Ilovadan foydalanish rostdan ham bepulmi?",
+        a: "Ha. Tsikl va homiladorlik kuzatuvi, eslatmalar, hamjamiyat va Hamkor funksiyasi — barchasi hech qanday to'lovsiz mavjud.",
+      },
+      {
+        q: "Mening ma'lumotlarim kim bilan ulashiladi?",
+        a: "Hech kim bilan. Ma'lumotlaringiz shifrlangan holda saqlanadi va faqat siz ruxsat bergan Hamkoringizgina, siz tanlagan qismini ko'ra oladi.",
+      },
+      {
+        q: "Bu ilova shifokorni almashtiradimi?",
+        a: "Yo'q. MammoAI — kuzatuv va eslatma vositasi, tibbiy tashxis yoki davolash tavsiyasi bermaydi. Har qanday tashvish tug'diruvchi holatda shifokorga murojaat qiling.",
+      },
+      {
+        q: "Homilador bo'lmasam ham foydalanishim mumkinmi?",
+        a: "Albatta. Hayz tsiklini kuzatish, homiladorlikka tayyorgarlik yoki shunchaki sog'lig'ingizni nazorat qilish uchun ham ilova moslashadi.",
+      },
+      {
+        q: "Ilova qaysi tillarda ishlaydi?",
+        a: "O'zbek (lotin va kirill), rus va ingliz tillarida — istalgan vaqt sozlamalardan almashtirishingiz mumkin.",
+      },
+    ],
+    finalCtaTitle: "Bugundan boshlang",
+    finalCtaSubtitle: "Ro'yxatdan o'tish bir daqiqadan kam vaqt oladi.",
+    finalCtaButton: "Bepul sinab ko'rish",
+    footerTagline: "Ayollar salomatligi uchun shaxsiy yordamchi.",
+    footerPrivacy: "Maxfiylik siyosati",
+    footerRights: (year: number) => `© ${year} MammoAI. Barcha huquqlar himoyalangan.`,
+  },
 };
 
 export default uz;

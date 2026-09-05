@@ -629,6 +629,84 @@ const en: Dictionary = {
     bloodTypeUnknownOption: "I don't know",
     notSet: "Not entered",
   },
+  landing: {
+    navCta: "Get started",
+    heroEyebrow: "Built for women in Uzbekistan",
+    heroTitle: "Your health, in your control",
+    heroSubtitle: "Track your cycle, pregnancy, and medical checkups in one place. Simple, private, and available in your language.",
+    ctaPrimary: "Try it for free",
+    ctaSecondary: "How it works",
+    featuresTitle: "Everything you need, in one app",
+    featuresSubtitle: "A tool for every stage of your health journey.",
+    features: {
+      cycle: {
+        title: "Cycle tracking",
+        desc: "Log your period days, mood, and symptoms — the app accurately predicts your next cycle.",
+      },
+      pregnancy: {
+        title: "Pregnancy",
+        desc: "Week-by-week progress, a checkup schedule, and a kick counter — all in one place.",
+      },
+      checkups: {
+        title: "Checkups & reminders",
+        desc: "Personal reminders so you never miss a gynecologist visit, mammography, or other key checkup.",
+      },
+      community: {
+        title: "Community & Partner",
+        desc: "Share your experience with other women, or invite someone close to follow your journey as a partner.",
+      },
+      clinics: {
+        title: "Clinic directory",
+        desc: "Find nearby gynecology and mammography clinics, including free public screening programs.",
+      },
+      articles: {
+        title: "Educational articles",
+        desc: "Clear, reliable articles on your cycle, pregnancy, and preventive care, grounded in trustworthy sources.",
+      },
+    },
+    howTitle: "Get started in three steps",
+    howSteps: [
+      { title: "Sign up", desc: "All you need is your phone number — no password to remember." },
+      { title: "Choose your goal", desc: "Cycle tracking, pregnancy, or planning — the app adapts to you." },
+      { title: "Track and learn", desc: "Take control with personal tips, reminders, and clear statistics." },
+    ],
+    trustTitle: "Why MammoAI?",
+    trustItems: [
+      { title: "Privacy first", desc: "Your data is encrypted and never shared with anyone, including advertisers." },
+      { title: "Completely free", desc: "All core features are available at no cost." },
+      { title: "In your language", desc: "Interface and recommendations in Uzbek (Latin/Cyrillic), Russian, and English." },
+      { title: "Local clinics", desc: "A database of clinics in Uzbekistan and information on free mammography programs." },
+    ],
+    faqTitle: "Frequently asked questions",
+    faq: [
+      {
+        q: "Is the app really free to use?",
+        a: "Yes. Cycle and pregnancy tracking, reminders, the community, and the Partner feature are all available at no cost.",
+      },
+      {
+        q: "Who is my data shared with?",
+        a: "No one. Your data is stored encrypted, and only a Partner you've explicitly allowed can see the specific parts you've chosen to share.",
+      },
+      {
+        q: "Does this app replace a doctor?",
+        a: "No. MammoAI is a tracking and reminder tool — it does not provide a diagnosis or treatment advice. See a doctor for any concerning symptoms.",
+      },
+      {
+        q: "Can I use it if I'm not pregnant?",
+        a: "Absolutely. The app adapts whether you're tracking your cycle, planning a pregnancy, or simply keeping an eye on your health.",
+      },
+      {
+        q: "What languages does the app support?",
+        a: "Uzbek (Latin and Cyrillic), Russian, and English — you can switch languages anytime in settings.",
+      },
+    ],
+    finalCtaTitle: "Get started today",
+    finalCtaSubtitle: "Signing up takes less than a minute.",
+    finalCtaButton: "Try it for free",
+    footerTagline: "A personal assistant for women's health.",
+    footerPrivacy: "Privacy policy",
+    footerRights: (year: number) => `© ${year} MammoAI. All rights reserved.`,
+  },
 };
 
 export default en;
