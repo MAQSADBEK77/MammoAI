@@ -430,7 +430,12 @@ export default function OnboardingPage() {
   return (
     <div
       className={clsx(
-        "mx-auto flex max-w-md flex-col px-6 py-8",
+        "mx-auto flex max-w-md flex-col px-6 pt-8",
+        // Pastki masofa avvalgi py-8'dan (32px) ATAYLAB kattaroq — mobil brauzerning
+        // pastki asboblar paneli (Safari/Chrome) Orqaga/Keyingi tugmasiga "yopishib"
+        // qolmasligi uchun. env(safe-area-inset-bottom) PWA/notch'li qurilmada
+        // qo'shimcha real bo'shliq beradi, oddiy brauzerda 0 bo'lib, 3rem'ning o'zi qoladi.
+        "pb-[calc(env(safe-area-inset-bottom)+3rem)]",
         // "welcome"da Orqaga/Keyingi tugmasi yo'q, shuning uchun oddiy markazlashgan
         // (min-h-dvh) joylashuv yetarli. Qolgan bosqichlarda esa balandlik viewport'ga
         // QATʼIY tenglashtiriladi (h-dvh) va faqat o'rtadagi savol matni ichida scroll
