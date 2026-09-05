@@ -221,10 +221,12 @@ const uz = {
     unitInches: "dyuym",
     unitLb: "funt",
 
-    notificationsQuestion: "Muhim eslatmalar va ma'lumotlarni olishga rozimisiz?",
+    notificationsQuestion: "O'z vaqtida eslatmalar va aniq bashoratlar bilan har doim tayyor bo'ling",
     notificationsImportance:
       "Bildirishnomalar yoqilgan bo'lsa, hayz boshlanishi va unumdor kunlar oldindan, tekshiruv sanalari va hamkoringizdan xabarlar esa o'z vaqtida yetib boradi. Ular bo'lmasa, muhim daqiqalarni oson o'tkazib yuborishingiz mumkin.",
     notificationsSamplePreview: "Hayzingiz 2 kundan keyin boshlanishi kutilmoqda",
+    notificationsNowLabel: "Hozir",
+    notificationsTurnOnButton: "Yoqish",
 
     analyzingTitle: "Ma'lumotlaringiz tahlil qilinmoqda...",
     analyzingSubtitle: "Sizga mos dastur tayyorlanmoqda",

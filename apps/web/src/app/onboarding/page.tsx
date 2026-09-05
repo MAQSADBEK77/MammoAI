@@ -450,7 +450,10 @@ export default function OnboardingPage() {
       case "height_weight":
         return survey.heightCm.length > 0 && survey.weightKg.length > 0;
       case "notifications":
-        return survey.notificationsEnabled !== null;
+        // Endi majburiy tanlov emas — "Yoqish" tugmasi ixtiyoriy, pastdagi
+        // "Keyingisi" bilan har doim davom etish mumkin (Flo/Clue uslubidagi
+        // bitta CTA'li bildirishnoma ekrani, "Ha/Yo'q" emas).
+        return true;
       default:
         return true;
     }
@@ -883,28 +886,35 @@ export default function OnboardingPage() {
         )}
 
         {step === "notifications" && (
-          <div className="flex flex-1 flex-col justify-start gap-3">
-            {/* Namunaviy bildirishnoma kartasi — "bildirishnoma yoqilsa nima ko'rinadi"
-                degan aniq tasavvur berish uchun (App.pdf'dan tashqari, foydalanuvchi
-                so'roviga ko'ra: "qanchalik muhimligini takidla"). */}
-            <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 shadow-md shadow-text-primary/5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light/50">
-                <Emoji e="🔔" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-text-muted">{dict.common.appName}</p>
-                <p className="truncate text-sm font-semibold text-text-primary">{dict.onboarding.notificationsSamplePreview}</p>
+          <div className="flex flex-1 flex-col items-center justify-center gap-7 text-center">
+            {/* Haqiqiy bildirishnoma qanday ko'rinishini aniq tasavvur berish uchun —
+                Flo/Clue uslubidagi qulflangan ekran bannerining nusxasi (foydalanuvchi
+                so'roviga ko'ra: "shu usulda bo'lsin, ha/yo'q deb so'ramasin"). */}
+            <div className="w-full max-w-xs rounded-3xl border border-border bg-surface p-4 text-left shadow-xl shadow-text-primary/10">
+              <div className="flex items-center gap-2">
+                <div className="bg-aurora-cycle flex h-6 w-6 shrink-0 items-center justify-center rounded-md">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
+                  <img src="/logo.svg" alt="" className="h-3.5 w-3.5" />
+                </div>
+                <p className="flex-1 truncate text-xs font-semibold text-text-muted">
+                  {dict.common.appName} <span className="text-text-muted/70">· {dict.onboarding.notificationsNowLabel}</span>
+                </p>
+                <Emoji e="🔔" size={13} />
               </div>
+              <p className="mt-2 text-sm font-semibold leading-snug text-text-primary">{dict.onboarding.notificationsSamplePreview}</p>
             </div>
-            <ChoiceStep
-              title={dict.onboarding.notificationsQuestion}
-              description={dict.onboarding.notificationsImportance}
-              options={[
-                { label: dict.common.yes, value: "yes", onClick: () => void requestNotificationPermission(true) },
-                { label: dict.common.no, value: "no", onClick: () => void requestNotificationPermission(false) },
-              ]}
-              selected={survey.notificationsEnabled === null ? null : survey.notificationsEnabled ? "yes" : "no"}
-            />
+
+            <h2 className="max-w-xs text-xl font-bold leading-snug text-text-primary">{dict.onboarding.notificationsQuestion}</h2>
+
+            <Button
+              className="w-full max-w-xs"
+              onClick={async () => {
+                await requestNotificationPermission(true);
+                goNext();
+              }}
+            >
+              {dict.onboarding.notificationsTurnOnButton}
+            </Button>
           </div>
         )}
 

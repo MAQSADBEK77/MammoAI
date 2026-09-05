@@ -36,6 +36,7 @@ import { api } from "@/lib/api";
 import { Button, DateWheelPicker, IconChip, ProgressBar, TextField, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { WelcomeHero } from "@/components/WelcomeHero";
+import { Logo } from "@/components/Logo";
 // unDraw illyustratsiyalari (litsenziyasiz-erkin, tijorat uchun ochiq) — web versiyasi
 // bilan bir xil fayllar (apps/web/public/illustrations/), lekin bu yerda
 // react-native-svg-transformer orqali to'g'ridan-to'g'ri komponent sifatida import
@@ -422,7 +423,9 @@ export default function OnboardingScreen() {
       case "height_weight":
         return survey.heightCm.length > 0 && survey.weightKg.length > 0;
       case "notifications":
-        return survey.notificationsEnabled !== null;
+        // Endi majburiy tanlov emas — "Yoqish" tugmasi ixtiyoriy, pastdagi
+        // "Keyingisi" bilan har doim davom etish mumkin.
+        return true;
       default:
         return true;
     }
@@ -806,29 +809,34 @@ export default function OnboardingScreen() {
           )}
 
           {step === "notifications" && (
-            <View className="gap-3">
-              {/* Namunaviy bildirishnoma kartasi — "yoqilsa nima ko'rinadi" degan
-                  aniq tasavvur berish uchun. */}
-              <View className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-                <View className="h-9 w-9 items-center justify-center rounded-full bg-primary-light/50">
-                  <Emoji e="🔔" />
-                </View>
-                <View className="min-w-0 flex-1">
-                  <Text className="text-[11px] font-semibold text-text-muted">{dict.common.appName}</Text>
-                  <Text className="text-sm font-semibold text-text-primary" numberOfLines={1}>
-                    {dict.onboarding.notificationsSamplePreview}
+            <View className="flex-1 items-center justify-center gap-7">
+              {/* Haqiqiy bildirishnoma qanday ko'rinishini aniq tasavvur berish uchun —
+                  Flo/Clue uslubidagi qulflangan ekran bannerining nusxasi (foydalanuvchi
+                  so'roviga ko'ra: "shu usulda bo'lsin, ha/yo'q deb so'ramasin"). */}
+              <View className="w-full max-w-xs rounded-3xl border border-border bg-surface p-4" style={{ elevation: 3, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
+                <View className="flex-row items-center gap-2">
+                  <View className="h-6 w-6 items-center justify-center rounded-md bg-primary">
+                    <Logo width={14} height={8} />
+                  </View>
+                  <Text className="flex-1 text-xs font-semibold text-text-muted" numberOfLines={1}>
+                    {dict.common.appName} · {dict.onboarding.notificationsNowLabel}
                   </Text>
+                  <Emoji e="🔔" size={13} />
                 </View>
+                <Text className="mt-2 text-sm font-semibold leading-snug text-text-primary">{dict.onboarding.notificationsSamplePreview}</Text>
               </View>
-              <ChoiceStep
-                title={dict.onboarding.notificationsQuestion}
-                description={dict.onboarding.notificationsImportance}
-                options={[
-                  { label: dict.common.yes, value: "yes", onPress: () => void requestNotificationPermission(true) },
-                  { label: dict.common.no, value: "no", onPress: () => void requestNotificationPermission(false) },
-                ]}
-                selected={survey.notificationsEnabled === null ? null : survey.notificationsEnabled ? "yes" : "no"}
-              />
+
+              <Text className="max-w-xs text-center text-xl font-bold leading-snug text-text-primary">{dict.onboarding.notificationsQuestion}</Text>
+
+              <Button
+                className="w-full max-w-xs"
+                onPress={async () => {
+                  await requestNotificationPermission(true);
+                  goNext();
+                }}
+              >
+                {dict.onboarding.notificationsTurnOnButton}
+              </Button>
             </View>
           )}
 

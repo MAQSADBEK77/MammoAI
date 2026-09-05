@@ -217,10 +217,12 @@ const ru: Dictionary = {
     unitInches: "дюйм",
     unitLb: "фунт",
 
-    notificationsQuestion: "Согласны получать важные напоминания и информацию?",
+    notificationsQuestion: "Будьте готовы благодаря своевременным напоминаниям и точным прогнозам",
     notificationsImportance:
       "Если уведомления включены, вы заранее узнаете о начале цикла и фертильных днях, о датах осмотров и сообщениях от партнёра. Без них легко пропустить важные моменты.",
     notificationsSamplePreview: "Ваши месячные ожидаются через 2 дня",
+    notificationsNowLabel: "Сейчас",
+    notificationsTurnOnButton: "Включить",
 
     analyzingTitle: "Анализируем ваши данные...",
     analyzingSubtitle: "Готовим программу специально для вас",

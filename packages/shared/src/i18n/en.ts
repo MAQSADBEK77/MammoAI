@@ -219,10 +219,12 @@ const en: Dictionary = {
     unitInches: "in",
     unitLb: "lb",
 
-    notificationsQuestion: "Would you like to receive important reminders and updates?",
+    notificationsQuestion: "Stay prepared with timely reminders and accurate predictions",
     notificationsImportance:
       "With notifications on, you'll know ahead of time when your period and fertile days are coming, when checkups are due, and when your partner sends a message. Without them, it's easy to miss things that matter.",
     notificationsSamplePreview: "Your period is expected to start in 2 days",
+    notificationsNowLabel: "Now",
+    notificationsTurnOnButton: "Turn on",
 
     analyzingTitle: "Analyzing your information...",
     analyzingSubtitle: "Preparing a plan just for you",
