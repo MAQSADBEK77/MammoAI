@@ -79,8 +79,16 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
               <KeyboardArrowDownOutlined fontSize="small" />
             </a>
           </div>
-          {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-          <img src="/illustrations/welcome.svg" alt="" className="mt-2 h-56 w-auto md:h-72" />
+          {/* Ilovaning haqiqiy ko'rinishi — bosh sahifa (namunaviy ma'lumot bilan),
+              rasm yasama illyustratsiya emas, real UI'dan olingan skrinshot. */}
+          <div className="relative mt-2">
+            <div className="bg-primary-light/40 absolute inset-0 -z-10 scale-90 rounded-full blur-3xl" />
+            <div className="relative w-[220px] -rotate-2 overflow-hidden rounded-[2rem] border-[8px] border-[#1f2937] bg-[#1f2937] shadow-2xl">
+              <div className="absolute left-1/2 top-2 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-[#1f2937]" />
+              {/* eslint-disable-next-line @next/next/no-img-element -- statik skrinshot, next/image optimizatsiyasi kerak emas */}
+              <img src="/app-preview.png" alt="" className="block w-full" />
+            </div>
+          </div>
         </div>
       </section>
 
