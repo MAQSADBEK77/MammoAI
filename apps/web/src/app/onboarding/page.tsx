@@ -8,6 +8,7 @@ import type {
   Goal,
   HealthCondition,
   HeardAboutUs,
+  IllustrationSlotKey,
   OnboardingProfile,
   PeriodAttitude,
   Symptom,
@@ -24,6 +25,7 @@ import {
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar } from "@/components/ui";
 import { Lottie } from "lottie-react";
@@ -278,6 +280,7 @@ const PERIOD_ATTITUDE_ICON: Record<PeriodAttitude, string> = {
 export default function OnboardingPage() {
   const { dict, language, setLanguage } = useI18n();
   const { applyMeResponse } = useSession();
+  const { resolve: resolveIllustration } = useIllustrations();
   const router = useRouter();
 
   const [survey, setSurvey] = useState<SurveyState>(INITIAL_SURVEY);
@@ -483,7 +486,7 @@ export default function OnboardingPage() {
           <div className="mb-4 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
             <img
-              src={`/illustrations/${STEP_ILLUSTRATION[step]}.svg`}
+              src={resolveIllustration(`onboarding.${step}` as IllustrationSlotKey)}
               alt=""
               className={clsx("w-auto", step === "last_period" ? "h-24" : "h-36")}
             />
@@ -903,7 +906,7 @@ export default function OnboardingPage() {
         {step === "analyzing" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center animate-fade-in-up">
             {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-            <img src="/illustrations/well-done.svg" alt="" className={clsx("h-40 w-auto", !finishError && "animate-pulse")} />
+            <img src={resolveIllustration("onboarding.analyzing")} alt="" className={clsx("h-40 w-auto", !finishError && "animate-pulse")} />
             {finishError ? (
               <>
                 <h2 className="text-xl font-bold text-text-primary">{finishError}</h2>

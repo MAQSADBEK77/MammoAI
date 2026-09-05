@@ -18,6 +18,7 @@ import type {
   FlowLevel,
   HealthCondition,
   HeardAboutUs,
+  IllustrationSlotKey,
   Language,
   Mood,
   OnboardingProfile,
@@ -36,7 +37,14 @@ import type {
   Symptom,
   User,
 } from "@mammoai/shared";
-import { CHECKLIST_ITEM_IS_FREE, DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH, getPregnancyStatus } from "@mammoai/shared";
+import {
+  CHECKLIST_ITEM_IS_FREE,
+  DEFAULT_CYCLE_LENGTH,
+  DEFAULT_PERIOD_LENGTH,
+  DEFAULT_SLOT_ASSIGNMENTS,
+  SLOT_KEYS,
+  getPregnancyStatus,
+} from "@mammoai/shared";
 
 const now = () => new Date().toISOString();
 const today = () => now().slice(0, 10);
@@ -641,6 +649,36 @@ export async function logReferralEvent(
   await sql`
     INSERT INTO referral_events (id, user_id, clinic_id, checklist_item_id, action, created_at)
     VALUES (${randomUUID()}, ${userId}, ${payload.clinicId}, ${payload.checklistItemId}, ${payload.action}, ${now()})
+  `;
+}
+
+// ---------------------------------------------------------------------------
+// Illyustratsiyalar — admin panelda tanlanadigan rasmlar (har bir "joy" mustaqil).
+// ---------------------------------------------------------------------------
+
+/** Hozirgi holat — DB'da yozuv bo'lmagan slot uchun DEFAULT_SLOT_ASSIGNMENTS
+ * ishlatiladi (shu tufayli admin hali hech narsa o'zgartirmagan bo'lsa ham
+ * ilova ilgarigidek ko'rinadi). */
+export async function getIllustrationSlots(): Promise<Record<IllustrationSlotKey, string>> {
+  await ensureSchema();
+  const rows = (await sql`SELECT slot_key, illustration_slug FROM illustration_slots`) as unknown as {
+    slot_key: string;
+    illustration_slug: string;
+  }[];
+  const overrides = new Map(rows.map((r) => [r.slot_key, r.illustration_slug]));
+  const result = {} as Record<IllustrationSlotKey, string>;
+  for (const key of SLOT_KEYS) {
+    result[key] = overrides.get(key) ?? DEFAULT_SLOT_ASSIGNMENTS[key];
+  }
+  return result;
+}
+
+export async function setIllustrationSlot(slotKey: IllustrationSlotKey, slug: string): Promise<void> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO illustration_slots (slot_key, illustration_slug, updated_at)
+    VALUES (${slotKey}, ${slug}, ${now()})
+    ON CONFLICT (slot_key) DO UPDATE SET illustration_slug = ${slug}, updated_at = ${now()}
   `;
 }
 

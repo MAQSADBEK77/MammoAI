@@ -6,6 +6,7 @@ import type { PregnancyResponse, VitalType } from "@mammoai/shared";
 import { getMilestoneForWeek, getVitalTone, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
@@ -23,6 +24,7 @@ const VITAL_TINT: Record<VitalType, string> = {
  * /homiladorlik sahifasi edi, endi rejimga qarab Asosiy ichida ko'rsatiladi. */
 export function PregnancyScreen() {
   const { dict } = useI18n();
+  const { resolve } = useIllustrations();
   const { onboardingProfile } = useSession();
   const [data, setData] = useState<PregnancyResponse | null>(null);
   const [lmpInput, setLmpInput] = useState("");
@@ -63,7 +65,7 @@ export function PregnancyScreen() {
         <ScreenHeader title={dict.pregnancy.title} />
         <div className="flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-          <img src="/illustrations/expecting.svg" alt="" className="h-40 w-auto" />
+          <img src={resolve("screen.pregnancy")} alt="" className="h-40 w-auto" />
         </div>
         <Card className="space-y-3">
           <p className="text-sm text-text-secondary">{dict.onboarding.lastCheckupQuestion}</p>

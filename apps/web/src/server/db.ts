@@ -88,6 +88,16 @@ async function initSchema() {
         free_screening BOOLEAN NOT NULL DEFAULT FALSE
       )
     `,
+    // Admin panelda tanlanadigan illyustratsiyalar — har bir "joy" (masalan
+    // "onboarding.welcome") mustaqil ravishda qaysi unDraw rasmi (slug)
+    // ko'rsatilishini belgilaydi (packages/shared/src/illustration-library.ts).
+    sql`
+      CREATE TABLE IF NOT EXISTS illustration_slots (
+        slot_key TEXT PRIMARY KEY,
+        illustration_slug TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `,
   ]);
 
   // 1-bosqich: faqat users'ga bog'liq jadvallar (parallel, chunki bir-biriga bog'liq emas).

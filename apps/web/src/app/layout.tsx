@@ -4,6 +4,7 @@ import "./globals.css";
 import { I18nProvider } from "@/lib/i18n";
 import { SessionProvider } from "@/lib/session";
 import { MuiThemeProvider } from "@/lib/mui-theme";
+import { IllustrationsProvider } from "@/lib/illustrations";
 
 // Iliq, yumaloq shrift — o'zbek (lotin) va rus (kirill) ikkalasini ham qamrab oladi.
 const nunito = Nunito({ subsets: ["latin", "cyrillic"], variable: "--font-body" });
@@ -29,7 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <I18nProvider>
           <SessionProvider>
-            <MuiThemeProvider>{children}</MuiThemeProvider>
+            <IllustrationsProvider>
+              <MuiThemeProvider>{children}</MuiThemeProvider>
+            </IllustrationsProvider>
           </SessionProvider>
         </I18nProvider>
       </body>

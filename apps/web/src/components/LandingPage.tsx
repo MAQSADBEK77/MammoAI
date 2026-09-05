@@ -17,6 +17,7 @@ import {
   ExpandMoreOutlined,
 } from "@mui/icons-material";
 import { useI18n } from "@/lib/i18n";
+import { useIllustrations } from "@/lib/illustrations";
 import { Button, Card } from "@/components/ui";
 
 const FEATURE_KEYS = ["cycle", "pregnancy", "checkups", "community", "clinics", "articles"] as const;
@@ -93,6 +94,7 @@ function AppPreviewCarousel() {
  */
 export function LandingPage({ onStart }: { onStart: () => void }) {
   const { dict } = useI18n();
+  const { resolve } = useIllustrations();
   const l = dict.landing;
 
   return (
@@ -115,8 +117,8 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
       </header>
 
       <section className="relative isolate overflow-hidden bg-aurora-hero">
-        <BgArt src="/illustrations/welcome.svg" className="-left-16 -top-10 h-72 w-72 -rotate-12 md:h-96 md:w-96" />
-        <BgArt src="/illustrations/healthy-lifestyle.svg" className="-right-14 bottom-0 h-64 w-64 rotate-6 md:h-80 md:w-80" />
+        <BgArt src={resolve("landing.heroLeft")} className="-left-16 -top-10 h-72 w-72 -rotate-12 md:h-96 md:w-96" />
+        <BgArt src={resolve("landing.heroRight")} className="-right-14 bottom-0 h-64 w-64 rotate-6 md:h-80 md:w-80" />
         <div className="animate-fade-in-up relative mx-auto flex max-w-5xl flex-col items-center gap-6 px-5 pb-14 pt-14 text-center md:pt-20">
           <span className="rounded-full bg-white/70 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-primary shadow-sm">
             {l.heroEyebrow}
@@ -140,7 +142,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
       </section>
 
       <section className="relative isolate overflow-hidden">
-        <BgArt src="/illustrations/goal.svg" className="-right-16 -top-16 h-72 w-72 rotate-6 md:h-96 md:w-96" />
+        <BgArt src={resolve("landing.features")} className="-right-16 -top-16 h-72 w-72 rotate-6 md:h-96 md:w-96" />
         <div className="relative mx-auto max-w-5xl px-5 py-16">
           <div className="mx-auto max-w-xl text-center">
             <h2 className="text-2xl font-extrabold text-text-primary md:text-3xl">{l.featuresTitle}</h2>
@@ -165,7 +167,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
       </section>
 
       <section id={HOW_ANCHOR} className="relative isolate overflow-hidden bg-surface-muted py-16">
-        <BgArt src="/illustrations/calendar.svg" className="-left-16 -bottom-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
+        <BgArt src={resolve("landing.howItWorks")} className="-left-16 -bottom-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
         <div className="relative mx-auto max-w-4xl px-5">
           <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.howTitle}</h2>
           <div className="mt-10 grid gap-8 sm:grid-cols-3">
@@ -183,7 +185,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
       </section>
 
       <section className="relative isolate overflow-hidden">
-        <BgArt src="/illustrations/secure-login.svg" className="-right-14 -bottom-14 h-64 w-64 rotate-6 md:h-80 md:w-80" />
+        <BgArt src={resolve("landing.trust")} className="-right-14 -bottom-14 h-64 w-64 rotate-6 md:h-80 md:w-80" />
         <div className="relative mx-auto max-w-5xl px-5 py-16">
           <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.trustTitle}</h2>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -202,7 +204,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
       </section>
 
       <section className="relative isolate overflow-hidden bg-surface-muted py-16">
-        <BgArt src="/illustrations/doctor.svg" className="-left-14 -top-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
+        <BgArt src={resolve("landing.faq")} className="-left-14 -top-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
         <div className="relative mx-auto max-w-2xl px-5">
           <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.faqTitle}</h2>
           <div className="mt-8 space-y-3">

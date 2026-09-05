@@ -12,3 +12,4 @@ export * from "./api-client";
 export * from "./i18n";
 export * from "./emoji";
 export * from "./phone";
+export * from "./illustration-library";

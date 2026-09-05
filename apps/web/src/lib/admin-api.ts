@@ -1,7 +1,19 @@
 // Admin panel uchun alohida, sodda API mijozi — oddiy foydalanuvchi `api`
 // mijozidan mustaqil (admin sessiyasi butunlay boshqa cookie/token orqali).
 
-import type { Article, ArticleCategory, Clinic, ClinicSpecialty, CommunityComment, CommunityPost, Language, OnboardingProfile, User } from "@mammoai/shared";
+import type {
+  Article,
+  ArticleCategory,
+  Clinic,
+  ClinicSpecialty,
+  CommunityComment,
+  CommunityPost,
+  IllustrationSlotKey,
+  Language,
+  LibraryIllustration,
+  OnboardingProfile,
+  User,
+} from "@mammoai/shared";
 
 export interface AdminUserSummary extends User {
   primaryGoal: OnboardingProfile["primaryGoal"] | null;
@@ -123,5 +135,10 @@ export const adminApi = {
     update: (id: string, patch: Partial<Omit<Article, "id" | "isSeedData">>) =>
       request<{ ok: true }>(`/articles/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
     delete: (id: string) => request<{ ok: true }>(`/articles/${id}`, { method: "DELETE" }),
+  },
+  illustrations: {
+    list: () => request<{ slots: Record<IllustrationSlotKey, string>; library: LibraryIllustration[] }>("/illustrations"),
+    update: (slotKey: IllustrationSlotKey, slug: string) =>
+      request<{ slots: Record<IllustrationSlotKey, string> }>("/illustrations", { method: "PATCH", body: JSON.stringify({ slotKey, slug }) }),
   },
 };

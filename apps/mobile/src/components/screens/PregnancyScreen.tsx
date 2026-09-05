@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -7,10 +7,10 @@ import type { PregnancyResponse, VitalType } from "@mammoai/shared";
 import { getMilestoneForWeek, getVitalTone, gradients, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, FloatingTag, LoadingSpinner, ScreenHeader, TextField } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
-import ExpectingIllustration from "../../../assets/illustrations/expecting.svg";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
 const VITAL_ICON: Record<VitalType, keyof typeof MaterialCommunityIcons.glyphMap> = { heart_rate: "heart-outline", blood_pressure: "chart-line", weight: "scale-bathroom", temperature: "thermometer" };
@@ -25,6 +25,7 @@ const VITAL_ICON_COLOR: Record<VitalType, string> = {
  * /homiladorlik ekrani edi. O'zining SafeAreaView/ScrollView'i yo'q. */
 export function PregnancyScreen() {
   const { dict } = useI18n();
+  const { resolve: resolveIllustration } = useIllustrations();
   const { onboardingProfile } = useSession();
   const [data, setData] = useState<PregnancyResponse | null>(null);
   const [lmpInput, setLmpInput] = useState("");
@@ -66,9 +67,7 @@ export function PregnancyScreen() {
       <View className="gap-4">
         <ScreenHeader title={dict.pregnancy.title} />
         <LinearGradient colors={gradients.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 32, paddingVertical: 24 }}>
-          <View className="items-center py-2">
-            <ExpectingIllustration width={200} height={160} />
-          </View>
+          <View className="items-center py-2">{createElement(resolveIllustration("screen.pregnancy"), { width: 200, height: 160 })}</View>
         </LinearGradient>
         <Card className="gap-3">
           <Text className="text-sm text-text-secondary">{dict.onboarding.lastCheckupQuestion}</Text>

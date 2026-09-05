@@ -35,6 +35,7 @@ import type {
 } from "./types";
 import type { CyclePrediction } from "./logic/cycle";
 import type { PregnancyStatus } from "./logic/pregnancy";
+import type { IllustrationSlotKey } from "./illustration-library";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -243,6 +244,10 @@ export function createApiClient(config: ApiClientConfig) {
       sendChatMessage: (body: string) =>
         request<{ message: PartnerChatMessage }>("/api/partner/messages", { method: "POST", body: JSON.stringify({ body }) }),
       disconnect: () => request<PartnerStatusResponse>("/api/partner", { method: "DELETE" }),
+    },
+    illustrations: {
+      /** Admin panelda tanlangan illyustratsiyalar xaritasi — ochiq (autentifikatsiyasiz). */
+      get: () => request<{ slots: Record<IllustrationSlotKey, string> }>("/api/illustrations"),
     },
   };
 }

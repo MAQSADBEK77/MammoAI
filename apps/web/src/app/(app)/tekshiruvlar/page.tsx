@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ChecklistItem } from "@mammoai/shared";
 import { formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
 import { CheckCircleOutlined, AccessTimeOutlined, ErrorOutlineOutlined } from "@mui/icons-material";
@@ -14,6 +15,7 @@ const STATUS_ICON_COLOR = { pending: "text-text-muted", done: "text-success", ov
 
 export default function ChecklistPage() {
   const { dict } = useI18n();
+  const { resolve } = useIllustrations();
   const router = useRouter();
   const [items, setItems] = useState<ChecklistItem[] | null>(null);
 
@@ -44,7 +46,7 @@ export default function ChecklistPage() {
 
       <div className="flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-        <img src="/illustrations/healthy-lifestyle.svg" alt="" className="h-32 w-auto" />
+        <img src={resolve("screen.tekshiruvlar")} alt="" className="h-32 w-auto" />
       </div>
 
       <div className="animate-fade-in-up flex gap-2.5">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -7,9 +7,9 @@ import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
+import { useIllustrations } from "@/lib/illustrations";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import HealthyLifestyleIllustration from "../../../assets/illustrations/healthy-lifestyle.svg";
 
 const STATUS_ICON: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = { pending: "clock-outline", done: "check-circle-outline", overdue: "alert-circle-outline" };
 const STATUS_ICON_COLOR = { pending: "#9CA3AF", done: "#57B894", overdue: "#E0506F" } as const;
@@ -17,6 +17,7 @@ const STATUS_ICON_COLOR = { pending: "#9CA3AF", done: "#57B894", overdue: "#E050
 export default function ChecklistScreen() {
   const { dict } = useI18n();
   const { openDrawer } = useDrawer();
+  const { resolve: resolveIllustration } = useIllustrations();
   const [items, setItems] = useState<ChecklistItem[] | null>(null);
 
   useEffect(() => {
@@ -54,9 +55,7 @@ export default function ChecklistScreen() {
         </Pressable>
         <ScreenHeader title={dict.checklist.title} />
 
-        <View className="items-center">
-          <HealthyLifestyleIllustration width={170} height={110} />
-        </View>
+        <View className="items-center">{createElement(resolveIllustration("screen.tekshiruvlar"), { width: 170, height: 110 })}</View>
 
         <Animated.View entering={FadeInUp.duration(450)} className="flex-row gap-2.5">
           <StatTile

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -12,6 +12,7 @@ import type {
   Goal,
   HealthCondition,
   HeardAboutUs,
+  IllustrationSlotKey,
   OnboardingProfile,
   PeriodAttitude,
   Symptom,
@@ -30,6 +31,7 @@ import {
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar, TextField } from "@/components/ui";
 import { WelcomeHero } from "@/components/WelcomeHero";
@@ -44,7 +46,6 @@ import MedicineIllustration from "../../assets/illustrations/medicine.svg";
 import DoctorIllustration from "../../assets/illustrations/doctor.svg";
 import NotificationsIllustration from "../../assets/illustrations/notifications.svg";
 import MeditationIllustration from "../../assets/illustrations/meditation.svg";
-import WellDoneIllustration from "../../assets/illustrations/well-done.svg";
 
 type Step =
   | "welcome"
@@ -270,6 +271,7 @@ function landingPath(goal: Goal): "/(tabs)/asosiy" | "/(tabs)/tekshiruvlar" {
 export default function OnboardingScreen() {
   const { dict, language, setLanguage } = useI18n();
   const { applyMeResponse } = useSession();
+  const { resolve: resolveIllustration } = useIllustrations();
 
   const [survey, setSurvey] = useState<SurveyState>(INITIAL_SURVEY);
   const [stepIndex, setStepIndex] = useState(0);
@@ -449,11 +451,13 @@ export default function OnboardingScreen() {
         >
           {STEP_ILLUSTRATION[step] ? (
             <Animated.View key={`illustration-${step}`} entering={FadeIn.duration(350)} className="mb-1 items-center">
-              {(() => {
-                const Illustration = STEP_ILLUSTRATION[step]!;
+              {
                 // "last_period" — bir oz soddalashtirilgan (kichikroq) ko'rinish.
-                return step === "last_period" ? <Illustration width={120} height={87} /> : <Illustration width={180} height={130} />;
-              })()}
+                createElement(
+                  resolveIllustration(`onboarding.${step}` as IllustrationSlotKey),
+                  step === "last_period" ? { width: 120, height: 87 } : { width: 180, height: 130 }
+                )
+              }
             </Animated.View>
           ) : (
             STEP_ICON[step] && (
@@ -823,7 +827,7 @@ export default function OnboardingScreen() {
 
           {step === "analyzing" && (
             <View className="items-center gap-4">
-              <WellDoneIllustration width={180} height={130} />
+              {createElement(resolveIllustration("onboarding.analyzing"), { width: 180, height: 130 })}
               {finishError ? (
                 <>
                   <Text className="text-center text-xl font-bold text-text-primary">{finishError}</Text>
