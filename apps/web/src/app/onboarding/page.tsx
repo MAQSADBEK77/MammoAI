@@ -25,7 +25,6 @@ import {
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { useTelegram } from "@/lib/telegram";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar, DateWheelPicker, WheelPicker } from "@/components/ui";
@@ -284,10 +283,6 @@ export default function OnboardingPage() {
   const { applyMeResponse } = useSession();
   const { resolve: resolveIllustration } = useIllustrations();
   const router = useRouter();
-  // Telegram Mini App ichida SessionProvider allaqachon `initData` orqali
-  // akkaunt yaratgan/topgan bo'ladi — shuning uchun telefon raqam so'rovi
-  // (account_choice/account_identifier) ostidagi `steps`da o'tkazib yuboriladi.
-  const { isTelegram, tgUser } = useTelegram();
 
   const [survey, setSurvey] = useState<SurveyState>(INITIAL_SURVEY);
   const [stepIndex, setStepIndex] = useState(0);
@@ -305,12 +300,17 @@ export default function OnboardingPage() {
   const isMinor = age > 0 && age < 18;
 
   // Bosqichlar ro'yxati maqsad/yoshga qarab dinamik shakllanadi (App.pdf §7-10).
-  // Telegram Mini App'da akkaunt SessionProvider tomonidan `initData` orqali
-  // avtomatik yaratilgan/topilgan bo'ladi — telefon raqam bosqichlari kerak emas.
   const steps = useMemo<Step[]>(() => {
-    const base: Step[] = isTelegram
-      ? ["welcome", "language", "privacy", "name", "age", "goal"]
-      : ["welcome", "language", "account_choice", "account_identifier", "privacy", "name", "age", "goal"];
+    const base: Step[] = [
+      "welcome",
+      "language",
+      "account_choice",
+      "account_identifier",
+      "privacy",
+      "name",
+      "age",
+      "goal",
+    ];
     if (!survey.primaryGoal) return [...base, "analyzing"];
 
     const tail: Step[] = [];
@@ -328,21 +328,11 @@ export default function OnboardingPage() {
     if (needsHeightWeight(survey.primaryGoal)) tail.push("height_weight");
     tail.push("notifications", "analyzing");
     return [...base, ...tail];
-  }, [survey.primaryGoal, isTelegram]);
+  }, [survey.primaryGoal]);
 
   const step = steps[stepIndex];
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
   const goBack = () => setStepIndex((i) => Math.max(i - 1, 0));
-
-  // Telegram profilidagi ism bor bo'lsa, "name" bosqichini oldindan to'ldiramiz
-  // (foydalanuvchi shunchaki tasdiqlaydi yoki tahrirlaydi, qayta yozmaydi).
-  useEffect(() => {
-    if (!isTelegram || !tgUser) return;
-    const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ").trim();
-    if (!fullName) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSurvey((s) => (s.name ? s : { ...s, name: fullName }));
-  }, [isTelegram, tgUser]);
 
   function toggleArrayValue<T>(arr: T[], value: T): T[] {
     return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];

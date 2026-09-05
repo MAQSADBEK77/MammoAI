@@ -263,10 +263,6 @@ async function initSchema() {
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`,
     // Admin panel — foydalanuvchini bloklash (App.pdf'dan tashqari, moderatsiya uchun).
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE`,
-    // Telegram Mini App — `initData`dan olingan Telegram foydalanuvchi ID'si (raqamni
-    // TEXT sifatida saqlaymiz, JS number aniqligidan xoli bo'lish uchun). Telefon
-    // raqamsiz avtomatik akkaunt yaratish/kirish shu ustun orqali (server/telegram-auth.ts).
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_id TEXT UNIQUE`,
     sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
     // Hamkor "Xabar" (tezkor eslatma) tugmasi shu ustunni ishlatadi —
     // izoh-bildirishnomalaridan farqli o'laroq, erkin matn saqlaydi.

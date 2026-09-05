@@ -4,7 +4,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { MeResponse, OnboardingProfile, User } from "@mammoai/shared";
 import { api } from "./api";
 import { useI18n } from "./i18n";
-import { getTelegramWebApp } from "./telegram";
 
 type SessionStatus = "loading" | "onboarded" | "anonymous";
 
@@ -39,22 +38,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const res = await api.me.get();
       applyMeResponse(res);
     } catch {
-      // Mavjud sessiya (cookie) topilmadi — Telegram Mini App ichida ochilgan
-      // bo'lsa, `initData` orqali avtomatik akkaunt yaratamiz/kiramiz (telefon
-      // raqam so'ralmaydi, onboarding'da account_choice/account_identifier
-      // bosqichlari o'tkazib yuboriladi — apps/web/src/app/onboarding/page.tsx).
-      const webApp = getTelegramWebApp();
-      webApp?.ready();
-      webApp?.expand();
-      if (webApp?.initData) {
-        try {
-          const tgRes = await api.auth.telegram({ initData: webApp.initData });
-          applyMeResponse(tgRes);
-          return;
-        } catch {
-          // Tasdiqlash muvaffaqiyatsiz — oddiy anonim holatga qaytamiz.
-        }
-      }
       setStatus("anonymous");
       setUser(null);
       setOnboardingProfile(null);

@@ -71,16 +71,6 @@ export interface AuthStartResponse extends MeResponse {
   isNewAccount: boolean;
 }
 
-export interface AuthTelegramPayload {
-  /** Telegram WebApp `initData` — server tomonda bot tokeni bilan tasdiqlanadi. */
-  initData: string;
-}
-
-export interface AuthTelegramResponse extends MeResponse {
-  token?: string;
-  isNewAccount: boolean;
-}
-
 export interface CycleResponse {
   settings: CycleSettings;
   logs: CycleLog[];
@@ -157,10 +147,6 @@ export function createApiClient(config: ApiClientConfig) {
       /** Telefon raqam bilan akkaunt yaratish yoki mavjudiga kirish. */
       start: (payload: AuthStartPayload) =>
         request<AuthStartResponse>("/api/auth/start", { method: "POST", body: JSON.stringify(payload) }),
-      /** Telegram Mini App ichida ochilganda — `initData` orqali avtomatik
-       * akkaunt yaratish/kirish, telefon raqam so'ralmaydi. */
-      telegram: (payload: AuthTelegramPayload) =>
-        request<AuthTelegramResponse>("/api/auth/telegram", { method: "POST", body: JSON.stringify(payload) }),
       /** Faqat veb uchun — httpOnly sessiya cookie'sini o'chiradi. Mobil o'z
        * tokenini mahalliy (SecureStore) o'chiradi, bu chaqiruv shart emas. */
       logout: () => request<{ ok: true }>("/api/auth/logout", { method: "POST" }),

@@ -70,7 +70,6 @@ interface UserRow {
   created_at: string;
   avatar_url: string | null;
   is_blocked: boolean;
-  telegram_id: string | null;
 }
 
 function userFromRow(row: UserRow): User {
@@ -141,46 +140,6 @@ export async function createUserWithIdentifier(
       phone,
       email: null,
       name: null,
-      region: null,
-      language,
-      fontScale: "normal",
-      highContrast: false,
-      notificationsEnabled: true,
-      createdAt,
-      avatarUrl: null,
-      isBlocked: false,
-    },
-    tokenVersion: 0,
-  };
-}
-
-export async function findUserByTelegramId(telegramId: string): Promise<(User & { tokenVersion: number }) | null> {
-  await ensureSchema();
-  const rows = (await sql`SELECT * FROM users WHERE telegram_id = ${telegramId}`) as unknown as UserRow[];
-  const row = rows[0];
-  return row ? { ...userFromRow(row), tokenVersion: row.token_version } : null;
-}
-
-/**
- * Telegram Mini App orqali birinchi marta kirgan foydalanuvchi uchun akkaunt —
- * `initData` allaqachon Telegram tomonidan tasdiqlangani uchun telefon/SMS
- * shart emas (server/telegram-auth.ts:verifyTelegramInitData).
- */
-export async function createUserWithTelegram(
-  telegramId: string,
-  language: Language,
-  name: string | null
-): Promise<{ user: User; tokenVersion: number }> {
-  await ensureSchema();
-  const id = randomUUID();
-  const createdAt = now();
-  await sql`INSERT INTO users (id, telegram_id, name, language, created_at) VALUES (${id}, ${telegramId}, ${name}, ${language}, ${createdAt})`;
-  return {
-    user: {
-      id,
-      phone: null,
-      email: null,
-      name,
       region: null,
       language,
       fontScale: "normal",
