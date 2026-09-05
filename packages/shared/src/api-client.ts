@@ -3,6 +3,7 @@
 // Backend — apps/web/src/app/api ichida, ikkalasiga ham xizmat qiladi (spec §8).
 
 import type {
+  AnalyticsEventInput,
   AppNotification,
   Article,
   BloodType,
@@ -67,6 +68,16 @@ export interface AuthStartPayload {
 export interface AuthStartResponse extends MeResponse {
   token?: string;
   /** false — bu identifikator bo'yicha mavjud akkaunt topildi va shunga kirildi. */
+  isNewAccount: boolean;
+}
+
+export interface AuthTelegramPayload {
+  /** Telegram WebApp `initData` — server tomonda bot tokeni bilan tasdiqlanadi. */
+  initData: string;
+}
+
+export interface AuthTelegramResponse extends MeResponse {
+  token?: string;
   isNewAccount: boolean;
 }
 
@@ -146,6 +157,10 @@ export function createApiClient(config: ApiClientConfig) {
       /** Telefon raqam bilan akkaunt yaratish yoki mavjudiga kirish. */
       start: (payload: AuthStartPayload) =>
         request<AuthStartResponse>("/api/auth/start", { method: "POST", body: JSON.stringify(payload) }),
+      /** Telegram Mini App ichida ochilganda — `initData` orqali avtomatik
+       * akkaunt yaratish/kirish, telefon raqam so'ralmaydi. */
+      telegram: (payload: AuthTelegramPayload) =>
+        request<AuthTelegramResponse>("/api/auth/telegram", { method: "POST", body: JSON.stringify(payload) }),
       /** Faqat veb uchun — httpOnly sessiya cookie'sini o'chiradi. Mobil o'z
        * tokenini mahalliy (SecureStore) o'chiradi, bu chaqiruv shart emas. */
       logout: () => request<{ ok: true }>("/api/auth/logout", { method: "POST" }),
@@ -248,6 +263,13 @@ export function createApiClient(config: ApiClientConfig) {
     illustrations: {
       /** Admin panelda tanlangan illyustratsiyalar xaritasi — ochiq (autentifikatsiyasiz). */
       get: () => request<{ slots: Record<IllustrationSlotKey, string> }>("/api/illustrations"),
+    },
+    analytics: {
+      /** Foydalanish hodisalari (sahifa ko'rish/tugma bosish) — to'plamda yuboriladi.
+       * Xato bo'lsa ham ilova ishlashiga ta'sir qilmasligi kerak — chaqiruvchi tomon
+       * (lib/analytics.ts) xatoliklarni yutadi, shu yerda qayta urinish shart emas. */
+      sendEvents: (events: AnalyticsEventInput[]) =>
+        request<{ ok: true }>("/api/analytics/events", { method: "POST", body: JSON.stringify({ events }) }),
     },
   };
 }

@@ -7,6 +7,7 @@ import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 import { TabBarBackground, TabIcon } from "@/components/TabBar";
 import { LoadingSpinner } from "@/components/ui";
+import { trackClick } from "@/lib/analytics";
 
 export default function TabsLayout() {
   const { status } = useSession();
@@ -66,6 +67,7 @@ export default function TabsLayout() {
             </TabIcon>
           ),
         }}
+        listeners={{ tabPress: () => trackClick("/asosiy", dict.nav.home) }}
       />
       <Tabs.Screen
         name="jamiyat"
@@ -77,6 +79,7 @@ export default function TabsLayout() {
             </TabIcon>
           ),
         }}
+        listeners={{ tabPress: () => trackClick("/jamiyat", dict.nav.community) }}
       />
       <Tabs.Screen
         name="tekshiruvlar"
@@ -88,6 +91,7 @@ export default function TabsLayout() {
             </TabIcon>
           ),
         }}
+        listeners={{ tabPress: () => trackClick("/tekshiruvlar", dict.nav.checklist) }}
       />
       {/* Hamkor — foydalanuvchi so'roviga ko'ra pastki menyuga qo'shildi. */}
       <Tabs.Screen
@@ -100,6 +104,7 @@ export default function TabsLayout() {
             </TabIcon>
           ),
         }}
+        listeners={{ tabPress: () => trackClick("/hamkor", dict.partner.title) }}
       />
       {/* Profil endi pastki menyuda emas — faqat chap burger menyusi orqali
           ochiladi (foydalanuvchi so'rovi). `href: null` marshrutni ishlaydigan

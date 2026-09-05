@@ -181,6 +181,24 @@ async function initSchema() {
         due_date TEXT
       )
     `,
+    // Foydalanish analitikasi — qaysi sahifada qancha vaqt o'tkazilgani (pageview,
+    // duration_ms) va qaysi tugma bosilgani (click, label). `user_id` NULL bo'lishi
+    // mumkin (onboarding tugamasdan oldingi hodisalar) — CASCADE, chunki akkaunt
+    // o'chirilganda bog'liq analitika ham tozalanishi kerak (App.pdf'dan tashqari,
+    // maxfiylik siyosati bilan izchil).
+    sql`
+      CREATE TABLE IF NOT EXISTS analytics_events (
+        id TEXT PRIMARY KEY,
+        user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+        session_id TEXT NOT NULL,
+        platform TEXT NOT NULL DEFAULT 'web',
+        type TEXT NOT NULL,
+        path TEXT,
+        label TEXT,
+        duration_ms INTEGER,
+        created_at TEXT NOT NULL
+      )
+    `,
     sql`
       CREATE TABLE IF NOT EXISTS pregnancy_visits (
         id TEXT PRIMARY KEY,
@@ -245,6 +263,10 @@ async function initSchema() {
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`,
     // Admin panel — foydalanuvchini bloklash (App.pdf'dan tashqari, moderatsiya uchun).
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE`,
+    // Telegram Mini App — `initData`dan olingan Telegram foydalanuvchi ID'si (raqamni
+    // TEXT sifatida saqlaymiz, JS number aniqligidan xoli bo'lish uchun). Telefon
+    // raqamsiz avtomatik akkaunt yaratish/kirish shu ustun orqali (server/telegram-auth.ts).
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_id TEXT UNIQUE`,
     sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
     // Hamkor "Xabar" (tezkor eslatma) tugmasi shu ustunni ishlatadi —
     // izoh-bildirishnomalaridan farqli o'laroq, erkin matn saqlaydi.
@@ -323,6 +345,9 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_partner_links_a ON partner_links(user_a_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_partner_links_b ON partner_links(user_b_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_partner_messages_link ON partner_messages(partner_link_id, created_at ASC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_created ON analytics_events(created_at)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_user ON analytics_events(user_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(type, created_at)`,
   ]);
 }
 

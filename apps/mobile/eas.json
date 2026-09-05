@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://mammoai-maqsadbek77s-projects.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://mammo.uz"
       }
     },
     "production": {
@@ -19,7 +19,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://mammoai-maqsadbek77s-projects.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://mammo.uz"
       }
     }
   }

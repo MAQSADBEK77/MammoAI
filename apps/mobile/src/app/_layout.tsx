@@ -8,6 +8,14 @@ import { IllustrationsProvider } from "@/lib/illustrations";
 import { DynamicPaperProvider } from "@/lib/paper-theme";
 import { DrawerProvider } from "@/lib/drawer";
 import { AppDrawer } from "@/components/AppDrawer";
+import { useAnalytics } from "@/lib/analytics";
+
+/** `useAnalytics` expo-router'ning global yo'l kontekstiga muhtoj — shuning
+ * uchun `<Stack>` bilan bir qatorda, alohida (ko'rinmas) komponentda chaqiriladi. */
+function AnalyticsMount() {
+  useAnalytics();
+  return null;
+}
 
 export default function RootLayout() {
   return (
@@ -18,6 +26,7 @@ export default function RootLayout() {
             <DynamicPaperProvider>
               <DrawerProvider>
                 <StatusBar style="dark" />
+                <AnalyticsMount />
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="index" />
                   <Stack.Screen name="onboarding" />

@@ -2,6 +2,8 @@
 // mijozidan mustaqil (admin sessiyasi butunlay boshqa cookie/token orqali).
 
 import type {
+  AnalyticsSummary,
+  AnalyticsUserSummary,
   Article,
   ArticleCategory,
   Clinic,
@@ -140,5 +142,15 @@ export const adminApi = {
     list: () => request<{ slots: Record<IllustrationSlotKey, string>; library: LibraryIllustration[] }>("/illustrations"),
     update: (slotKey: IllustrationSlotKey, slug: string) =>
       request<{ slots: Record<IllustrationSlotKey, string> }>("/illustrations", { method: "PATCH", body: JSON.stringify({ slotKey, slug }) }),
+  },
+  analytics: {
+    summary: (days: number) => request<AnalyticsSummary>(`/analytics/summary?days=${days}`),
+    users: (params: { search?: string; limit?: number; offset?: number }) => {
+      const q = new URLSearchParams();
+      if (params.search) q.set("search", params.search);
+      if (params.limit) q.set("limit", String(params.limit));
+      if (params.offset) q.set("offset", String(params.offset));
+      return request<{ users: AnalyticsUserSummary[]; total: number }>(`/analytics/users?${q.toString()}`);
+    },
   },
 };

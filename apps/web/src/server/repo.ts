@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "./db";
 import { ApiError } from "./api-utils";
 import type {
+  AnalyticsEventInput,
+  AnalyticsSummary,
+  AnalyticsUserSummary,
   AppNotification,
   Article,
   ArticleCategory,
@@ -67,6 +70,7 @@ interface UserRow {
   created_at: string;
   avatar_url: string | null;
   is_blocked: boolean;
+  telegram_id: string | null;
 }
 
 function userFromRow(row: UserRow): User {
@@ -137,6 +141,46 @@ export async function createUserWithIdentifier(
       phone,
       email: null,
       name: null,
+      region: null,
+      language,
+      fontScale: "normal",
+      highContrast: false,
+      notificationsEnabled: true,
+      createdAt,
+      avatarUrl: null,
+      isBlocked: false,
+    },
+    tokenVersion: 0,
+  };
+}
+
+export async function findUserByTelegramId(telegramId: string): Promise<(User & { tokenVersion: number }) | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM users WHERE telegram_id = ${telegramId}`) as unknown as UserRow[];
+  const row = rows[0];
+  return row ? { ...userFromRow(row), tokenVersion: row.token_version } : null;
+}
+
+/**
+ * Telegram Mini App orqali birinchi marta kirgan foydalanuvchi uchun akkaunt —
+ * `initData` allaqachon Telegram tomonidan tasdiqlangani uchun telefon/SMS
+ * shart emas (server/telegram-auth.ts:verifyTelegramInitData).
+ */
+export async function createUserWithTelegram(
+  telegramId: string,
+  language: Language,
+  name: string | null
+): Promise<{ user: User; tokenVersion: number }> {
+  await ensureSchema();
+  const id = randomUUID();
+  const createdAt = now();
+  await sql`INSERT INTO users (id, telegram_id, name, language, created_at) VALUES (${id}, ${telegramId}, ${name}, ${language}, ${createdAt})`;
+  return {
+    user: {
+      id,
+      phone: null,
+      email: null,
+      name,
       region: null,
       language,
       fontScale: "normal",
@@ -1088,6 +1132,187 @@ export async function getAdminStats(): Promise<AdminStats> {
       articles: articlesCount,
     },
     signupsByDay: signupsByDayRows,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Foydalanish analitikasi — mijoz qaysi sahifada qancha vaqt o'tkazgani va
+// qaysi tugmani bosgani (admin panel "chuqur tahlil" so'roviga ko'ra qo'shildi).
+// ---------------------------------------------------------------------------
+
+const ANALYTICS_TYPES = new Set(["pageview", "click"]);
+const ANALYTICS_PLATFORMS = new Set(["web", "mobile"]);
+
+/** Bitta to'plamdagi hodisalarni bitta INSERT bilan yozadi — har bir klik/sahifa
+ * ko'rish uchun alohida so'rov yubormaslik uchun (mijoz tomon to'playdi, davriy
+ * yuboradi). Noto'g'ri (schema'ga mos kelmaydigan) yozuvlar jimgina tashlanadi —
+ * analitika ilovaning asosiy ishlashiga ta'sir qilmasligi kerak. */
+export async function recordAnalyticsEvents(userId: string | null, events: AnalyticsEventInput[]): Promise<void> {
+  const valid = events.filter(
+    (e) =>
+      ANALYTICS_TYPES.has(e.type) &&
+      ANALYTICS_PLATFORMS.has(e.platform) &&
+      typeof e.sessionId === "string" &&
+      e.sessionId.length > 0 &&
+      typeof e.path === "string" &&
+      e.path.length > 0
+  );
+  if (valid.length === 0) return;
+  await ensureSchema();
+  const createdAt = now();
+  const rows = valid.map((e) => ({
+    id: randomUUID(),
+    user_id: userId,
+    session_id: e.sessionId.slice(0, 100),
+    platform: e.platform,
+    type: e.type,
+    path: e.path.slice(0, 300),
+    label: e.label ? e.label.slice(0, 150) : null,
+    duration_ms: e.durationMs && e.durationMs > 0 ? Math.round(e.durationMs) : null,
+    created_at: createdAt,
+  }));
+  await sql`
+    INSERT INTO analytics_events ${sql(rows, "id", "user_id", "session_id", "platform", "type", "path", "label", "duration_ms", "created_at")}
+  `;
+}
+
+interface AnalyticsDailyRow {
+  day: string;
+  sessions: number;
+  pageviews: number;
+  clicks: number;
+}
+
+export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummary> {
+  await ensureSchema();
+  const clampedDays = Math.min(Math.max(Math.round(days) || 14, 1), 90);
+  const sinceInterval = `${clampedDays} days`;
+  const seriesStartInterval = `${clampedDays - 1} days`;
+
+  const [totalsRows, avgSessionRows, dailyRows, topPagesRows, topButtonsRows] = (await Promise.all([
+    sql`
+      SELECT count(DISTINCT session_id)::int as sessions,
+        count(*) FILTER (WHERE type = 'pageview')::int as pageviews,
+        count(*) FILTER (WHERE type = 'click')::int as clicks
+      FROM analytics_events
+      WHERE (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+    `,
+    // Seans davomiyligi — mijoz o'zi hisoblab yuborgan har bir sahifa
+    // `duration_ms`'i yig'indisi orqali olinadi (server qabul qilgan vaqt farqi
+    // EMAS — chunki qisqa tashrifning barcha hodisalari bitta to'plamda, bitta
+    // vaqt belgisi bilan kelishi mumkin, bu holda vaqt farqi 0 chiqib qolardi).
+    sql`
+      SELECT coalesce(avg(duration_ms), 0)::bigint as avg_ms FROM (
+        SELECT session_id, sum(coalesce(duration_ms, 0)) as duration_ms
+        FROM analytics_events
+        WHERE type = 'pageview' AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+        GROUP BY session_id
+      ) t
+    `,
+    sql`
+      SELECT to_char(d.day, 'YYYY-MM-DD') as day,
+        count(DISTINCT e.session_id)::int as sessions,
+        count(*) FILTER (WHERE e.type = 'pageview')::int as pageviews,
+        count(*) FILTER (WHERE e.type = 'click')::int as clicks
+      FROM generate_series(now()::date - ${seriesStartInterval}::interval, now()::date, interval '1 day') as d(day)
+      LEFT JOIN analytics_events e ON (e.created_at)::timestamptz::date = d.day
+      GROUP BY d.day ORDER BY d.day ASC
+    `,
+    sql`
+      SELECT path, count(*)::int as view_count, sum(coalesce(duration_ms, 0))::bigint as total_duration_ms
+      FROM analytics_events
+      WHERE type = 'pageview' AND path IS NOT NULL AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+      GROUP BY path
+      ORDER BY total_duration_ms DESC
+      LIMIT 10
+    `,
+    sql`
+      SELECT label, path, count(*)::int as count
+      FROM analytics_events
+      WHERE type = 'click' AND label IS NOT NULL AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+      GROUP BY label, path
+      ORDER BY count DESC
+      LIMIT 10
+    `,
+  ])) as unknown as [
+    { sessions: number; pageviews: number; clicks: number }[],
+    { avg_ms: number }[],
+    AnalyticsDailyRow[],
+    { path: string; view_count: number; total_duration_ms: number }[],
+    { label: string; path: string | null; count: number }[],
+  ];
+
+  const totals = totalsRows[0] ?? { sessions: 0, pageviews: 0, clicks: 0 };
+  const avgSessionDurationMs = Number(avgSessionRows[0]?.avg_ms ?? 0);
+
+  return {
+    totals: { ...totals, avgSessionDurationMs },
+    dailyActivity: dailyRows.map((r) => ({ day: r.day, sessions: r.sessions, pageviews: r.pageviews, clicks: r.clicks })),
+    topPages: topPagesRows.map((r) => ({
+      path: r.path,
+      viewCount: r.view_count,
+      totalDurationMs: Number(r.total_duration_ms),
+      avgDurationMs: r.view_count > 0 ? Math.round(Number(r.total_duration_ms) / r.view_count) : 0,
+    })),
+    topButtons: topButtonsRows.map((r) => ({ label: r.label, path: r.path, count: r.count })),
+  };
+}
+
+export async function listAnalyticsUsersAdmin(params: { search?: string; limit?: number; offset?: number }): Promise<{
+  users: AnalyticsUserSummary[];
+  total: number;
+}> {
+  await ensureSchema();
+  const limit = params.limit ?? 30;
+  const offset = params.offset ?? 0;
+  const q = params.search?.trim();
+  const searchPattern = q ? `%${q}%` : null;
+  const searchClause = searchPattern ? sql`WHERE u.name ILIKE ${searchPattern} OR u.phone ILIKE ${searchPattern}` : sql``;
+
+  const rows = (await sql`
+    SELECT u.id as user_id, u.name, u.phone,
+      count(DISTINCT e.session_id)::int as sessions_count,
+      count(e.id)::int as events_count,
+      max(e.created_at) as last_active_at,
+      sum(CASE WHEN e.type = 'pageview' THEN coalesce(e.duration_ms, 0) ELSE 0 END)::bigint as total_duration_ms,
+      (
+        SELECT e2.path FROM analytics_events e2
+        WHERE e2.user_id = u.id AND e2.type = 'pageview' AND e2.path IS NOT NULL
+        GROUP BY e2.path ORDER BY sum(coalesce(e2.duration_ms, 0)) DESC LIMIT 1
+      ) as top_path
+    FROM users u
+    JOIN analytics_events e ON e.user_id = u.id
+    ${searchClause}
+    GROUP BY u.id, u.name, u.phone
+    ORDER BY total_duration_ms DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `) as unknown as {
+    user_id: string;
+    name: string | null;
+    phone: string | null;
+    sessions_count: number;
+    events_count: number;
+    last_active_at: string | null;
+    total_duration_ms: number;
+    top_path: string | null;
+  }[];
+
+  const [{ count }] = (await sql`
+    SELECT count(DISTINCT u.id)::int as count FROM users u JOIN analytics_events e ON e.user_id = u.id ${searchClause}
+  `) as unknown as { count: number }[];
+
+  return {
+    total: count,
+    users: rows.map((r) => ({
+      userId: r.user_id,
+      name: r.name,
+      phone: r.phone,
+      sessionsCount: r.sessions_count,
+      eventsCount: r.events_count,
+      totalDurationMs: Number(r.total_duration_ms),
+      lastActiveAt: r.last_active_at,
+      topPath: r.top_path,
+    })),
   };
 }
 

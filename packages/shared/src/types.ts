@@ -341,3 +341,54 @@ export interface PartnerStatusResponse {
   /** Hali ulanmagan bo'lsa va kod so'ralgan bo'lsa — shu foydalanuvchi ulashishi mumkin bo'lgan kod. */
   myInviteCode: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Foydalanish analitikasi — mijoz qaysi sahifada qancha vaqt o'tkazgani va
+// qaysi tugmalarni bosgani (admin panelda "chuqur tahlil" uchun). Faqat
+// asosiy ilova (onboarding + (app) guruhi) kuzatiladi — admin panelning o'zi
+// EMAS, chunki bu foydalanuvchi xatti-harakatini o'rganish uchun, egasi
+// emas. Mobil'da tugma bosishlar cheklangan (faqat asosiy CTA'lar) — React
+// Native'da DOM'dagi kabi global "document click" delegatsiyasi yo'q.
+// ---------------------------------------------------------------------------
+
+export type AnalyticsEventType = "pageview" | "click";
+
+export interface AnalyticsEventInput {
+  type: AnalyticsEventType;
+  /** Sahifa/ekran yo'li (masalan "/asosiy"). */
+  path: string;
+  /** `click` uchun — tugma matni/yorlig'i. `pageview` uchun `null`. */
+  label?: string | null;
+  /** `pageview` uchun — shu sahifada o'tkazilgan vaqt (millisekund). */
+  durationMs?: number | null;
+  /** Mijoz tomonida generatsiya qilingan, brauzer/ilova ochiq turgancha barqaror ID. */
+  sessionId: string;
+  platform: "web" | "mobile";
+}
+
+export interface AnalyticsSummary {
+  totals: {
+    sessions: number;
+    pageviews: number;
+    clicks: number;
+    /** O'rtacha bitta seans davomiyligi (millisekund). */
+    avgSessionDurationMs: number;
+  };
+  /** So'nggi N kun uchun kunlik faollik — grafik uchun. */
+  dailyActivity: { day: string; sessions: number; pageviews: number; clicks: number }[];
+  /** Eng ko'p vaqt o'tkazilgan sahifalar (kamayish tartibida). */
+  topPages: { path: string; viewCount: number; totalDurationMs: number; avgDurationMs: number }[];
+  /** Eng ko'p bosilgan tugmalar (kamayish tartibida). */
+  topButtons: { label: string; path: string | null; count: number }[];
+}
+
+export interface AnalyticsUserSummary {
+  userId: string;
+  name: string | null;
+  phone: string | null;
+  sessionsCount: number;
+  eventsCount: number;
+  totalDurationMs: number;
+  lastActiveAt: string | null;
+  topPath: string | null;
+}
