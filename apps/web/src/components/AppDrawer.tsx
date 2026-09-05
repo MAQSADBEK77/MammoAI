@@ -21,6 +21,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { IconButton } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 
 const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: "uz", label: "O'zbekcha (lotin)" },
@@ -54,7 +55,7 @@ export function AppDrawer() {
     router.push(href);
   }
 
-  const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
+  const initials = user.name?.trim()?.[0]?.toUpperCase() ?? null;
 
   // Asosiy/Jamiyat/Tekshiruvlar/Hamkor pastki menyuda allaqachon bor — bu
   // yerda takrorlanmaydi. Profil endi FAQAT shu burger menyu orqali ochiladi
@@ -73,7 +74,7 @@ export function AppDrawer() {
           <div className="bg-aurora-profile flex items-center gap-3 p-5 text-white">
             <button type="button" onClick={() => go("/profil")} className="flex flex-1 items-center gap-3 text-left">
               <Avatar src={user.avatarUrl ?? undefined} sx={{ width: 48, height: 48, bgcolor: "rgba(255,255,255,0.25)" }}>
-                {!user.avatarUrl && initials}
+                {!user.avatarUrl && (initials ?? <Emoji e="👋" size={22} />)}
               </Avatar>
               <div className="min-w-0">
                 <p className="truncate font-bold">{user.name?.trim() || dict.profile.noNameFallback}</p>

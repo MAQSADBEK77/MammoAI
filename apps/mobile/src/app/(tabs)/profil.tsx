@@ -16,6 +16,7 @@ import { api } from "@/lib/api";
 import { clearToken } from "@/lib/storage";
 import { useDrawer } from "@/lib/drawer";
 import { Card, TextField } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const MODES: { goal: Goal; icon: string }[] = [
@@ -196,7 +197,7 @@ export default function ProfileScreen() {
     ]);
   }
 
-  const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
+  const initials = user.name?.trim()?.[0]?.toUpperCase() ?? null;
   const daysActive = Math.max(0, Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / 86400000));
   const isCycleMode = onboardingProfile?.primaryGoal === "cycle";
 
@@ -219,8 +220,10 @@ export default function ProfileScreen() {
               <Pressable onPress={pickAvatar} className="h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/20">
                 {user.avatarUrl ? (
                   <Image source={{ uri: user.avatarUrl }} className="h-full w-full" />
-                ) : (
+                ) : initials ? (
                   <Text className="text-2xl font-extrabold text-white">{initials}</Text>
+                ) : (
+                  <Emoji e="👋" size={30} />
                 )}
                 <View className="absolute bottom-0 right-0 h-6 w-6 items-center justify-center rounded-full bg-nav">
                   <MaterialCommunityIcons name="camera-outline" size={12} color="#FFFFFF" />
@@ -305,7 +308,7 @@ export default function ProfileScreen() {
                       backgroundColor: active ? `${accent.primaryLight}66` : colors.surface,
                     }}
                   >
-                    <Text style={{ fontSize: 20, lineHeight: 24 }}>{icon}</Text>
+                    <Emoji e={icon} size={22} />
                     <Text className="text-xs font-semibold" style={{ color: active ? accent.primaryDark : colors.textSecondary }}>
                       {dict.profile.modes[goal as keyof typeof dict.profile.modes]}
                     </Text>
@@ -489,7 +492,7 @@ export default function ProfileScreen() {
         >
           <View className="flex-row items-center gap-3">
             <View className="h-12 w-12 items-center justify-center rounded-full bg-white/20">
-              <Text style={{ fontSize: 22 }}>✨</Text>
+              <Emoji e="✨" size={22} />
             </View>
             <View className="flex-1">
               <Text className="font-semibold text-white">{dict.profile.premiumTitle}</Text>
@@ -584,11 +587,7 @@ function SettingsRow({
           end={{ x: 1, y: 1 }}
           style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" }}
         >
-          {isIconName ? (
-            <MaterialCommunityIcons name={icon as never} size={18} color="#FFFFFF" />
-          ) : (
-            <Text style={{ fontSize: 16 }}>{icon}</Text>
-          )}
+          {isIconName ? <MaterialCommunityIcons name={icon as never} size={18} color="#FFFFFF" /> : <Emoji e={icon} />}
         </LinearGradient>
         <Text className="font-medium text-text-primary">{label}</Text>
       </View>

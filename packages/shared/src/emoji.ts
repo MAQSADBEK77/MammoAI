@@ -16,6 +16,18 @@ export const MOOD_EMOJI: Record<Mood, string> = {
   anxious: "😰",
 };
 
+// Kayfiyat sharhi matni oxiridagi emoji (i18n moodResponses.*) — MOOD_EMOJI'dan
+// mustaqil, chunki matn ohangiga mos boshqa emoji tanlangan (masalan "sad" uchun
+// tanlagichdagi 😔 emas, g'amxo'rlik ma'nosidagi 💗).
+export const MOOD_RESPONSE_EMOJI: Record<Mood, string> = {
+  happy: "😄",
+  calm: "🙂",
+  tired: "😴",
+  sad: "💗",
+  irritable: "🌿",
+  anxious: "💕",
+};
+
 export const FLOW_EMOJI: Record<FlowLevel, string> = {
   spotting: "💧",
   light: "🌸",

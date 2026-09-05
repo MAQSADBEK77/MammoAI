@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { CommunityTag } from "@mammoai/shared";
 import { adminApi, type AdminCommunityComment, type AdminCommunityPost } from "@/lib/admin-api";
 import { Card, Badge, Button } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 
 const PAGE_SIZE = 20;
 
@@ -184,10 +185,16 @@ export default function AdminCommunityPage() {
               )}
 
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
-                <div className="flex gap-4 text-xs text-text-muted">
-                  <span>❤️ {post.likesCount}</span>
-                  <button type="button" onClick={() => toggleComments(post)} className="font-semibold text-text-secondary underline-offset-2 hover:underline">
-                    💬 {post.commentsCount} izoh {expandedId === post.id ? "▲" : "▼"}
+                <div className="flex items-center gap-4 text-xs text-text-muted">
+                  <span className="flex items-center gap-1">
+                    <Emoji e="❤️" size={12} /> {post.likesCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleComments(post)}
+                    className="flex items-center gap-1 font-semibold text-text-secondary underline-offset-2 hover:underline"
+                  >
+                    <Emoji e="💬" size={12} /> {post.commentsCount} izoh {expandedId === post.id ? "▲" : "▼"}
                   </button>
                 </div>
                 <div className="flex gap-1">

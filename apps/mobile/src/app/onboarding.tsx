@@ -34,6 +34,7 @@ import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar, TextField } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 import { WelcomeHero } from "@/components/WelcomeHero";
 // unDraw illyustratsiyalari (litsenziyasiz-erkin, tijorat uchun ochiq) — web versiyasi
 // bilan bir xil fayllar (apps/web/public/illustrations/), lekin bu yerda
@@ -628,7 +629,7 @@ export default function OnboardingScreen() {
                   <View key={sym} style={{ width: "48%" }}>
                     <IconChip
                       label={dict.cycle.symptoms[sym]}
-                      icon={SYMPTOM_ICON[sym]}
+                      icon={<Emoji e={SYMPTOM_ICON[sym]} />}
                       active={survey.typicalSymptoms.includes(sym)}
                       onPress={() =>
                         setSurvey((s) => ({ ...s, typicalSymptoms: toggleArrayValue(s.typicalSymptoms, sym), typicalSymptomsUnknown: false }))
@@ -639,7 +640,7 @@ export default function OnboardingScreen() {
                 <View style={{ width: "48%" }}>
                   <IconChip
                     label={dict.common.dontKnow}
-                    icon="🤷"
+                    icon={<Emoji e="🤷" />}
                     active={survey.typicalSymptomsUnknown}
                     onPress={() => setSurvey((s) => ({ ...s, typicalSymptomsUnknown: !s.typicalSymptomsUnknown, typicalSymptoms: [] }))}
                   />
@@ -669,7 +670,7 @@ export default function OnboardingScreen() {
                   <View key={cond} style={{ width: "48%" }}>
                     <IconChip
                       label={dict.onboarding.healthConditions[cond]}
-                      icon={HEALTH_CONDITION_ICON[cond]}
+                      icon={<Emoji e={HEALTH_CONDITION_ICON[cond]} />}
                       active={survey.healthConditions.includes(cond)}
                       onPress={() => setSurvey((s) => ({ ...s, healthConditions: toggleArrayValue(s.healthConditions, cond) }))}
                     />
@@ -804,7 +805,7 @@ export default function OnboardingScreen() {
                   aniq tasavvur berish uchun. */}
               <View className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
                 <View className="h-9 w-9 items-center justify-center rounded-full bg-primary-light/50">
-                  <Text style={{ fontSize: 16 }}>🔔</Text>
+                  <Emoji e="🔔" />
                 </View>
                 <View className="min-w-0 flex-1">
                   <Text className="text-[11px] font-semibold text-text-muted">{dict.common.appName}</Text>
@@ -984,7 +985,7 @@ function LangOption({ flag, label, active, onPress }: { flag: string; label: str
           : { shadowColor: "#1F2937", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 }
       }
     >
-      <Text style={{ fontSize: 20, lineHeight: 24 }}>{flag}</Text>
+      <Emoji e={flag} size={22} />
       <Text className={clsx("text-lg font-semibold", active ? "text-white" : "text-text-primary")}>{label}</Text>
     </Pressable>
   );
@@ -1019,7 +1020,7 @@ function ChoiceStep({
             )}
             style={active ? { shadowColor: "#F43F7F", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 } : undefined}
           >
-            {opt.icon && <Text style={{ fontSize: 20 }}>{opt.icon}</Text>}
+            {opt.icon && <Emoji e={opt.icon} />}
             <Text className={clsx("flex-1 text-base font-medium", active ? "text-primary-dark" : "text-text-primary")}>{opt.label}</Text>
           </Pressable>
         );

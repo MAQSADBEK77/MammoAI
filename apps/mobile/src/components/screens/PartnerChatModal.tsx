@@ -6,6 +6,7 @@ import { Avatar } from "react-native-paper";
 import clsx from "clsx";
 import type { PartnerChatMessage } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
 import { LoadingSpinner } from "@/components/ui";
 
@@ -65,7 +66,7 @@ export function PartnerChatModal({
     }
   }
 
-  const initials = partnerName.trim()[0]?.toUpperCase() ?? "🙂";
+  const initials = partnerName.trim()[0]?.toUpperCase() ?? null;
   // FlatList `inverted` — eng yangi xabar pastda, avtomatik pastga scroll bilan;
   // shuning uchun massiv teskarisiga beriladi.
   const reversedMessages = messages ? [...messages].reverse() : [];
@@ -80,8 +81,10 @@ export function PartnerChatModal({
             </Pressable>
             {partnerAvatarUrl ? (
               <Avatar.Image size={36} source={{ uri: partnerAvatarUrl }} />
-            ) : (
+            ) : initials ? (
               <Avatar.Text size={36} label={initials} style={{ backgroundColor: "#FFB3CB" }} />
+            ) : (
+              <Avatar.Icon size={36} icon={() => <Emoji e="🙂" size={18} />} style={{ backgroundColor: "#FFB3CB" }} />
             )}
             <Text className="font-bold text-text-primary">{partnerName}</Text>
           </View>

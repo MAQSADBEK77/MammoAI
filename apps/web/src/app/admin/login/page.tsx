@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { adminApi, AdminApiError } from "@/lib/admin-api";
 import { Button } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -35,8 +36,8 @@ export default function AdminLoginPage() {
 
       <div className="relative z-10 w-full max-w-sm animate-fade-in-up rounded-[28px] border border-white/10 bg-nav-light/60 p-8 shadow-2xl backdrop-blur-xl">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary text-2xl shadow-lg shadow-primary/30">
-            🛡️
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/30">
+            <Emoji e="🛡️" size={28} />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">MammoAI Admin</h1>

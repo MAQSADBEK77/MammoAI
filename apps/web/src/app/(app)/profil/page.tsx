@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 import { Switch, Select, MenuItem } from "@mui/material";
 import clsx from "clsx";
 import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, VisibilityOutlined as Eye, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen } from "@mui/icons-material";
@@ -229,7 +230,7 @@ export default function ProfilePage() {
     }
   }
 
-  const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
+  const initials = user.name?.trim()?.[0]?.toUpperCase() ?? null;
   const daysActive = Math.max(0, Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / 86400000));
   const isCycleMode = onboardingProfile?.primaryGoal === "cycle";
 
@@ -248,8 +249,10 @@ export default function ProfilePage() {
             {user.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- kichik base64 avatar, next/image shart emas
               <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
+            ) : initials ? (
               initials
+            ) : (
+              <Emoji e="👋" size={28} />
             )}
             <span className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100">
               <Camera sx={{ fontSize: 18 }} className="text-white" />
@@ -338,7 +341,7 @@ export default function ProfilePage() {
                     backgroundColor: active ? `${accent.primaryLight}66` : "var(--color-surface)",
                   }}
                 >
-                  <span className="text-xl leading-none">{icon}</span>
+                  <Emoji e={icon} size={22} />
                   <span className="text-xs font-semibold" style={{ color: active ? accent.primaryDark : "var(--color-text-secondary)" }}>
                     {dict.profile.modes[goal as keyof typeof dict.profile.modes]}
                   </span>
@@ -509,7 +512,9 @@ export default function ProfilePage() {
 
       <div className="bg-aurora-pregnancy rounded-[28px] p-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-xl">✨</div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20">
+            <Emoji e="✨" size={22} />
+          </div>
           <div>
             <p className="font-semibold text-white">{dict.profile.premiumTitle}</p>
             <p className="mt-1 text-sm text-white/80">{dict.profile.premiumSubtitle}</p>
@@ -594,7 +599,7 @@ function SettingsRow({
     <div className={clsx("flex items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark text-lg shadow-sm">
-          {Icon ? <Icon sx={{ fontSize: 18 }} className="text-white" /> : (icon as string)}
+          {Icon ? <Icon sx={{ fontSize: 18 }} className="text-white" /> : <Emoji e={icon as string} />}
         </div>
         <span className="font-medium text-text-primary">{label}</span>
       </div>

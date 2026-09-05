@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { CyclePhase } from "@mammoai/shared";
 import { getFertilityLevel, CYCLE_PHASE_EMOJI, gradientStops, colors } from "@mammoai/shared";
 import { useI18n } from "../lib/i18n";
+import { Emoji } from "./Emoji";
 
 const PHASE_COLOR: Record<CyclePhase, string> = {
   menstrual: colors.primary,
@@ -29,9 +30,10 @@ export function PhaseCard({ phase }: { phase: CyclePhase }) {
       style={{ borderRadius: 24, padding: 20 }}
     >
       <View className="flex-row items-center justify-between gap-3">
-        <Text className="text-lg font-bold text-white">
-          {CYCLE_PHASE_EMOJI[phase]} {copy.name}
-        </Text>
+        <View className="flex-row items-center gap-1.5">
+          <Emoji e={CYCLE_PHASE_EMOJI[phase]} />
+          <Text className="text-lg font-bold text-white">{copy.name}</Text>
+        </View>
         <View className="rounded-full bg-white/25 px-3 py-1">
           <Text className="text-xs font-semibold text-white">
             {dict.cyclePhase.fertilityLabel}: {dict.cyclePhase.fertilityLevels[fertility]}

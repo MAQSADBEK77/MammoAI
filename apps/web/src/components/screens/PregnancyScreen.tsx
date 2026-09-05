@@ -7,6 +7,7 @@ import { getMilestoneForWeek, getVitalTone, localDateStr, formatDateDisplay } fr
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
+import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
@@ -99,7 +100,11 @@ export function PregnancyScreen() {
   const sizeLabel = dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
   const progressPct = (status.currentWeek / 40) * 100;
   const weeksRemaining = Math.max(0, 40 - status.currentWeek);
-  const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
+  const greeting = (
+    <>
+      {dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} <Emoji e="👋" size={20} />
+    </>
+  );
 
   const todayStr = localDateStr();
   const nextVisit = data.visits.find((v) => v.date >= todayStr) ?? null;

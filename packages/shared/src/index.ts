@@ -11,5 +11,6 @@ export * from "./logic/clinic-display";
 export * from "./api-client";
 export * from "./i18n";
 export * from "./emoji";
+export * from "./emoji-codepoint";
 export * from "./phone";
 export * from "./illustration-library";

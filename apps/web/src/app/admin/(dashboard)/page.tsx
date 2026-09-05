@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminApi, type AdminStats } from "@/lib/admin-api";
 import { Card, LoadingSpinner } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 import { SignupsChart } from "./_components/SignupsChart";
 
 const GOAL_LABELS: Record<string, string> = {
@@ -21,7 +22,7 @@ function StatCard({ icon, label, value, hint }: { icon: string; label: string; v
   return (
     <Card className="flex flex-col gap-1">
       <div className="flex items-center gap-2 text-sm font-semibold text-text-secondary">
-        <span className="text-lg leading-none">{icon}</span>
+        <Emoji e={icon} />
         {label}
       </div>
       <div className="mt-1 text-3xl font-extrabold text-text-primary">{value}</div>
@@ -135,7 +136,7 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {contentEntries.map((entry) => (
             <div key={entry.label} className="rounded-2xl bg-surface-muted p-3.5">
-              <div className="text-lg leading-none">{entry.icon}</div>
+              <Emoji e={entry.icon} />
               <div className="mt-2 text-xl font-extrabold text-text-primary">{entry.value}</div>
               <div className="text-[11px] leading-tight text-text-secondary">{entry.label}</div>
             </div>
@@ -144,7 +145,9 @@ export default function AdminDashboardPage() {
       </Card>
 
       <Card className="border border-warning/20 bg-warning/5">
-        <p className="text-sm font-semibold text-text-primary">💡 Server yuklamasi haqida</p>
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
+          <Emoji e="💡" size={16} /> Server yuklamasi haqida
+        </p>
         <p className="mt-1 text-sm text-text-secondary">
           Vercel serverless muhitida an&apos;anaviy CPU/server-yuklama ko&apos;rsatkichi mavjud emas — shuning uchun bu yerda haqiqiy
           ishlatilish (foydalanuvchi, yozuv, faollik) statistikasi ko&apos;rsatilmoqda. Real trafik/so&apos;rovlar bo&apos;yicha aniq

@@ -6,6 +6,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { adminApi } from "@/lib/admin-api";
 import { LoadingSpinner } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 
 const NAV_ITEMS: { href: string; label: string; icon: string; exact?: boolean }[] = [
   { href: "/admin", label: "Boshqaruv paneli", icon: "📊", exact: true },
@@ -59,8 +60,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh bg-background">
       <aside className="flex w-64 shrink-0 flex-col bg-nav px-4 py-6">
         <div className="mb-8 flex items-center gap-2.5 px-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-lg shadow-md shadow-primary/30">
-            🛡️
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary shadow-md shadow-primary/30">
+            <Emoji e="🛡️" size={18} />
           </div>
           <div>
             <div className="text-sm font-bold leading-tight text-white">MammoAI</div>
@@ -80,7 +81,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   active ? "bg-gradient-to-r from-primary to-secondary text-white shadow-md shadow-primary/25" : "text-white/60 hover:bg-white/5 hover:text-white"
                 )}
               >
-                <span className="text-base leading-none">{item.icon}</span>
+                <Emoji e={item.icon} />
                 {item.label}
               </Link>
             );
@@ -92,7 +93,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           onClick={handleLogout}
           className="tap-target flex items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-white/60 transition hover:bg-white/5 hover:text-white"
         >
-          <span className="text-base leading-none">🚪</span>
+          <Emoji e="🚪" />
           Chiqish
         </button>
       </aside>

@@ -14,6 +14,7 @@ import { MOOD_EMOJI, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Button, Card, LoadingSpinner, ScreenHeader, Badge } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 import { PartnerChatDialog } from "./PartnerChatDialog";
 
 /**
@@ -91,7 +92,7 @@ export function HamkorScreen() {
   }
 
   const daysAgo = status.linkedSince ? Math.floor((new Date().getTime() - new Date(status.linkedSince).getTime()) / 86400000) : 0;
-  const initials = (status.partner?.name?.trim()?.[0] ?? "🙂").toUpperCase();
+  const initials = status.partner?.name?.trim()?.[0]?.toUpperCase() ?? null;
 
   return (
     <div className="space-y-4 pb-6">
@@ -100,7 +101,11 @@ export function HamkorScreen() {
       {!status.linked ? (
         <>
           <div className="bg-aurora-hero space-y-2 rounded-[28px] p-6 text-center">
-            <p className="text-4xl">🐰❤️🐰</p>
+            <p className="flex items-center justify-center gap-1">
+              <Emoji e="🐰" size={36} />
+              <Emoji e="❤️" size={36} />
+              <Emoji e="🐰" size={36} />
+            </p>
             <p className="text-lg font-bold text-text-primary">{dict.partner.heroTitle}</p>
             <p className="text-sm text-text-secondary">{dict.partner.heroDescription}</p>
           </div>
@@ -134,7 +139,7 @@ export function HamkorScreen() {
           </Card>
 
           <Button className="w-full" onClick={openConnectModal}>
-            {dict.partner.connectButton}
+            <Emoji e="💑" size={16} /> {dict.partner.connectButton}
           </Button>
           <Button variant="ghost" className="w-full border border-border" onClick={openConnectModal}>
             {dict.partner.enterCodeButton}
@@ -145,7 +150,7 @@ export function HamkorScreen() {
           <Card className="space-y-3">
             <div className="flex items-center gap-3">
               <Avatar src={status.partner?.avatarUrl ?? undefined} sx={{ width: 48, height: 48, bgcolor: "var(--color-primary-light)" }}>
-                {!status.partner?.avatarUrl && initials}
+                {!status.partner?.avatarUrl && (initials ?? <Emoji e="🙂" size={22} />)}
               </Avatar>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
@@ -299,7 +304,7 @@ function SharingRow({
   return (
     <div className={`flex items-center justify-between gap-3 py-2 ${last ? "" : "border-b border-border"}`}>
       <div className="flex items-center gap-2.5">
-        <span className="text-lg">{icon}</span>
+        <Emoji e={icon} />
         <span className="text-sm font-medium text-text-primary">{label}</span>
       </div>
       <Switch

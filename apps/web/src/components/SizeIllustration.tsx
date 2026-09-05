@@ -3,6 +3,7 @@
 // Hozircha emoji + o'sib boruvchi gradient doira orqali "kattalik" hissi beriladi.
 
 import { cssGradient, colors } from "@mammoai/shared";
+import { Emoji } from "@/components/Emoji";
 
 const ICON_EMOJI: Record<string, string> = {
   seed: "🌱",
@@ -28,7 +29,7 @@ export function SizeIllustration({ icon }: { icon: string }) {
       className="mx-auto flex items-center justify-center rounded-full shadow-md transition-all"
       style={{ width: size, height: size, background: cssGradient(colors.accent) }}
     >
-      <span style={{ fontSize: size * 0.45 }}>{ICON_EMOJI[icon] ?? "🤰"}</span>
+      <Emoji e={ICON_EMOJI[icon] ?? "🤰"} size={size * 0.45} />
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, FloatingTag, LoadingSpinner, ScreenHeader, TextField } from "@/components/ui";
 import { SizeIllustration } from "@/components/SizeIllustration";
+import { Emoji } from "@/components/Emoji";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
 const VITAL_ICON: Record<VitalType, keyof typeof MaterialCommunityIcons.glyphMap> = { heart_rate: "heart-outline", blood_pressure: "chart-line", weight: "scale-bathroom", temperature: "thermometer" };
@@ -95,7 +96,14 @@ export function PregnancyScreen() {
   const sizeLabel = dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
   const progressPct = (status.currentWeek / 40) * 100;
   const weeksRemaining = Math.max(0, 40 - status.currentWeek);
-  const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
+  const greeting = (
+    <View className="flex-row items-center gap-1.5">
+      <Text className="text-2xl font-bold text-text-primary" numberOfLines={1}>
+        {dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())}
+      </Text>
+      <Emoji e="👋" size={20} />
+    </View>
+  );
 
   const todayStr = localDateStr();
   const nextVisit = data.visits.find((v) => v.date >= todayStr) ?? null;

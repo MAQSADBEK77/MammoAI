@@ -13,6 +13,7 @@ import {
   ToggleButton,
   Avatar,
 } from "@mui/material";
+import { Emoji } from "./Emoji";
 
 // Foydalanuvchi so'roviga ko'ra ("hamma joyga Material UI ishlat — iconlardan
 // tortib buttonlargacha hammasiga 100%") — ilovaning umumiy UI-kit qatlami
@@ -177,7 +178,7 @@ export function ScreenHeader({
   avatarUri,
   right,
 }: {
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   avatarUri?: string | null;
   right?: ReactNode;
@@ -188,7 +189,7 @@ export function ScreenHeader({
         <div className="flex flex-1 items-center gap-3">
           {avatarUri !== undefined && (
             <Avatar src={avatarUri ?? undefined} sx={{ width: 48, height: 48, bgcolor: "var(--color-primary-light)" }}>
-              {!avatarUri && "👋"}
+              {!avatarUri && <Emoji e="👋" size={22} />}
             </Avatar>
           )}
           <div className="min-w-0 flex-1">

@@ -28,6 +28,7 @@ import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Button, IconChip, ProgressBar } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 import { Lottie } from "lottie-react";
 import {
   LockOutlined,
@@ -708,7 +709,7 @@ export default function OnboardingPage() {
                 <IconChip
                   key={sym}
                   label={dict.cycle.symptoms[sym]}
-                  icon={SYMPTOM_ICON[sym]}
+                  icon={<Emoji e={SYMPTOM_ICON[sym]} />}
                   active={survey.typicalSymptoms.includes(sym)}
                   onClick={() =>
                     setSurvey((s) => ({ ...s, typicalSymptoms: toggleArrayValue(s.typicalSymptoms, sym), typicalSymptomsUnknown: false }))
@@ -717,7 +718,7 @@ export default function OnboardingPage() {
               ))}
               <IconChip
                 label={dict.common.dontKnow}
-                icon="🤷"
+                icon={<Emoji e="🤷" />}
                 active={survey.typicalSymptomsUnknown}
                 onClick={() => setSurvey((s) => ({ ...s, typicalSymptomsUnknown: !s.typicalSymptomsUnknown, typicalSymptoms: [] }))}
               />
@@ -746,7 +747,7 @@ export default function OnboardingPage() {
                 <IconChip
                   key={cond}
                   label={dict.onboarding.healthConditions[cond]}
-                  icon={HEALTH_CONDITION_ICON[cond]}
+                  icon={<Emoji e={HEALTH_CONDITION_ICON[cond]} />}
                   active={survey.healthConditions.includes(cond)}
                   onClick={() => setSurvey((s) => ({ ...s, healthConditions: toggleArrayValue(s.healthConditions, cond) }))}
                 />
@@ -885,7 +886,9 @@ export default function OnboardingPage() {
                 degan aniq tasavvur berish uchun (App.pdf'dan tashqari, foydalanuvchi
                 so'roviga ko'ra: "qanchalik muhimligini takidla"). */}
             <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 shadow-md shadow-text-primary/5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light/50 text-lg">🔔</span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light/50">
+                <Emoji e="🔔" />
+              </span>
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold text-text-muted">{dict.common.appName}</p>
                 <p className="truncate text-sm font-semibold text-text-primary">{dict.onboarding.notificationsSamplePreview}</p>
@@ -1059,7 +1062,7 @@ function LangOption({ flag, label, active, onClick }: { flag: string; label: str
         active ? "bg-primary text-white shadow-lg shadow-primary/30" : "bg-surface text-text-primary shadow-md shadow-text-primary/5 hover:bg-surface-muted"
       )}
     >
-      <span className="text-xl leading-none">{flag}</span>
+      <Emoji e={flag} size={22} />
       {label}
     </button>
   );
@@ -1093,11 +1096,7 @@ function ChoiceStep({
               : "border-border bg-surface text-text-primary hover:border-primary-light"
           )}
         >
-          {opt.icon && (
-            <span className="text-xl leading-none" aria-hidden>
-              {opt.icon}
-            </span>
-          )}
+          {opt.icon && <Emoji e={opt.icon} />}
           {opt.label}
         </button>
       ))}

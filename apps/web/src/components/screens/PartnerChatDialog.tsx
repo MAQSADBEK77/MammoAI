@@ -6,6 +6,7 @@ import { ArrowBackOutlined, SendRounded } from "@mui/icons-material";
 import type { PartnerChatMessage } from "@mammoai/shared";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
+import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
 import { LoadingSpinner } from "@/components/ui";
 
@@ -78,7 +79,7 @@ export function PartnerChatDialog({
             <ArrowBackOutlined sx={{ fontSize: 20 }} />
           </button>
           <Avatar src={partnerAvatarUrl ?? undefined} sx={{ width: 36, height: 36, bgcolor: "var(--color-primary-light)" }}>
-            {!partnerAvatarUrl && (partnerName.trim()[0]?.toUpperCase() ?? "🙂")}
+            {!partnerAvatarUrl && (partnerName.trim()[0]?.toUpperCase() ?? <Emoji e="🙂" size={18} />)}
           </Avatar>
           <p className="font-bold text-text-primary">{partnerName}</p>
         </div>

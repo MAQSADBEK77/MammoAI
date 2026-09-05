@@ -3,6 +3,7 @@
 import type { CyclePhase } from "@mammoai/shared";
 import { getFertilityLevel, CYCLE_PHASE_EMOJI, cssGradient, colors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { Emoji } from "@/components/Emoji";
 
 // Joriy tsikl fazasi kartasi — App.pdf'dan keyin, Figma "Make" manbasida topilgan
 // haqiqiy dizayn elementi asosida ("Follikul fazasi", "UNUMDOR DAVR" kabi). Har bir
@@ -29,8 +30,8 @@ export function PhaseCard({ phase }: { phase: CyclePhase }) {
   return (
     <div className="rounded-3xl p-5 text-white shadow-lg" style={{ background: cssGradient(color) }}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-lg font-bold">
-          {CYCLE_PHASE_EMOJI[phase]} {copy.name}
+        <p className="flex items-center gap-1.5 text-lg font-bold">
+          <Emoji e={CYCLE_PHASE_EMOJI[phase]} /> {copy.name}
         </p>
         <span className="rounded-full bg-white/25 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
           {dict.cyclePhase.fertilityLabel}: {dict.cyclePhase.fertilityLevels[fertility]}

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { WaterDropOutlined, MedicalServicesOutlined, DateRangeOutlined, GppMaybeOutlined, MenuBookOutlined, ChevronRight } from "@mui/icons-material";
 import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { getCyclePhase, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -13,6 +13,7 @@ import { Button, Card, FloatingTag, LoadingSpinner, ScreenHeader, IconChip, Badg
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
+import { Emoji } from "@/components/Emoji";
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -103,7 +104,11 @@ export function CycleScreen() {
 
   const todayLog = data.logs.find((l) => l.date === today);
   const selectedPhase = phaseForDate(selectedDate);
-  const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
+  const greeting = (
+    <>
+      {dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} <Emoji e="👋" size={20} />
+    </>
+  );
 
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
@@ -175,7 +180,11 @@ export function CycleScreen() {
         {periodDay && (
           <div className="mt-4 flex justify-center">
             <Badge tone="primary">
-              {isMinor ? "🐰 " : ""}
+              {isMinor && (
+                <>
+                  <Emoji e="🐰" size={14} />{" "}
+                </>
+              )}
               {dict.cycle.periodDayBadge(periodDay)}
             </Badge>
           </div>
@@ -211,11 +220,15 @@ export function CycleScreen() {
                 todayLog?.mood === m ? "border-primary bg-primary-light/40" : "border-transparent bg-surface-muted hover:border-border"
               )}
             >
-              {MOOD_EMOJI[m]}
+              <Emoji e={MOOD_EMOJI[m]} size={26} />
             </button>
           ))}
         </div>
-        {todayLog?.mood && <p className="text-center text-sm font-semibold text-primary-dark">{dict.cycle.moodResponses[todayLog.mood]}</p>}
+        {todayLog?.mood && (
+          <p className="flex items-center justify-center gap-1 text-center text-sm font-semibold text-primary-dark">
+            {dict.cycle.moodResponses[todayLog.mood]} <Emoji e={MOOD_RESPONSE_EMOJI[todayLog.mood]} size={16} />
+          </p>
+        )}
       </div>
 
       <div>
@@ -225,7 +238,13 @@ export function CycleScreen() {
             icon={<WaterDropOutlined sx={{ fontSize: 20 }} />}
             tone="primary"
             label={dict.cycle.flowCardLabel}
-            value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
+            value={
+              todayLog?.flow ? (
+                <>
+                  <Emoji e={FLOW_EMOJI[todayLog.flow]} size={14} /> {dict.cycle.flowLevels[todayLog.flow]}
+                </>
+              ) : undefined
+            }
             onClick={() => openLogging(today, todayLog)}
           />
           <QuickCard
@@ -269,7 +288,7 @@ export function CycleScreen() {
               {FLOW_LEVELS.map((f) => (
                 <IconChip
                   key={f}
-                  icon={FLOW_EMOJI[f]}
+                  icon={<Emoji e={FLOW_EMOJI[f]} />}
                   label={dict.cycle.flowLevels[f]}
                   active={flow === f}
                   onClick={() => setFlow(flow === f ? null : f)}
@@ -284,7 +303,7 @@ export function CycleScreen() {
               {MOODS.map((m) => (
                 <IconChip
                   key={m}
-                  icon={MOOD_EMOJI[m]}
+                  icon={<Emoji e={MOOD_EMOJI[m]} />}
                   label={dict.cycle.moods[m]}
                   active={mood === m}
                   onClick={() => setMood(mood === m ? null : m)}
@@ -299,7 +318,7 @@ export function CycleScreen() {
               {SYMPTOMS.map((s) => (
                 <IconChip
                   key={s}
-                  icon={SYMPTOM_EMOJI[s]}
+                  icon={<Emoji e={SYMPTOM_EMOJI[s]} />}
                   label={dict.cycle.symptoms[s]}
                   active={symptoms.includes(s)}
                   onClick={() =>
@@ -372,8 +391,8 @@ export function CycleScreen() {
               return (
                 <button key={log.id} type="button" onClick={() => openLogging(log.date, log)} className="w-full text-left">
                   <Card interactive className="flex items-center gap-3 py-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-light/50 text-xl">
-                      {emoji}
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-light/50">
+                      <Emoji e={emoji} size={22} />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-text-primary">{dateLabel}</p>
@@ -404,7 +423,7 @@ function QuickCard({
 }: {
   icon: React.ReactNode;
   label: string;
-  value?: string;
+  value?: React.ReactNode;
   tone: "primary" | "secondary" | "accent";
   onClick: () => void;
 }) {

@@ -13,6 +13,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useDrawer } from "@/lib/drawer";
 import { api } from "@/lib/api";
+import { Emoji } from "@/components/Emoji";
 
 const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: "uz", label: "O'zbekcha (lotin)" },
@@ -63,7 +64,7 @@ export function AppDrawer() {
     router.push(href);
   }
 
-  const initials = (user.name?.trim()?.[0] ?? "👋").toUpperCase();
+  const initials = user.name?.trim()?.[0]?.toUpperCase() ?? null;
 
   // Asosiy/Jamiyat/Tekshiruvlar/Hamkor pastki tab panelida allaqachon bor —
   // bu yerda takrorlanmaydi. Profil endi FAQAT shu burger menyu orqali
@@ -94,8 +95,10 @@ export function AppDrawer() {
                 <View className="h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white/25">
                   {user.avatarUrl ? (
                     <Image source={{ uri: user.avatarUrl }} className="h-full w-full" />
-                  ) : (
+                  ) : initials ? (
                     <Text className="text-lg font-extrabold text-white">{initials}</Text>
+                  ) : (
+                    <Emoji e="👋" size={22} />
                   )}
                 </View>
                 <View className="min-w-0 flex-1">

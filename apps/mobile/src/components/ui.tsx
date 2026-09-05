@@ -16,6 +16,7 @@ import {
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
 import { glass, gradients } from "@mammoai/shared";
 import { useModeAccent } from "@/lib/theme";
+import { Emoji } from "@/components/Emoji";
 
 // Foydalanuvchi so'roviga ko'ra ("hamma joyga Material UI ishlat — iconlardan
 // tortib buttonlargacha hammasiga 100%") — mobil UI-kit qatlami endi
@@ -140,7 +141,9 @@ export function ScreenHeader({
   avatarUri,
   right,
 }: {
-  title: string;
+  /** Oddiy matn bo'lsa avtomatik <Text> ichiga o'raladi; ReactNode (masalan
+   * salomlashuv matni + <Emoji/>) bo'lsa, o'zicha (tayyor holda) chiziladi. */
+  title: ReactNode;
   subtitle?: string;
   /** Mavjud bo'lsa, sarlavha chap tomonida kichik doiraviy avatar ko'rsatiladi
    * (referens kitlardagi "Good Morning / Hello Mummy!" uslubi). */
@@ -148,6 +151,15 @@ export function ScreenHeader({
   /** O'ng tomonda ko'rsatiladigan slot (masalan, qo'ng'iroq ikonasi). */
   right?: ReactNode;
 }) {
+  const titleNode =
+    typeof title === "string" ? (
+      <Text className="text-2xl font-bold text-text-primary" numberOfLines={1}>
+        {title}
+      </Text>
+    ) : (
+      title
+    );
+
   if (avatarUri !== undefined || right) {
     return (
       <View className="mb-5 flex-row items-center justify-between gap-3">
@@ -158,15 +170,13 @@ export function ScreenHeader({
                 <Image source={{ uri: avatarUri }} className="h-full w-full" />
               ) : (
                 <View className="h-full w-full items-center justify-center">
-                  <Text className="text-lg">👋</Text>
+                  <Emoji e="👋" size={22} />
                 </View>
               )}
             </View>
           )}
           <View className="flex-1">
-            <Text className="text-2xl font-bold text-text-primary" numberOfLines={1}>
-              {title}
-            </Text>
+            {titleNode}
             {subtitle && <Text className="mt-0.5 text-sm text-text-secondary">{subtitle}</Text>}
           </View>
         </View>
@@ -177,7 +187,7 @@ export function ScreenHeader({
 
   return (
     <View className="mb-5">
-      <Text className="text-2xl font-bold text-text-primary">{title}</Text>
+      {titleNode}
       {subtitle && <Text className="mt-1 text-sm text-text-secondary">{subtitle}</Text>}
     </View>
   );
@@ -191,7 +201,7 @@ const BADGE_TONES: Record<string, { bg: string; text: string }> = {
   primary: { bg: "#FFB3CB", text: "#D62A63" },
 };
 
-export function Badge({ tone = "muted", children }: { tone?: keyof typeof BADGE_TONES; children: string }) {
+export function Badge({ tone = "muted", children }: { tone?: keyof typeof BADGE_TONES; children: ReactNode }) {
   const t = BADGE_TONES[tone];
   return (
     <PaperChip
@@ -300,7 +310,7 @@ export function IconChip({
   onPress,
 }: {
   label: string;
-  icon?: string;
+  icon?: ReactNode;
   active?: boolean;
   onPress?: () => void;
 }) {
@@ -309,7 +319,7 @@ export function IconChip({
       <View
         className={clsx("min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 py-3", active ? "bg-primary" : "bg-surface-muted")}
       >
-        {icon && <Text className="text-xl leading-none">{icon}</Text>}
+        {icon}
         <Text className={clsx("text-center text-xs font-medium leading-tight", active ? "text-white" : "text-text-secondary")}>{label}</Text>
       </View>
     </TouchableRipple>

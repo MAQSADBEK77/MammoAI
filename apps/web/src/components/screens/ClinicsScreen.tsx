@@ -16,6 +16,7 @@ import { getClinicRating, getClinicHours, isTopClinic } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Card, LinkButton, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 import clsx from "clsx";
 
 // Leaflet DOM/window'ga tayanadi — faqat client'da render qilinadi.
@@ -70,7 +71,9 @@ export function ClinicsScreen() {
       <ScreenHeader title={dict.clinics.title} subtitle={dict.clinics.seedDataNotice} />
 
       <div className="relative">
-        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">🔍</span>
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+          <Emoji e="🔍" size={16} />
+        </span>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}

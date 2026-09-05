@@ -9,6 +9,7 @@ import { getClinicRating, getClinicHours, isTopClinic } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile, TextField } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 import { ClinicsMap } from "@/components/ClinicsMap";
 
 const SPECIALTIES: ClinicSpecialty[] = [
@@ -62,7 +63,7 @@ export function ClinicsScreen() {
         value={search}
         onChangeText={setSearch}
         placeholder={dict.clinics.searchPlaceholder}
-        icon={<Text style={{ fontSize: 16 }}>🔍</Text>}
+        icon={<Emoji e="🔍" size={16} />}
       />
 
       <Animated.View entering={FadeInUp.duration(450)} className="flex-row gap-3">

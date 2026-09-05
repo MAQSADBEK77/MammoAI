@@ -5,7 +5,7 @@ import clsx from "clsx";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { CycleLog, CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { getCyclePhase, localDateStr, MOOD_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -13,6 +13,7 @@ import { Badge, Button, Card, FloatingTag, IconChip, LoadingSpinner, ScreenHeade
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
+import { Emoji } from "@/components/Emoji";
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -99,7 +100,14 @@ export function CycleScreen() {
 
   const todayLog = data.logs.find((l) => l.date === today);
   const selectedPhase = phaseForDate(selectedDate);
-  const greeting = `${dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} 👋`;
+  const greeting = (
+    <View className="flex-row items-center gap-1.5">
+      <Text className="text-2xl font-bold text-text-primary" numberOfLines={1}>
+        {dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())}
+      </Text>
+      <Emoji e="👋" size={20} />
+    </View>
+  );
 
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
@@ -171,7 +179,12 @@ export function CycleScreen() {
           </Pressable>
           {periodDay && (
             <View className="mt-4 items-center">
-              <Badge tone="primary">{`${isMinor ? "🐰 " : ""}${dict.cycle.periodDayBadge(periodDay)}`}</Badge>
+              <Badge tone="primary">
+                <View className="flex-row items-center gap-1">
+                  {isMinor && <Emoji e="🐰" size={14} />}
+                  <Text>{dict.cycle.periodDayBadge(periodDay)}</Text>
+                </View>
+              </Badge>
             </View>
           )}
 
@@ -206,14 +219,17 @@ export function CycleScreen() {
                 todayLog?.mood === m ? "border-primary bg-primary-light/40" : "border-transparent bg-surface-muted"
               )}
             >
-              <Text style={{ fontSize: 22 }}>{MOOD_EMOJI[m]}</Text>
+              <Emoji e={MOOD_EMOJI[m]} size={26} />
             </Pressable>
           ))}
         </View>
         {todayLog?.mood && (
-          <Text className="text-center text-sm font-semibold" style={{ color: "#D62A63" }}>
-            {dict.cycle.moodResponses[todayLog.mood]}
-          </Text>
+          <View className="flex-row items-center justify-center gap-1">
+            <Text className="text-center text-sm font-semibold" style={{ color: "#D62A63" }}>
+              {dict.cycle.moodResponses[todayLog.mood]}
+            </Text>
+            <Emoji e={MOOD_RESPONSE_EMOJI[todayLog.mood]} size={16} />
+          </View>
         )}
       </View>
 
@@ -224,7 +240,8 @@ export function CycleScreen() {
             icon={<MaterialCommunityIcons name="water-outline" size={20} color={todayLog?.flow ? "#FFFFFF" : "#F43F7F"} />}
             tone="primary"
             label={dict.cycle.flowCardLabel}
-            value={todayLog?.flow ? `${FLOW_EMOJI[todayLog.flow]} ${dict.cycle.flowLevels[todayLog.flow]}` : undefined}
+            valueIcon={todayLog?.flow ? <Emoji e={FLOW_EMOJI[todayLog.flow]} size={12} /> : undefined}
+            value={todayLog?.flow ? dict.cycle.flowLevels[todayLog.flow] : undefined}
             onPress={() => openLogging(today, todayLog)}
           />
           <QuickCard
@@ -268,7 +285,7 @@ export function CycleScreen() {
               {FLOW_LEVELS.map((f) => (
                 <IconChip
                   key={f}
-                  icon={FLOW_EMOJI[f]}
+                  icon={<Emoji e={FLOW_EMOJI[f]} />}
                   label={dict.cycle.flowLevels[f]}
                   active={flow === f}
                   onPress={() => setFlow(flow === f ? null : f)}
@@ -283,7 +300,7 @@ export function CycleScreen() {
               {MOODS.map((m) => (
                 <IconChip
                   key={m}
-                  icon={MOOD_EMOJI[m]}
+                  icon={<Emoji e={MOOD_EMOJI[m]} />}
                   label={dict.cycle.moods[m]}
                   active={mood === m}
                   onPress={() => setMood(mood === m ? null : m)}
@@ -298,7 +315,7 @@ export function CycleScreen() {
               {SYMPTOMS.map((s) => (
                 <IconChip
                   key={s}
-                  icon={SYMPTOM_EMOJI[s]}
+                  icon={<Emoji e={SYMPTOM_EMOJI[s]} />}
                   label={dict.cycle.symptoms[s]}
                   active={symptoms.includes(s)}
                   onPress={() => setSymptoms((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]))}
@@ -374,7 +391,7 @@ export function CycleScreen() {
                 <Pressable key={log.id} className="active:scale-[0.98]" onPress={() => openLogging(log.date, log)}>
                   <Card className="flex-row items-center gap-3 py-3">
                     <View className="h-11 w-11 items-center justify-center rounded-full bg-primary-light/50">
-                      <Text style={{ fontSize: 18 }}>{emoji}</Text>
+                      <Emoji e={emoji} size={20} />
                     </View>
                     <View className="min-w-0 flex-1">
                       <Text className="font-semibold text-text-primary">{dateLabel}</Text>
@@ -402,12 +419,15 @@ function QuickCard({
   icon,
   label,
   value,
+  valueIcon,
   tone,
   onPress,
 }: {
   icon: React.ReactNode;
   label: string;
   value?: string;
+  /** Value matnidan oldin ko'rsatiladigan kichik emoji (masalan, hayz oqimi turi). */
+  valueIcon?: React.ReactNode;
   tone: "primary" | "secondary" | "accent";
   onPress: () => void;
 }) {
@@ -418,9 +438,12 @@ function QuickCard({
       <Card className={`items-center gap-2 py-4 ${bgClass}`}>
         <View className={`h-10 w-10 items-center justify-center rounded-2xl ${filled ? "bg-white/20" : "bg-surface-muted"}`}>{icon}</View>
         <Text className={`text-xs font-semibold ${filled ? "text-white" : "text-text-secondary"}`}>{label}</Text>
-        <Text className={`text-xs ${filled ? "text-white/80" : "text-text-muted"}`} numberOfLines={1}>
-          {value ?? "—"}
-        </Text>
+        <View className="flex-row items-center gap-1">
+          {valueIcon}
+          <Text className={`text-xs ${filled ? "text-white/80" : "text-text-muted"}`} numberOfLines={1}>
+            {value ?? "—"}
+          </Text>
+        </View>
       </Card>
     </Pressable>
   );

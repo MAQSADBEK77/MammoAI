@@ -7,6 +7,7 @@ import type { Article, ArticleCategory } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Card, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 
 const CATEGORY_EMOJI: Record<ArticleCategory, string> = { cycle: "🩸", pregnancy: "🤰", checkups: "🩺" };
 const CATEGORY_TINT: Record<ArticleCategory, string> = { cycle: "bg-primary/15", pregnancy: "bg-secondary/15", checkups: "bg-accent/15" };
@@ -29,8 +30,8 @@ export default function ArticlesPage() {
       {articles.map((article) => (
         <Link key={article.id} href={`/maqolalar/${article.slug}`}>
           <Card interactive className="flex items-start gap-3">
-            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-lg ${CATEGORY_TINT[article.category]}`}>
-              {CATEGORY_EMOJI[article.category]}
+            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${CATEGORY_TINT[article.category]}`}>
+              <Emoji e={CATEGORY_EMOJI[article.category]} />
             </span>
             <div className="min-w-0 flex-1 space-y-1.5">
               <Badge>{dict.articles.categories[article.category]}</Badge>

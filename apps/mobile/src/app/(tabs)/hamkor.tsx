@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
 import { Button, Card, LoadingSpinner, ScreenHeader, Badge } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 import { PartnerChatModal } from "@/components/screens/PartnerChatModal";
 
 /**
@@ -89,7 +90,7 @@ export default function HamkorScreen() {
   }
 
   const daysAgo = status.linkedSince ? Math.floor((new Date().getTime() - new Date(status.linkedSince).getTime()) / 86400000) : 0;
-  const initials = (status.partner?.name?.trim()?.[0] ?? "🙂").toUpperCase();
+  const initials = status.partner?.name?.trim()?.[0]?.toUpperCase() ?? null;
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -102,7 +103,11 @@ export default function HamkorScreen() {
         {!status.linked ? (
           <>
             <View className="gap-2 rounded-[28px] bg-primary-light/30 p-6">
-              <Text className="text-center text-4xl">🐰❤️🐰</Text>
+              <View className="flex-row items-center justify-center gap-1">
+                <Emoji e="🐰" size={36} />
+                <Emoji e="❤️" size={36} />
+                <Emoji e="🐰" size={36} />
+              </View>
               <Text className="text-center text-lg font-bold text-text-primary">{dict.partner.heroTitle}</Text>
               <Text className="text-center text-sm text-text-secondary">{dict.partner.heroDescription}</Text>
             </View>
@@ -135,7 +140,10 @@ export default function HamkorScreen() {
               </View>
             </Card>
 
-            <Button onPress={openConnectModal}>{dict.partner.connectButton}</Button>
+            <Button onPress={openConnectModal}>
+              <Emoji e="💑" size={16} />
+              <Text className="text-base font-semibold text-white"> {dict.partner.connectButton}</Text>
+            </Button>
             <Button variant="ghost" onPress={openConnectModal}>
               {dict.partner.enterCodeButton}
             </Button>
@@ -144,7 +152,11 @@ export default function HamkorScreen() {
           <>
             <Card className="gap-3">
               <View className="flex-row items-center gap-3">
-                <Avatar.Text size={48} label={initials} style={{ backgroundColor: "#FFB3CB" }} />
+                {initials ? (
+                  <Avatar.Text size={48} label={initials} style={{ backgroundColor: "#FFB3CB" }} />
+                ) : (
+                  <Avatar.Icon size={48} icon={() => <Emoji e="🙂" size={24} />} style={{ backgroundColor: "#FFB3CB" }} />
+                )}
                 <View className="min-w-0 flex-1">
                   <View className="flex-row items-center gap-1.5">
                     <Text className="flex-shrink font-bold text-text-primary" numberOfLines={1}>
@@ -308,7 +320,7 @@ function SharingRow({
   return (
     <View className={`flex-row items-center justify-between gap-3 py-2 ${last ? "" : "border-b border-border"}`}>
       <View className="flex-row items-center gap-2.5">
-        <Text className="text-lg">{icon}</Text>
+        <Emoji e={icon} />
         <Text className="text-sm font-medium text-text-primary">{label}</Text>
       </View>
       <Switch value={checked} onValueChange={onChange} color="#F43F7F" />
