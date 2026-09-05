@@ -66,6 +66,14 @@ const en: Dictionary = {
     identifierPlaceholder: "+998901234567",
     invalidIdentifier: "Please enter a valid phone number",
     welcomeBackMessage: "Welcome back! We found your account.",
+    phoneVerifyTitle: "Verify via Telegram",
+    phoneVerifyIntro: "Tap the button below to open our Telegram bot and press \"Start\" — you'll instantly receive a 6-digit verification code.",
+    openTelegramButton: "Open in Telegram",
+    waitingForCode: "Waiting for the code... After pressing \"Start\" in the bot, come back here and enter the code.",
+    codeSentHint: "The code was sent to Telegram — enter it below",
+    codePlaceholder: "6-digit code",
+    invalidCode: "Incorrect or expired code",
+    resendLink: "Get a new link",
   },
 
   privacy: {

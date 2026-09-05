@@ -68,6 +68,15 @@ const uz = {
     identifierPlaceholder: "+998901234567",
     invalidIdentifier: "To'g'ri telefon raqam kiriting",
     welcomeBackMessage: "Xush kelibsiz! Akkauntingiz topildi.",
+    phoneVerifyTitle: "Telegram orqali tasdiqlang",
+    phoneVerifyIntro:
+      "Pastdagi tugma orqali Telegram botimizni oching va \"Start\" bosing — sizga darhol 6 xonali tasdiqlash kodi yuboriladi.",
+    openTelegramButton: "Telegram'da ochish",
+    waitingForCode: "Kod kutilmoqda... Botda \"Start\" bosganingizdan so'ng shu yerga qaytib, kodni kiriting.",
+    codeSentHint: "Kod Telegram'ga yuborildi — uni pastga kiriting",
+    codePlaceholder: "6 xonali kod",
+    invalidCode: "Kod noto'g'ri yoki muddati o'tgan",
+    resendLink: "Havolani qaytadan olish",
   },
 
   privacy: {

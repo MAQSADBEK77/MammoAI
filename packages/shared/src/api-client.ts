@@ -60,12 +60,19 @@ export interface MeResponse {
   onboardingProfile: OnboardingProfile | null;
 }
 
-export interface AuthStartPayload {
+export interface PhoneCodeStartPayload {
   identifier: string; // telefon raqam
   language: Language;
 }
 
-export interface AuthStartResponse extends MeResponse {
+export interface PhoneCodeStartResponse {
+  /** Keyingi (status/verify) chaqiruvlarda kerak bo'ladigan vaqtinchalik identifikator. */
+  token: string;
+  /** Telegram botga olib boradigan chuqur havola — foydalanuvchi shuni bosishi kerak. */
+  deepLink: string;
+}
+
+export interface PhoneCodeVerifyResponse extends MeResponse {
   token?: string;
   /** false — bu identifikator bo'yicha mavjud akkaunt topildi va shunga kirildi. */
   isNewAccount: boolean;
@@ -144,9 +151,16 @@ export function createApiClient(config: ApiClientConfig) {
 
   return {
     auth: {
-      /** Telefon raqam bilan akkaunt yaratish yoki mavjudiga kirish. */
-      start: (payload: AuthStartPayload) =>
-        request<AuthStartResponse>("/api/auth/start", { method: "POST", body: JSON.stringify(payload) }),
+      /** 1-qadam — telefon raqam yuboriladi, Telegram botga olib boradigan
+       * chuqur havola qaytadi. Foydalanuvchi shuni bosib, botda "Start"
+       * bosishi kerak (shundagina kod yuboriladi). */
+      phoneCodeStart: (payload: PhoneCodeStartPayload) =>
+        request<PhoneCodeStartResponse>("/api/auth/phone-code/start", { method: "POST", body: JSON.stringify(payload) }),
+      /** Foydalanuvchi botda "Start" bosganini (kod yuborilganini) tekshirish uchun. */
+      phoneCodeStatus: (token: string) => request<{ sent: boolean }>(`/api/auth/phone-code/status?token=${encodeURIComponent(token)}`),
+      /** 2-qadam — Telegram'dan kelgan kodni tasdiqlaydi, akkaunt yaratadi/kirishni bajaradi. */
+      phoneCodeVerify: (payload: { token: string; code: string }) =>
+        request<PhoneCodeVerifyResponse>("/api/auth/phone-code/verify", { method: "POST", body: JSON.stringify(payload) }),
       /** Faqat veb uchun — httpOnly sessiya cookie'sini o'chiradi. Mobil o'z
        * tokenini mahalliy (SecureStore) o'chiradi, bu chaqiruv shart emas. */
       logout: () => request<{ ok: true }>("/api/auth/logout", { method: "POST" }),

@@ -194,6 +194,89 @@ export async function deleteUser(id: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Umumiy sozlamalar (kalit-qiymat) — .env'ga bog'lanmasdan, admin panel orqali
+// ishlab chiqarishda ham o'zgartirsa bo'ladigan sirlar uchun.
+// ---------------------------------------------------------------------------
+
+export async function getSetting(key: string): Promise<string | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT value FROM app_settings WHERE key = ${key}`) as unknown as { value: string | null }[];
+  return rows[0]?.value ?? null;
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO app_settings (key, value, updated_at) VALUES (${key}, ${value}, ${now()})
+    ON CONFLICT (key) DO UPDATE SET value = ${value}, updated_at = ${now()}
+  `;
+}
+
+// ---------------------------------------------------------------------------
+// Telefon raqamni Telegram bot orqali tasdiqlash — foydalanuvchi telefon
+// kiritgach vaqtinchalik yozuv yaratiladi (token), botga "Start" bosilgach
+// shu yozuvga chat_id + kod qo'shiladi (server/telegram-bot.ts), foydalanuvchi
+// kodni kiritib tasdiqlaganda hisob yaratiladi/kirish beriladi.
+// ---------------------------------------------------------------------------
+
+const PHONE_VERIFICATION_TTL_MINUTES = 10;
+
+interface PhoneVerificationRow {
+  id: string;
+  token: string;
+  phone: string;
+  language: Language;
+  code: string | null;
+  telegram_chat_id: string | null;
+  verified_at: string | null;
+  created_at: string;
+}
+
+export async function createPhoneVerification(phone: string, language: Language): Promise<{ token: string }> {
+  await ensureSchema();
+  const id = randomUUID();
+  const token = randomUUID().replace(/-/g, "");
+  await sql`
+    INSERT INTO phone_verifications (id, token, phone, language, created_at) VALUES (${id}, ${token}, ${phone}, ${language}, ${now()})
+  `;
+  return { token };
+}
+
+export async function getPhoneVerificationByToken(token: string): Promise<PhoneVerificationRow | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM phone_verifications WHERE token = ${token}`) as unknown as PhoneVerificationRow[];
+  return rows[0] ?? null;
+}
+
+/** Bot'dan "/start <token>" kelganda chaqiriladi — tasodifiy 6 xonali kod
+ * generatsiya qilib, chat_id bilan birga saqlaydi (server/telegram-bot.ts
+ * shu kodni foydalanuvchiga Telegram xabari sifatida yuboradi). */
+export async function attachTelegramChatToVerification(token: string, chatId: string): Promise<{ phone: string; code: string } | null> {
+  await ensureSchema();
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const rows = (await sql`
+    UPDATE phone_verifications SET telegram_chat_id = ${chatId}, code = ${code}
+    WHERE token = ${token} AND verified_at IS NULL
+    RETURNING phone
+  `) as unknown as { phone: string }[];
+  const row = rows[0];
+  return row ? { phone: row.phone, code } : null;
+}
+
+/** Kodni tekshiradi — to'g'ri bo'lsa, yozuvni "ishlatilgan" deb belgilaydi
+ * (qayta ishlatib bo'lmasligi uchun) va telefon raqamni qaytaradi. */
+export async function verifyPhoneCode(token: string, code: string): Promise<{ phone: string; language: Language } | null> {
+  await ensureSchema();
+  const row = await getPhoneVerificationByToken(token);
+  if (!row || !row.code || row.verified_at) return null;
+  if (row.code !== code) return null;
+  const ageMinutes = (Date.now() - new Date(row.created_at).getTime()) / 60000;
+  if (ageMinutes > PHONE_VERIFICATION_TTL_MINUTES) return null;
+  await sql`UPDATE phone_verifications SET verified_at = ${now()} WHERE token = ${token}`;
+  return { phone: row.phone, language: row.language };
+}
+
+// ---------------------------------------------------------------------------
 // Onboarding
 // ---------------------------------------------------------------------------
 

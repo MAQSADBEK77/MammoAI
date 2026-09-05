@@ -1,5 +1,5 @@
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from "react-native";
+import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Animated, { FadeInUp, FadeIn } from "react-native-reanimated";
@@ -54,6 +54,7 @@ type Step =
   | "language"
   | "account_choice"
   | "account_identifier"
+  | "phone_verify"
   | "privacy"
   | "name"
   | "age"
@@ -224,6 +225,7 @@ const PERIOD_ATTITUDE_ICON: Record<PeriodAttitude, string> = {
 const STEP_ICON: Partial<Record<Step, string>> = {
   account_choice: "account-outline",
   account_identifier: "lock-outline",
+  phone_verify: "send-outline",
   privacy: "shield-check-outline",
   name: "pencil-outline",
   age: "cake-variant-outline",
@@ -237,6 +239,7 @@ const STEP_ICON: Partial<Record<Step, string>> = {
 // kichik emoji doira o'rniga to'liq illyustratsiya ko'rsatiladi.
 const STEP_ILLUSTRATION: Partial<Record<Step, React.ComponentType<{ width?: number; height?: number }>>> = {
   account_identifier: SecureLoginIllustration,
+  phone_verify: SecureLoginIllustration,
   goal: GoalIllustration,
   cycle_lengths: CalendarIllustration,
   last_period: CalendarIllustration,
@@ -249,6 +252,7 @@ const STEP_ILLUSTRATION: Partial<Record<Step, React.ComponentType<{ width?: numb
 const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   account_choice: colors.secondary,
   account_identifier: colors.secondary,
+  phone_verify: colors.secondary,
   privacy: colors.secondary,
   name: colors.secondary,
   age: colors.secondary,
@@ -279,6 +283,12 @@ export default function OnboardingScreen() {
   const [stepIndex, setStepIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Telegram orqali telefon tasdiqlash — account_identifier'da yaratilgan
+  // vaqtinchalik token/havola, "phone_verify" bosqichida ishlatiladi.
+  const [phoneToken, setPhoneToken] = useState<string | null>(null);
+  const [phoneDeepLink, setPhoneDeepLink] = useState<string | null>(null);
+  const [codeSent, setCodeSent] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
   // Web'dagi kabi — effekt qayta ishga tushib qolsa `finish()` ikki marta
   // chaqirilmasin (masalan tez-tez qayta render bo'lishi mumkin bo'lgan holatlarda).
   const finishStartedRef = useRef(false);
@@ -293,6 +303,7 @@ export default function OnboardingScreen() {
       "language",
       "account_choice",
       "account_identifier",
+      "phone_verify",
       "privacy",
       "name",
       "age",
@@ -321,7 +332,41 @@ export default function OnboardingScreen() {
     setSubmitting(true);
     setErrorMessage(null);
     try {
-      const res = await api.auth.start({ identifier: extractUzPhoneDigits(survey.identifier) ?? survey.identifier.trim(), language });
+      const identifier = extractUzPhoneDigits(survey.identifier) ?? survey.identifier.trim();
+      const res = await api.auth.phoneCodeStart({ identifier, language });
+      setPhoneToken(res.token);
+      setPhoneDeepLink(res.deepLink);
+      setCodeSent(false);
+      setVerifyCode("");
+      goNext();
+    } catch {
+      setErrorMessage(dict.auth.invalidIdentifier);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // "phone_verify" bosqichida — foydalanuvchi Telegram botda "Start" bosganini
+  // (kod yuborilganini) davriy tekshiradi, shundagina kod kiritish maydonini ko'rsatadi.
+  useEffect(() => {
+    if (step !== "phone_verify" || !phoneToken || codeSent) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.auth.phoneCodeStatus(phoneToken);
+        if (res.sent) setCodeSent(true);
+      } catch {
+        // Tarmoq xatosi — keyingi urinishda davom etamiz.
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [step, phoneToken, codeSent]);
+
+  async function submitVerifyCode() {
+    if (!phoneToken) return;
+    setSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const res = await api.auth.phoneCodeVerify({ token: phoneToken, code: verifyCode.trim() });
       applyMeResponse(res);
       if (res.onboardingProfile) {
         router.replace(landingPath(res.onboardingProfile.primaryGoal));
@@ -329,7 +374,7 @@ export default function OnboardingScreen() {
       }
       goNext();
     } catch {
-      setErrorMessage(dict.auth.invalidIdentifier);
+      setErrorMessage(dict.auth.invalidCode);
     } finally {
       setSubmitting(false);
     }
@@ -404,6 +449,8 @@ export default function OnboardingScreen() {
         return survey.accountChoice !== null;
       case "account_identifier":
         return extractUzPhoneDigits(survey.identifier) !== null;
+      case "phone_verify":
+        return codeSent && verifyCode.trim().length === 6;
       case "name":
         return survey.name.trim().length > 0;
       case "age":
@@ -519,6 +566,40 @@ export default function OnboardingScreen() {
                 icon={<MaterialCommunityIcons name="lock-outline" size={18} color="#9CA3AF" />}
               />
               {errorMessage && <Text className="text-sm text-danger">{errorMessage}</Text>}
+            </View>
+          )}
+
+          {step === "phone_verify" && (
+            <View className="gap-4">
+              <Text className="text-center text-xl font-bold text-text-primary">{dict.auth.phoneVerifyTitle}</Text>
+              <Text className="text-center leading-relaxed text-text-secondary">{dict.auth.phoneVerifyIntro}</Text>
+              {phoneDeepLink && (
+                <Pressable
+                  onPress={() => Linking.openURL(phoneDeepLink)}
+                  className="min-h-[48px] w-full flex-row items-center justify-center gap-2 rounded-2xl px-5 py-3 active:scale-[0.98]"
+                  style={{ backgroundColor: "#26A5E4" }}
+                >
+                  <MaterialCommunityIcons name="send" size={18} color="#FFFFFF" />
+                  <Text className="text-base font-bold text-white">{dict.auth.openTelegramButton}</Text>
+                </Pressable>
+              )}
+              {!codeSent ? (
+                <Text className="text-center text-sm text-text-secondary">{dict.auth.waitingForCode}</Text>
+              ) : (
+                <View className="gap-2">
+                  <Text className="text-center text-sm font-semibold text-success">{dict.auth.codeSentHint}</Text>
+                  <TextField
+                    value={verifyCode}
+                    onChangeText={(v) => setVerifyCode(v.replace(/\D/g, "").slice(0, 6))}
+                    placeholder={dict.auth.codePlaceholder}
+                    keyboardType="numeric"
+                  />
+                </View>
+              )}
+              {errorMessage && <Text className="text-center text-sm text-danger">{errorMessage}</Text>}
+              <Pressable onPress={submitIdentifier}>
+                <Text className="text-center text-sm font-semibold text-primary-dark">{dict.auth.resendLink}</Text>
+              </Pressable>
             </View>
           )}
 
@@ -888,6 +969,10 @@ export default function OnboardingScreen() {
             )}
             {step === "account_identifier" ? (
               <Button onPress={submitIdentifier} disabled={submitting || !canProceed()}>
+                {dict.common.continueButton}
+              </Button>
+            ) : step === "phone_verify" ? (
+              <Button onPress={submitVerifyCode} disabled={submitting || !canProceed()}>
                 {dict.common.continueButton}
               </Button>
             ) : step === "privacy" ? (

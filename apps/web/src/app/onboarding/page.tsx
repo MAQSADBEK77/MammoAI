@@ -40,6 +40,7 @@ import {
   SickOutlined,
   FamilyRestroomOutlined,
   MonitorWeightOutlined,
+  SendOutlined,
 } from "@mui/icons-material";
 import clsx from "clsx";
 
@@ -50,6 +51,7 @@ type Step =
   | "language"
   | "account_choice"
   | "account_identifier"
+  | "phone_verify"
   | "privacy"
   | "name"
   | "age"
@@ -181,6 +183,7 @@ const STEP_ICON: Partial<Record<Step, StepIconComponent>> = {
 // bo'lardi), lekin "quruq matn" o'rniga chizilgan sifatli vizual taassurot beradi.
 const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
   account_identifier: "secure-login",
+  phone_verify: "secure-login",
   goal: "goal",
   cycle_lengths: "calendar",
   last_period: "calendar",
@@ -193,6 +196,7 @@ const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
 const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   account_choice: colors.secondary,
   account_identifier: colors.secondary,
+  phone_verify: colors.secondary,
   privacy: colors.secondary,
   name: colors.secondary,
   age: colors.secondary,
@@ -288,6 +292,12 @@ export default function OnboardingPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Telegram orqali telefon tasdiqlash — account_identifier'da yaratilgan
+  // vaqtinchalik token/havola, "phone_verify" bosqichida ishlatiladi.
+  const [phoneToken, setPhoneToken] = useState<string | null>(null);
+  const [phoneDeepLink, setPhoneDeepLink] = useState<string | null>(null);
+  const [codeSent, setCodeSent] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
   // "Analyzing" effekti React StrictMode'da (dev rejimida) ataylab ikki marta
   // ishga tushirilishi mumkin — bu ref shu tufayli `finish()` ikki marta (parallel
   // ravishda) chaqirilib, onboarding ikki marta yuborilishi va natijada redirect
@@ -306,6 +316,7 @@ export default function OnboardingPage() {
       "language",
       "account_choice",
       "account_identifier",
+      "phone_verify",
       "privacy",
       "name",
       "age",
@@ -342,7 +353,41 @@ export default function OnboardingPage() {
     setSubmitting(true);
     setErrorMessage(null);
     try {
-      const res = await api.auth.start({ identifier: extractUzPhoneDigits(survey.identifier) ?? survey.identifier.trim(), language });
+      const identifier = extractUzPhoneDigits(survey.identifier) ?? survey.identifier.trim();
+      const res = await api.auth.phoneCodeStart({ identifier, language });
+      setPhoneToken(res.token);
+      setPhoneDeepLink(res.deepLink);
+      setCodeSent(false);
+      setVerifyCode("");
+      goNext();
+    } catch {
+      setErrorMessage(dict.auth.invalidIdentifier);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // "phone_verify" bosqichida — foydalanuvchi Telegram botda "Start" bosganini
+  // (kod yuborilganini) davriy tekshiradi, shundagina kod kiritish maydonini ko'rsatadi.
+  useEffect(() => {
+    if (step !== "phone_verify" || !phoneToken || codeSent) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.auth.phoneCodeStatus(phoneToken);
+        if (res.sent) setCodeSent(true);
+      } catch {
+        // Tarmoq xatosi — keyingi urinishda davom etamiz.
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [step, phoneToken, codeSent]);
+
+  async function submitVerifyCode() {
+    if (!phoneToken) return;
+    setSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const res = await api.auth.phoneCodeVerify({ token: phoneToken, code: verifyCode.trim() });
       applyMeResponse(res);
       if (res.onboardingProfile) {
         router.replace(landingPath(res.onboardingProfile.primaryGoal));
@@ -350,7 +395,7 @@ export default function OnboardingPage() {
       }
       goNext();
     } catch {
-      setErrorMessage(dict.auth.invalidIdentifier);
+      setErrorMessage(dict.auth.invalidCode);
     } finally {
       setSubmitting(false);
     }
@@ -431,6 +476,8 @@ export default function OnboardingPage() {
         return survey.accountChoice !== null;
       case "account_identifier":
         return extractUzPhoneDigits(survey.identifier) !== null;
+      case "phone_verify":
+        return codeSent && verifyCode.trim().length === 6;
       case "name":
         return survey.name.trim().length > 0;
       case "age":
@@ -586,6 +633,44 @@ export default function OnboardingPage() {
               />
             </div>
             {errorMessage && <p className="text-sm text-danger">{errorMessage}</p>}
+          </div>
+        )}
+
+        {step === "phone_verify" && (
+          <div className="flex flex-1 flex-col justify-start gap-4">
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.auth.phoneVerifyTitle}</h2>
+            <p className="text-center text-sm leading-relaxed text-text-secondary">{dict.auth.phoneVerifyIntro}</p>
+            {phoneDeepLink && (
+              <a
+                href={phoneDeepLink}
+                target="_blank"
+                rel="noreferrer"
+                className="tap-target flex w-full items-center justify-center gap-2 rounded-2xl bg-[#26A5E4] text-base font-bold text-white transition hover:brightness-95"
+              >
+                <SendOutlined sx={{ fontSize: 20 }} />
+                {dict.auth.openTelegramButton}
+              </a>
+            )}
+            {!codeSent ? (
+              <p className="text-center text-sm text-text-secondary">{dict.auth.waitingForCode}</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="text-center text-sm font-semibold text-success">{dict.auth.codeSentHint}</p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={verifyCode}
+                  onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder={dict.auth.codePlaceholder}
+                  className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-center text-2xl font-bold tracking-[0.5em] text-text-primary outline-none focus:border-primary"
+                />
+              </div>
+            )}
+            {errorMessage && <p className="text-center text-sm text-danger">{errorMessage}</p>}
+            <button type="button" onClick={submitIdentifier} className="text-center text-sm font-semibold text-primary-dark underline-offset-2 hover:underline">
+              {dict.auth.resendLink}
+            </button>
           </div>
         )}
 
@@ -955,6 +1040,10 @@ export default function OnboardingPage() {
           )}
           {step === "account_identifier" ? (
             <Button onClick={submitIdentifier} disabled={submitting || !canProceed()}>
+              {dict.common.continueButton}
+            </Button>
+          ) : step === "phone_verify" ? (
+            <Button onClick={submitVerifyCode} disabled={submitting || !canProceed()}>
               {dict.common.continueButton}
             </Button>
           ) : step === "privacy" ? (

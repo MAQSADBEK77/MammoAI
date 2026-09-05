@@ -33,6 +33,16 @@ export interface AdminCommunityComment extends CommunityComment {
   authorPhone: string | null;
 }
 
+export interface TelegramBotSettings {
+  hasToken: boolean;
+  tokenValid: boolean;
+  maskedToken: string | null;
+  username: string | null;
+  name: string | null;
+  description: string | null;
+  shortDescription: string | null;
+}
+
 export interface AdminStats {
   totalUsers: number;
   newUsersToday: number;
@@ -152,5 +162,10 @@ export const adminApi = {
       if (params.offset) q.set("offset", String(params.offset));
       return request<{ users: AnalyticsUserSummary[]; total: number }>(`/analytics/users?${q.toString()}`);
     },
+  },
+  telegramBot: {
+    get: () => request<TelegramBotSettings>("/telegram-bot"),
+    update: (patch: { token?: string; name?: string; description?: string; shortDescription?: string }) =>
+      request<{ ok: true }>("/telegram-bot", { method: "PATCH", body: JSON.stringify(patch) }),
   },
 };

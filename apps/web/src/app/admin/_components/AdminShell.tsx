@@ -13,6 +13,7 @@ const NAV_ITEMS: { href: string; label: string; icon: string; exact?: boolean }[
   { href: "/admin/users", label: "Foydalanuvchilar", icon: "👥" },
   { href: "/admin/analytics", label: "Analitika", icon: "📈" },
   { href: "/admin/community", label: "Hamjamiyat", icon: "💬" },
+  { href: "/admin/telegram-bot", label: "Telegram bot", icon: "🤖" },
   { href: "/admin/clinics", label: "Klinikalar", icon: "🏥" },
   { href: "/admin/articles", label: "Maqolalar", icon: "📰" },
   { href: "/admin/illustrations", label: "Illyustratsiyalar", icon: "🖼️" },

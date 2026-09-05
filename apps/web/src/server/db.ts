@@ -88,6 +88,32 @@ async function initSchema() {
         free_screening BOOLEAN NOT NULL DEFAULT FALSE
       )
     `,
+    // Umumiy kalit-qiymat sozlamalar — .env'ga bog'lanmasdan, admin panel orqali
+    // ishlab chiqarishda ham o'zgartirsa bo'ladigan sirlar/moslamalar uchun
+    // (masalan Telegram bot tokeni — qayta deploy qilmasdan yangilash mumkin bo'lsin).
+    sql`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT,
+        updated_at TEXT NOT NULL
+      )
+    `,
+    // Telegram bot orqali telefon raqamni tasdiqlash — foydalanuvchi telefon
+    // kiritgach, shu jadvalga vaqtinchalik yozuv qo'shiladi (token — Telegram
+    // chuqur havolasi uchun); botga "Start" bosilgach, chat_id va tasodifiy kod
+    // shu yerga yoziladi, keyin foydalanuvchi kodni kiritib tasdiqlaydi.
+    sql`
+      CREATE TABLE IF NOT EXISTS phone_verifications (
+        id TEXT PRIMARY KEY,
+        token TEXT UNIQUE NOT NULL,
+        phone TEXT NOT NULL,
+        language TEXT NOT NULL DEFAULT 'uz',
+        code TEXT,
+        telegram_chat_id TEXT,
+        verified_at TEXT,
+        created_at TEXT NOT NULL
+      )
+    `,
     // Admin panelda tanlanadigan illyustratsiyalar — har bir "joy" (masalan
     // "onboarding.welcome") mustaqil ravishda qaysi unDraw rasmi (slug)
     // ko'rsatilishini belgilaydi (packages/shared/src/illustration-library.ts).
@@ -330,6 +356,7 @@ async function initSchema() {
 
   // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
   await Promise.all([
+    sql`CREATE INDEX IF NOT EXISTS idx_phone_verifications_created ON phone_verifications(created_at)`,
     sql`CREATE INDEX IF NOT EXISTS idx_cycle_logs_user ON cycle_logs(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`,

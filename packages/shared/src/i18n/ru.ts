@@ -64,6 +64,14 @@ const ru: Dictionary = {
     identifierPlaceholder: "+998901234567",
     invalidIdentifier: "Введите корректный номер телефона",
     welcomeBackMessage: "С возвращением! Ваш аккаунт найден.",
+    phoneVerifyTitle: "Подтвердите через Telegram",
+    phoneVerifyIntro: "Нажмите кнопку ниже, чтобы открыть нашего Telegram-бота, и нажмите «Start» — вам сразу придёт 6-значный код подтверждения.",
+    openTelegramButton: "Открыть в Telegram",
+    waitingForCode: "Ожидание кода... После нажатия «Start» в боте вернитесь сюда и введите код.",
+    codeSentHint: "Код отправлен в Telegram — введите его ниже",
+    codePlaceholder: "6-значный код",
+    invalidCode: "Неверный код или срок его действия истёк",
+    resendLink: "Получить ссылку заново",
   },
 
   privacy: {
