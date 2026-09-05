@@ -32,6 +32,17 @@ const TRUST_ICONS = [ShieldOutlined, CheckCircleOutlined, TranslateOutlined, Loc
 
 const HOW_ANCHOR = "qanday-ishlaydi";
 
+/** Bo'lim fonidagi dekorativ illyustratsiya — juda xira (o'qishga xalaqit
+ * bermaydi), sahifaga "quruq" oq/kulrang bo'lib qolmasligi uchun chuqurlik
+ * beradi. Har doim `overflow-hidden relative` bo'limning ICHIDA, tarkibdan
+ * OLDIN chaqiriladi (z-index bilan orqaga suriladi). */
+function BgArt({ src, className }: { src: string; className: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- fon uchun dekorativ SVG, next/image kerak emas
+    <img src={src} alt="" aria-hidden className={clsx("pointer-events-none absolute -z-10 opacity-25 select-none", className)} />
+  );
+}
+
 // Ilovaning haqiqiy ekranlaridan olingan skrinshotlar (namunaviy ma'lumot bilan) —
 // tsikl, homiladorlik, tekshiruvlar, hamkor va hamjamiyat. Yasama illyustratsiya
 // emas, real UI — bir nechtasi navbat bilan almashinib turadi ("animatsiyaga
@@ -103,8 +114,10 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </header>
 
-      <section className="bg-aurora-hero">
-        <div className="animate-fade-in-up mx-auto flex max-w-5xl flex-col items-center gap-6 px-5 pb-14 pt-14 text-center md:pt-20">
+      <section className="relative isolate overflow-hidden bg-aurora-hero">
+        <BgArt src="/illustrations/welcome.svg" className="-left-16 -top-10 h-72 w-72 -rotate-12 md:h-96 md:w-96" />
+        <BgArt src="/illustrations/healthy-lifestyle.svg" className="-right-14 bottom-0 h-64 w-64 rotate-6 md:h-80 md:w-80" />
+        <div className="animate-fade-in-up relative mx-auto flex max-w-5xl flex-col items-center gap-6 px-5 pb-14 pt-14 text-center md:pt-20">
           <span className="rounded-full bg-white/70 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-primary shadow-sm">
             {l.heroEyebrow}
           </span>
@@ -126,30 +139,34 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-5 py-16">
-        <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-extrabold text-text-primary md:text-3xl">{l.featuresTitle}</h2>
-          <p className="mt-2 text-text-secondary">{l.featuresSubtitle}</p>
-        </div>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURE_KEYS.map((key, i) => {
-            const Icon = FEATURE_ICONS[i];
-            const f = l.features[key];
-            return (
-              <Card key={key} className="p-6!">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Icon />
-                </div>
-                <h3 className="text-lg font-bold text-text-primary">{f.title}</h3>
-                <p className="mt-1 text-sm text-text-secondary">{f.desc}</p>
-              </Card>
-            );
-          })}
+      <section className="relative isolate overflow-hidden">
+        <BgArt src="/illustrations/goal.svg" className="-right-16 -top-16 h-72 w-72 rotate-6 md:h-96 md:w-96" />
+        <div className="relative mx-auto max-w-5xl px-5 py-16">
+          <div className="mx-auto max-w-xl text-center">
+            <h2 className="text-2xl font-extrabold text-text-primary md:text-3xl">{l.featuresTitle}</h2>
+            <p className="mt-2 text-text-secondary">{l.featuresSubtitle}</p>
+          </div>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURE_KEYS.map((key, i) => {
+              const Icon = FEATURE_ICONS[i];
+              const f = l.features[key];
+              return (
+                <Card key={key} className="p-6!">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <Icon />
+                  </div>
+                  <h3 className="text-lg font-bold text-text-primary">{f.title}</h3>
+                  <p className="mt-1 text-sm text-text-secondary">{f.desc}</p>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      <section id={HOW_ANCHOR} className="bg-surface-muted py-16">
-        <div className="mx-auto max-w-4xl px-5">
+      <section id={HOW_ANCHOR} className="relative isolate overflow-hidden bg-surface-muted py-16">
+        <BgArt src="/illustrations/calendar.svg" className="-left-16 -bottom-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
+        <div className="relative mx-auto max-w-4xl px-5">
           <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.howTitle}</h2>
           <div className="mt-10 grid gap-8 sm:grid-cols-3">
             {l.howSteps.map((step, i) => (
@@ -165,24 +182,28 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-5 py-16">
-        <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.trustTitle}</h2>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {l.trustItems.map((item, i) => {
-            const Icon = TRUST_ICONS[i];
-            return (
-              <div key={i} className="rounded-3xl bg-surface p-5 text-center shadow-sm shadow-text-primary/5">
-                <Icon className="mx-auto mb-3 text-primary" />
-                <h3 className="text-sm font-bold text-text-primary">{item.title}</h3>
-                <p className="mt-1 text-xs text-text-secondary">{item.desc}</p>
-              </div>
-            );
-          })}
+      <section className="relative isolate overflow-hidden">
+        <BgArt src="/illustrations/secure-login.svg" className="-right-14 -bottom-14 h-64 w-64 rotate-6 md:h-80 md:w-80" />
+        <div className="relative mx-auto max-w-5xl px-5 py-16">
+          <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.trustTitle}</h2>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {l.trustItems.map((item, i) => {
+              const Icon = TRUST_ICONS[i];
+              return (
+                <div key={i} className="rounded-3xl bg-surface p-5 text-center shadow-sm shadow-text-primary/5">
+                  <Icon className="mx-auto mb-3 text-primary" />
+                  <h3 className="text-sm font-bold text-text-primary">{item.title}</h3>
+                  <p className="mt-1 text-xs text-text-secondary">{item.desc}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      <section className="bg-surface-muted py-16">
-        <div className="mx-auto max-w-2xl px-5">
+      <section className="relative isolate overflow-hidden bg-surface-muted py-16">
+        <BgArt src="/illustrations/doctor.svg" className="-left-14 -top-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
+        <div className="relative mx-auto max-w-2xl px-5">
           <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.faqTitle}</h2>
           <div className="mt-8 space-y-3">
             {l.faq.map((item, i) => (
@@ -209,8 +230,10 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
-      <section className="bg-aurora-cycle px-5 py-16 text-center text-white">
-        <div className="mx-auto max-w-lg">
+      <section className="relative isolate overflow-hidden bg-aurora-cycle px-5 py-16 text-center text-white">
+        <div className="pointer-events-none absolute -left-10 -top-16 -z-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-10 -bottom-16 -z-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative mx-auto max-w-lg">
           <h2 className="text-2xl font-extrabold md:text-3xl">{l.finalCtaTitle}</h2>
           <p className="mt-2 text-white/85">{l.finalCtaSubtitle}</p>
           <button
