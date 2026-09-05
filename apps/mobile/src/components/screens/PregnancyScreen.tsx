@@ -118,7 +118,7 @@ export function PregnancyScreen() {
     : null;
 
   return (
-    <View className="gap-4">
+    <View className="gap-5">
       <ScreenHeader title={greeting} subtitle={dict.pregnancy.trimester(status.trimester)} />
 
       <Animated.View entering={FadeInUp.duration(450)}>

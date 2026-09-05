@@ -49,7 +49,7 @@ export default function ChecklistScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-32">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
         <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
           <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
         </Pressable>

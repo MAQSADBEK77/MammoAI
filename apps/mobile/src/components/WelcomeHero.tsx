@@ -31,13 +31,9 @@ export function WelcomeHero({ title, subtitle }: { title: string; subtitle: stri
   return (
     <View style={{ alignItems: "center", gap: 24 }}>
       <View style={{ alignItems: "center", justifyContent: "center" }}>
-        {/* Yumshoq nur halqasi (glow) — yasama illyustratsiya o'rniga logo atrofiga
-            chuqurlik beradi, RN'da haqiqiy blur shart emas, xira doira yetarli. */}
-        <View
-          pointerEvents="none"
-          style={{ position: "absolute", width: 220, height: 220, borderRadius: 110, backgroundColor: "rgba(255,255,255,0.18)" }}
-        />
-        {/* Logo — fonsiz, animatsiyasiz, shunchaki gradient fon ustida turadi. */}
+        {/* Logo — fonsiz, animatsiyasiz, shunchaki gradient fon ustida turadi (web
+            bilan bir xil ko'rinish — orqasida doira/glow yo'q, RN'da haqiqiy blur
+            bo'lmagani uchun avvalgi "xira doira" qattiq chekka bilan ko'rinib qolardi). */}
         <Logo width={180} height={101} />
       </View>
       <Animated.Text style={[{ textAlign: "center", fontSize: 30, fontWeight: "800", color: "#FFFFFF" }, titleStyle]}>{title}</Animated.Text>

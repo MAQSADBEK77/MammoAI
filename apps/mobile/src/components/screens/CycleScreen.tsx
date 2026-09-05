@@ -157,7 +157,7 @@ export function CycleScreen() {
   }
 
   return (
-    <View className="gap-4">
+    <View className="gap-5">
       <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
 
       {data.isIrregular && (
@@ -208,14 +208,14 @@ export function CycleScreen() {
           kontekstual javob ko'rsatiladi. */}
       <View className="gap-3">
         <Text className="text-base font-bold text-text-primary">{dict.cycle.moodCheckinTitle}</Text>
-        <View className="flex-row justify-between">
+        <View className="flex-row gap-2">
           {MOODS.map((m) => (
             <Pressable
               key={m}
               onPress={() => pickMood(m)}
               disabled={moodSaving}
               className={clsx(
-                "h-12 w-12 items-center justify-center rounded-2xl border-2 active:scale-95",
+                "aspect-square flex-1 items-center justify-center rounded-2xl border-2 active:scale-95",
                 todayLog?.mood === m ? "border-primary bg-primary-light/40" : "border-transparent bg-surface-muted"
               )}
             >
@@ -245,7 +245,7 @@ export function CycleScreen() {
             onPress={() => openLogging(today, todayLog)}
           />
           <QuickCard
-            icon={<MaterialCommunityIcons name="stethoscope" size={20} color={todayLog?.symptoms.length ? "#FFFFFF" : "#0D9488"} />}
+            icon={<MaterialCommunityIcons name="medical-bag" size={20} color={todayLog?.symptoms.length ? "#FFFFFF" : "#0D9488"} />}
             tone="accent"
             label={dict.cycle.symptomsCardLabel}
             value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}

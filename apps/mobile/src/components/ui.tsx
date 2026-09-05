@@ -170,9 +170,16 @@ export function ScreenHeader({
       title
     );
 
+  // DIQQAT: bu yerda `mb-*` (tashqi bo'shliq) ATAYLAB YO'Q — RN'da flex `gap`
+  // marginlar bilan birlashmaydi (web'dagi CSS margin-collapse'dan farqli),
+  // shuning uchun har bir ekran ScreenHeader'ni allaqachon `gap-*` konteyner
+  // ichida chaqiradi (ScrollView contentContainerClassName yoki View gap-N) —
+  // shu gap keyingi elementgacha bo'lgan bo'shliqni ta'minlaydi. Agar bu yerga
+  // ham `mb-5` qo'shilsa, ikkalasi qo'shilib, webdagiga qaraganda deyarli 2
+  // baravar katta bo'shliq hosil bo'lardi (bu xato avval shunday sodir bo'lgan).
   if (avatarUri !== undefined || right) {
     return (
-      <View className="mb-5 flex-row items-center justify-between gap-3">
+      <View className="flex-row items-center justify-between gap-3">
         <View className="flex-1 flex-row items-center gap-3">
           {avatarUri !== undefined && (
             <View className="h-12 w-12 overflow-hidden rounded-full bg-primary-light">
@@ -196,7 +203,7 @@ export function ScreenHeader({
   }
 
   return (
-    <View className="mb-5">
+    <View>
       {titleNode}
       {subtitle && <Text className="mt-1 text-sm text-text-secondary">{subtitle}</Text>}
     </View>
@@ -327,7 +334,7 @@ export function IconChip({
   return (
     <TouchableRipple onPress={onPress} borderless style={{ borderRadius: 18, flex: 1 }}>
       <View
-        className={clsx("min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 py-3", active ? "bg-primary" : "bg-surface-muted")}
+        className={clsx("min-h-[48px] flex-1 items-center justify-center gap-1 rounded-[18px] px-3 py-3", active ? "bg-primary" : "bg-surface-muted")}
       >
         {icon}
         <Text className={clsx("text-center text-xs font-medium leading-tight", active ? "text-white" : "text-text-secondary")}>{label}</Text>

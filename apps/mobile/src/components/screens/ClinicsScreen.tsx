@@ -56,7 +56,7 @@ export function ClinicsScreen() {
   }
 
   return (
-    <View className="gap-3">
+    <View className="gap-4">
       <ScreenHeader title={dict.clinics.title} subtitle={dict.clinics.seedDataNotice} />
 
       <TextField

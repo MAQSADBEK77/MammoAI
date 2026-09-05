@@ -53,7 +53,7 @@ export default function RiskQuizScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-5 pb-8">
         <ScreenHeader title={dict.riskQuiz.title} />
         <Text className="-mt-3 text-xs text-text-muted">{dict.riskQuiz.disclaimer}</Text>
 

@@ -30,7 +30,7 @@ export default function ArticlesScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-8">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
         <ScreenHeader title={dict.articles.title} />
         <Text className="-mt-3 text-xs text-text-muted">{dict.articles.seedDataNotice}</Text>
         {articles.map((article) => (

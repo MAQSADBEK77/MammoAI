@@ -8,7 +8,7 @@ export default function PrivacyPolicyScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-5 pb-8">
         <ScreenHeader title={dict.privacy.title} />
         <Card className="gap-4">
           <Text className="leading-relaxed text-text-secondary">{dict.privacy.body}</Text>
