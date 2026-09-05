@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Animated, { FadeInUp, FadeIn } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Notifications from "expo-notifications";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import clsx from "clsx";
 import type {
@@ -204,6 +205,15 @@ const HEALTH_CONDITION_ICON: Record<HealthCondition, string> = {
   none: "✅",
 };
 
+// "Hayzingiz haqida qanday fikrdasiz?" javoblari oldida — til tanlash tugmalaridagi
+// bayroqlar kabi, har bir javobga mos emoji (foydalanuvchi so'rovi).
+const PERIOD_ATTITUDE_ICON: Record<PeriodAttitude, string> = {
+  uncomfortable: "😣",
+  dislike: "😕",
+  want_to_learn: "📖",
+  comfortable: "😊",
+};
+
 // Web versiyasi bilan bir xil (apps/web/src/app/onboarding/page.tsx) — har bir
 // savol bosqichi uchun ikona + rang. MaterialCommunityIcons nomlari (emoji emas —
 // profil va boshqa ekranlar bilan bir xil, saytdagi MUI ikonlariga mos uslubda).
@@ -366,6 +376,23 @@ export default function OnboardingScreen() {
     finish();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
+
+  // "Ha" bosilganda haqiqiy OS ruxsat so'rovi (expo-notifications) chiqadi —
+  // avvalgi versiyada bu shunchaki ichki belgi (survey holati) edi, haqiqiy
+  // ruxsat so'ralmasdan. OS ruxsatni allaqachon rad etgan bo'lsa, dialog qayta
+  // chiqmaydi (tizim xotirasi) — natija shunga qarab "Yo'q" tanlangandek ko'rinadi.
+  async function requestNotificationPermission(wantsEnabled: boolean) {
+    if (!wantsEnabled) {
+      setSurvey((s) => ({ ...s, notificationsEnabled: false }));
+      return;
+    }
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      setSurvey((s) => ({ ...s, notificationsEnabled: status === "granted" }));
+    } catch {
+      setSurvey((s) => ({ ...s, notificationsEnabled: false }));
+    }
+  }
 
   function canProceed(): boolean {
     switch (step) {
@@ -623,6 +650,7 @@ export default function OnboardingScreen() {
               options={(["uncomfortable", "dislike", "want_to_learn", "comfortable"] as PeriodAttitude[]).map((v) => ({
                 label: dict.onboarding.periodAttitude[v],
                 value: v,
+                icon: PERIOD_ATTITUDE_ICON[v],
                 onPress: () => setSurvey((s) => ({ ...s, periodAttitude: v })),
               }))}
               selected={survey.periodAttitude}
@@ -785,8 +813,8 @@ export default function OnboardingScreen() {
                 title={dict.onboarding.notificationsQuestion}
                 description={dict.onboarding.notificationsImportance}
                 options={[
-                  { label: dict.common.yes, value: "yes", onPress: () => setSurvey((s) => ({ ...s, notificationsEnabled: true })) },
-                  { label: dict.common.no, value: "no", onPress: () => setSurvey((s) => ({ ...s, notificationsEnabled: false })) },
+                  { label: dict.common.yes, value: "yes", onPress: () => void requestNotificationPermission(true) },
+                  { label: dict.common.no, value: "no", onPress: () => void requestNotificationPermission(false) },
                 ]}
                 selected={survey.notificationsEnabled === null ? null : survey.notificationsEnabled ? "yes" : "no"}
               />
@@ -967,7 +995,8 @@ function ChoiceStep({
   title: string;
   /** Ixtiyoriy — savol nima uchun muhimligini tushuntiruvchi qo'shimcha matn. */
   description?: string;
-  options: { label: string; value: string; onPress: () => void }[];
+  /** `icon` — ixtiyoriy emoji, til tanlash tugmalaridagi bayroq kabi yorliq oldida ko'rsatiladi. */
+  options: { label: string; value: string; icon?: string; onPress: () => void }[];
   selected: string | null;
 }) {
   return (
@@ -981,12 +1010,13 @@ function ChoiceStep({
             key={opt.value}
             onPress={opt.onPress}
             className={clsx(
-              "min-h-[48px] w-full justify-center rounded-3xl border-2 px-5 py-4 active:scale-[0.98]",
+              "min-h-[48px] w-full flex-row items-center gap-3 rounded-3xl border-2 px-5 py-4 active:scale-[0.98]",
               active ? "border-primary bg-primary-light" : "border-border bg-surface"
             )}
             style={active ? { shadowColor: "#F43F7F", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 } : undefined}
           >
-            <Text className={clsx("text-base font-medium", active ? "text-primary-dark" : "text-text-primary")}>{opt.label}</Text>
+            {opt.icon && <Text style={{ fontSize: 20 }}>{opt.icon}</Text>}
+            <Text className={clsx("flex-1 text-base font-medium", active ? "text-primary-dark" : "text-text-primary")}>{opt.label}</Text>
           </Pressable>
         );
       })}

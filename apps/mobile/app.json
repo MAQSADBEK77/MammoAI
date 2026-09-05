@@ -51,6 +51,12 @@
         {
           "photosPermission": "Profil suratini yuklash uchun galereyangizga kirish kerak."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#F43F7F"
+        }
       ]
     ],
     "experiments": {

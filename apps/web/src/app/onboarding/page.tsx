@@ -266,6 +266,15 @@ const HEALTH_CONDITION_ICON: Record<HealthCondition, string> = {
   none: "✅",
 };
 
+// "Hayzingiz haqida qanday fikrdasiz?" javoblari oldida — til tanlash tugmalaridagi
+// bayroqlar kabi, har bir javobga mos emoji (foydalanuvchi so'rovi).
+const PERIOD_ATTITUDE_ICON: Record<PeriodAttitude, string> = {
+  uncomfortable: "😣",
+  dislike: "😕",
+  want_to_learn: "📖",
+  comfortable: "😊",
+};
+
 export default function OnboardingPage() {
   const { dict, language, setLanguage } = useI18n();
   const { applyMeResponse } = useSession();
@@ -393,6 +402,24 @@ export default function OnboardingPage() {
     finish();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
+
+  // "Ha" bosilganda haqiqiy brauzer ruxsat so'rovi (Notification.requestPermission)
+  // chiqadi — avvalgi versiyada bu shunchaki ichki belgi (survey holati) edi,
+  // haqiqiy OS/brauzer ruxsati so'ralmasdan. Brauzer ruxsatni allaqachon rad etgan
+  // bo'lsa, dialog qayta chiqmaydi (brauzer xotirasi) — natija shunga qarab kelib,
+  // "Yo'q" tanlangandek ko'rinadi (implicit signal, alohida xabar shart emas).
+  async function requestNotificationPermission(wantsEnabled: boolean) {
+    if (!wantsEnabled || typeof window === "undefined" || !("Notification" in window)) {
+      setSurvey((s) => ({ ...s, notificationsEnabled: false }));
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      setSurvey((s) => ({ ...s, notificationsEnabled: permission === "granted" }));
+    } catch {
+      setSurvey((s) => ({ ...s, notificationsEnabled: false }));
+    }
+  }
 
   function canProceed(): boolean {
     switch (step) {
@@ -701,6 +728,7 @@ export default function OnboardingPage() {
             options={(["uncomfortable", "dislike", "want_to_learn", "comfortable"] as PeriodAttitude[]).map((v) => ({
               label: dict.onboarding.periodAttitude[v],
               value: v,
+              icon: PERIOD_ATTITUDE_ICON[v],
               onClick: () => setSurvey((s) => ({ ...s, periodAttitude: v })),
             }))}
             selected={survey.periodAttitude}
@@ -864,8 +892,8 @@ export default function OnboardingPage() {
               title={dict.onboarding.notificationsQuestion}
               description={dict.onboarding.notificationsImportance}
               options={[
-                { label: dict.common.yes, value: "yes", onClick: () => setSurvey((s) => ({ ...s, notificationsEnabled: true })) },
-                { label: dict.common.no, value: "no", onClick: () => setSurvey((s) => ({ ...s, notificationsEnabled: false })) },
+                { label: dict.common.yes, value: "yes", onClick: () => void requestNotificationPermission(true) },
+                { label: dict.common.no, value: "no", onClick: () => void requestNotificationPermission(false) },
               ]}
               selected={survey.notificationsEnabled === null ? null : survey.notificationsEnabled ? "yes" : "no"}
             />
@@ -1043,7 +1071,8 @@ function ChoiceStep({
   title: string;
   /** Ixtiyoriy — savol nima uchun muhimligini tushuntiruvchi qo'shimcha matn (masalan bildirishnomalar bosqichida). */
   description?: string;
-  options: { label: string; value: string; onClick: () => void }[];
+  /** `icon` — ixtiyoriy emoji, til tanlash tugmalaridagi bayroq kabi yorliq oldida ko'rsatiladi. */
+  options: { label: string; value: string; icon?: string; onClick: () => void }[];
   selected: string | null;
 }) {
   return (
@@ -1055,12 +1084,17 @@ function ChoiceStep({
           key={opt.value}
           onClick={opt.onClick}
           className={clsx(
-            "tap-target w-full rounded-3xl border-2 px-5 py-4 text-left text-base font-medium transition active:scale-[0.98]",
+            "tap-target flex w-full items-center gap-3 rounded-3xl border-2 px-5 py-4 text-left text-base font-medium transition active:scale-[0.98]",
             selected === opt.value
               ? "border-primary bg-primary-light text-primary-dark shadow-lg shadow-primary/20"
               : "border-border bg-surface text-text-primary hover:border-primary-light"
           )}
         >
+          {opt.icon && (
+            <span className="text-xl leading-none" aria-hidden>
+              {opt.icon}
+            </span>
+          )}
           {opt.label}
         </button>
       ))}
