@@ -106,6 +106,7 @@ export const ILLUSTRATION_CATEGORY_LABEL: Record<IllustrationCategory, string> =
 /** Ilovadagi har bir illyustratsiya "joyi" — admin panelda mustaqil tanlanadi. */
 export type IllustrationSlotKey =
   | "onboarding.account_identifier"
+  | "onboarding.phone_verify"
   | "onboarding.goal"
   | "onboarding.cycle_lengths"
   | "onboarding.last_period"
@@ -131,6 +132,7 @@ export const SLOT_SECTION_LABEL = {
 
 export const SLOT_META: Record<IllustrationSlotKey, { section: keyof typeof SLOT_SECTION_LABEL; label: string }> = {
   "onboarding.account_identifier": { section: "onboarding", label: "Telefon raqam kiritish" },
+  "onboarding.phone_verify": { section: "onboarding", label: "Telegram orqali tasdiqlash" },
   "onboarding.goal": { section: "onboarding", label: "Maqsad tanlash" },
   "onboarding.cycle_lengths": { section: "onboarding", label: "Tsikl davomiyligi" },
   "onboarding.last_period": { section: "onboarding", label: "Oxirgi hayz sanasi" },
@@ -155,6 +157,7 @@ export const SLOT_KEYS = Object.keys(SLOT_META) as IllustrationSlotKey[];
  * ilovaning HOZIRGI (kod ichida qattiq yozilgan bo'lgan) ko'rinishi bilan bir xil. */
 export const DEFAULT_SLOT_ASSIGNMENTS: Record<IllustrationSlotKey, string> = {
   "onboarding.account_identifier": "classic-secure-login",
+  "onboarding.phone_verify": "classic-secure-login",
   "onboarding.goal": "classic-goal",
   "onboarding.cycle_lengths": "classic-calendar",
   "onboarding.last_period": "classic-calendar",
