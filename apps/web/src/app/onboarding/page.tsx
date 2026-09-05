@@ -489,20 +489,21 @@ export default function OnboardingPage() {
           )
         )}
         {step === "welcome" && (
-          <div className="flex flex-col items-center gap-6 text-center">
+          <div className="relative isolate flex flex-col items-center gap-6 text-center">
+            {/* Yasama illyustratsiya olib tashlandi — logo atrofidagi yumshoq nur
+                halqasi (glow) o'rniga chuqurlik beradi, boshqa hech narsaga
+                xalaqit qilmaydi. */}
+            <div className="pointer-events-none absolute -top-4 left-1/2 -z-10 h-64 w-64 -translate-x-1/2 rounded-full bg-white/20 blur-3xl" />
             {/* logo.svg — shaffof fonli belgi, hech qanday karta/soya/animatsiyasiz,
                 shunchaki fon gradienti ustida turadi. */}
-            <Image src="/logo.svg" alt="Logo" width={200} height={112} priority />
+            <Image src="/logo.svg" alt="Logo" width={220} height={123} priority className="animate-hero-badge" />
             <h1 className="animate-hero-title text-3xl font-extrabold text-white">{dict.onboarding.welcomeTitle}</h1>
             <p className="animate-hero-subtitle max-w-xs text-white/85">{dict.onboarding.welcomeSubtitle}</p>
-            <div className="animate-fade-in-up rounded-[32px] bg-white/15 p-4" style={{ animationDelay: "0.5s" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-              <img src="/illustrations/welcome.svg" alt="" className="h-32 w-auto" />
-            </div>
             <button
               type="button"
               onClick={goNext}
-              className="tap-target mt-2 w-full max-w-xs rounded-full bg-white text-base font-bold text-primary-dark shadow-lg transition hover:brightness-95 active:scale-[0.98]"
+              className="animate-fade-in-up tap-target mt-6 w-full max-w-xs rounded-full bg-white text-base font-bold text-primary-dark shadow-lg transition hover:brightness-95 active:scale-[0.98]"
+              style={{ animationDelay: "0.6s" }}
             >
               {dict.onboarding.startButton}
             </button>

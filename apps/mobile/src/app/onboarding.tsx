@@ -36,7 +36,6 @@ import { WelcomeHero } from "@/components/WelcomeHero";
 // bilan bir xil fayllar (apps/web/public/illustrations/), lekin bu yerda
 // react-native-svg-transformer orqali to'g'ridan-to'g'ri komponent sifatida import
 // qilinadi (Metro statik import talab qiladi, shuning uchun dinamik require yo'q).
-import WelcomeIllustration from "../../assets/illustrations/welcome.svg";
 import SecureLoginIllustration from "../../assets/illustrations/secure-login.svg";
 import GoalIllustration from "../../assets/illustrations/goal.svg";
 import CalendarIllustration from "../../assets/illustrations/calendar.svg";
@@ -448,9 +447,6 @@ export default function OnboardingScreen() {
             {step === "welcome" && (
               <View className="items-center gap-6">
                 <WelcomeHero title={dict.onboarding.welcomeTitle} subtitle={dict.onboarding.welcomeSubtitle} />
-                <Animated.View entering={FadeIn.duration(500).delay(500)} className="rounded-[32px] bg-white/15 p-4">
-                  <WelcomeIllustration width={160} height={115} />
-                </Animated.View>
               </View>
             )}
 

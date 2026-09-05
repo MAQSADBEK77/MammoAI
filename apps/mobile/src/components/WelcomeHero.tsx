@@ -30,8 +30,16 @@ export function WelcomeHero({ title, subtitle }: { title: string; subtitle: stri
 
   return (
     <View style={{ alignItems: "center", gap: 24 }}>
-      {/* Logo — fonsiz, animatsiyasiz, shunchaki gradient fon ustida turadi. */}
-      <Logo width={160} height={90} />
+      <View style={{ alignItems: "center", justifyContent: "center" }}>
+        {/* Yumshoq nur halqasi (glow) — yasama illyustratsiya o'rniga logo atrofiga
+            chuqurlik beradi, RN'da haqiqiy blur shart emas, xira doira yetarli. */}
+        <View
+          pointerEvents="none"
+          style={{ position: "absolute", width: 220, height: 220, borderRadius: 110, backgroundColor: "rgba(255,255,255,0.18)" }}
+        />
+        {/* Logo — fonsiz, animatsiyasiz, shunchaki gradient fon ustida turadi. */}
+        <Logo width={180} height={101} />
+      </View>
       <Animated.Text style={[{ textAlign: "center", fontSize: 30, fontWeight: "800", color: "#FFFFFF" }, titleStyle]}>{title}</Animated.Text>
       <Animated.Text style={[{ maxWidth: 260, textAlign: "center", color: "rgba(255,255,255,0.85)" }, subtitleStyle]}>{subtitle}</Animated.Text>
     </View>
