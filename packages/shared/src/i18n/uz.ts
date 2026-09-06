@@ -57,6 +57,7 @@ const uz = {
     community: "Jamiyat",
     clinics: "Klinikalar",
     profile: "Profil",
+    assistant: "Yordamchi",
   },
 
   auth: {
@@ -578,6 +579,39 @@ const uz = {
     statCycleDay: (n: number) => `Tsiklning ${n}-kuni`,
     noDataShared: "Hamkoringiz hozircha hech narsa ulashmagan",
     invalidCode: "Kod noto'g'ri yoki muddati o'tgan",
+  },
+
+  chat: {
+    title: "Yordamchi",
+    subtitle: "Sog'lig'ingiz haqida gaplashing — sizni eslab qoladi",
+    placeholder: "Xabar yozing...",
+    emptyGreeting: "Salom! Men sizning AI yordamchingizman. Sikl, kayfiyat yoki sog'lig'ingiz haqida nima demoqchisiz?",
+    thinking: "Yozmoqda…",
+    disclaimer: "Yordamchi tashxis qo'ymaydi va shifokor maslahati o'rnini bosmaydi.",
+    patternBannerTitle: "Diqqat qiling",
+    patternBannerBody: "So'nggi oylarda bir necha marta takrorlangan simptomlar bor — shifokorga ko'rinishni tavsiya qilamiz.",
+    sendError: "Javob olishda xatolik yuz berdi — birozdan so'ng qayta urinib ko'ring",
+    chatTab: "Suhbat",
+    statisticsTab: "Statistika",
+    insightsEmpty: "Statistika ko'rish uchun hali yetarli ma'lumot yo'q — sikl kunlaringizni davom ettirib qayd eting.",
+    cycleLengthChartTitle: "Sikl uzunligi tarixi",
+    symptomFrequencyChartTitle: "Simptomlar chastotasi (so'nggi 6 oy)",
+    moodDistributionChartTitle: "Kayfiyat taqsimoti (so'nggi 6 oy)",
+    painDaysChartTitle: "Og'riqli kunlar / sikl",
+    painDaysChartHint: "Kunlik jurnalda og'riq kuchi emas, faqat borligi qayd etiladi — shuning uchun bu son sikldagi og'riqli KUNLAR sonini bildiradi.",
+    daysUnit: "kun",
+  },
+
+  feedback: {
+    menuLabel: "Fikr bildirish",
+    title: "Fikr-mulohazangiz",
+    subtitle: "Ilova sizga qanday yordam berayotgani haqida gapiring",
+    ratingLabel: "Umumiy bahoingiz",
+    messagePlaceholder: "Nima yoqdi? Nima yetishmayapti?",
+    submitButton: "Yuborish",
+    thankYou: "Rahmat! Fikringiz qabul qilindi.",
+    chatPromptQuestion: "Yordamchi sizga foydali bo'ldimi?",
+    chatPromptThanks: "Rahmat!",
   },
 
   profile: {

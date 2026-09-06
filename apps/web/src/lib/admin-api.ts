@@ -43,6 +43,20 @@ export interface TelegramBotSettings {
   shortDescription: string | null;
 }
 
+export interface AdminFeedbackEntry {
+  id: string;
+  trigger: "manual" | "chat_prompt";
+  rating: number | null;
+  message: string | null;
+  createdAt: string;
+  userPhone: string | null;
+}
+
+export interface AiSettings {
+  hasKey: boolean;
+  maskedKey: string | null;
+}
+
 export interface AdminStats {
   totalUsers: number;
   newUsersToday: number;
@@ -167,5 +181,17 @@ export const adminApi = {
     get: () => request<TelegramBotSettings>("/telegram-bot"),
     update: (patch: { token?: string; name?: string; description?: string; shortDescription?: string }) =>
       request<{ ok: true }>("/telegram-bot", { method: "PATCH", body: JSON.stringify(patch) }),
+  },
+  aiSettings: {
+    get: () => request<AiSettings>("/ai-settings"),
+    update: (patch: { apiKey: string }) => request<{ ok: true }>("/ai-settings", { method: "PATCH", body: JSON.stringify(patch) }),
+  },
+  feedback: {
+    list: (params: { limit?: number; offset?: number }) => {
+      const q = new URLSearchParams();
+      if (params.limit) q.set("limit", String(params.limit));
+      if (params.offset) q.set("offset", String(params.offset));
+      return request<{ responses: AdminFeedbackEntry[]; total: number; averageRating: number | null }>(`/feedback?${q.toString()}`);
+    },
   },
 };

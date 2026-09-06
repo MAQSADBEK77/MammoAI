@@ -14,9 +14,13 @@ import type {
   Clinic,
   CommunityComment,
   CommunityPost,
+  ChatMessage,
   CommunityStats,
   CommunityTag,
   CycleLog,
+  FeedbackResponse,
+  FeedbackSubmission,
+  FeedbackTrigger,
   CycleSettings,
   FlowLevel,
   HealthCondition,
@@ -1262,7 +1266,7 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
   const sinceInterval = `${clampedDays} days`;
   const seriesStartInterval = `${clampedDays - 1} days`;
 
-  const [totalsRows, avgSessionRows, dailyRows, topPagesRows, topButtonsRows] = (await Promise.all([
+  const [totalsRows, avgSessionRows, dailyRows, topPagesRows, topButtonsRows, qrSignupRows] = (await Promise.all([
     sql`
       SELECT count(DISTINCT session_id)::int as sessions,
         count(*) FILTER (WHERE type = 'pageview')::int as pageviews,
@@ -1307,12 +1311,23 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
       ORDER BY count DESC
       LIMIT 10
     `,
+    // QR-funnel (/baholash?src=...) orqali ro'yxatdan o'tishlar — onboarding
+    // "signup_from_qr:<src>" labelli hodisa yuboradi (lib/analytics.ts:trackEvent).
+    sql`
+      SELECT substring(label from 'signup_from_qr:(.*)') as source, count(*)::int as count
+      FROM analytics_events
+      WHERE type = 'click' AND label LIKE 'signup_from_qr:%' AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+      GROUP BY source
+      ORDER BY count DESC
+      LIMIT 20
+    `,
   ])) as unknown as [
     { sessions: number; pageviews: number; clicks: number }[],
     { avg_ms: number }[],
     AnalyticsDailyRow[],
     { path: string; view_count: number; total_duration_ms: number }[],
     { label: string; path: string | null; count: number }[],
+    { source: string; count: number }[],
   ];
 
   const totals = totalsRows[0] ?? { sessions: 0, pageviews: 0, clicks: 0 };
@@ -1328,6 +1343,7 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
       avgDurationMs: r.view_count > 0 ? Math.round(Number(r.total_duration_ms) / r.view_count) : 0,
     })),
     topButtons: topButtonsRows.map((r) => ({ label: r.label, path: r.path, count: r.count })),
+    qrSignups: qrSignupRows.map((r) => ({ source: r.source, count: r.count })),
   };
 }
 
@@ -1852,5 +1868,114 @@ export async function getPartnerStatus(userId: string): Promise<PartnerStatusRes
     partnerData: { pregnancyWeek, nextCheckup, todayMood, cycleDay },
     linkedSince: link.created_at,
     myInviteCode: null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// AI Yordamchi — chat tarixi. Xotira/pattern-aniqlash logikasi shu yerda emas,
+// server/ai-chat.ts'da — u mavjud cycle_logs/onboarding_profiles'ni o'qiydi.
+// ---------------------------------------------------------------------------
+
+interface ChatMessageRow {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+function chatMessageFromRow(row: ChatMessageRow): ChatMessage {
+  return { id: row.id, role: row.role, content: row.content, createdAt: row.created_at };
+}
+
+/** Oxirgi N ta chat xabari (eskidan yangiga qarab) — Claude'ga tarix sifatida
+ * yuboriladi va ekranda ko'rsatiladi. */
+export async function listChatMessages(userId: string, limit = 50): Promise<ChatMessage[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT * FROM (
+      SELECT * FROM chat_messages WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit}
+    ) recent ORDER BY created_at ASC
+  `) as unknown as ChatMessageRow[];
+  return rows.map(chatMessageFromRow);
+}
+
+export async function saveChatMessage(userId: string, role: "user" | "assistant", content: string): Promise<ChatMessage> {
+  await ensureSchema();
+  const id = randomUUID();
+  const createdAt = now();
+  await sql`
+    INSERT INTO chat_messages (id, user_id, role, content, created_at)
+    VALUES (${id}, ${userId}, ${role}, ${content}, ${createdAt})
+  `;
+  return { id, role, content, createdAt };
+}
+
+/** Bugungi (UTC kun) xabarlar soni — sodda kunlik limit uchun. */
+export async function countChatMessagesToday(userId: string): Promise<number> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT COUNT(*)::int AS count FROM chat_messages
+    WHERE user_id = ${userId} AND role = 'user' AND created_at >= ${today()}
+  `) as unknown as { count: number }[];
+  return rows[0]?.count ?? 0;
+}
+
+// ---------------------------------------------------------------------------
+// Feedback loop — "Fikr bildirish" menyu bandi + AI Yordamchi ichidagi
+// yumshoq 👍/👎 so'rov.
+// ---------------------------------------------------------------------------
+
+interface FeedbackRow {
+  id: string;
+  trigger: FeedbackTrigger;
+  rating: number | null;
+  message: string | null;
+  created_at: string;
+}
+
+function feedbackFromRow(row: FeedbackRow): FeedbackResponse {
+  return { id: row.id, trigger: row.trigger, rating: row.rating, message: row.message, createdAt: row.created_at };
+}
+
+export async function submitFeedback(userId: string, input: FeedbackSubmission): Promise<FeedbackResponse> {
+  await ensureSchema();
+  const id = randomUUID();
+  const createdAt = now();
+  const rating = input.rating ?? null;
+  const message = input.message ?? null;
+  await sql`
+    INSERT INTO feedback_responses (id, user_id, trigger, rating, message, created_at)
+    VALUES (${id}, ${userId}, ${input.trigger}, ${rating}, ${message}, ${createdAt})
+  `;
+  return { id, trigger: input.trigger, rating, message, createdAt };
+}
+
+/** Admin panel uchun — sahifalab ro'yxat + jami son + faqat 'manual'
+ * (yulduzcha) baholarning o'rtachasi (chat 👍/👎 shu o'rtachaga kirmaydi). */
+export async function listFeedbackAdmin(params: { limit?: number; offset?: number }): Promise<{
+  responses: (FeedbackResponse & { userPhone: string | null })[];
+  total: number;
+  averageRating: number | null;
+}> {
+  await ensureSchema();
+  const limit = params.limit ?? 30;
+  const offset = params.offset ?? 0;
+
+  const rows = (await sql`
+    SELECT f.*, u.phone as user_phone
+    FROM feedback_responses f
+    JOIN users u ON u.id = f.user_id
+    ORDER BY f.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `) as unknown as (FeedbackRow & { user_phone: string | null })[];
+  const [{ count }] = (await sql`SELECT count(*)::int as count FROM feedback_responses`) as unknown as { count: number }[];
+  const [{ avg }] = (await sql`
+    SELECT avg(rating)::float as avg FROM feedback_responses WHERE trigger = 'manual' AND rating IS NOT NULL
+  `) as unknown as { avg: number | null }[];
+
+  return {
+    total: count,
+    averageRating: avg,
+    responses: rows.map((row) => ({ ...feedbackFromRow(row), userPhone: row.user_phone })),
   };
 }

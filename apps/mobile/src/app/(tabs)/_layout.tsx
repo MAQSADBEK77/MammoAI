@@ -106,6 +106,20 @@ export default function TabsLayout() {
         }}
         listeners={{ tabPress: () => trackClick("/hamkor", dict.partner.title) }}
       />
+      {/* AI Yordamchi — sikl/homiladorlik tarixidan kontekst olib suhbatlashadigan,
+          takrorlanuvchi simptomlarni signal qiladigan yordamchi. */}
+      <Tabs.Screen
+        name="yordamchi"
+        options={{
+          title: dict.nav.assistant,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon focused={focused}>
+              <MaterialCommunityIcons name={focused ? "robot" : "robot-outline"} color={color} size={26} />
+            </TabIcon>
+          ),
+        }}
+        listeners={{ tabPress: () => trackClick("/yordamchi", dict.nav.assistant) }}
+      />
       {/* Profil endi pastki menyuda emas — faqat chap burger menyusi orqali
           ochiladi (foydalanuvchi so'rovi). `href: null` marshrutni ishlaydigan
           holda qoldiradi, lekin tab panelidan yashiradi. */}

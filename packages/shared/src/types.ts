@@ -283,10 +283,90 @@ export interface PartnerChatMessage {
   createdAt: string;
 }
 
+// ---------------------------------------------------------------------------
+// AI Yordamchi — chat + xotira (mavjud sikl/homiladorlik ma'lumotidan
+// jonli o'qiladi) + oddiy pattern-aniqlash (diagnoz emas, faqat signal).
+// ---------------------------------------------------------------------------
+
+export type ChatRole = "user" | "assistant";
+
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  createdAt: string;
+}
+
+/** Oxirgi ~90 kunda 3+ marta takrorlangan simptom — tashxis emas, shifokorga
+ * murojaat qilishni taklif qiluvchi yumshoq signal. */
+export interface SymptomPattern {
+  symptom: Symptom;
+  occurrences: number;
+}
+
 export interface CommunityStats {
   totalMembers: number;
   totalPosts: number;
   postsToday: number;
+}
+
+// ---------------------------------------------------------------------------
+// Trendlar/statistika — mavjud cycle_logs ustidan hisoblanadigan agregatsiya
+// (alohida "stats" jadvali yo'q). AI Yordamchi ekranining "Statistika"
+// segmentida ko'rsatiladi (server/insights.ts).
+// ---------------------------------------------------------------------------
+
+export interface CycleLengthPoint {
+  startDate: string;
+  lengthDays: number;
+}
+
+export interface SymptomFrequencyPoint {
+  symptom: Symptom;
+  count: number;
+}
+
+export interface MoodDistributionPoint {
+  mood: Mood;
+  count: number;
+}
+
+/** Bitta aniqlangan sikl davomida cramps/back_pain/headache mavjud kunlar
+ * soni — og'riq INTENSIVLIGI emas (bu hozircha kunlik jurnalda yo'q),
+ * chastota-proksi sifatida. */
+export interface PainDaysPoint {
+  startDate: string;
+  painDays: number;
+}
+
+export interface InsightsSummary {
+  /** Kamida 2 ta aniqlangan sikl yoki 14 ta log bo'lmasa false — bo'sh holat. */
+  hasEnoughData: boolean;
+  cycleLengths: CycleLengthPoint[];
+  symptomFrequency: SymptomFrequencyPoint[];
+  moodDistribution: MoodDistributionPoint[];
+  painDaysPerCycle: PainDaysPoint[];
+}
+
+// ---------------------------------------------------------------------------
+// Feedback loop — "Fikr bildirish" menyu bandi + AI Yordamchi ichidagi
+// yumshoq so'rov.
+// ---------------------------------------------------------------------------
+
+export type FeedbackTrigger = "manual" | "chat_prompt";
+
+export interface FeedbackSubmission {
+  trigger: FeedbackTrigger;
+  rating?: number | null;
+  message?: string | null;
+}
+
+export interface FeedbackResponse {
+  id: string;
+  trigger: FeedbackTrigger;
+  rating: number | null;
+  message: string | null;
+  createdAt: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -380,6 +460,9 @@ export interface AnalyticsSummary {
   topPages: { path: string; viewCount: number; totalDurationMs: number; avgDurationMs: number }[];
   /** Eng ko'p bosilgan tugmalar (kamayish tartibida). */
   topButtons: { label: string; path: string | null; count: number }[];
+  /** QR-flyer funneli (`/baholash?src=...`) orqali ro'yxatdan o'tishlar,
+   * manba bo'yicha guruhlangan (kamayish tartibida). */
+  qrSignups: { source: string; count: number }[];
 }
 
 export interface AnalyticsUserSummary {

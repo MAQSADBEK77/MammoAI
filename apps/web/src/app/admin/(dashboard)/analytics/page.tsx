@@ -189,6 +189,27 @@ export default function AdminAnalyticsPage() {
               </div>
             </Card>
           </div>
+
+          <Card>
+            <div className="mb-4">
+              <h2 className="text-base font-bold text-text-primary">QR-funnel ro&apos;yxatdan o&apos;tishlar</h2>
+              <p className="text-xs text-text-secondary">
+                <code className="rounded bg-surface-muted px-1">/baholash?src=...</code> havolasi orqali kelib, ro&apos;yxatdan o&apos;tganlar (manba bo&apos;yicha)
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              {summary.qrSignups.length === 0 && <p className="text-sm text-text-muted">Hali ma&apos;lumot yo&apos;q</p>}
+              {summary.qrSignups.map((q) => (
+                <RankedBar
+                  key={q.source}
+                  label={q.source}
+                  valueLabel={`${q.count} ta`}
+                  value={q.count}
+                  max={Math.max(1, ...summary.qrSignups.map((s) => s.count))}
+                />
+              ))}
+            </div>
+          </Card>
         </>
       )}
 

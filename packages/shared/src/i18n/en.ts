@@ -55,6 +55,7 @@ const en: Dictionary = {
     community: "Community",
     clinics: "Clinics",
     profile: "Profile",
+    assistant: "Assistant",
   },
 
   auth: {
@@ -572,6 +573,39 @@ const en: Dictionary = {
     statCycleDay: (n: number) => `Cycle day ${n}`,
     noDataShared: "Your partner hasn't shared anything yet",
     invalidCode: "Code is invalid or expired",
+  },
+
+  chat: {
+    title: "Assistant",
+    subtitle: "Talk about your health — it remembers you",
+    placeholder: "Type a message...",
+    emptyGreeting: "Hi! I'm your AI assistant. What would you like to share about your cycle, mood, or health?",
+    thinking: "Typing…",
+    disclaimer: "The assistant does not diagnose and is not a substitute for medical advice.",
+    patternBannerTitle: "Worth noting",
+    patternBannerBody: "A few symptoms have repeated several times over recent months — we recommend seeing a doctor.",
+    sendError: "Couldn't get a reply — please try again shortly",
+    chatTab: "Chat",
+    statisticsTab: "Statistics",
+    insightsEmpty: "Not enough data yet for statistics — keep logging your cycle days.",
+    cycleLengthChartTitle: "Cycle length history",
+    symptomFrequencyChartTitle: "Symptom frequency (last 6 months)",
+    moodDistributionChartTitle: "Mood distribution (last 6 months)",
+    painDaysChartTitle: "Pain days / cycle",
+    painDaysChartHint: "The daily log only records whether pain occurred, not its intensity — this number is the count of pain days per cycle.",
+    daysUnit: "days",
+  },
+
+  feedback: {
+    menuLabel: "Give feedback",
+    title: "Your feedback",
+    subtitle: "Tell us how the app is helping you",
+    ratingLabel: "Overall rating",
+    messagePlaceholder: "What did you like? What's missing?",
+    submitButton: "Submit",
+    thankYou: "Thanks! Your feedback has been received.",
+    chatPromptQuestion: "Was the assistant helpful?",
+    chatPromptThanks: "Thanks!",
   },
 
   profile: {

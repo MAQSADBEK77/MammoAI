@@ -27,6 +27,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { Button, IconChip, ProgressBar, DateWheelPicker, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { Lottie } from "lottie-react";
@@ -401,6 +402,24 @@ export default function OnboardingPage() {
     }
   }
 
+  /** QR-funnel (`/baholash`) orqali kelgan foydalanuvchi ro'yxatdan o'tgan
+   * bo'lsa — sessionStorage'dagi test javoblari endi haqiqiy akkauntga
+   * yoziladi va manba (`?src=`) analitikada belgilanadi. Ikkinchi darajali
+   * qadam — muvaffaqiyatsiz bo'lsa ham onboarding davom etadi. */
+  async function submitPendingQuizAnswersIfAny() {
+    try {
+      const raw = sessionStorage.getItem("mammoai_qr_answers");
+      if (!raw) return;
+      const src = sessionStorage.getItem("mammoai_qr_src") ?? "direct";
+      await api.riskQuiz.submit(JSON.parse(raw));
+      trackEvent(`signup_from_qr:${src}`);
+      sessionStorage.removeItem("mammoai_qr_answers");
+      sessionStorage.removeItem("mammoai_qr_src");
+    } catch {
+      // Muvaffaqiyatsiz bo'lsa ham onboarding davom etishi kerak — ikkinchi darajali qadam.
+    }
+  }
+
   async function finish() {
     setSubmitting(true);
     setFinishError(null);
@@ -431,6 +450,7 @@ export default function OnboardingPage() {
         notificationsEnabled: !!survey.notificationsEnabled,
       });
       applyMeResponse(res);
+      await submitPendingQuizAnswersIfAny();
       router.replace(landingPath(survey.primaryGoal!));
     } catch {
       // Xatolik bo'lsa foydalanuvchi "tahlil qilinmoqda" ekranida abadiy

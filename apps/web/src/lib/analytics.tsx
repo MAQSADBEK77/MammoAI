@@ -131,6 +131,13 @@ function useClickTracking(): void {
   }, []);
 }
 
+/** Bittalik maxsus hodisa (masalan QR-manba orqali ro'yxatdan o'tishni
+ * belgilash) — mavjud navbat/session infratuzilmasidan foydalanadi, alohida
+ * so'rov yubormaydi (keyingi flush bilan ketadi). */
+export function trackEvent(label: string, path?: string): void {
+  track("click", path ?? (typeof window !== "undefined" ? window.location.pathname : ""), { label });
+}
+
 export function AnalyticsProvider({ children }: { children: ReactNode }) {
   usePageViewTracking();
   useClickTracking();

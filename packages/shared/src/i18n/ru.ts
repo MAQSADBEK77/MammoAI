@@ -53,6 +53,7 @@ const ru: Dictionary = {
     community: "Сообщество",
     clinics: "Клиники",
     profile: "Профиль",
+    assistant: "Помощник",
   },
 
   auth: {
@@ -570,6 +571,39 @@ const ru: Dictionary = {
     statCycleDay: (n: number) => `${n}-й день цикла`,
     noDataShared: "Ваш партнёр пока ничем не поделился",
     invalidCode: "Код неверен или истёк",
+  },
+
+  chat: {
+    title: "Помощник",
+    subtitle: "Расскажите о своём здоровье — помощник всё запомнит",
+    placeholder: "Напишите сообщение...",
+    emptyGreeting: "Привет! Я ваш AI-помощник. Что бы вы хотели рассказать о цикле, настроении или самочувствии?",
+    thinking: "Печатает…",
+    disclaimer: "Помощник не ставит диагноз и не заменяет консультацию врача.",
+    patternBannerTitle: "Обратите внимание",
+    patternBannerBody: "В последние месяцы несколько раз повторялись одни и те же симптомы — рекомендуем обратиться к врачу.",
+    sendError: "Не удалось получить ответ — попробуйте немного позже",
+    chatTab: "Чат",
+    statisticsTab: "Статистика",
+    insightsEmpty: "Пока недостаточно данных для статистики — продолжайте отмечать дни цикла.",
+    cycleLengthChartTitle: "История длины цикла",
+    symptomFrequencyChartTitle: "Частота симптомов (последние 6 мес.)",
+    moodDistributionChartTitle: "Распределение настроения (последние 6 мес.)",
+    painDaysChartTitle: "Дни с болью / цикл",
+    painDaysChartHint: "В дневнике фиксируется только наличие боли, а не её сила — это число показывает количество дней с болью за цикл.",
+    daysUnit: "дн.",
+  },
+
+  feedback: {
+    menuLabel: "Оставить отзыв",
+    title: "Ваш отзыв",
+    subtitle: "Расскажите, насколько приложение вам помогает",
+    ratingLabel: "Общая оценка",
+    messagePlaceholder: "Что понравилось? Чего не хватает?",
+    submitButton: "Отправить",
+    thankYou: "Спасибо! Ваш отзыв принят.",
+    chatPromptQuestion: "Помощник оказался полезен?",
+    chatPromptThanks: "Спасибо!",
   },
 
   profile: {

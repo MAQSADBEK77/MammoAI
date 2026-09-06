@@ -59,7 +59,7 @@ export function AppDrawer() {
     await refresh();
   }
 
-  function go(href: "/(tabs)/profil" | "/maxfiylik") {
+  function go(href: "/(tabs)/profil" | "/maxfiylik" | "/fikr") {
     close();
     router.push(href);
   }
@@ -72,6 +72,7 @@ export function AppDrawer() {
   const navItems: { href: Parameters<typeof go>[0]; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
     { href: "/(tabs)/profil", label: dict.nav.profile, icon: "account-circle-outline" },
     { href: "/maxfiylik", label: dict.profile.securityTitle, icon: "lock-outline" },
+    { href: "/fikr", label: dict.feedback.menuLabel, icon: "message-alert-outline" },
   ];
 
   return (

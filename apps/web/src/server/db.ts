@@ -280,6 +280,30 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // AI Yordamchi — chat tarixi. Alohida "xotira" jadvali yo'q: kontekst
+    // har safar mavjud cycle_logs/onboarding_profiles/pregnancy_profiles'dan
+    // jonli yig'iladi (server/ai-chat.ts:buildUserContext).
+    sql`
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `,
+    // Feedback loop — "Fikr bildirish" menyu bandi + AI Yordamchi ichidagi
+    // yumshoq 👍/👎 so'rov. `trigger`: 'manual' | 'chat_prompt'.
+    sql`
+      CREATE TABLE IF NOT EXISTS feedback_responses (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        trigger TEXT NOT NULL,
+        rating INTEGER,
+        message TEXT,
+        created_at TEXT NOT NULL
+      )
+    `,
   ]);
 
   // 1.5-bosqich: eski (allaqachon mavjud) jadvallarga yangi ustunlar qo'shish —
@@ -371,6 +395,8 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_created ON analytics_events(created_at)`,
     sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_user ON analytics_events(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(type, created_at)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id, created_at ASC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback_responses(created_at DESC)`,
   ]);
 }
 

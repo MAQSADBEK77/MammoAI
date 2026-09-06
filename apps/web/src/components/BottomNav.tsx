@@ -11,6 +11,8 @@ import {
   GroupsOutlined,
   Favorite,
   FavoriteBorderOutlined,
+  SmartToy,
+  SmartToyOutlined,
 } from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
@@ -29,6 +31,7 @@ export function BottomNav() {
     { href: "/jamiyat", label: dict.nav.community, Icon: Groups, IconOutline: GroupsOutlined },
     { href: "/tekshiruvlar", label: dict.nav.checklist, Icon: FactCheck, IconOutline: FactCheckOutlined },
     { href: "/hamkor", label: dict.partner.title, Icon: Favorite, IconOutline: FavoriteBorderOutlined },
+    { href: "/yordamchi", label: dict.nav.assistant, Icon: SmartToy, IconOutline: SmartToyOutlined },
   ];
 
   return (

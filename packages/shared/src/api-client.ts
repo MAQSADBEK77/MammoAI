@@ -13,7 +13,11 @@ import type {
   CommunityPost,
   CommunityStats,
   CommunityTag,
+  ChatMessage,
   CycleLog,
+  FeedbackSubmission,
+  FeedbackResponse,
+  InsightsSummary,
   CycleSettings,
   Goal,
   HealthCondition,
@@ -32,6 +36,7 @@ import type {
   RiskQuizAnswers,
   RiskQuizResult,
   Symptom,
+  SymptomPattern,
   User,
 } from "./types";
 import type { CyclePrediction } from "./logic/cycle";
@@ -270,6 +275,26 @@ export function createApiClient(config: ApiClientConfig) {
        * (lib/analytics.ts) xatoliklarni yutadi, shu yerda qayta urinish shart emas. */
       sendEvents: (events: AnalyticsEventInput[]) =>
         request<{ ok: true }>("/api/analytics/events", { method: "POST", body: JSON.stringify({ events }) }),
+    },
+    chat: {
+      /** Suhbat tarixi (eskidan yangiga). */
+      list: () => request<{ messages: ChatMessage[] }>("/api/chat/messages"),
+      /** Xabar yuboradi — javob keladi (Claude chaqiruvi tugagunicha kutiladi,
+       * websocket yo'q — foydalanuvchi "yozmoqda…" holatini ko'radi). */
+      send: (content: string) =>
+        request<{ message: ChatMessage; patterns: SymptomPattern[] }>("/api/chat/message", {
+          method: "POST",
+          body: JSON.stringify({ content }),
+        }),
+    },
+    insights: {
+      /** AI Yordamchi ekranining "Statistika" segmenti — sikl uzunligi
+       * tarixi, simptom chastotasi, kayfiyat taqsimoti, og'riqli kunlar/sikl. */
+      get: () => request<{ summary: InsightsSummary; patterns: SymptomPattern[] }>("/api/insights"),
+    },
+    feedback: {
+      submit: (payload: FeedbackSubmission) =>
+        request<{ response: FeedbackResponse }>("/api/feedback", { method: "POST", body: JSON.stringify(payload) }),
     },
   };
 }

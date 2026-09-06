@@ -14,7 +14,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { Menu as MenuIcon, PersonOutlined, LockOutlined, Close } from "@mui/icons-material";
+import { Menu as MenuIcon, PersonOutlined, LockOutlined, FeedbackOutlined, Close } from "@mui/icons-material";
 import clsx from "clsx";
 import type { Language } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -63,6 +63,7 @@ export function AppDrawer() {
   const navItems = [
     { href: "/profil", label: dict.nav.profile, icon: <PersonOutlined /> },
     { href: "/maxfiylik", label: dict.profile.securityTitle, icon: <LockOutlined /> },
+    { href: "/fikr", label: dict.feedback.menuLabel, icon: <FeedbackOutlined /> },
   ];
 
   return (
