@@ -65,7 +65,7 @@ const ru: Dictionary = {
     invalidIdentifier: "Введите корректный номер телефона",
     welcomeBackMessage: "С возвращением! Ваш аккаунт найден.",
     phoneVerifyTitle: "Подтвердите через Telegram",
-    phoneVerifyIntro: "Нажмите кнопку ниже, чтобы открыть нашего Telegram-бота, и нажмите «Start» — вам сразу придёт 6-значный код подтверждения.",
+    phoneVerifyIntro: "Нажмите кнопку ниже, чтобы открыть нашего Telegram-бота, нажмите «Start» и поделитесь номером телефона — после этого вам придёт 6-значный код подтверждения.",
     openTelegramButton: "Открыть в Telegram",
     waitingForCode: "Ожидание кода... После нажатия «Start» в боте вернитесь сюда и введите код.",
     codeSentHint: "Код отправлен в Telegram — введите его ниже",

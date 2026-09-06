@@ -248,19 +248,50 @@ export async function getPhoneVerificationByToken(token: string): Promise<PhoneV
   return rows[0] ?? null;
 }
 
-/** Bot'dan "/start <token>" kelganda chaqiriladi — tasodifiy 6 xonali kod
- * generatsiya qilib, chat_id bilan birga saqlaydi (server/telegram-bot.ts
- * shu kodni foydalanuvchiga Telegram xabari sifatida yuboradi). */
-export async function attachTelegramChatToVerification(token: string, chatId: string): Promise<{ phone: string; code: string } | null> {
+function normalizePhoneDigits(raw: string): string {
+  return raw.replace(/\D/g, "");
+}
+
+/** Bot'dan "/start <token>" kelganda chaqiriladi — chat_id'ni yozuvga bog'laydi
+ * (hali kod YO'Q — avval haqiqiy egasi ekanini tekshirish uchun Telegram'ning
+ * "telefon raqamni ulashish" tugmasi so'raladi, server/telegram-bot.ts). */
+export async function registerTelegramStart(token: string, chatId: string): Promise<{ phone: string; language: Language } | null> {
   await ensureSchema();
-  const code = String(Math.floor(100000 + Math.random() * 900000));
   const rows = (await sql`
-    UPDATE phone_verifications SET telegram_chat_id = ${chatId}, code = ${code}
-    WHERE token = ${token} AND verified_at IS NULL
-    RETURNING phone
-  `) as unknown as { phone: string }[];
+    UPDATE phone_verifications SET telegram_chat_id = ${chatId}
+    WHERE token = ${token} AND verified_at IS NULL AND code IS NULL
+    RETURNING phone, language
+  `) as unknown as { phone: string; language: Language }[];
+  return rows[0] ?? null;
+}
+
+/**
+ * Foydalanuvchi Telegram'da "Telefon raqamimni ulashish" tugmasini bosganda
+ * chaqiriladi — ulashilgan raqam saytga kiritilgan raqam bilan ustma-ust
+ * tushishini tekshiradi (aks holda ISTALGAN Telegram hisobidan "Start"
+ * bosib, o'zganing raqamiga kod olib bo'lardi — bu haqiqiy egalikni
+ * tasdiqlamaydi). Faqat mos kelsa kod generatsiya qilinadi.
+ */
+export async function confirmPhoneViaContact(
+  chatId: string,
+  sharedPhone: string
+): Promise<{ matched: true; phone: string; language: Language; code: string } | { matched: false } | null> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT token, phone, language FROM phone_verifications
+    WHERE telegram_chat_id = ${chatId} AND code IS NULL AND verified_at IS NULL
+    ORDER BY created_at DESC LIMIT 1
+  `) as unknown as { token: string; phone: string; language: Language }[];
   const row = rows[0];
-  return row ? { phone: row.phone, code } : null;
+  if (!row) return null;
+
+  if (normalizePhoneDigits(row.phone) !== normalizePhoneDigits(sharedPhone)) {
+    return { matched: false };
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  await sql`UPDATE phone_verifications SET code = ${code} WHERE token = ${row.token}`;
+  return { matched: true, phone: row.phone, language: row.language, code };
 }
 
 /** Kodni tekshiradi — to'g'ri bo'lsa, yozuvni "ishlatilgan" deb belgilaydi

@@ -34,8 +34,22 @@ export async function callTelegramApi<T = unknown>(method: string, body?: Record
   return json.result as T;
 }
 
-export async function sendTelegramMessage(chatId: string, text: string): Promise<void> {
-  await callTelegramApi("sendMessage", { chat_id: chatId, text });
+export async function sendTelegramMessage(chatId: string, text: string, replyMarkup?: Record<string, unknown>): Promise<void> {
+  await callTelegramApi("sendMessage", { chat_id: chatId, text, reply_markup: replyMarkup });
+}
+
+/** "Telefon raqamimni ulashish" tugmasi bilan klaviatura — foydalanuvchi
+ * bosganda Telegram o'zi (haqiqiy, hisobga bog'langan) raqamni yuboradi. */
+export function requestContactKeyboard(buttonText: string): Record<string, unknown> {
+  return {
+    keyboard: [[{ text: buttonText, request_contact: true }]],
+    resize_keyboard: true,
+    one_time_keyboard: true,
+  };
+}
+
+export function removeKeyboard(): Record<string, unknown> {
+  return { remove_keyboard: true };
 }
 
 interface TelegramBotInfo {

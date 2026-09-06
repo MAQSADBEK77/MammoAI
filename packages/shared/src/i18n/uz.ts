@@ -70,7 +70,7 @@ const uz = {
     welcomeBackMessage: "Xush kelibsiz! Akkauntingiz topildi.",
     phoneVerifyTitle: "Telegram orqali tasdiqlang",
     phoneVerifyIntro:
-      "Pastdagi tugma orqali Telegram botimizni oching va \"Start\" bosing — sizga darhol 6 xonali tasdiqlash kodi yuboriladi.",
+      "Pastdagi tugma orqali Telegram botimizni oching, \"Start\" bosing va telefon raqamingizni ulashing — shundan keyin sizga 6 xonali tasdiqlash kodi yuboriladi.",
     openTelegramButton: "Telegram'da ochish",
     waitingForCode: "Kod kutilmoqda... Botda \"Start\" bosganingizdan so'ng shu yerga qaytib, kodni kiriting.",
     codeSentHint: "Kod Telegram'ga yuborildi — uni pastga kiriting",
