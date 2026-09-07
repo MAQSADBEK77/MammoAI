@@ -63,7 +63,7 @@ export function computeCycleLengths(logs: Pick<CycleLog, "date" | "flow">[], lim
 /** Berilgan sana bilan boshlangan flow-streak necha kun davom etgani (bo'shliq
  * uchramaguncha ketma-ket flow'li kunlarni sanaydi) — davom etayotgan (hali
  * tugamagan) hayz uchun `null` qaytaradi, chunki uzunligi hali noma'lum. */
-function computePeriodLength(logs: Pick<CycleLog, "date" | "flow">[], periodStart: string, today: string): number | null {
+export function computePeriodLength(logs: Pick<CycleLog, "date" | "flow">[], periodStart: string, today: string): number | null {
   const flowDates = new Set(logs.filter((l) => l.flow).map((l) => l.date));
   let length = 0;
   let cursor = periodStart;

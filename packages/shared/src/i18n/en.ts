@@ -605,6 +605,15 @@ const en: Dictionary = {
     painDaysChartTitle: "Pain days / cycle",
     painDaysChartHint: "The daily log only records whether pain occurred, not its intensity — this number is the count of pain days per cycle.",
     daysUnit: "days",
+    periodLengthChartTitle: "Period length history",
+    regularityTitle: "Cycle regularity",
+    regularitySummary: (avg: number, variability: number) => `Averaging ${avg} days (±${variability} days)`,
+    regularityTrendStable: "Stable",
+    regularityTrendLengthening: "Your recent cycles are getting longer",
+    regularityTrendShortening: "Your recent cycles are getting shorter",
+    symptomPhaseChartTitle: "When symptoms show up",
+    symptomPhasePeriodLabel: "During period days",
+    symptomPhaseOtherLabel: "Other days",
   },
 
   feedback: {

@@ -54,6 +54,27 @@ function RankedRow({ label, count, max }: { label: string; count: number; max: n
   );
 }
 
+/** Ikki seriyali (hayz kunlari / boshqa kunlar) taqqoslash — web bilan bir xil. */
+function PhaseBreakdownRow({ label, periodDays, otherDays }: { label: string; periodDays: number; otherDays: number }) {
+  const total = periodDays + otherDays || 1;
+  return (
+    <View>
+      <View className="mb-1 flex-row items-center justify-between gap-3">
+        <Text className="flex-1 text-xs font-semibold text-text-secondary" numberOfLines={1}>
+          {label}
+        </Text>
+        <Text className="text-xs text-text-muted">
+          {periodDays}/{otherDays}
+        </Text>
+      </View>
+      <View className="h-2 w-full flex-row overflow-hidden rounded-full bg-surface-muted">
+        <View className="h-full bg-primary" style={{ width: `${(periodDays / total) * 100}%` }} />
+        <View className="h-full bg-secondary/50" style={{ width: `${(otherDays / total) * 100}%` }} />
+      </View>
+    </View>
+  );
+}
+
 export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary; patterns: SymptomPattern[] }) {
   const { dict } = useI18n();
 
@@ -78,6 +99,22 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
         </View>
       )}
 
+      {summary.regularity && (
+        <Card className="gap-1.5">
+          <Text className="text-sm font-bold text-text-primary">{dict.chat.regularityTitle}</Text>
+          <Text className="text-2xl font-extrabold text-text-primary">
+            {dict.chat.regularitySummary(summary.regularity.averageCycleLength, summary.regularity.variabilityDays)}
+          </Text>
+          <Text className="text-xs text-text-muted">
+            {summary.regularity.trend === "lengthening"
+              ? dict.chat.regularityTrendLengthening
+              : summary.regularity.trend === "shortening"
+                ? dict.chat.regularityTrendShortening
+                : dict.chat.regularityTrendStable}
+          </Text>
+        </Card>
+      )}
+
       {summary.cycleLengths.length > 0 && (
         <Card className="gap-3">
           <Text className="text-sm font-bold text-text-primary">{dict.chat.cycleLengthChartTitle}</Text>
@@ -85,6 +122,42 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
             points={summary.cycleLengths.map((p) => ({ label: formatShortDate(p.startDate), value: p.lengthDays }))}
             valueSuffix={dict.chat.daysUnit}
           />
+        </Card>
+      )}
+
+      {summary.periodLengths.length > 0 && (
+        <Card className="gap-3">
+          <Text className="text-sm font-bold text-text-primary">{dict.chat.periodLengthChartTitle}</Text>
+          <BarTrendChart
+            points={summary.periodLengths.map((p) => ({ label: formatShortDate(p.startDate), value: p.lengthDays }))}
+            valueSuffix={dict.chat.daysUnit}
+          />
+        </Card>
+      )}
+
+      {summary.symptomPhaseBreakdown.length > 0 && (
+        <Card className="gap-3">
+          <Text className="text-sm font-bold text-text-primary">{dict.chat.symptomPhaseChartTitle}</Text>
+          <View className="flex-row items-center gap-4">
+            <View className="flex-row items-center gap-1.5">
+              <View className="h-2 w-2 rounded-full bg-primary" />
+              <Text className="text-[11px] font-semibold text-text-secondary">{dict.chat.symptomPhasePeriodLabel}</Text>
+            </View>
+            <View className="flex-row items-center gap-1.5">
+              <View className="h-2 w-2 rounded-full bg-secondary/50" />
+              <Text className="text-[11px] font-semibold text-text-secondary">{dict.chat.symptomPhaseOtherLabel}</Text>
+            </View>
+          </View>
+          <View className="gap-2.5">
+            {summary.symptomPhaseBreakdown.map((p) => (
+              <PhaseBreakdownRow
+                key={p.symptom}
+                label={dict.cycle.symptoms[p.symptom]}
+                periodDays={p.periodDaysCount}
+                otherDays={p.otherDaysCount}
+              />
+            ))}
+          </View>
         </Card>
       )}
 

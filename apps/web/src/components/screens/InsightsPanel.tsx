@@ -68,6 +68,27 @@ function RankedRow({ label, count, max }: { label: string; count: number; max: n
   );
 }
 
+/** Ikki seriyali (hayz kunlari / boshqa kunlar) taqqoslash — 2 seriya bo'lgani
+ * uchun rang identifikatorga aylanadi, shuning uchun har doim legend ko'rsatiladi
+ * (dataviz qoidasi). */
+function PhaseBreakdownRow({ label, periodDays, otherDays }: { label: string; periodDays: number; otherDays: number }) {
+  const total = periodDays + otherDays || 1;
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between gap-3 text-xs font-semibold text-text-secondary">
+        <span className="truncate">{label}</span>
+        <span className="shrink-0 text-text-muted">
+          {periodDays}/{otherDays}
+        </span>
+      </div>
+      <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+        <div className="h-full bg-primary" style={{ width: `${(periodDays / total) * 100}%` }} />
+        <div className="h-full bg-secondary/50" style={{ width: `${(otherDays / total) * 100}%` }} />
+      </div>
+    </div>
+  );
+}
+
 export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary; patterns: SymptomPattern[] }) {
   const { dict } = useI18n();
 
@@ -94,6 +115,22 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
         </div>
       )}
 
+      {summary.regularity && (
+        <Card className="flex flex-col gap-1.5">
+          <p className="text-sm font-bold text-text-primary">{dict.chat.regularityTitle}</p>
+          <p className="text-2xl font-extrabold text-text-primary">
+            {dict.chat.regularitySummary(summary.regularity.averageCycleLength, summary.regularity.variabilityDays)}
+          </p>
+          <p className="text-xs text-text-muted">
+            {summary.regularity.trend === "lengthening"
+              ? dict.chat.regularityTrendLengthening
+              : summary.regularity.trend === "shortening"
+                ? dict.chat.regularityTrendShortening
+                : dict.chat.regularityTrendStable}
+          </p>
+        </Card>
+      )}
+
       {summary.cycleLengths.length > 0 && (
         <Card className="flex flex-col gap-3">
           <p className="text-sm font-bold text-text-primary">{dict.chat.cycleLengthChartTitle}</p>
@@ -101,6 +138,40 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
             points={summary.cycleLengths.map((p) => ({ label: formatShortDate(p.startDate), value: p.lengthDays }))}
             valueSuffix={dict.chat.daysUnit}
           />
+        </Card>
+      )}
+
+      {summary.periodLengths.length > 0 && (
+        <Card className="flex flex-col gap-3">
+          <p className="text-sm font-bold text-text-primary">{dict.chat.periodLengthChartTitle}</p>
+          <BarTrendChart
+            points={summary.periodLengths.map((p) => ({ label: formatShortDate(p.startDate), value: p.lengthDays }))}
+            valueSuffix={dict.chat.daysUnit}
+          />
+        </Card>
+      )}
+
+      {summary.symptomPhaseBreakdown.length > 0 && (
+        <Card className="flex flex-col gap-3">
+          <p className="text-sm font-bold text-text-primary">{dict.chat.symptomPhaseChartTitle}</p>
+          <div className="flex items-center gap-4 text-[11px] font-semibold text-text-secondary">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-primary" /> {dict.chat.symptomPhasePeriodLabel}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-secondary/50" /> {dict.chat.symptomPhaseOtherLabel}
+            </span>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {summary.symptomPhaseBreakdown.map((p) => (
+              <PhaseBreakdownRow
+                key={p.symptom}
+                label={dict.cycle.symptoms[p.symptom]}
+                periodDays={p.periodDaysCount}
+                otherDays={p.otherDaysCount}
+              />
+            ))}
+          </div>
         </Card>
       )}
 

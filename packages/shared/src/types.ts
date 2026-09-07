@@ -339,11 +339,42 @@ export interface PainDaysPoint {
   painDays: number;
 }
 
+export interface PeriodLengthPoint {
+  startDate: string;
+  lengthDays: number;
+}
+
+/** Sikl uzunligining o'rtachasi va o'zgaruvchanligi — ikkilik "tartibsiz/emas"
+ * belgisidan ko'ra to'liqroq: "27 kun (±3 kun)" kabi shaffof ko'rsatkich. */
+export interface RegularityScore {
+  averageCycleLength: number;
+  /** Aniqlangan sikllar orasidagi eng katta farq (max-min), kun. */
+  variabilityDays: number;
+  cyclesAnalyzed: number;
+  /** So'nggi yarim va oldingi yarim sikllar o'rtachasi solishtirilgan yo'nalish
+   * — kamida 4 ta sikl bo'lgandagina hisoblanadi (bo'lmasa "stable"). */
+  trend: "stable" | "lengthening" | "shortening";
+}
+
+/** Bitta simptom sikl davomida QACHON ko'proq uchrashi — hayz kunlarida
+ * (menstrual) yoki qolgan kunlarda (boshqa fazalar). Aniq 4-fazali (follikulyar/
+ * ovulyatsiya/luteal) taqsimot BBT/LH ma'lumotisiz ishonchli emas, shuning
+ * uchun faqat shu ikkilik taqsimot beriladi — baribir "faqat hayz paytida"
+ * yoki "sikl davomida doim" kabi foydali farqni ko'rsatadi. */
+export interface SymptomPhaseBreakdown {
+  symptom: Symptom;
+  periodDaysCount: number;
+  otherDaysCount: number;
+}
+
 export interface InsightsSummary {
   /** Kamida 2 ta aniqlangan sikl yoki 14 ta log bo'lmasa false — bo'sh holat. */
   hasEnoughData: boolean;
   cycleLengths: CycleLengthPoint[];
+  periodLengths: PeriodLengthPoint[];
+  regularity: RegularityScore | null;
   symptomFrequency: SymptomFrequencyPoint[];
+  symptomPhaseBreakdown: SymptomPhaseBreakdown[];
   moodDistribution: MoodDistributionPoint[];
   painDaysPerCycle: PainDaysPoint[];
 }

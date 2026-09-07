@@ -611,6 +611,15 @@ const uz = {
     painDaysChartTitle: "Og'riqli kunlar / sikl",
     painDaysChartHint: "Kunlik jurnalda og'riq kuchi emas, faqat borligi qayd etiladi — shuning uchun bu son sikldagi og'riqli KUNLAR sonini bildiradi.",
     daysUnit: "kun",
+    periodLengthChartTitle: "Hayz davomiyligi tarixi",
+    regularityTitle: "Sikl barqarorligi",
+    regularitySummary: (avg: number, variability: number) => `O'rtacha ${avg} kun (±${variability} kun farq)`,
+    regularityTrendStable: "Barqaror",
+    regularityTrendLengthening: "So'nggi sikllar uzayib bormoqda",
+    regularityTrendShortening: "So'nggi sikllar qisqarib bormoqda",
+    symptomPhaseChartTitle: "Simptomlar qachon kuzatiladi",
+    symptomPhasePeriodLabel: "Hayz kunlarida",
+    symptomPhaseOtherLabel: "Boshqa kunlarda",
   },
 
   feedback: {

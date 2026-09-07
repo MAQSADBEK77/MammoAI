@@ -9,13 +9,27 @@
 // KUNLAR SONI orqali proksi sifatida hisoblanadi, haqiqiy shkala emas.
 
 import { listCycleLogs } from "./repo";
-import { detectPeriodStarts } from "@mammoai/shared";
-import type { CycleLengthPoint, CycleLog, InsightsSummary, Mood, MoodDistributionPoint, PainDaysPoint, Symptom, SymptomFrequencyPoint } from "@mammoai/shared";
+import { computeCycleLengths, computePeriodLength, detectPeriodStarts } from "@mammoai/shared";
+import type {
+  CycleLengthPoint,
+  CycleLog,
+  InsightsSummary,
+  Mood,
+  MoodDistributionPoint,
+  PainDaysPoint,
+  PeriodLengthPoint,
+  RegularityScore,
+  Symptom,
+  SymptomFrequencyPoint,
+  SymptomPhaseBreakdown,
+} from "@mammoai/shared";
 
 const FREQUENCY_WINDOW_MONTHS = 6;
 const CYCLE_LENGTH_LIMIT = 12;
 const MIN_CYCLES_FOR_DATA = 2;
 const MIN_LOGS_FOR_DATA = 14;
+const REGULARITY_TREND_MIN_CYCLES = 4; // shundan kam bo'lsa yo'nalish haqida gapirish shoshqaloqlik bo'lardi
+const REGULARITY_TREND_THRESHOLD_DAYS = 2; // yarim-yarim o'rtachalar farqi shuncha kundan katta bo'lsagina yo'nalish e'lon qilinadi
 const PAIN_SYMPTOMS: Symptom[] = ["cramps", "back_pain", "headache"];
 
 function daysBetween(a: string, b: string): number {
@@ -41,6 +55,42 @@ function computeCycleLengthPoints(logs: CycleLog[], limit: number): CycleLengthP
   return points.slice(-limit);
 }
 
+/** Har bir aniqlangan siklning HAYZ qismi qancha davom etgani (bashorat
+ * algoritmidagi `computePeriodLength` bilan bir xil funksiya) — hali
+ * tugamagan (davom etayotgan) hayz shu ro'yxatga kirmaydi. */
+function computePeriodLengthPoints(logs: CycleLog[], limit: number): PeriodLengthPoint[] {
+  const starts = detectPeriodStarts(logs);
+  const today = new Date().toISOString().slice(0, 10);
+  const points: PeriodLengthPoint[] = [];
+  for (const start of starts) {
+    const length = computePeriodLength(logs, start, today);
+    if (length !== null) points.push({ startDate: start, lengthDays: length });
+  }
+  return points.slice(-limit);
+}
+
+/** Sikl uzunligining o'rtachasi, o'zgaruvchanligi va yo'nalishi — Cycle
+ * ekranidagi ikkilik "tartibsiz/emas" belgisidan chuqurroq ko'rsatkich. */
+function computeRegularityScore(logs: CycleLog[]): RegularityScore | null {
+  const lengths = computeCycleLengths(logs, CYCLE_LENGTH_LIMIT);
+  if (lengths.length === 0) return null;
+
+  const averageCycleLength = Math.round(lengths.reduce((sum, l) => sum + l, 0) / lengths.length);
+  const variabilityDays = Math.max(...lengths) - Math.min(...lengths);
+
+  let trend: RegularityScore["trend"] = "stable";
+  if (lengths.length >= REGULARITY_TREND_MIN_CYCLES) {
+    const mid = Math.floor(lengths.length / 2);
+    const firstHalfAvg = lengths.slice(0, mid).reduce((sum, l) => sum + l, 0) / mid;
+    const secondHalfAvg = lengths.slice(mid).reduce((sum, l) => sum + l, 0) / (lengths.length - mid);
+    const diff = secondHalfAvg - firstHalfAvg;
+    if (diff > REGULARITY_TREND_THRESHOLD_DAYS) trend = "lengthening";
+    else if (diff < -REGULARITY_TREND_THRESHOLD_DAYS) trend = "shortening";
+  }
+
+  return { averageCycleLength, variabilityDays, cyclesAnalyzed: lengths.length, trend };
+}
+
 function computeSymptomFrequency(logs: CycleLog[], months: number): SymptomFrequencyPoint[] {
   const cutoff = monthsAgoStr(months);
   const counts = new Map<Symptom, number>();
@@ -49,6 +99,26 @@ function computeSymptomFrequency(logs: CycleLog[], months: number): SymptomFrequ
     for (const symptom of log.symptoms) counts.set(symptom, (counts.get(symptom) ?? 0) + 1);
   }
   return [...counts.entries()].map(([symptom, count]) => ({ symptom, count })).sort((a, b) => b.count - a.count);
+}
+
+/** Har bir simptom hayz kunlarida ko'proq uchraydimi, yoki sikl davomida
+ * boshqa kunlarda ham bab-baravar — "faqat hayz paytida" va "doim" o'rtasidagi
+ * foydali farqni ko'rsatadi (aniq 4-fazali tahlil BBT/LH'siz ishonchsiz bo'lardi). */
+function computeSymptomPhaseBreakdown(logs: CycleLog[], months: number): SymptomPhaseBreakdown[] {
+  const cutoff = monthsAgoStr(months);
+  const counts = new Map<Symptom, { periodDaysCount: number; otherDaysCount: number }>();
+  for (const log of logs) {
+    if (log.date < cutoff || log.symptoms.length === 0) continue;
+    for (const symptom of log.symptoms) {
+      const entry = counts.get(symptom) ?? { periodDaysCount: 0, otherDaysCount: 0 };
+      if (log.flow) entry.periodDaysCount++;
+      else entry.otherDaysCount++;
+      counts.set(symptom, entry);
+    }
+  }
+  return [...counts.entries()]
+    .map(([symptom, c]) => ({ symptom, ...c }))
+    .sort((a, b) => b.periodDaysCount + b.otherDaysCount - (a.periodDaysCount + a.otherDaysCount));
 }
 
 function computeMoodDistribution(logs: CycleLog[], months: number): MoodDistributionPoint[] {
@@ -85,7 +155,10 @@ export async function getInsightsSummary(userId: string): Promise<InsightsSummar
   return {
     hasEnoughData,
     cycleLengths: computeCycleLengthPoints(logs, CYCLE_LENGTH_LIMIT),
+    periodLengths: computePeriodLengthPoints(logs, CYCLE_LENGTH_LIMIT),
+    regularity: computeRegularityScore(logs),
     symptomFrequency: computeSymptomFrequency(logs, FREQUENCY_WINDOW_MONTHS),
+    symptomPhaseBreakdown: computeSymptomPhaseBreakdown(logs, FREQUENCY_WINDOW_MONTHS),
     moodDistribution: computeMoodDistribution(logs, FREQUENCY_WINDOW_MONTHS),
     painDaysPerCycle: computePainDaysPerCycle(logs, CYCLE_LENGTH_LIMIT),
   };

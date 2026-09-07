@@ -603,6 +603,15 @@ const ru: Dictionary = {
     painDaysChartTitle: "Дни с болью / цикл",
     painDaysChartHint: "В дневнике фиксируется только наличие боли, а не её сила — это число показывает количество дней с болью за цикл.",
     daysUnit: "дн.",
+    periodLengthChartTitle: "История длительности менструации",
+    regularityTitle: "Стабильность цикла",
+    regularitySummary: (avg: number, variability: number) => `В среднем ${avg} дн. (±${variability} дн. разброс)`,
+    regularityTrendStable: "Стабильно",
+    regularityTrendLengthening: "Последние циклы удлиняются",
+    regularityTrendShortening: "Последние циклы укорачиваются",
+    symptomPhaseChartTitle: "Когда проявляются симптомы",
+    symptomPhasePeriodLabel: "В дни менструации",
+    symptomPhaseOtherLabel: "В другие дни",
   },
 
   feedback: {
