@@ -75,6 +75,15 @@ const en: Dictionary = {
     codePlaceholder: "6-digit code",
     invalidCode: "Incorrect or expired code",
     resendLink: "Get a new link",
+    miniAppLoading: "Checking your account...",
+    miniAppShareTitle: "Welcome!",
+    miniAppShareIntro: "Your name and photo were automatically pulled from Telegram. Just confirm your phone number.",
+    miniAppShareButton: "📱 Share my phone number",
+    miniAppWaiting: "Waiting for you to allow it in the Telegram popup...",
+    miniAppDeclined: "The number wasn't shared. The app needs your phone number to work — please try again.",
+    miniAppRetryButton: "Try again",
+    miniAppNotInTelegram: "This page only opens inside the Telegram app.",
+    miniAppError: "Something went wrong — please try again.",
   },
 
   privacy: {

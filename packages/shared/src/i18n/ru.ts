@@ -73,6 +73,15 @@ const ru: Dictionary = {
     codePlaceholder: "6-значный код",
     invalidCode: "Неверный код или срок его действия истёк",
     resendLink: "Получить ссылку заново",
+    miniAppLoading: "Проверяем ваш аккаунт...",
+    miniAppShareTitle: "Добро пожаловать!",
+    miniAppShareIntro: "Имя и фото автоматически получены из Telegram. Осталось подтвердить номер телефона.",
+    miniAppShareButton: "📱 Поделиться номером телефона",
+    miniAppWaiting: "Ждём подтверждения в окне Telegram...",
+    miniAppDeclined: "Номер не был передан. Для работы приложения нужен номер телефона — попробуйте снова.",
+    miniAppRetryButton: "Попробовать снова",
+    miniAppNotInTelegram: "Эта страница открывается только внутри приложения Telegram.",
+    miniAppError: "Произошла ошибка — попробуйте снова.",
   },
 
   privacy: {

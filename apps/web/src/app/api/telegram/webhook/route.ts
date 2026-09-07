@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { Language } from "@mammoai/shared";
-import { confirmPhoneViaContact, registerTelegramStart } from "@/server/repo";
+import { confirmMiniAppContact, confirmPhoneViaContact, registerTelegramStart } from "@/server/repo";
 import { removeKeyboard, requestContactKeyboard, sendTelegramMessage } from "@/server/telegram-bot";
 
 interface TelegramUpdate {
@@ -48,13 +48,18 @@ function messagesFor(language: Language) {
  * Telegram bot yangiliklari shu yerga keladi (admin panelda token saqlanganda
  * `setWebhook` orqali avtomatik ro'yxatdan o'tkaziladi — server/telegram-bot.ts).
  *
- * Ikki bosqichli oqim:
+ * Ikki bosqichli oqim (sayt orqali telefon tasdiqlash):
  * 1. "/start <token>" — chat_id yozuvga bog'lanadi, "telefon raqamni ulashish"
  *    tugmasi bilan xabar yuboriladi (hali kod YO'Q).
  * 2. Foydalanuvchi tugmani bosgach kelgan `contact` — ulashilgan raqam saytga
  *    kiritilgan raqam bilan solishtiriladi; mos kelsagina kod yuboriladi.
  *    Bu — ISTALGAN Telegram hisobidan "Start" bosib, o'zganing raqamiga kod
  *    olishning oldini oladi (haqiqiy egalikni Telegram o'zi tasdiqlaydi).
+ *
+ * Uchinchi (mustaqil) oqim — Telegram Mini App: `contact` kelganda avval
+ * `confirmMiniAppContact` orqali tekshiriladi (Mini App'ning o'z
+ * `requestContact()`i faqat o'z kontaktini so'raydi, solishtirish shart emas) —
+ * mos kelsa shu yerda to'xtaydi, aks holda yuqoridagi 2-qadamga tushadi.
  *
  * MUHIM: Telegram har doim tezkor 200 javobini kutadi, aks holda xabarni
  * qayta-qayta yuborishga urinaveradi — shuning uchun xato bo'lsa ham jim
@@ -77,6 +82,16 @@ export async function POST(request: NextRequest) {
         await sendTelegramMessage(String(chatId), messagesFor("uz").invalidToken);
       }
     } else if (message?.contact?.phone_number) {
+      // Avval Mini App orqali kutilayotgan kirish bormi tekshiriladi (1:1 shaxsiy
+      // chatda chat_id === user_id) — Mini App'ning o'z `requestContact()`i faqat
+      // foydalanuvchining O'Z kontaktini so'raydi, shuning uchun bu yerda raqamni
+      // solishtirish shart emas (eski oqimdan farqli o'laroq).
+      const miniAppMatched = await confirmMiniAppContact(String(chatId), message.contact.phone_number);
+      if (miniAppMatched) {
+        await sendTelegramMessage(String(chatId), "✅ Raqamingiz tasdiqlandi — ilovaga qayting.", removeKeyboard());
+        return NextResponse.json({ ok: true });
+      }
+
       const result = await confirmPhoneViaContact(String(chatId), message.contact.phone_number);
       if (result?.matched) {
         const m = messagesFor(result.language);

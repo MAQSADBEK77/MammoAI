@@ -312,6 +312,92 @@ export async function verifyPhoneCode(token: string, code: string): Promise<{ ph
 }
 
 // ---------------------------------------------------------------------------
+// Telegram Mini App orqali kirish — telefon/ism/rasm Telegram'dan avtomatik
+// olinadi (server/telegram-miniapp-auth.ts:verifyTelegramInitData tomonidan
+// tasdiqlangan initData asosida). Xotira: 1:1 shaxsiy chatda chat_id === user_id,
+// shuning uchun bot xabar yuborishda ham users.telegram_user_id ishlatiladi.
+// ---------------------------------------------------------------------------
+
+export async function findUserByTelegramId(telegramUserId: string): Promise<(User & { tokenVersion: number }) | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM users WHERE telegram_user_id = ${telegramUserId}`) as unknown as UserRow[];
+  const row = rows[0];
+  return row ? { ...userFromRow(row), tokenVersion: row.token_version } : null;
+}
+
+/** Telegram'ni akkauntga bog'laydi — `name`/`avatarUrl` FAQAT hozir bo'sh bo'lsa
+ * to'ldiriladi (foydalanuvchi qo'lda o'zgartirgan bo'lsa bosib yozilmaydi). */
+export async function linkTelegramToUser(
+  userId: string,
+  opts: { telegramUserId: string; name?: string | null; avatarUrl?: string | null }
+): Promise<void> {
+  await ensureSchema();
+  await sql`
+    UPDATE users SET
+      telegram_user_id = ${opts.telegramUserId},
+      name = COALESCE(name, ${opts.name ?? null}),
+      avatar_url = COALESCE(avatar_url, ${opts.avatarUrl ?? null})
+    WHERE id = ${userId}
+  `;
+}
+
+export async function upsertMiniAppPending(telegramUserId: string): Promise<void> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO telegram_miniapp_pending (telegram_user_id, phone, created_at)
+    VALUES (${telegramUserId}, NULL, ${now()})
+    ON CONFLICT (telegram_user_id) DO UPDATE SET phone = NULL, created_at = ${now()}
+  `;
+}
+
+export async function getMiniAppPendingPhone(telegramUserId: string): Promise<string | null> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT phone FROM telegram_miniapp_pending WHERE telegram_user_id = ${telegramUserId}
+  `) as unknown as { phone: string | null }[];
+  return rows[0]?.phone ?? null;
+}
+
+export async function deleteMiniAppPending(telegramUserId: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM telegram_miniapp_pending WHERE telegram_user_id = ${telegramUserId}`;
+}
+
+/** Webhook'dan chaqiriladi (`message.contact` kelganda) — shu telegram_user_id
+ * uchun kutilayotgan Mini App kirish bormi, bo'lsa ulashilgan raqamni saqlaydi.
+ * Mini App'ning o'z `requestContact()`i faqat foydalanuvchining O'Z kontaktini
+ * so'raydi (rasmiy hujjatda tasdiqlangan) — eski klaviatura-tugma yo'lidagi kabi
+ * "boshqa birovning kontaktini yuborish" xavfi yo'q, shuning uchun bu yerda
+ * qo'shimcha solishtirish shart emas. */
+export async function confirmMiniAppContact(telegramUserId: string, phone: string): Promise<boolean> {
+  await ensureSchema();
+  const rows = (await sql`
+    UPDATE telegram_miniapp_pending SET phone = ${phone}
+    WHERE telegram_user_id = ${telegramUserId} AND phone IS NULL
+    RETURNING telegram_user_id
+  `) as unknown as { telegram_user_id: string }[];
+  return rows.length > 0;
+}
+
+/** Foydalanuvchining Telegram'i bog'langan va bildirishnoma yoqilgan bo'lsa,
+ * bot orqali xabar yuboradi (push o'rniga — Mini App'da native push yo'q).
+ * Xato bo'lsa ham jimgina yutiladi — asosiy amal (izoh/xabar yaratish) buzilmasligi kerak. */
+export async function notifyUserViaTelegram(userId: string, text: string): Promise<void> {
+  try {
+    await ensureSchema();
+    const rows = (await sql`
+      SELECT telegram_user_id, notifications_enabled FROM users WHERE id = ${userId}
+    `) as unknown as { telegram_user_id: string | null; notifications_enabled: boolean }[];
+    const row = rows[0];
+    if (!row?.telegram_user_id || !row.notifications_enabled) return;
+    const { sendTelegramMessage } = await import("./telegram-bot");
+    await sendTelegramMessage(row.telegram_user_id, text);
+  } catch {
+    // Bot xabari yuborilmasa ham asosiy amal davom etadi.
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Onboarding
 // ---------------------------------------------------------------------------
 
@@ -1576,6 +1662,7 @@ export async function addCommunityComment(
       INSERT INTO notifications (id, user_id, actor_user_id, type, post_id, comment_id, is_anonymous_actor, created_at)
       VALUES (${randomUUID()}, ${post.user_id}, ${userId}, 'comment_on_post', ${postId}, ${id}, ${payload.isAnonymous}, ${now()})
     `;
+    await notifyUserViaTelegram(post.user_id, `💬 Postingizga yangi izoh qoldirildi:\n"${payload.body}"`);
   }
   const author = await getUserById(userId);
   return {
@@ -1810,6 +1897,7 @@ export async function sendPartnerChatMessage(userId: string, body: string): Prom
     INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
     VALUES (${randomUUID()}, ${partnerId}, ${userId}, 'partner_message', ${body}, ${createdAt})
   `;
+  await notifyUserViaTelegram(partnerId, `💌 Hamkoringizdan yangi xabar:\n"${body}"`);
   return { id, body, isOwn: true, createdAt };
 }
 

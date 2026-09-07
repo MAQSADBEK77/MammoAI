@@ -169,6 +169,21 @@ export function createApiClient(config: ApiClientConfig) {
       /** Faqat veb uchun — httpOnly sessiya cookie'sini o'chiradi. Mobil o'z
        * tokenini mahalliy (SecureStore) o'chiradi, bu chaqiruv shart emas. */
       logout: () => request<{ ok: true }>("/api/auth/logout", { method: "POST" }),
+      /** Telegram Mini App — `initData`ni tasdiqlaydi. Akkaunt allaqachon
+       * bog'langan bo'lsa sessiya darhol o'rnatiladi (`loggedIn:true`), aks
+       * holda telefon raqamni Telegram orqali olish kerak (`needsContact:true`). */
+      telegramMiniAppStart: (initData: string) =>
+        request<{ loggedIn: boolean; onboarded?: boolean; needsContact?: boolean }>("/api/auth/telegram-miniapp/start", {
+          method: "POST",
+          body: JSON.stringify({ initData }),
+        }),
+      /** Foydalanuvchi Telegram'ning "Telefon raqamimni ulashish" popup'ini
+       * tasdiqlaganini (webhook orqali kelganini) tekshirish uchun poll qilinadi. */
+      telegramMiniAppStatus: (telegramUserId: string) =>
+        request<{ phoneReady: boolean }>(`/api/auth/telegram-miniapp/status?telegramUserId=${encodeURIComponent(telegramUserId)}`),
+      /** Telefon tayyor bo'lgach — akkauntni topadi/yaratadi va sessiyani yakunlaydi. */
+      telegramMiniAppFinish: (initData: string) =>
+        request<PhoneCodeVerifyResponse>("/api/auth/telegram-miniapp/finish", { method: "POST", body: JSON.stringify({ initData }) }),
     },
     onboarding: {
       submit: (payload: OnboardingPayload) =>

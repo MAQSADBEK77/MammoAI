@@ -78,6 +78,15 @@ const uz = {
     codePlaceholder: "6 xonali kod",
     invalidCode: "Kod noto'g'ri yoki muddati o'tgan",
     resendLink: "Havolani qaytadan olish",
+    miniAppLoading: "Hisobingiz tekshirilmoqda...",
+    miniAppShareTitle: "Xush kelibsiz!",
+    miniAppShareIntro: "Ismingiz va rasmingiz Telegram'dan avtomatik olindi. Faqat telefon raqamingizni tasdiqlash qoldi.",
+    miniAppShareButton: "📱 Telefon raqamimni ulashish",
+    miniAppWaiting: "Telegram popup'ida ruxsat berishingizni kutmoqdamiz...",
+    miniAppDeclined: "Raqam ulashilmadi. Ilova ishlashi uchun telefon raqamingiz kerak — qayta urinib ko'ring.",
+    miniAppRetryButton: "Qayta urinish",
+    miniAppNotInTelegram: "Bu sahifa faqat Telegram ilovasi ichida ochilishi kerak.",
+    miniAppError: "Xatolik yuz berdi — qayta urinib ko'ring.",
   },
 
   privacy: {

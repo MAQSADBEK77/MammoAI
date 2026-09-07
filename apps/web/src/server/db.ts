@@ -304,6 +304,16 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // Telegram Mini App orqali kirish — foydalanuvchi "Telefon raqamimni ulashish"
+    // tugmasini bosgach, telefon shu yerga yoziladi (webhook orqali), keyin
+    // /finish shu yozuvni o'qib akkaunt yaratadi/topadi va o'chiradi.
+    sql`
+      CREATE TABLE IF NOT EXISTS telegram_miniapp_pending (
+        telegram_user_id TEXT PRIMARY KEY,
+        phone TEXT,
+        created_at TEXT NOT NULL
+      )
+    `,
   ]);
 
   // 1.5-bosqich: eski (allaqachon mavjud) jadvallarga yangi ustunlar qo'shish —
@@ -317,6 +327,10 @@ async function initSchema() {
     // Hamkor "Xabar" (tezkor eslatma) tugmasi shu ustunni ishlatadi —
     // izoh-bildirishnomalaridan farqli o'laroq, erkin matn saqlaydi.
     sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS message TEXT`,
+    // Telegram Mini App orqali kirgan (yoki keyinroq bog'langan) foydalanuvchilar —
+    // 1:1 shaxsiy chatda chat_id === user_id, shuning uchun bot xabar yuborishda
+    // ham shu ustunning o'zi ishlatiladi (alohida chat_id ustuni shart emas).
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_user_id TEXT`,
   ]);
 
   // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.
@@ -397,6 +411,7 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(type, created_at)`,
     sql`CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id, created_at ASC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback_responses(created_at DESC)`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_user_id ON users(telegram_user_id) WHERE telegram_user_id IS NOT NULL`,
   ]);
 }
 

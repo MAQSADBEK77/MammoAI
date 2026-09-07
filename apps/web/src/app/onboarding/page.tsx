@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import type {
   CycleRegularity,
@@ -283,9 +283,21 @@ const PERIOD_ATTITUDE_ICON: Record<PeriodAttitude, string> = {
   comfortable: "😊",
 };
 
+// `useSearchParams()` (fromTelegram=1 aniqlash uchun) Next.js'ning statik
+// prerender qilishiga to'sqinlik qiladi — Suspense chegarasi shart (bug fixi:
+// apps/web/src/app/baholash/page.tsxdagi bilan bir xil sabab).
 export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-background" />}>
+      <OnboardingPageInner />
+    </Suspense>
+  );
+}
+
+function OnboardingPageInner() {
   const { dict, language, setLanguage } = useI18n();
-  const { applyMeResponse } = useSession();
+  const { applyMeResponse, user } = useSession();
+  const searchParams = useSearchParams();
   const { resolve: resolveIllustration } = useIllustrations();
   const router = useRouter();
 
@@ -341,6 +353,21 @@ export default function OnboardingPage() {
     tail.push("notifications", "analyzing");
     return [...base, ...tail];
   }, [survey.primaryGoal]);
+
+  // Telegram Mini App orqali kirgan (telefon Telegram'ning o'zi orqali
+  // tasdiqlangan) foydalanuvchi uchun — akkaunt/telefon-tasdiqlash qadamlarini
+  // butunlay o'tkazib yuboramiz, to'g'ridan-to'g'ri profil savollariga o'tadi.
+  const skippedTelegramStepRef = useRef(false);
+  useEffect(() => {
+    if (skippedTelegramStepRef.current) return;
+    if (searchParams.get("fromTelegram") !== "1" || !user?.phone) return;
+    const nextIndex = steps.indexOf("privacy");
+    if (nextIndex > 0) {
+      skippedTelegramStepRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStepIndex(nextIndex);
+    }
+  }, [searchParams, user, steps]);
 
   const step = steps[stepIndex];
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
