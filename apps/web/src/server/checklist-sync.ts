@@ -1,6 +1,6 @@
 import type { OnboardingProfile } from "@mammoai/shared";
-import { generateChecklist, isCycleIrregular } from "@mammoai/shared";
-import { ensureChecklistItem, getCycleSettings, getOnboardingProfile, getPregnancyProfile, listCycleLogs } from "./repo";
+import { computeCycleLengths, generateChecklist, isCycleIrregular } from "@mammoai/shared";
+import { ensureChecklistItem, getOnboardingProfile, getPregnancyProfile, listCycleLogs } from "./repo";
 
 const addDays = (dateStr: string, days: number) => {
   const d = new Date(dateStr + "T00:00:00Z");
@@ -24,13 +24,13 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
   const profile = knownProfile ?? (await getOnboardingProfile(userId));
   if (!profile) return;
 
-  const [cycleSettings, recentLogs, pregnancy] = await Promise.all([
-    getCycleSettings(userId),
-    listCycleLogs(userId, 12),
-    getPregnancyProfile(userId),
-  ]);
-  const cycleIrregular =
-    profile.cycleRegularity === "irregular" || isCycleIrregular(recentLogs.map(() => cycleSettings.averageCycleLength));
+  // 12 emas, 365 — sikl uzunligi tartibsizligini haqiqatan aniqlash uchun
+  // bir nechta TO'LIQ sikl kerak (12 kunlik log 1 ta hayzning o'zi bo'lishi
+  // mumkin, tartibsizlikni umuman ko'rsata olmasdi — avvalgi xato shu edi:
+  // `isCycleIrregular` doim BIR XIL statik qiymatga tekshirilib, hech qachon
+  // tartibsiz deb chiqmasdi).
+  const [recentLogs, pregnancy] = await Promise.all([listCycleLogs(userId, 365), getPregnancyProfile(userId)]);
+  const cycleIrregular = profile.cycleRegularity === "irregular" || isCycleIrregular(computeCycleLengths(recentLogs));
   const isPregnant = profile.isPregnant || !!pregnancy?.dueDate;
 
   const generated = generateChecklist({

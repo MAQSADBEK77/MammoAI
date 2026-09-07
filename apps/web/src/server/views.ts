@@ -1,7 +1,7 @@
 // API javoblari uchun "composite" ko'rinishlar — bir nechta route (GET va mutatsiyalar)
 // bir xil natija shaklini qaytarishi kerak bo'lganda shu yerdan qayta ishlatiladi.
 
-import { isCycleIrregular, predictCycle, getPregnancyStatus } from "@mammoai/shared";
+import { computeCycleLengths, deriveAdaptiveCycleSettings, isCycleIrregular, predictCycle, getPregnancyStatus } from "@mammoai/shared";
 import type { CycleResponse, PregnancyResponse } from "@mammoai/shared";
 import {
   getCycleSettings,
@@ -16,22 +16,21 @@ import {
 
 export async function buildCycleResponse(userId: string): Promise<CycleResponse> {
   const settings = await getCycleSettings(userId);
-  const logs = await listCycleLogs(userId);
-  const prediction = predictCycle(settings);
+  // Bashorat uchun ko'proq tarix kerak (ADAPTIVE_MAX_CYCLES ta sikl uchun
+  // yetarli) — Cycle ekranida ko'rsatiladigan oxirgi loglar bilan aralashtirmaslik
+  // uchun alohida so'raladi (ekranga faqat oxirgi ~180 kun yetarli bo'lsa ham).
+  const [logs, historyLogs] = await Promise.all([listCycleLogs(userId), listCycleLogs(userId, 365)]);
 
-  const periodStarts = logs
-    .filter((l) => l.flow)
-    .map((l) => l.date)
-    .sort();
-  const lengths: number[] = [];
-  for (let i = 1; i < periodStarts.length; i++) {
-    const days = Math.round(
-      (new Date(periodStarts[i]).getTime() - new Date(periodStarts[i - 1]).getTime()) / 86400000
-    );
-    if (days > 10) lengths.push(days);
-  }
+  // Bashorat endi statik `cycle_settings`ga emas — imkon qadar haqiqiy
+  // `cycle_logs` tarixidan "o'rganilgan" (adaptiv) qiymatlarga tayanadi, yetarli
+  // tarix bo'lmasa foydalanuvchining o'zi kiritgan sozlamasiga tushadi.
+  const adaptive = deriveAdaptiveCycleSettings(historyLogs, settings);
+  const prediction = adaptive && predictCycle(adaptive);
+  if (prediction && adaptive) prediction.cyclesAnalyzed = adaptive.cyclesAnalyzed;
 
-  return { settings, logs, prediction, isIrregular: isCycleIrregular(lengths) };
+  const isIrregular = isCycleIrregular(computeCycleLengths(historyLogs));
+
+  return { settings, logs, prediction, isIrregular };
 }
 
 /** Vazn — oldingi qayddan (yoki, birinchi qayd bo'lsa, onboarding vaznidan) farqi, kg. */

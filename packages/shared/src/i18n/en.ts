@@ -267,6 +267,8 @@ const en: Dictionary = {
     irregularBannerTitle: "3+ months of irregular cycles detected",
     irregularBannerAction: "Consider getting a checkup",
     ringEmptyLabel: "Set your last period date to see predictions",
+    predictionBasisHistory: (n: number) => `Calculated from your last ${n} cycles`,
+    predictionBasisEstimate: "Estimated — logging more cycles will make this more accurate",
     articlesCardTitle: "Interesting articles",
     riskQuizCardTitle: "Self-check test",
     riskQuizCardSubtitle: "Find out your risk level in 2 minutes",

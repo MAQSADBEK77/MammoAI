@@ -202,6 +202,13 @@ export function CycleScreen() {
             label={dict.cycle.periodLengthLabel}
           />
         </div>
+        {data.prediction && (
+          <p className="mt-3 text-center text-xs text-text-muted">
+            {data.prediction.cyclesAnalyzed > 0
+              ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
+              : dict.cycle.predictionBasisEstimate}
+          </p>
+        )}
       </Card>
 
       {/* Kunlik kayfiyat so'rovi — Figma referens: kalendar tepasida, faqat

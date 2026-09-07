@@ -9,9 +9,9 @@
 // KUNLAR SONI orqali proksi sifatida hisoblanadi, haqiqiy shkala emas.
 
 import { listCycleLogs } from "./repo";
+import { detectPeriodStarts } from "@mammoai/shared";
 import type { CycleLengthPoint, CycleLog, InsightsSummary, Mood, MoodDistributionPoint, PainDaysPoint, Symptom, SymptomFrequencyPoint } from "@mammoai/shared";
 
-const CYCLE_GAP_DAYS = 2; // shuncha kun flow'siz o'tsa, keyingi flow kuni yangi sikl boshlanishi hisoblanadi
 const FREQUENCY_WINDOW_MONTHS = 6;
 const CYCLE_LENGTH_LIMIT = 12;
 const MIN_CYCLES_FOR_DATA = 2;
@@ -28,22 +28,12 @@ function monthsAgoStr(months: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** Kunlik loglar ichida "sikl boshlanishi" kunlarini aniqlaydi: flow mavjud
- * kun, va undan oldingi flow kunidan CYCLE_GAP_DAYSdan ko'proq vaqt o'tgan
- * bo'lsa (yoki ro'yxatdagi birinchi flow kuni bo'lsa). Oddiy streak-detection. */
-function detectCycleStarts(logs: CycleLog[]): string[] {
-  const flowDates = [...new Set(logs.filter((l) => l.flow).map((l) => l.date))].sort();
-  const starts: string[] = [];
-  for (let i = 0; i < flowDates.length; i++) {
-    if (i === 0 || daysBetween(flowDates[i - 1], flowDates[i]) > CYCLE_GAP_DAYS) {
-      starts.push(flowDates[i]);
-    }
-  }
-  return starts;
-}
-
-function computeCycleLengths(logs: CycleLog[], limit: number): CycleLengthPoint[] {
-  const starts = detectCycleStarts(logs);
+/** Sikl boshlanishi kunlarini aniqlaydi — `packages/shared/src/logic/cycle.ts`dagi
+ * `detectPeriodStarts` bilan BIR XIL mantiq (bashorat algoritmi ham shuni
+ * ishlatadi — ikkalasi hech qachon bir-biridan farqli natija bermasligi uchun
+ * shu bitta joyda yozilgan). */
+function computeCycleLengthPoints(logs: CycleLog[], limit: number): CycleLengthPoint[] {
+  const starts = detectPeriodStarts(logs);
   const points: CycleLengthPoint[] = [];
   for (let i = 1; i < starts.length; i++) {
     points.push({ startDate: starts[i - 1], lengthDays: daysBetween(starts[i - 1], starts[i]) });
@@ -72,7 +62,7 @@ function computeMoodDistribution(logs: CycleLog[], months: number): MoodDistribu
 }
 
 function computePainDaysPerCycle(logs: CycleLog[], limit: number): PainDaysPoint[] {
-  const starts = detectCycleStarts(logs);
+  const starts = detectPeriodStarts(logs);
   if (!starts.length) return [];
   const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
   const points: PainDaysPoint[] = starts.map((rangeStart, i) => {
@@ -89,12 +79,12 @@ function computePainDaysPerCycle(logs: CycleLog[], limit: number): PainDaysPoint
 
 export async function getInsightsSummary(userId: string): Promise<InsightsSummary> {
   const logs = await listCycleLogs(userId, 365);
-  const starts = detectCycleStarts(logs);
+  const starts = detectPeriodStarts(logs);
   const hasEnoughData = starts.length >= MIN_CYCLES_FOR_DATA || logs.length >= MIN_LOGS_FOR_DATA;
 
   return {
     hasEnoughData,
-    cycleLengths: computeCycleLengths(logs, CYCLE_LENGTH_LIMIT),
+    cycleLengths: computeCycleLengthPoints(logs, CYCLE_LENGTH_LIMIT),
     symptomFrequency: computeSymptomFrequency(logs, FREQUENCY_WINDOW_MONTHS),
     moodDistribution: computeMoodDistribution(logs, FREQUENCY_WINDOW_MONTHS),
     painDaysPerCycle: computePainDaysPerCycle(logs, CYCLE_LENGTH_LIMIT),

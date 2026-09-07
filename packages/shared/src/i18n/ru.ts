@@ -265,6 +265,8 @@ const ru: Dictionary = {
     irregularBannerTitle: "Обнаружена нерегулярность цикла 3+ месяца",
     irregularBannerAction: "Рассмотрите визит к врачу",
     ringEmptyLabel: "Отметьте дату последней менструации для прогноза",
+    predictionBasisHistory: (n: number) => `Рассчитано на основе последних ${n} циклов`,
+    predictionBasisEstimate: "Приблизительно — станет точнее по мере наблюдений",
     articlesCardTitle: "Интересные статьи",
     riskQuizCardTitle: "Тест самопроверки",
     riskQuizCardSubtitle: "Узнайте уровень риска за 2 минуты",

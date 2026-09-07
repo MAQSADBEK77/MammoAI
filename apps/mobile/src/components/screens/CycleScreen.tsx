@@ -200,6 +200,13 @@ export function CycleScreen() {
               label={dict.cycle.periodLengthLabel}
             />
           </View>
+          {data.prediction && (
+            <Text className="mt-3 text-center text-xs text-text-muted">
+              {data.prediction.cyclesAnalyzed > 0
+                ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
+                : dict.cycle.predictionBasisEstimate}
+            </Text>
+          )}
         </Card>
       </Animated.View>
 

@@ -270,6 +270,8 @@ const uz = {
     irregularBannerTitle: "3+ oy tartibsiz tsikl aniqlandi",
     irregularBannerAction: "Tekshiruvdan o'tishni ko'rib chiqing",
     ringEmptyLabel: "Bashorat qilish uchun oxirgi hayz sanasini belgilang",
+    predictionBasisHistory: (n: number) => `So'nggi ${n} ta sikl asosida hisoblangan`,
+    predictionBasisEstimate: "Taxminiy — ko'proq kuzatuv qilsangiz aniqroq bo'ladi",
     articlesCardTitle: "Qiziqarli maqolalar",
     riskQuizCardTitle: "O'z-o'zini tekshirish testi",
     riskQuizCardSubtitle: "2 daqiqada xavf darajangizni bilib oling",
