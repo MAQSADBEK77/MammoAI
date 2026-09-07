@@ -616,6 +616,14 @@ const en: Dictionary = {
     symptomPhaseOtherLabel: "Other days",
   },
 
+  reminders: {
+    logToday: "You haven't logged today yet. Take a minute to keep your cycle tracking up to date 🌸",
+    periodToday: "Your period is expected to start today 🩷",
+    periodTomorrow: "Your period is expected to start tomorrow — get ready 🩷",
+    periodSoon: (days: number) => `Your period starts in ${days} days 🩷`,
+    fertileWindow: "You're currently in your fertile window",
+  },
+
   feedback: {
     menuLabel: "Give feedback",
     title: "Your feedback",

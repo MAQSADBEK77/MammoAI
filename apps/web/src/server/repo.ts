@@ -1775,6 +1775,34 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
   await sql`UPDATE notifications SET is_read = TRUE WHERE user_id = ${userId} AND is_read = FALSE`;
 }
 
+/** Tizim (kunlik eslatma kabi) bildirishnomasi — haqiqiy "actor" yo'q
+ * (`actor_user_id` NULL), shuning uchun UI'da hech kimning ismi ko'rsatilmaydi. */
+export async function createSystemNotification(userId: string, type: "daily_reminder", message: string): Promise<void> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
+    VALUES (${randomUUID()}, ${userId}, NULL, ${type}, ${message}, ${now()})
+  `;
+}
+
+/** Kunlik eslatma (server/daily-reminders.ts) uchun — faqat Telegram bog'langan,
+ * bildirishnoma yoqilgan va test/bloklangan bo'lmagan foydalanuvchilar. */
+export async function listUsersForDailyReminders(): Promise<{ id: string; language: Language; telegramUserId: string }[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT id, language, telegram_user_id FROM users
+    WHERE telegram_user_id IS NOT NULL AND notifications_enabled = TRUE
+      AND is_test_account = FALSE AND is_blocked = FALSE
+  `) as unknown as { id: string; language: Language; telegram_user_id: string }[];
+  return rows.map((r) => ({ id: r.id, language: r.language, telegramUserId: r.telegram_user_id }));
+}
+
+export async function hasLoggedToday(userId: string): Promise<boolean> {
+  await ensureSchema();
+  const rows = (await sql`SELECT 1 FROM cycle_logs WHERE user_id = ${userId} AND date = ${today()} LIMIT 1`) as unknown as unknown[];
+  return rows.length > 0;
+}
+
 // ---------------------------------------------------------------------------
 // Hamkor (Partner) — kod orqali ikkita akkauntni bog'lash (Figma referens:
 // "Hamkor" bo'limi). Har bir foydalanuvchi o'z ulashish sozlamalarini

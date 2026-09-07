@@ -327,6 +327,9 @@ async function initSchema() {
     // Hamkor "Xabar" (tezkor eslatma) tugmasi shu ustunni ishlatadi —
     // izoh-bildirishnomalaridan farqli o'laroq, erkin matn saqlaydi.
     sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS message TEXT`,
+    // Kunlik eslatma (system) bildirishnomalari uchun — haqiqiy "actor"
+    // (boshqa foydalanuvchi) yo'q, shuning uchun bu ustun endi ixtiyoriy.
+    sql`ALTER TABLE notifications ALTER COLUMN actor_user_id DROP NOT NULL`,
     // Telegram Mini App orqali kirgan (yoki keyinroq bog'langan) foydalanuvchilar —
     // 1:1 shaxsiy chatda chat_id === user_id, shuning uchun bot xabar yuborishda
     // ham shu ustunning o'zi ishlatiladi (alohida chat_id ustuni shart emas).
@@ -385,7 +388,7 @@ async function initSchema() {
     CREATE TABLE IF NOT EXISTS notifications (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      actor_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      actor_user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
       type TEXT NOT NULL,
       post_id TEXT REFERENCES community_posts(id) ON DELETE CASCADE,
       comment_id TEXT REFERENCES community_comments(id) ON DELETE CASCADE,

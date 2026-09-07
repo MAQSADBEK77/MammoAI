@@ -404,7 +404,7 @@ export interface FeedbackResponse {
 // Bildirishnomalar — hozircha faqat "postingizga izoh qoldirildi" turi.
 // ---------------------------------------------------------------------------
 
-export type NotificationType = "comment_on_post" | "partner_message";
+export type NotificationType = "comment_on_post" | "partner_message" | "daily_reminder";
 
 export interface AppNotification {
   id: string;

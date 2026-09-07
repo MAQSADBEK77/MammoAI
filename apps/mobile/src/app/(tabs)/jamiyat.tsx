@@ -247,6 +247,8 @@ export default function CommunityScreen() {
                         &ldquo;{n.message}&rdquo;
                       </Text>
                     </>
+                  ) : n.type === "daily_reminder" ? (
+                    <Text className="text-sm font-medium text-text-primary">{n.message}</Text>
                   ) : (
                     <>
                       <Text className="text-sm font-medium text-text-primary">

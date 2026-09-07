@@ -622,6 +622,18 @@ const uz = {
     symptomPhaseOtherLabel: "Boshqa kunlarda",
   },
 
+  // Kunlik eslatmalar — bot orqali (server/daily-reminders.ts) va ilova ichidagi
+  // bildirishnomalar markazida bir xil matn. Faqat MAZMUNLI bo'lganda yuboriladi
+  // (bugun hali belgilanmagan bo'lsa, YOKI hayz/unumdor kun yaqinlashganda) —
+  // har kuni bir xil xabar yuborib zerikarli qilib yubormaslik uchun.
+  reminders: {
+    logToday: "Bugungi holatingizni hali belgilamadingiz. Bir daqiqa ajratib, sikl kuzatuvini davom ettiring 🌸",
+    periodToday: "Bugun hayzingiz boshlanishi kutilmoqda 🩷",
+    periodTomorrow: "Ertaga hayzingiz boshlanishi kutilmoqda — tayyorgarlik ko'ring 🩷",
+    periodSoon: (days: number) => `${days} kundan keyin hayzingiz boshlanadi 🩷`,
+    fertileWindow: "Siz hozir unumdor oyna ichidasiz",
+  },
+
   feedback: {
     menuLabel: "Fikr bildirish",
     title: "Fikr-mulohazangiz",

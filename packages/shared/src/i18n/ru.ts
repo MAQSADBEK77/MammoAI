@@ -614,6 +614,14 @@ const ru: Dictionary = {
     symptomPhaseOtherLabel: "В другие дни",
   },
 
+  reminders: {
+    logToday: "Вы ещё не отметили сегодняшнее состояние. Уделите минуту дневнику цикла 🌸",
+    periodToday: "Сегодня ожидается начало менструации 🩷",
+    periodTomorrow: "Завтра ожидается начало менструации — подготовьтесь 🩷",
+    periodSoon: (days: number) => `Менструация начнётся через ${days} дн. 🩷`,
+    fertileWindow: "Сейчас у вас окно фертильности",
+  },
+
   feedback: {
     menuLabel: "Оставить отзыв",
     title: "Ваш отзыв",

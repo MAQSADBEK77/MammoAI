@@ -226,6 +226,8 @@ export default function CommunityPage() {
                       </p>
                       <p className="mt-0.5 truncate text-xs text-text-secondary">&ldquo;{n.message}&rdquo;</p>
                     </>
+                  ) : n.type === "daily_reminder" ? (
+                    <p className="font-medium text-text-primary">{n.message}</p>
                   ) : (
                     <>
                       <p className="font-medium text-text-primary">

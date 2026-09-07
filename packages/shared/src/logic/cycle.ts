@@ -150,7 +150,12 @@ export function predictCycle(
 
   // Bugungi kungacha necha tsikl o'tganini hisoblab, keyingi bashoratni topamiz.
   const daysSinceLast = daysBetween(settings.lastPeriodStart, today);
-  const cyclesElapsed = Math.floor(daysSinceLast / cycleLength);
+  let cyclesElapsed = Math.floor(daysSinceLast / cycleLength);
+  // Chekka holat: `daysSinceLast` aynan cycleLength'ga karrali bo'lsa (masalan
+  // aynan 28 kun o'tgan, 28 kunlik sikl) — bugun AYNAN navbatdagi hayz kuni,
+  // shuning uchun bitta ORTIQCHA sikl qo'shib yubormaslik kerak (aks holda
+  // bashorat bir butun sikl uzoqqa "sakrab ketardi").
+  if (daysSinceLast > 0 && daysSinceLast % cycleLength === 0) cyclesElapsed -= 1;
   const nextPeriodStart = addDays(settings.lastPeriodStart, (cyclesElapsed + 1) * cycleLength);
   const nextPeriodEnd = addDays(nextPeriodStart, periodLength - 1);
 
