@@ -331,6 +331,9 @@ async function initSchema() {
     // 1:1 shaxsiy chatda chat_id === user_id, shuning uchun bot xabar yuborishda
     // ham shu ustunning o'zi ishlatiladi (alohida chat_id ustuni shart emas).
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_user_id TEXT`,
+    // Play Store tekshiruvchisi kabi ichki test hisoblar — admin panelning
+    // Foydalanuvchilar/Analitika ro'yxatlari va statistikasida ko'rinmasligi kerak.
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_test_account BOOLEAN NOT NULL DEFAULT FALSE`,
   ]);
 
   // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.

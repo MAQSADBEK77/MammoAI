@@ -1055,8 +1055,11 @@ export async function listUsersAdmin(params: { search?: string; limit?: number; 
   const q = params.search?.trim();
   const searchPattern = q ? `%${q}%` : null;
 
-  const whereClause = searchPattern
-    ? sql`WHERE u.name ILIKE ${searchPattern} OR u.phone ILIKE ${searchPattern} OR u.email ILIKE ${searchPattern}`
+  // `is_test_account` (masalan Play Store tekshiruvchisi) — admin ro'yxatida
+  // umuman ko'rinmasligi kerak, shuning uchun har doim (qidiruvdan qat'iy
+  // nazar) chetlab o'tiladi.
+  const searchClause = searchPattern
+    ? sql`AND (u.name ILIKE ${searchPattern} OR u.phone ILIKE ${searchPattern} OR u.email ILIKE ${searchPattern})`
     : sql``;
 
   const rows = (await sql`
@@ -1069,12 +1072,14 @@ export async function listUsersAdmin(params: { search?: string; limit?: number; 
       ) AS last_active_at
     FROM users u
     LEFT JOIN onboarding_profiles o ON o.user_id = u.id
-    ${whereClause}
+    WHERE u.is_test_account = FALSE ${searchClause}
     ORDER BY u.created_at DESC
     LIMIT ${limit} OFFSET ${offset}
   `) as unknown as (UserRow & { primary_goal: OnboardingProfile["primaryGoal"] | null; cycle_logs_count: number; last_active_at: string | null })[];
 
-  const [{ count }] = (await sql`SELECT count(*)::int as count FROM users u ${whereClause}`) as unknown as { count: number }[];
+  const [{ count }] = (await sql`
+    SELECT count(*)::int as count FROM users u WHERE u.is_test_account = FALSE ${searchClause}
+  `) as unknown as { count: number }[];
 
   return {
     total: count,
@@ -1231,20 +1236,25 @@ export async function getAdminStats(): Promise<AdminStats> {
     [{ count: articlesCount }],
     signupsByDayRows,
   ] = (await Promise.all([
-    sql`SELECT count(*)::int as count FROM users`,
-    sql`SELECT count(*)::int as count FROM users WHERE (created_at)::timestamptz >= now() - interval '1 day'`,
-    sql`SELECT count(*)::int as count FROM users WHERE (created_at)::timestamptz >= now() - interval '7 days'`,
+    sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE`,
+    sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz >= now() - interval '1 day'`,
+    sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz >= now() - interval '7 days'`,
     sql`
-      SELECT count(DISTINCT user_id)::int as count FROM (
+      SELECT count(DISTINCT recent.user_id)::int as count FROM (
         SELECT user_id, created_at FROM cycle_logs WHERE (created_at)::timestamptz >= now() - interval '7 days'
         UNION ALL
         SELECT user_id, created_at FROM pregnancy_vitals WHERE (created_at)::timestamptz >= now() - interval '7 days'
         UNION ALL
         SELECT user_id, completed_at FROM checklist_items WHERE completed_at IS NOT NULL AND (completed_at)::timestamptz >= now() - interval '7 days'
       ) recent
+      JOIN users u ON u.id = recent.user_id AND u.is_test_account = FALSE
     `,
-    sql`SELECT language, count(*)::int as count FROM users GROUP BY language ORDER BY count DESC`,
-    sql`SELECT primary_goal as goal, count(*)::int as count FROM onboarding_profiles GROUP BY primary_goal ORDER BY count DESC`,
+    sql`SELECT language, count(*)::int as count FROM users WHERE is_test_account = FALSE GROUP BY language ORDER BY count DESC`,
+    sql`
+      SELECT o.primary_goal as goal, count(*)::int as count FROM onboarding_profiles o
+      JOIN users u ON u.id = o.user_id AND u.is_test_account = FALSE
+      GROUP BY o.primary_goal ORDER BY count DESC
+    `,
     sql`SELECT count(*)::int as count FROM cycle_logs`,
     sql`SELECT count(*)::int as count FROM pregnancy_visits`,
     sql`SELECT count(*)::int as count FROM pregnancy_vitals`,
@@ -1256,7 +1266,7 @@ export async function getAdminStats(): Promise<AdminStats> {
     sql`
       SELECT to_char(d.day, 'YYYY-MM-DD') as day, count(u.id)::int as count
       FROM generate_series(now()::date - interval '29 days', now()::date, interval '1 day') as d(day)
-      LEFT JOIN users u ON (u.created_at)::timestamptz::date = d.day
+      LEFT JOIN users u ON (u.created_at)::timestamptz::date = d.day AND u.is_test_account = FALSE
       GROUP BY d.day ORDER BY d.day ASC
     `,
   ])) as unknown as [
@@ -1442,7 +1452,7 @@ export async function listAnalyticsUsersAdmin(params: { search?: string; limit?:
   const offset = params.offset ?? 0;
   const q = params.search?.trim();
   const searchPattern = q ? `%${q}%` : null;
-  const searchClause = searchPattern ? sql`WHERE u.name ILIKE ${searchPattern} OR u.phone ILIKE ${searchPattern}` : sql``;
+  const searchClause = searchPattern ? sql`AND (u.name ILIKE ${searchPattern} OR u.phone ILIKE ${searchPattern})` : sql``;
 
   const rows = (await sql`
     SELECT u.id as user_id, u.name, u.phone,
@@ -1457,7 +1467,7 @@ export async function listAnalyticsUsersAdmin(params: { search?: string; limit?:
       ) as top_path
     FROM users u
     JOIN analytics_events e ON e.user_id = u.id
-    ${searchClause}
+    WHERE u.is_test_account = FALSE ${searchClause}
     GROUP BY u.id, u.name, u.phone
     ORDER BY total_duration_ms DESC
     LIMIT ${limit} OFFSET ${offset}
@@ -1473,7 +1483,8 @@ export async function listAnalyticsUsersAdmin(params: { search?: string; limit?:
   }[];
 
   const [{ count }] = (await sql`
-    SELECT count(DISTINCT u.id)::int as count FROM users u JOIN analytics_events e ON e.user_id = u.id ${searchClause}
+    SELECT count(DISTINCT u.id)::int as count FROM users u JOIN analytics_events e ON e.user_id = u.id
+    WHERE u.is_test_account = FALSE ${searchClause}
   `) as unknown as { count: number }[];
 
   return {
