@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   keywords: ["hayz kalendari", "homiladorlik kuzatuvi", "ayollar salomatligi", "sikl kalkulyatori", "MammoAI"],
   alternates: { canonical: SITE_URL },
+  // Google Search Console — mulkni tasdiqlash uchun (foydalanuvchi so'rovi bilan qo'shildi).
+  verification: { google: "B8SNUTi-DyBjndWe-QIY6wzg_VQ2a_Hb5gngp6EJlVM" },
   // logo.svg endi faqat shaffof (fonsiz) belgi — bryauzer tab fonida ko'rinmasligi
   // mumkin, shuning uchun favicon uchun brend-fonli PNG ishlatiladi.
   icons: { icon: "/favicon.png" },
