@@ -52,6 +52,12 @@ export function removeKeyboard(): Record<string, unknown> {
   return { remove_keyboard: true };
 }
 
+/** Xabar ostida "Ilovani ochish" tugmasi — bosilganda Mini App'ni (`url`)
+ * to'g'ridan-to'g'ri ochadi (Telegram Bot API'ning `web_app` tugma turi). */
+export function miniAppInlineKeyboard(buttonText: string, url: string): Record<string, unknown> {
+  return { inline_keyboard: [[{ text: buttonText, web_app: { url } }]] };
+}
+
 interface TelegramBotInfo {
   id: number;
   is_bot: boolean;
