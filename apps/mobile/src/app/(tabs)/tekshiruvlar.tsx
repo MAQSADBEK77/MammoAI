@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import type { ChecklistItem } from "@mammoai/shared";
+import type { ChecklistResponse } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -20,22 +20,23 @@ export default function ChecklistScreen() {
   const themeColors = useThemeColors();
   const { openDrawer } = useDrawer();
   const { resolve: resolveIllustration } = useIllustrations();
-  const [items, setItems] = useState<ChecklistItem[] | null>(null);
+  const [data, setData] = useState<ChecklistResponse | null>(null);
 
   useEffect(() => {
-    api.checklist.list().then(setItems);
+    api.checklist.list().then(setData);
   }, []);
 
-  if (!items) {
+  if (!data) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <LoadingSpinner label={dict.common.loading} />
       </SafeAreaView>
     );
   }
+  const { items, readOnly, emptyReason, partnerName } = data;
 
   async function complete(id: string) {
-    setItems(await api.checklist.complete(id));
+    setData(await api.checklist.complete(id));
   }
 
   const statusTone = { pending: "muted", done: "success", overdue: "danger" } as const;
@@ -55,39 +56,51 @@ export default function ChecklistScreen() {
         <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
           <MaterialCommunityIcons name="menu" size={22} color={themeColors.textPrimary} />
         </Pressable>
-        <ScreenHeader title={dict.checklist.title} />
+        <ScreenHeader title={readOnly && partnerName ? dict.checklist.partnerTitle(partnerName) : dict.checklist.title} />
 
         <View className="items-center">{createElement(resolveIllustration("screen.tekshiruvlar"), { width: 170, height: 110 })}</View>
 
-        <Animated.View entering={FadeInUp.duration(450)} className="flex-row gap-2.5">
-          <StatTile
-            icon={<MaterialCommunityIcons name="check-circle-outline" size={16} color="#FFFFFF" />}
-            label={statusLabel.done}
-            value={String(doneCount)}
-            tone="accent"
-            active
-          />
-          <StatTile
-            icon={<MaterialCommunityIcons name="clock-outline" size={16} color="#FFFFFF" />}
-            label={statusLabel.pending}
-            value={String(pendingCount)}
-            tone="secondary"
-            active
-          />
-          <StatTile
-            icon={<MaterialCommunityIcons name="alert-circle-outline" size={16} color="#FFFFFF" />}
-            label={statusLabel.overdue}
-            value={String(overdueCount)}
-            tone="primary"
-            active
-          />
-        </Animated.View>
-
-        <Pressable className="active:scale-[0.98]" onPress={() => router.push("/xavf-testi")}>
+        {readOnly && emptyReason ? (
           <Card>
-            <Text className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</Text>
+            <Text className="text-center text-sm text-text-secondary">
+              {emptyReason === "not_linked" ? dict.checklist.partnerNotLinked : dict.checklist.partnerNotShared}
+            </Text>
           </Card>
-        </Pressable>
+        ) : (
+          <Animated.View entering={FadeInUp.duration(450)} className="flex-row gap-2.5">
+            <StatTile
+              icon={<MaterialCommunityIcons name="check-circle-outline" size={16} color="#FFFFFF" />}
+              label={statusLabel.done}
+              value={String(doneCount)}
+              tone="accent"
+              active
+            />
+            <StatTile
+              icon={<MaterialCommunityIcons name="clock-outline" size={16} color="#FFFFFF" />}
+              label={statusLabel.pending}
+              value={String(pendingCount)}
+              tone="secondary"
+              active
+            />
+            <StatTile
+              icon={<MaterialCommunityIcons name="alert-circle-outline" size={16} color="#FFFFFF" />}
+              label={statusLabel.overdue}
+              value={String(overdueCount)}
+              tone="primary"
+              active
+            />
+          </Animated.View>
+        )}
+
+        {/* O'z-o'zini tekshirish testi — faqat o'zining checklist'i uchun,
+            hamkorining ro'yxatini ko'rayotganda ma'nosiz. */}
+        {!readOnly && (
+          <Pressable className="active:scale-[0.98]" onPress={() => router.push("/xavf-testi")}>
+            <Card>
+              <Text className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</Text>
+            </Card>
+          </Pressable>
+        )}
 
         {items.map((item) => {
           const info = dict.checklist.items[item.type];
@@ -110,7 +123,7 @@ export default function ChecklistScreen() {
                 </View>
               </View>
               <Text className="text-sm text-text-secondary">{info.why}</Text>
-              {item.status !== "done" && (
+              {!readOnly && item.status !== "done" && (
                 <View className="flex-row gap-2 pt-1">
                   <Button variant="secondary" onPress={() => complete(item.id)}>
                     {dict.checklist.markDoneButton}

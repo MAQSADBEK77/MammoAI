@@ -166,6 +166,20 @@ export interface ChecklistItem {
   isFree: boolean;
 }
 
+export interface ChecklistResponse {
+  items: ChecklistItem[];
+  /** "Hamkorimni kuzataman" maqsadidagi foydalanuvchi uchun true — bu
+   * o'zining emas, ulangan hamkorining ro'yxati (bajarilgan deb belgilash/
+   * klinika topish tugmalari ko'rsatilmaydi, faqat ko'rish uchun). */
+  readOnly: boolean;
+  /** `readOnly` true-yu, lekin `items` bo'sh bo'lganda — sababi: hamkor
+   * hali ulanmaganmi, yoki ulangan-u lekin tekshiruv ma'lumotini
+   * ulashmaganmi (Hamkor sozlamalaridagi "checkups" o'chirilgan). */
+  emptyReason: "not_linked" | "not_shared" | null;
+  /** `readOnly` true bo'lganda — kimning ro'yxati ekanini ko'rsatish uchun. */
+  partnerName: string | null;
+}
+
 export interface Clinic {
   id: string;
   name: string;

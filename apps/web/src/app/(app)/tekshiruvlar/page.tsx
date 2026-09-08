@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ChecklistItem } from "@mammoai/shared";
+import type { ChecklistResponse } from "@mammoai/shared";
 import { formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useIllustrations } from "@/lib/illustrations";
@@ -17,16 +17,17 @@ export default function ChecklistPage() {
   const { dict } = useI18n();
   const { resolve } = useIllustrations();
   const router = useRouter();
-  const [items, setItems] = useState<ChecklistItem[] | null>(null);
+  const [data, setData] = useState<ChecklistResponse | null>(null);
 
   useEffect(() => {
-    api.checklist.list().then(setItems);
+    api.checklist.list().then(setData);
   }, []);
 
-  if (!items) return <LoadingSpinner label={dict.common.loading} />;
+  if (!data) return <LoadingSpinner label={dict.common.loading} />;
+  const { items, readOnly, emptyReason, partnerName } = data;
 
   async function complete(id: string) {
-    setItems(await api.checklist.complete(id));
+    setData(await api.checklist.complete(id));
   }
 
   const statusTone = { pending: "muted", done: "success", overdue: "danger" } as const;
@@ -42,26 +43,36 @@ export default function ChecklistPage() {
 
   return (
     <div className="space-y-4 pb-6">
-      <ScreenHeader title={dict.checklist.title} />
+      <ScreenHeader title={readOnly && partnerName ? dict.checklist.partnerTitle(partnerName) : dict.checklist.title} />
 
       <div className="flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
         <img src={resolve("screen.tekshiruvlar")} alt="" className="h-32 w-auto" />
       </div>
 
-      <div className="animate-fade-in-up flex gap-2.5">
-        <StatTile icon={<CheckCircleOutlined sx={{ fontSize: 16 }} />} label={statusLabel.done} value={String(doneCount)} tone="accent" active />
-        <StatTile icon={<AccessTimeOutlined sx={{ fontSize: 16 }} />} label={statusLabel.pending} value={String(pendingCount)} tone="secondary" active />
-        <StatTile icon={<ErrorOutlineOutlined sx={{ fontSize: 16 }} />} label={statusLabel.overdue} value={String(overdueCount)} tone="primary" active />
-      </div>
-
-      <button onClick={() => router.push("/xavf-testi")} className="block w-full text-left">
-        <Card interactive>
-          <p className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</p>
+      {readOnly && emptyReason ? (
+        <Card className="text-center text-sm text-text-secondary">
+          {emptyReason === "not_linked" ? dict.checklist.partnerNotLinked : dict.checklist.partnerNotShared}
         </Card>
-      </button>
+      ) : (
+        <div className="animate-fade-in-up flex gap-2.5">
+          <StatTile icon={<CheckCircleOutlined sx={{ fontSize: 16 }} />} label={statusLabel.done} value={String(doneCount)} tone="accent" active />
+          <StatTile icon={<AccessTimeOutlined sx={{ fontSize: 16 }} />} label={statusLabel.pending} value={String(pendingCount)} tone="secondary" active />
+          <StatTile icon={<ErrorOutlineOutlined sx={{ fontSize: 16 }} />} label={statusLabel.overdue} value={String(overdueCount)} tone="primary" active />
+        </div>
+      )}
 
-      {items.length === 0 && <p className="text-text-secondary">—</p>}
+      {/* O'z-o'zini tekshirish testi — faqat o'zining checklist'i uchun,
+          hamkorining ro'yxatini ko'rayotganda ma'nosiz (bu shaxsiy xavf testi). */}
+      {!readOnly && (
+        <button onClick={() => router.push("/xavf-testi")} className="block w-full text-left">
+          <Card interactive>
+            <p className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</p>
+          </Card>
+        </button>
+      )}
+
+      {!readOnly && items.length === 0 && <p className="text-text-secondary">—</p>}
 
       {items.map((item) => {
         const info = dict.checklist.items[item.type];
@@ -84,7 +95,7 @@ export default function ChecklistPage() {
             {item.dueDate && item.status !== "done" && (
               <p className="text-xs text-text-muted">{formatDateDisplay(item.dueDate)}</p>
             )}
-            {item.status !== "done" && (
+            {!readOnly && item.status !== "done" && (
               <div className="flex gap-2 pt-1">
                 <Button variant="secondary" onClick={() => complete(item.id)}>
                   {dict.checklist.markDoneButton}

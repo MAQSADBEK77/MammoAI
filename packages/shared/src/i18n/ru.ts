@@ -403,6 +403,9 @@ const ru: Dictionary = {
     markDoneButton: "Выполнено",
     findClinicButton: "Найти клинику",
     riskQuizCardTitle: "Тест самопроверки",
+    partnerTitle: (name: string) => `Обследования ${name}`,
+    partnerNotLinked: "Ваш партнёр ещё не подключён — подключите в разделе «Партнёр».",
+    partnerNotShared: "Партнёр ещё не поделился данными об обследованиях.",
     items: {
       gyn_annual_checkup: {
         title: "Ежегодный гинекологический осмотр",

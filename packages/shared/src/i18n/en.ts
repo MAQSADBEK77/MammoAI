@@ -405,6 +405,9 @@ const en: Dictionary = {
     markDoneButton: "Mark as done",
     findClinicButton: "Find a clinic",
     riskQuizCardTitle: "Self-check test",
+    partnerTitle: (name: string) => `${name}'s checkups`,
+    partnerNotLinked: "Your partner isn't linked yet — connect them in the \"Partner\" section.",
+    partnerNotShared: "Your partner hasn't shared checkup info yet.",
     items: {
       gyn_annual_checkup: {
         title: "Annual gynecological checkup",

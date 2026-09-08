@@ -10,9 +10,14 @@ import { LoadingSpinner } from "@/components/ui";
 import { trackClick } from "@/lib/analytics";
 
 export default function TabsLayout() {
-  const { status } = useSession();
+  const { status, onboardingProfile } = useSession();
   const { dict } = useI18n();
   const insets = useSafeAreaInsets();
+  // "Hamkorimni kuzataman" (partner_tracking) foydalanuvchisida shaxsiy sikl/
+  // homiladorlik ma'lumoti yo'q — Jamiyat (hayz/homiladorlik mavzusidagi
+  // muhokamalar) ular uchun aloqador emas, shuning uchun tab panelidan
+  // yashiriladi (marshrut o'zi ishlayveradi — profil bilan bir xil naqsh).
+  const isPartnerTracking = onboardingProfile?.primaryGoal === "partner_tracking";
 
   useEffect(() => {
     if (status === "anonymous") router.replace("/onboarding");
@@ -73,6 +78,7 @@ export default function TabsLayout() {
         name="jamiyat"
         options={{
           title: dict.nav.community,
+          href: isPartnerTracking ? null : undefined,
           tabBarIcon: ({ color, focused }) => (
             <TabIcon focused={focused}>
               <MaterialCommunityIcons name={focused ? "account-group" : "account-group-outline"} color={color} size={26} />

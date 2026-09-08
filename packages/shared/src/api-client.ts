@@ -7,7 +7,7 @@ import type {
   AppNotification,
   Article,
   BloodType,
-  ChecklistItem,
+  ChecklistResponse,
   Clinic,
   CommunityComment,
   CommunityPost,
@@ -224,8 +224,8 @@ export function createApiClient(config: ApiClientConfig) {
         request<PregnancyResponse>("/api/pregnancy/vitals", { method: "POST", body: JSON.stringify(payload) }),
     },
     checklist: {
-      list: () => request<ChecklistItem[]>("/api/checklist"),
-      complete: (id: string) => request<ChecklistItem[]>(`/api/checklist/${id}/complete`, { method: "POST" }),
+      list: () => request<ChecklistResponse>("/api/checklist"),
+      complete: (id: string) => request<ChecklistResponse>(`/api/checklist/${id}/complete`, { method: "POST" }),
     },
     clinics: {
       list: () => request<Clinic[]>("/api/clinics"),

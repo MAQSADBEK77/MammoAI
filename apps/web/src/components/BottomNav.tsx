@@ -16,26 +16,35 @@ import {
 } from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { dict } = useI18n();
+  const { onboardingProfile } = useSession();
 
   // "Asosiy" — Tsikl/Homiladorlik (rejimga qarab) + Klinikalar birlashtirilgan
   // yagona bosh sahifa. Profil pastki menyuda emas — faqat chap burger menyusi
   // orqali ochiladi. Hamkor esa foydalanuvchi so'roviga ko'ra pastki menyuga
   // qo'shildi. Har bir bandda ikkita ikonka bor — faol bo'lmasa "outlined",
   // faol bo'lsa "filled" (Material konvensiyasi).
+  // "Hamkorimni kuzataman" (partner_tracking) foydalanuvchisida shaxsiy
+  // sikl/homiladorlik ma'lumoti yo'q — Jamiyat (hayz/homiladorlik mavzusidagi
+  // muhokamalar) ular uchun aloqador emas, shuning uchun ko'rsatilmaydi.
+  const isPartnerTracking = onboardingProfile?.primaryGoal === "partner_tracking";
   const items = [
     { href: "/asosiy", label: dict.nav.home, Icon: Home, IconOutline: HomeOutlined },
-    { href: "/jamiyat", label: dict.nav.community, Icon: Groups, IconOutline: GroupsOutlined },
+    ...(isPartnerTracking ? [] : [{ href: "/jamiyat", label: dict.nav.community, Icon: Groups, IconOutline: GroupsOutlined }]),
     { href: "/tekshiruvlar", label: dict.nav.checklist, Icon: FactCheck, IconOutline: FactCheckOutlined },
     { href: "/hamkor", label: dict.partner.title, Icon: Favorite, IconOutline: FavoriteBorderOutlined },
     { href: "/yordamchi", label: dict.nav.assistant, Icon: SmartToy, IconOutline: SmartToyOutlined },
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-4"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + var(--tg-safe-area-bottom) + 12px)" }}
+    >
       <div className="bg-aurora-nav flex w-full max-w-md items-stretch justify-between gap-1 rounded-[32px] px-2 py-2 shadow-2xl shadow-black/30">
         {items.map(({ href, label, Icon, IconOutline }) => {
           const active = pathname?.startsWith(href);

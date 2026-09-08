@@ -2042,6 +2042,31 @@ export async function getPartnerStatus(userId: string): Promise<PartnerStatusRes
   };
 }
 
+/** "Hamkorimni kuzataman" maqsadidagi foydalanuvchi uchun — o'zining
+ * (bo'sh) tekshiruv ro'yxati o'rniga ulangan hamkorining ro'yxatini
+ * qaytaradi (faqat hamkor "Tekshiruvlar" ma'lumotini ulashishga rozi
+ * bo'lsa — `partner_links`dagi `checkups` sozlamasi, xuddi Hamkor
+ * ekranidagi "Ko'ra oladi" ro'yxati kabi). Ataylab READ-ONLY: kuzatuvchi
+ * hamkorining tekshiruvini "bajarildi" deb belgilay olmaydi — bu haqiqatan
+ * uni bajargan kishining o'zi qilishi kerak bo'lgan amal. */
+export async function getPartnerChecklistItems(
+  userId: string
+): Promise<{ items: ChecklistItem[]; emptyReason: "not_linked" | "not_shared" | null; partnerName: string | null }> {
+  await ensureSchema();
+  const link = await findPartnerLink(userId);
+  if (!link) return { items: [], emptyReason: "not_linked", partnerName: null };
+
+  const isA = link.user_a_id === userId;
+  const partnerId = isA ? link.user_b_id : link.user_a_id;
+  const partnerSharing = JSON.parse(isA ? link.user_b_shares : link.user_a_shares) as PartnerShareSettings;
+  const partnerUser = await getUserById(partnerId);
+
+  if (!partnerSharing.checkups) return { items: [], emptyReason: "not_shared", partnerName: partnerUser?.name ?? null };
+
+  const items = await listChecklistItems(partnerId);
+  return { items, emptyReason: null, partnerName: partnerUser?.name ?? null };
+}
+
 // ---------------------------------------------------------------------------
 // AI Yordamchi — chat tarixi. Xotira/pattern-aniqlash logikasi shu yerda emas,
 // server/ai-chat.ts'da — u mavjud cycle_logs/onboarding_profiles'ni o'qiydi.

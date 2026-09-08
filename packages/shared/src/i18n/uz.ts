@@ -410,6 +410,9 @@ const uz = {
     markDoneButton: "Bajardim",
     findClinicButton: "Klinika topish",
     riskQuizCardTitle: "O'z-o'zini tekshirish testi",
+    partnerTitle: (name: string) => `${name}ning tekshiruvlari`,
+    partnerNotLinked: "Hali hamkoringiz ulanmagan — \"Juft\" bo'limidan ulaning.",
+    partnerNotShared: "Hamkoringiz tekshiruv ma'lumotini hali ulashmagan.",
     items: {
       gyn_annual_checkup: {
         title: "Yillik ginekologik ko'rik",

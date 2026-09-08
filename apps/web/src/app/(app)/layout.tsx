@@ -26,7 +26,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-dvh bg-background pb-24">
+    <div
+      className="min-h-dvh bg-background"
+      // Pastdagi suzuvchi menyu (BottomNav) endi Telegram Mini App'da
+      // odatdagidan balandroq bo'lishi mumkin (--tg-safe-area-bottom) —
+      // sahifa mazmuni shu balandlikdan pastda qolib, menyu ostida
+      // "siqilib" ko'rinmasligi uchun scroll maydoni ham shunga mos kengaytiriladi.
+      style={{ paddingBottom: "calc(6rem + var(--tg-safe-area-bottom))" }}
+    >
       {/* Telegram Mini App'da fullscreen sarlavha paneli shaffof holda shu
           yerning ustida qoladi (lib/telegram.ts) — `--tg-safe-area-top`
           oddiy brauzerda 0px, Mini App'da esa panel balandligiga teng
