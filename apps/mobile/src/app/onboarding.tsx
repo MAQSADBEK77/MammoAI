@@ -23,6 +23,7 @@ import {
   goalToLandingTab,
   needsCycleInfo,
   needsHeightWeight,
+  needsPersonalHealthQuestions,
   gradientStops,
   colors,
   gradients,
@@ -269,9 +270,11 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   notifications: colors.primary,
 };
 
-function landingPath(goal: Goal): "/(tabs)/asosiy" | "/(tabs)/tekshiruvlar" {
+function landingPath(goal: Goal): "/(tabs)/asosiy" | "/(tabs)/tekshiruvlar" | "/(tabs)/hamkor" {
   const tab = goalToLandingTab(goal);
-  return tab === "checkups" ? "/(tabs)/tekshiruvlar" : "/(tabs)/asosiy";
+  if (tab === "checkups") return "/(tabs)/tekshiruvlar";
+  if (tab === "partner") return "/(tabs)/hamkor";
+  return "/(tabs)/asosiy";
 }
 
 export default function OnboardingScreen() {
@@ -314,7 +317,7 @@ export default function OnboardingScreen() {
     if (needsCycleInfo(survey.primaryGoal)) {
       tail.push("cycle_regularity", "cycle_lengths", "last_period", "typical_symptoms", "period_attitude", "health_conditions");
     }
-    tail.push("family_history", "last_checkup");
+    if (needsPersonalHealthQuestions(survey.primaryGoal)) tail.push("family_history", "last_checkup");
     if (needsHeightWeight(survey.primaryGoal)) tail.push("height_weight");
     tail.push("notifications", "analyzing");
     return [...base, ...tail];

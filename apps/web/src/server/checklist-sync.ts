@@ -23,6 +23,10 @@ const addDays = (dateStr: string, days: number) => {
 export async function syncChecklistForUser(userId: string, knownProfile?: OnboardingProfile): Promise<void> {
   const profile = knownProfile ?? (await getOnboardingProfile(userId));
   if (!profile) return;
+  // "Hamkorimni kuzataman" — bu foydalanuvchining O'ZIGA tegishli tibbiy
+  // tekshiruv checklist'i ma'nosiz (u o'zining emas, hamkorining ma'lumotini
+  // ko'radi) — checklist umuman yaratilmaydi.
+  if (profile.primaryGoal === "partner_tracking") return;
 
   // 12 emas, 365 — sikl uzunligi tartibsizligini haqiqatan aniqlash uchun
   // bir nechta TO'LIQ sikl kerak (12 kunlik log 1 ta hayzning o'zi bo'lishi

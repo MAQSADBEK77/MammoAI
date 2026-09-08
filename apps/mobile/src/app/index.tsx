@@ -17,7 +17,7 @@ export default function IndexScreen() {
       return;
     }
     const tab = goalToLandingTab(onboardingProfile.primaryGoal);
-    router.replace(tab === "checkups" ? "/(tabs)/tekshiruvlar" : "/(tabs)/asosiy");
+    router.replace(tab === "checkups" ? "/(tabs)/tekshiruvlar" : tab === "partner" ? "/(tabs)/hamkor" : "/(tabs)/asosiy");
   }, [status, onboardingProfile]);
 
   return (

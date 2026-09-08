@@ -4,16 +4,19 @@
 
 import type { Goal } from "../types";
 
-export type LandingTab = "cycle" | "pregnancy" | "checkups";
+export type LandingTab = "cycle" | "pregnancy" | "checkups" | "partner";
 
 export function goalToLandingTab(goal: Goal): LandingTab {
+  if (goal === "partner_tracking") return "partner";
   if (goal === "pregnancy" || goal === "planning_pregnancy") return "pregnancy";
   if (goal === "checkups") return "checkups";
   return "cycle"; // cycle, wellbeing, understand_body, skin
 }
 
-/** 18+ va <18 uchun alohida maqsad ro'yxati (App.pdf §5). */
-export const ADULT_GOALS: Goal[] = ["cycle", "pregnancy", "planning_pregnancy", "wellbeing", "checkups"];
+/** 18+ va <18 uchun alohida maqsad ro'yxati (App.pdf §5). `partner_tracking`
+ * faqat 18+ uchun — shaxsan hayz ko'rmaydigan (odatda erkak) foydalanuvchi
+ * Hamkor orqali ulangan ayolini kuzatadi. */
+export const ADULT_GOALS: Goal[] = ["cycle", "pregnancy", "planning_pregnancy", "wellbeing", "checkups", "partner_tracking"];
 export const MINOR_GOALS: Goal[] = ["cycle", "understand_body", "skin"];
 
 export function isPregnancyGoal(goal: Goal): boolean {
@@ -25,7 +28,14 @@ export function needsHeightWeight(goal: Goal): boolean {
 }
 
 export function needsCycleInfo(goal: Goal): boolean {
-  return goal !== "pregnancy";
+  return goal !== "pregnancy" && goal !== "partner_tracking";
+}
+
+/** `partner_tracking` uchun shaxsiy sog'liq savollari (oilaviy tarix, oxirgi
+ * tekshiruv) ham ma'nosiz — bular foydalanuvchining O'ZI haqida, u esa hamkorini
+ * kuzatadi. */
+export function needsPersonalHealthQuestions(goal: Goal): boolean {
+  return goal !== "partner_tracking";
 }
 
 export interface ModeAccentColors {

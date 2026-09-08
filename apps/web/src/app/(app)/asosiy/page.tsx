@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PlaceOutlined, ChevronRight } from "@mui/icons-material";
 import { goalToLandingTab } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -22,9 +22,19 @@ export default function AsosiyPage() {
   const { dict } = useI18n();
   const { onboardingProfile } = useSession();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [clinicsOpen, setClinicsOpen] = useState(() => Boolean(searchParams.get("checklistItemId")));
 
-  if (!onboardingProfile) {
+  // "Hamkorimni kuzataman" maqsadi tanlangan foydalanuvchida shaxsiy sikl/
+  // homiladorlik ma'lumoti umuman yo'q — bosh sahifasi to'g'ridan-to'g'ri
+  // Hamkor bo'limi (pastki menyudan "Asosiy"ga bosilsa ham shu yerga qaytadi).
+  useEffect(() => {
+    if (onboardingProfile && goalToLandingTab(onboardingProfile.primaryGoal) === "partner") {
+      router.replace("/hamkor");
+    }
+  }, [onboardingProfile, router]);
+
+  if (!onboardingProfile || goalToLandingTab(onboardingProfile.primaryGoal) === "partner") {
     return <LoadingSpinner label={dict.common.loading} />;
   }
 

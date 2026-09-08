@@ -19,6 +19,7 @@ import {
   goalToLandingTab,
   needsCycleInfo,
   needsHeightWeight,
+  needsPersonalHealthQuestions,
   colors,
   formatUzPhoneInput,
   extractUzPhoneDigits,
@@ -223,7 +224,9 @@ function auraName(color: string): "primary" | "secondary" | "accent" {
 
 function landingPath(goal: Goal): string {
   const tab = goalToLandingTab(goal);
-  return tab === "checkups" ? "/tekshiruvlar" : "/asosiy";
+  if (tab === "checkups") return "/tekshiruvlar";
+  if (tab === "partner") return "/hamkor";
+  return "/asosiy";
 }
 
 const SYMPTOM_OPTIONS: Symptom[] = [
@@ -348,7 +351,7 @@ function OnboardingPageInner() {
         "health_conditions"
       );
     }
-    tail.push("family_history", "last_checkup");
+    if (needsPersonalHealthQuestions(survey.primaryGoal)) tail.push("family_history", "last_checkup");
     if (needsHeightWeight(survey.primaryGoal)) tail.push("height_weight");
     tail.push("notifications", "analyzing");
     return [...base, ...tail];

@@ -21,7 +21,7 @@ export default function RootPage() {
   useEffect(() => {
     if (status !== "onboarded" || !onboardingProfile) return;
     const tab = goalToLandingTab(onboardingProfile.primaryGoal);
-    router.replace(tab === "checkups" ? "/tekshiruvlar" : "/asosiy");
+    router.replace(tab === "checkups" ? "/tekshiruvlar" : tab === "partner" ? "/hamkor" : "/asosiy");
   }, [status, onboardingProfile, router]);
 
   if (status === "loading" || status === "onboarded") {

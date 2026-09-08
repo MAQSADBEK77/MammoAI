@@ -187,6 +187,7 @@ const en: Dictionary = {
       checkups: "Keep track of checkups",
       understand_body: "Understand my body better",
       skin: "Improve my skin",
+      partner_tracking: "Track my partner (wife)",
     },
 
     pregnantQuestion: "Are you currently pregnant?",

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { goalToLandingTab } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -26,7 +26,16 @@ export default function AsosiyScreen() {
   const [clinicsOpen, setClinicsOpen] = useState(() => Boolean(checklistItemId));
   const { openDrawer } = useDrawer();
 
-  if (!onboardingProfile) {
+  // "Hamkorimni kuzataman" maqsadi tanlangan foydalanuvchida shaxsiy sikl/
+  // homiladorlik ma'lumoti umuman yo'q — bosh tab'i to'g'ridan-to'g'ri Hamkor
+  // bo'limi (pastki menyudan "Asosiy"ga bosilsa ham shu yerga qaytadi).
+  useEffect(() => {
+    if (onboardingProfile && goalToLandingTab(onboardingProfile.primaryGoal) === "partner") {
+      router.replace("/(tabs)/hamkor");
+    }
+  }, [onboardingProfile]);
+
+  if (!onboardingProfile || goalToLandingTab(onboardingProfile.primaryGoal) === "partner") {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <LoadingSpinner label={dict.common.loading} />

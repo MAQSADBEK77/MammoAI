@@ -190,6 +190,7 @@ const uz = {
       checkups: "Tekshiruvlarni nazorat qilish",
       understand_body: "Tanamni yaxshiroq tushunish",
       skin: "Terimni yaxshilash",
+      partner_tracking: "Hamkorimni (ayolimni) kuzatish",
     },
 
     pregnantQuestion: "Hozir homiladormisiz?",

@@ -4,6 +4,10 @@
 export type Language = "uz" | "uz-cyrl" | "ru" | "en";
 
 // App.pdf §5 — 18+ ayollar uchun 5 ta, 18 yoshgacha bo'lganlar uchun 3 ta maqsad.
+// `partner_tracking` — erkaklar (yoki shaxsan hayz ko'rmaydigan har qanday
+// foydalanuvchi) uchun 6-chi (faqat 18+) maqsad: o'zining emas, Hamkor orqali
+// ulangan ayolining ma'lumotlarini kuzatish — shaxsiy sikl/homiladorlik
+// savollari butunlay o'tkazib yuboriladi (packages/shared/src/logic/goal.ts).
 export type Goal =
   | "cycle"
   | "pregnancy"
@@ -11,7 +15,8 @@ export type Goal =
   | "wellbeing"
   | "checkups"
   | "understand_body"
-  | "skin";
+  | "skin"
+  | "partner_tracking";
 
 export interface User {
   id: string;

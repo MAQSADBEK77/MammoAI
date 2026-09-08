@@ -185,6 +185,7 @@ const ru: Dictionary = {
       checkups: "Отслеживать обследования",
       understand_body: "Лучше понимать своё тело",
       skin: "Улучшить состояние кожи",
+      partner_tracking: "Следить за партнёршей (женой)",
     },
 
     pregnantQuestion: "Вы сейчас беременны?",
