@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import clsx from "clsx";
 import type { ChatMessage, InsightsSummary, SymptomPattern } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
 import { LoadingSpinner, ScreenHeader, SegmentedControl } from "@/components/ui";
@@ -21,6 +22,7 @@ const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
  */
 export default function YordamchiScreen() {
   const { dict } = useI18n();
+  const themeColors = useThemeColors();
   const { openDrawer } = useDrawer();
   const [tab, setTab] = useState<"chat" | "stats">("chat");
 
@@ -100,7 +102,7 @@ export default function YordamchiScreen() {
       <KeyboardAvoidingView className="flex-1 pb-24" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View className="px-4 pt-2">
           <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
-            <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+            <MaterialCommunityIcons name="menu" size={22} color={themeColors.textPrimary} />
           </Pressable>
           <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
           <Text className="-mt-3 mb-2 text-xs text-text-muted">{dict.chat.disclaimer}</Text>
@@ -178,7 +180,7 @@ export default function YordamchiScreen() {
                           <MaterialCommunityIcons name="thumb-down-outline" size={18} color="#E0506F" />
                         </Pressable>
                         <Pressable onPress={() => setFeedbackPromptDismissed(true)} className="ml-1 h-8 w-8 items-center justify-center">
-                          <MaterialCommunityIcons name="close" size={16} color="#9CA3AF" />
+                          <MaterialCommunityIcons name="close" size={16} color={themeColors.textMuted} />
                         </Pressable>
                       </View>
                     </View>

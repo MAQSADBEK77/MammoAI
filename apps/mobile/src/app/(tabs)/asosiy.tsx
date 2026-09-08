@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { goalToLandingTab } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useThemeColors } from "@/lib/theme";
 import { useDrawer } from "@/lib/drawer";
 import { Card, LoadingSpinner } from "@/components/ui";
 import { CycleScreen } from "@/components/screens/CycleScreen";
@@ -22,6 +23,7 @@ import { ClinicsScreen } from "@/components/screens/ClinicsScreen";
 export default function AsosiyScreen() {
   const { dict } = useI18n();
   const { onboardingProfile } = useSession();
+  const themeColors = useThemeColors();
   const { checklistItemId } = useLocalSearchParams<{ checklistItemId?: string }>();
   const [clinicsOpen, setClinicsOpen] = useState(() => Boolean(checklistItemId));
   const { openDrawer } = useDrawer();
@@ -49,7 +51,7 @@ export default function AsosiyScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-8 pb-32">
         <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
-          <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+          <MaterialCommunityIcons name="menu" size={22} color={themeColors.textPrimary} />
         </Pressable>
         {isPregnancyMode ? <PregnancyScreen /> : <CycleScreen />}
         <View className="border-t border-border pt-6">
@@ -65,7 +67,7 @@ export default function AsosiyScreen() {
                   <Text className="font-bold text-text-primary">{dict.clinics.title}</Text>
                   <Text className="text-sm text-text-secondary">{dict.clinics.seedDataNotice}</Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={18} color="#9CA3AF" />
+                <MaterialCommunityIcons name="chevron-right" size={18} color={themeColors.textMuted} />
               </Card>
             </Pressable>
           )}

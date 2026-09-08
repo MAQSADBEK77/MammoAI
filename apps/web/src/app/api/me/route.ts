@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const user = await requireUser(request);
     const patch = (await request.json()) as Partial<
-      Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "avatarUrl">
+      Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl">
     >;
     const updated = await updateUser(user.id, patch);
     return NextResponse.json({ user: updated, onboardingProfile: await getOnboardingProfile(user.id) });

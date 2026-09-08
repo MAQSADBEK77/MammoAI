@@ -12,7 +12,13 @@ import { Card } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { Switch, Select, MenuItem } from "@mui/material";
 import clsx from "clsx";
-import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, VisibilityOutlined as Eye, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen } from "@mui/icons-material";
+import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, Brightness6Outlined as ThemeIcon, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen } from "@mui/icons-material";
+
+const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem" }[] = [
+  { value: "light", labelKey: "themeLight" },
+  { value: "dark", labelKey: "themeDark" },
+  { value: "system", labelKey: "themeSystem" },
+];
 
 // Profil "REJIMNI TANLANG" — App.pdf §5 dagi 7 ta maqsaddan uchtasi shu yerdan
 // tezkor almashtiriladi (qolganlari faqat onboarding'da tanlanadi).
@@ -485,8 +491,21 @@ export default function ProfilePage() {
           </div>
         </SettingsRow>
 
-        <SettingsRow icon={Eye} label={dict.profile.highContrastLabel}>
-          <Toggle checked={user.highContrast} onChange={() => save({ highContrast: !user.highContrast })} />
+        <SettingsRow icon={ThemeIcon} label={dict.profile.themeLabel}>
+          <div className="flex gap-2">
+            {THEME_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => save({ theme: opt.value })}
+                className={clsx(
+                  "tap-target rounded-full px-3 text-sm font-semibold",
+                  user.theme === opt.value ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
+                )}
+              >
+                {dict.profile[opt.labelKey]}
+              </button>
+            ))}
+          </div>
         </SettingsRow>
 
         <SettingsRow icon="🔔" label={dict.profile.notificationsLabel} last>

@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import type { ChecklistItem } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
 import { useIllustrations } from "@/lib/illustrations";
@@ -16,6 +17,7 @@ const STATUS_ICON_COLOR = { pending: "#9CA3AF", done: "#57B894", overdue: "#E050
 
 export default function ChecklistScreen() {
   const { dict } = useI18n();
+  const themeColors = useThemeColors();
   const { openDrawer } = useDrawer();
   const { resolve: resolveIllustration } = useIllustrations();
   const [items, setItems] = useState<ChecklistItem[] | null>(null);
@@ -51,7 +53,7 @@ export default function ChecklistScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
         <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
-          <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+          <MaterialCommunityIcons name="menu" size={22} color={themeColors.textPrimary} />
         </Pressable>
         <ScreenHeader title={dict.checklist.title} />
 

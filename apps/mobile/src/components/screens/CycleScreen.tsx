@@ -8,6 +8,7 @@ import type { CycleLog, CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai
 import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, FloatingTag, IconChip, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
@@ -37,6 +38,7 @@ const SYMPTOMS: Symptom[] = [
 export function CycleScreen() {
   const { dict } = useI18n();
   const { onboardingProfile } = useSession();
+  const themeColors = useThemeColors();
   const [data, setData] = useState<CycleResponse | null>(null);
   const [logging, setLogging] = useState(false);
   const [logDate, setLogDate] = useState<string>(() => localDateStr());
@@ -408,7 +410,7 @@ export function CycleScreen() {
                         </Text>
                       )}
                     </View>
-                    <MaterialCommunityIcons name="chevron-right" size={18} color="#9CA3AF" />
+                    <MaterialCommunityIcons name="chevron-right" size={18} color={themeColors.textMuted} />
                   </Card>
                 </Pressable>
               );

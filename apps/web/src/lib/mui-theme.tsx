@@ -2,7 +2,7 @@
 
 import { useMemo, type ReactNode } from "react";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
-import { colors, getModeAccentColors } from "@mammoai/shared";
+import { getModeAccentColors, resolveThemeColors } from "@mammoai/shared";
 import { useSession } from "./session";
 
 /**
@@ -13,14 +13,19 @@ import { useSession } from "./session";
  * bilan bir xil qiymatlar — packages/shared/src/design-tokens.ts).
  */
 export function MuiThemeProvider({ children }: { children: ReactNode }) {
-  const { onboardingProfile } = useSession();
+  const { onboardingProfile, resolvedTheme } = useSession();
+  // `resolveThemeColors` "light" uchun bitta doimiy obyektni qaytaradi, lekin
+  // "dark" uchun har chaqiruvda yangi obyekt yasaydi — useMemo bilan
+  // barqarorlashtirilmasa, quyidagi theme useMemo har renderda qayta ishlab
+  // chiqarilib ketardi.
+  const colors = useMemo(() => resolveThemeColors(resolvedTheme), [resolvedTheme]);
   const accent = onboardingProfile ? getModeAccentColors(onboardingProfile.primaryGoal) : { primary: colors.primary, primaryDark: colors.primaryDark, primaryLight: colors.primaryLight };
 
   const theme = useMemo(
     () =>
       createTheme({
         palette: {
-          mode: "light",
+          mode: resolvedTheme,
           primary: { main: accent.primary, dark: accent.primaryDark, light: accent.primaryLight, contrastText: "#FFFFFF" },
           secondary: { main: colors.secondary, light: colors.secondaryLight, contrastText: "#FFFFFF" },
           error: { main: colors.danger },
@@ -62,7 +67,7 @@ export function MuiThemeProvider({ children }: { children: ReactNode }) {
           },
         },
       }),
-    [accent.primary, accent.primaryDark, accent.primaryLight]
+    [accent.primary, accent.primaryDark, accent.primaryLight, resolvedTheme, colors]
   );
 
   return (

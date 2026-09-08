@@ -30,6 +30,12 @@ const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: "en", label: "English" },
 ];
 
+const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem" }[] = [
+  { value: "light", labelKey: "themeLight" },
+  { value: "dark", labelKey: "themeDark" },
+  { value: "system", labelKey: "themeSystem" },
+];
+
 /**
  * Chap tomondagi ochiladigan menyu (burger) — foydalanuvchi so'roviga ko'ra:
  * profil bo'limiga shu yerdan kirish mumkin, til/shrift/kontrast/bildirishnoma
@@ -150,15 +156,21 @@ export function AppDrawer() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-text-primary">{dict.profile.highContrastLabel}</span>
-              <Switch
-                checked={user.highContrast}
-                onChange={() => save({ highContrast: !user.highContrast })}
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": { color: "#fff" },
-                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "var(--color-primary)", opacity: 1 },
-                }}
-              />
+              <span className="text-sm font-medium text-text-primary">{dict.profile.themeLabel}</span>
+              <div className="flex gap-2">
+                {THEME_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => save({ theme: opt.value })}
+                    className={clsx(
+                      "tap-target rounded-full px-3 text-xs font-semibold",
+                      user.theme === opt.value ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
+                    )}
+                  >
+                    {dict.profile[opt.labelKey]}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex items-center justify-between gap-3">

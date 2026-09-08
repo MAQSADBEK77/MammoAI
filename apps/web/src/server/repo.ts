@@ -68,7 +68,7 @@ interface UserRow {
   region: string | null;
   language: Language;
   font_scale: "normal" | "large";
-  high_contrast: boolean;
+  theme: "light" | "dark" | "system";
   notifications_enabled: boolean;
   token_version: number;
   created_at: string;
@@ -85,7 +85,7 @@ function userFromRow(row: UserRow): User {
     region: row.region,
     language: row.language,
     fontScale: row.font_scale,
-    highContrast: !!row.high_contrast,
+    theme: row.theme,
     notificationsEnabled: !!row.notifications_enabled,
     createdAt: row.created_at,
     avatarUrl: row.avatar_url,
@@ -107,7 +107,7 @@ export async function createAnonymousUser(language: Language): Promise<{ user: U
       region: null,
       language,
       fontScale: "normal",
-      highContrast: false,
+      theme: "system",
       notificationsEnabled: true,
       createdAt,
       avatarUrl: null,
@@ -147,7 +147,7 @@ export async function createUserWithIdentifier(
       region: null,
       language,
       fontScale: "normal",
-      highContrast: false,
+      theme: "system",
       notificationsEnabled: true,
       createdAt,
       avatarUrl: null,
@@ -168,7 +168,7 @@ export async function getUserById(id: string): Promise<(User & { tokenVersion: n
 export async function updateUser(
   id: string,
   patch: Partial<
-    Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "avatarUrl" | "isBlocked">
+    Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl" | "isBlocked">
   >
 ): Promise<User> {
   await ensureSchema();
@@ -178,7 +178,7 @@ export async function updateUser(
   await sql`
     UPDATE users SET
       name = ${merged.name}, phone = ${merged.phone}, language = ${merged.language},
-      font_scale = ${merged.fontScale}, high_contrast = ${merged.highContrast},
+      font_scale = ${merged.fontScale}, theme = ${merged.theme},
       notifications_enabled = ${merged.notificationsEnabled}, avatar_url = ${merged.avatarUrl},
       is_blocked = ${merged.isBlocked}
     WHERE id = ${id}

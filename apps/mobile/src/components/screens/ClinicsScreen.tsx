@@ -7,6 +7,7 @@ import clsx from "clsx";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { getClinicRating, getClinicHours, isTopClinic } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile, TextField } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
@@ -27,6 +28,7 @@ const SPECIALTIES: ClinicSpecialty[] = [
  * O'zining SafeAreaView/ScrollView'i yo'q. */
 export function ClinicsScreen() {
   const { dict } = useI18n();
+  const themeColors = useThemeColors();
   const { checklistItemId } = useLocalSearchParams<{ checklistItemId?: string }>();
 
   const [clinics, setClinics] = useState<Clinic[] | null>(null);
@@ -121,11 +123,11 @@ export function ClinicsScreen() {
 
               <View className="gap-1">
                 <View className="flex-row items-center gap-1.5">
-                  <MaterialCommunityIcons name="map-marker-outline" size={16} color="#9CA3AF" />
+                  <MaterialCommunityIcons name="map-marker-outline" size={16} color={themeColors.textMuted} />
                   <Text className="flex-1 text-sm text-text-secondary">{clinic.address}</Text>
                 </View>
                 <View className="flex-row items-center gap-1.5">
-                  <MaterialCommunityIcons name="clock-outline" size={16} color="#9CA3AF" />
+                  <MaterialCommunityIcons name="clock-outline" size={16} color={themeColors.textMuted} />
                   <Text className="flex-1 text-sm text-text-secondary">{getClinicHours(clinic.id)}</Text>
                 </View>
               </View>
@@ -145,7 +147,7 @@ export function ClinicsScreen() {
                       Linking.openURL(`tel:${clinic.phone}`);
                     }}
                   >
-                    <MaterialCommunityIcons name="phone-outline" size={16} color="#1F2937" />
+                    <MaterialCommunityIcons name="phone-outline" size={16} color={themeColors.textPrimary} />
                     <Text className="text-sm font-semibold text-text-primary">{dict.clinics.callButton}</Text>
                   </Button>
                 </View>

@@ -7,6 +7,7 @@ import { Portal, Dialog, Switch, Avatar } from "react-native-paper";
 import type { PartnerShareSettings, PartnerStatusResponse } from "@mammoai/shared";
 import { MOOD_EMOJI, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
 import { Button, Card, LoadingSpinner, ScreenHeader, Badge } from "@/components/ui";
@@ -20,6 +21,7 @@ import { PartnerChatModal } from "@/components/screens/PartnerChatModal";
  */
 export default function HamkorScreen() {
   const { dict } = useI18n();
+  const themeColors = useThemeColors();
   const { openDrawer } = useDrawer();
   const [status, setStatus] = useState<PartnerStatusResponse | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
@@ -96,7 +98,7 @@ export default function HamkorScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
         <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
-          <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+          <MaterialCommunityIcons name="menu" size={22} color={themeColors.textPrimary} />
         </Pressable>
         <ScreenHeader title={dict.partner.title} subtitle={dict.partner.subtitle} />
 
@@ -170,7 +172,7 @@ export default function HamkorScreen() {
               <View className="flex-row gap-2">
                 <View className="flex-1">
                   <Button variant="secondary" onPress={() => setChatOpen(true)}>
-                    <MaterialCommunityIcons name="chat-outline" size={16} color="#1F2937" />
+                    <MaterialCommunityIcons name="chat-outline" size={16} color={themeColors.textPrimary} />
                     <Text className="text-sm font-semibold text-text-primary"> {dict.partner.messageButton}</Text>
                   </Button>
                 </View>

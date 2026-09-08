@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { Article, ArticleCategory } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Badge, Card, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
@@ -14,6 +15,7 @@ const CATEGORY_TINT: Record<ArticleCategory, string> = { cycle: "bg-primary/15",
 
 export default function ArticlesScreen() {
   const { dict } = useI18n();
+  const themeColors = useThemeColors();
   const [articles, setArticles] = useState<Article[] | null>(null);
 
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function ArticlesScreen() {
                   {article.excerpt}
                 </Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={18} color="#9CA3AF" style={{ marginTop: 4 }} />
+              <MaterialCommunityIcons name="chevron-right" size={18} color={themeColors.textMuted} style={{ marginTop: 4 }} />
             </Card>
           </Pressable>
         ))}

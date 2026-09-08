@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import clsx from "clsx";
 import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
 import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@/components/ui";
@@ -45,6 +46,7 @@ function Toggle({ checked, onPress }: { checked: boolean; onPress: () => void })
 
 export default function CommunityScreen() {
   const { dict } = useI18n();
+  const themeColors = useThemeColors();
   const { openDrawer } = useDrawer();
 
   const [stats, setStats] = useState<CommunityStats | null>(null);
@@ -215,14 +217,14 @@ export default function CommunityScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-32">
         <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
-          <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+          <MaterialCommunityIcons name="menu" size={22} color={themeColors.textPrimary} />
         </Pressable>
         <ScreenHeader
           title={dict.community.title}
           subtitle={dict.community.subtitle}
           right={
             <View>
-              <IconButton icon={<MaterialCommunityIcons name="bell-outline" size={18} color="#1F2937" />} onPress={toggleNotifications} />
+              <IconButton icon={<MaterialCommunityIcons name="bell-outline" size={18} color={themeColors.textPrimary} />} onPress={toggleNotifications} />
               {unreadCount > 0 && (
                 <View className="absolute -right-0.5 -top-0.5 h-4 w-4 items-center justify-center rounded-full bg-danger">
                   <Text className="text-[10px] font-bold text-white">{unreadCount > 9 ? "9+" : unreadCount}</Text>
@@ -377,16 +379,16 @@ export default function CommunityScreen() {
                       <MaterialCommunityIcons
                         name={post.viewerLiked ? "heart" : "heart-outline"}
                         size={16}
-                        color={post.viewerLiked ? "#E0506F" : "#4B5563"}
+                        color={post.viewerLiked ? "#E0506F" : themeColors.textSecondary}
                       />
                       <Text className={clsx("text-xs font-semibold", post.viewerLiked ? "text-danger" : "text-text-secondary")}>{post.likesCount}</Text>
                     </Pressable>
                     <Pressable onPress={() => toggleComments(post)} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl py-2 active:scale-95">
-                      <MaterialCommunityIcons name="message-outline" size={16} color="#4B5563" />
+                      <MaterialCommunityIcons name="message-outline" size={16} color={themeColors.textSecondary} />
                       <Text className="text-xs font-semibold text-text-secondary">{post.commentsCount}</Text>
                     </Pressable>
                     <Pressable onPress={() => sharePost(post)} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl py-2 active:scale-95">
-                      <MaterialCommunityIcons name="share-variant-outline" size={16} color="#4B5563" />
+                      <MaterialCommunityIcons name="share-variant-outline" size={16} color={themeColors.textSecondary} />
                       <Text className="text-xs font-semibold text-text-secondary">{dict.community.shareButton}</Text>
                     </Pressable>
                     {post.isOwn && (
@@ -406,9 +408,9 @@ export default function CommunityScreen() {
                             {!c.isAnonymous && c.authorAvatarUrl ? (
                               <Image source={{ uri: c.authorAvatarUrl }} className="h-full w-full" />
                             ) : c.isAnonymous ? (
-                              <MaterialCommunityIcons name="incognito" size={12} color="#4B5563" />
+                              <MaterialCommunityIcons name="incognito" size={12} color={themeColors.textSecondary} />
                             ) : (
-                              <MaterialCommunityIcons name="account-outline" size={12} color="#4B5563" />
+                              <MaterialCommunityIcons name="account-outline" size={12} color={themeColors.textSecondary} />
                             )}
                           </View>
                           <View className="flex-1 rounded-2xl bg-surface-muted px-3 py-2">
@@ -419,7 +421,7 @@ export default function CommunityScreen() {
                           </View>
                           {(c.isOwn || post.isOwn) && (
                             <Pressable onPress={() => removeComment(post, c)} className="mt-0.5 h-6 w-6 items-center justify-center rounded-lg active:opacity-60">
-                              <MaterialCommunityIcons name="trash-can-outline" size={13} color="#9CA3AF" />
+                              <MaterialCommunityIcons name="trash-can-outline" size={13} color={themeColors.textMuted} />
                             </Pressable>
                           )}
                         </View>

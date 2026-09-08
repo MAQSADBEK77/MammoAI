@@ -22,6 +22,12 @@ const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: "en", label: "English" },
 ];
 
+const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem" }[] = [
+  { value: "light", labelKey: "themeLight" },
+  { value: "dark", labelKey: "themeDark" },
+  { value: "system", labelKey: "themeSystem" },
+];
+
 const DRAWER_WIDTH = 300;
 
 /**
@@ -192,8 +198,20 @@ export function AppDrawer() {
             </View>
 
             <View className="flex-row items-center justify-between">
-              <Text className="text-sm font-medium text-text-primary">{dict.profile.highContrastLabel}</Text>
-              <Switch value={user.highContrast} onValueChange={() => save({ highContrast: !user.highContrast })} color="#F43F7F" />
+              <Text className="text-sm font-medium text-text-primary">{dict.profile.themeLabel}</Text>
+              <View className="flex-row gap-1.5">
+                {THEME_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.value}
+                    onPress={() => save({ theme: opt.value })}
+                    className={clsx("rounded-full px-2.5 py-1.5", user.theme === opt.value ? "bg-primary" : "bg-surface-muted")}
+                  >
+                    <Text className={clsx("text-xs font-semibold", user.theme === opt.value ? "text-white" : "text-text-secondary")}>
+                      {dict.profile[opt.labelKey]}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
 
             <View className="flex-row items-center justify-between">

@@ -9,7 +9,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     requireAdmin(request);
     const { id } = await context.params;
     const patch = (await request.json()) as Partial<
-      Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "isBlocked">
+      Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "isBlocked">
     >;
     const updated = await updateUser(id, patch);
     return NextResponse.json(updated);

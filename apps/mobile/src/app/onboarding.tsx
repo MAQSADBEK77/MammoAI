@@ -32,6 +32,7 @@ import {
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useThemeColors } from "@/lib/theme";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Button, DateWheelPicker, IconChip, ProgressBar, TextField, WheelPicker } from "@/components/ui";
@@ -281,6 +282,7 @@ export default function OnboardingScreen() {
   const { dict, language, setLanguage } = useI18n();
   const { applyMeResponse } = useSession();
   const { resolve: resolveIllustration } = useIllustrations();
+  const themeColors = useThemeColors();
 
   const [survey, setSurvey] = useState<SurveyState>(INITIAL_SURVEY);
   const [stepIndex, setStepIndex] = useState(0);
@@ -566,7 +568,7 @@ export default function OnboardingScreen() {
                 onChangeText={(v) => setSurvey((s) => ({ ...s, identifier: formatUzPhoneInput(v) }))}
                 placeholder={dict.auth.identifierPlaceholder}
                 keyboardType="phone-pad"
-                icon={<MaterialCommunityIcons name="lock-outline" size={18} color="#9CA3AF" />}
+                icon={<MaterialCommunityIcons name="lock-outline" size={18} color={themeColors.textMuted} />}
               />
               {errorMessage && <Text className="text-sm text-danger">{errorMessage}</Text>}
             </View>
@@ -632,7 +634,7 @@ export default function OnboardingScreen() {
                 <MaterialCommunityIcons
                   name={survey.agreedToOffer ? "checkbox-marked" : "checkbox-blank-outline"}
                   size={22}
-                  color={survey.agreedToOffer ? colors.primaryDark : colors.textMuted}
+                  color={survey.agreedToOffer ? colors.primaryDark : themeColors.textMuted}
                 />
                 <Text className="flex-1 text-sm font-medium text-text-primary">{dict.privacy.offerCheckboxLabel}</Text>
               </Pressable>

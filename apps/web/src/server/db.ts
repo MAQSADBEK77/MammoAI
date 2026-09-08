@@ -58,6 +58,7 @@ async function initSchema() {
         language TEXT NOT NULL DEFAULT 'uz',
         font_scale TEXT NOT NULL DEFAULT 'normal',
         high_contrast BOOLEAN NOT NULL DEFAULT FALSE,
+        theme TEXT NOT NULL DEFAULT 'system',
         notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
         token_version INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
@@ -337,6 +338,11 @@ async function initSchema() {
     // Play Store tekshiruvchisi kabi ichki test hisoblar — admin panelning
     // Foydalanuvchilar/Analitika ro'yxatlari va statistikasida ko'rinmasligi kerak.
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_test_account BOOLEAN NOT NULL DEFAULT FALSE`,
+    // Yorug'/Qorong'u/Tizim mavzu tanlovi — eski "Yuqori kontrast" (high_contrast)
+    // o'rnini bosadi. `high_contrast` ustuni ataylab o'chirilmaydi (dead column,
+    // qaytarib bo'lmaydigan DROP COLUMN'dan qochish uchun), shunchaki endi kod
+    // hech qayerda o'qimaydi/yozmaydi.
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'system'`,
   ]);
 
   // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.

@@ -25,7 +25,7 @@ import {
 } from "react-native-paper";
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
 import { colors, glass, gradients } from "@mammoai/shared";
-import { useModeAccent } from "@/lib/theme";
+import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { Emoji } from "@/components/Emoji";
 
 // Foydalanuvchi so'roviga ko'ra ("hamma joyga Material UI ishlat — iconlardan
@@ -477,6 +477,7 @@ export function WheelPicker<T>({
   const scrollRef = useRef<ScrollView>(null);
   const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
   const index = options.indexOf(value);
+  const themeColors = useThemeColors();
 
   // Tashqi `value` o'zgarganda (masalan oy almashganda kun ustuni qayta
   // hisoblanganda) ham mos qatorga scroll qilamiz.
@@ -504,12 +505,12 @@ export function WheelPicker<T>({
       {/* Yuqori/pastki xiralashish — iOS wheel'idagi kabi (LinearGradient, mask-image RN'da yo'q). */}
       <LinearGradient
         pointerEvents="none"
-        colors={[colors.background, `${colors.background}00`]}
+        colors={[themeColors.background, `${themeColors.background}00`]}
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: WHEEL_ITEM_HEIGHT * 1.5, zIndex: 5 }}
       />
       <LinearGradient
         pointerEvents="none"
-        colors={[`${colors.background}00`, colors.background]}
+        colors={[`${themeColors.background}00`, themeColors.background]}
         style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: WHEEL_ITEM_HEIGHT * 1.5, zIndex: 5 }}
       />
       <ScrollView

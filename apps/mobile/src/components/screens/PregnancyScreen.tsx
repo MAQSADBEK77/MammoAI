@@ -7,6 +7,7 @@ import type { PregnancyResponse, VitalType } from "@mammoai/shared";
 import { getMilestoneForWeek, getVitalTone, gradients, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useThemeColors } from "@/lib/theme";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader, TextField } from "@/components/ui";
@@ -26,6 +27,7 @@ const VITAL_ICON_COLOR: Record<VitalType, string> = {
  * /homiladorlik ekrani edi. O'zining SafeAreaView/ScrollView'i yo'q. */
 export function PregnancyScreen() {
   const { dict } = useI18n();
+  const themeColors = useThemeColors();
   const { resolve: resolveIllustration } = useIllustrations();
   const { onboardingProfile } = useSession();
   const [data, setData] = useState<PregnancyResponse | null>(null);
@@ -225,7 +227,7 @@ export function PregnancyScreen() {
               <Text className="text-sm text-text-muted">{dict.pregnancy.nextCheckupNone}</Text>
             )}
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={18} color="#9CA3AF" />
+          <MaterialCommunityIcons name="chevron-right" size={18} color={themeColors.textMuted} />
         </Card>
       </Pressable>
 

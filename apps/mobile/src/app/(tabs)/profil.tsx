@@ -12,6 +12,7 @@ import type { BloodType, CycleSettings, Goal, Language } from "@mammoai/shared";
 import { BLOOD_TYPES, getModeAccentColors, gradientStops, colors, gradients, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { clearToken } from "@/lib/storage";
 import { useDrawer } from "@/lib/drawer";
@@ -35,10 +36,17 @@ const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: "en", label: "English" },
 ];
 
+const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem" }[] = [
+  { value: "light", labelKey: "themeLight" },
+  { value: "dark", labelKey: "themeDark" },
+  { value: "system", labelKey: "themeSystem" },
+];
+
 export default function ProfileScreen() {
   const { dict, language, setLanguage } = useI18n();
   const { user, onboardingProfile, refresh } = useSession();
   const { openDrawer } = useDrawer();
+  const themeColors = useThemeColors();
 
   const [editingHeader, setEditingHeader] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
@@ -205,7 +213,7 @@ export default function ProfileScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-5 pb-32">
         <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
-          <MaterialCommunityIcons name="menu" size={22} color="#1F2937" />
+          <MaterialCommunityIcons name="menu" size={22} color={themeColors.textPrimary} />
         </Pressable>
         {/* Profil "shaxsiy" kartasi — Figma referens dizayniga moslab pushti gradient,
             yuklanadigan avatar va tahrirlanadigan ism/telefon. */}
@@ -304,12 +312,12 @@ export default function ProfileScreen() {
                     disabled={saving}
                     className="flex-1 items-center gap-1.5 rounded-2xl border-2 px-2 py-3 active:scale-95"
                     style={{
-                      borderColor: active ? accent.primary : colors.border,
-                      backgroundColor: active ? `${accent.primaryLight}66` : colors.surface,
+                      borderColor: active ? accent.primary : themeColors.border,
+                      backgroundColor: active ? `${accent.primaryLight}66` : themeColors.surface,
                     }}
                   >
                     <Emoji e={icon} size={22} />
-                    <Text className="text-xs font-semibold" style={{ color: active ? accent.primaryDark : colors.textSecondary }}>
+                    <Text className="text-xs font-semibold" style={{ color: active ? accent.primaryDark : themeColors.textSecondary }}>
                       {dict.profile.modes[goal as keyof typeof dict.profile.modes]}
                     </Text>
                   </Pressable>
@@ -457,8 +465,20 @@ export default function ProfileScreen() {
             </View>
           </SettingsRow>
 
-          <SettingsRow icon="eye-outline" label={dict.profile.highContrastLabel}>
-            <Toggle checked={user.highContrast} onPress={() => save({ highContrast: !user.highContrast })} />
+          <SettingsRow icon="theme-light-dark" label={dict.profile.themeLabel}>
+            <View className="flex-row gap-2">
+              {THEME_OPTIONS.map((opt) => (
+                <Pressable
+                  key={opt.value}
+                  onPress={() => save({ theme: opt.value })}
+                  className={clsx("min-h-[40px] rounded-full px-3 justify-center", user.theme === opt.value ? "bg-primary" : "bg-surface-muted")}
+                >
+                  <Text className={clsx("text-sm font-semibold", user.theme === opt.value ? "text-white" : "text-text-secondary")}>
+                    {dict.profile[opt.labelKey]}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </SettingsRow>
 
           <SettingsRow icon="🔔" label={dict.profile.notificationsLabel} last>
@@ -547,8 +567,9 @@ function ProfileActionButton({
   disabled?: boolean;
   tone?: "neutral" | "danger";
 }) {
-  const color = tone === "danger" ? colors.danger : colors.textPrimary;
-  const borderColor = tone === "danger" ? `${colors.danger}4D` : colors.border;
+  const themeColors = useThemeColors();
+  const color = tone === "danger" ? colors.danger : themeColors.textPrimary;
+  const borderColor = tone === "danger" ? `${colors.danger}4D` : themeColors.border;
   return (
     <Pressable
       onPress={onPress}

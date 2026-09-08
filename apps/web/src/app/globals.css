@@ -62,12 +62,19 @@
   --color-primary-light: #5eead4;
 }
 
-[data-high-contrast="true"] {
-  --color-background: #ffffff;
-  --color-text-primary: #000000;
-  --color-text-secondary: #1a1a1a;
-  --color-border: #000000;
-  --color-primary: #b01446;
+/* Qorong'u rejim — packages/shared/src/design-tokens.ts#darkColors bilan
+   qiymat jihatdan bir xil ushlab turiladi. `data-theme` atributi har doim
+   HAL QILINGAN aniq qiymatga ("light" yoki "dark") o'rnatiladi (lib/session.tsx),
+   "system" tanlovi ham JS orqali matchMedia bilan aniqlanib shu yerga keladi —
+   shuning uchun alohida `@media (prefers-color-scheme: dark)` bloki kerak emas. */
+[data-theme="dark"] {
+  --color-background: #0b0f17;
+  --color-surface: #161b26;
+  --color-surface-muted: #1f2633;
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #b9c0cc;
+  --color-text-muted: #6b7280;
+  --color-border: #2a3140;
 }
 
 html {

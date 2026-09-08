@@ -6,6 +6,7 @@ import { Avatar } from "react-native-paper";
 import clsx from "clsx";
 import type { PartnerChatMessage } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useThemeColors } from "@/lib/theme";
 import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
 import { LoadingSpinner } from "@/components/ui";
@@ -29,6 +30,7 @@ export function PartnerChatModal({
   partnerAvatarUrl: string | null;
 }) {
   const { dict } = useI18n();
+  const themeColors = useThemeColors();
   const [messages, setMessages] = useState<PartnerChatMessage[] | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -77,7 +79,7 @@ export function PartnerChatModal({
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <View className="flex-row items-center gap-3 border-b border-border bg-surface px-4 py-3">
             <Pressable onPress={onClose} className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-muted">
-              <MaterialCommunityIcons name="arrow-left" size={22} color="#1F2937" />
+              <MaterialCommunityIcons name="arrow-left" size={22} color={themeColors.textPrimary} />
             </Pressable>
             {partnerAvatarUrl ? (
               <Avatar.Image size={36} source={{ uri: partnerAvatarUrl }} />

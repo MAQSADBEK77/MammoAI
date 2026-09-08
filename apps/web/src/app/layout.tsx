@@ -51,13 +51,32 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#FFFFFF",
+  // OS darajasida qorong'u bo'lsa brauzer manzil panelining rangi ham mos
+  // keladi — ilova ichidagi aniq tanlov (yorug'/qorong'u/tizim) runtime
+  // JS holati, statik metadata uni bilmaydi, shuning uchun faqat
+  // `prefers-color-scheme`ga qarab ikkita variant (ko'pchilik holat uchun yetarli).
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B0F17" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uz" className={nunito.variable}>
+    <html lang="uz" className={nunito.variable} suppressHydrationWarning>
       <body>
+        {/* Sahifa bo'yalishidan OLDIN (hidratsiyadan oldin) ishlaydi — aks holda
+            <html> har doim yorug' rejimda chizilib, keyin qorong'u rejimga
+            "yaltirab" o'tadi (foydalanuvchi tanlovi `/api/me` javob bergunga
+            qadar noma'lum). lib/session.tsx shu bilan bir xil kalit/mantiqni
+            ishlatadi (localStorage'ni yozib turadi). */}
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("mammoai_theme");var dark=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=dark?"dark":"light";}catch(e){}})();`,
+          }}
+        />
         {/* Telegram Mini App SDK — o'zimizda joylashtirib bo'lmaydi (Telegram
             tomonidan doimiy yangilanib turadi), shuning uchun to'g'ridan-to'g'ri
             telegram.org'dan yuklanadi. Oddiy brauzerda zararsiz — window.Telegram

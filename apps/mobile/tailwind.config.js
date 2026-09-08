@@ -12,13 +12,17 @@ module.exports = {
         primary: { DEFAULT: "#F43F7F", dark: "#D62A63", light: "#FFB3CB" },
         secondary: { DEFAULT: "#7C3AED", light: "#C4B5FD" },
         accent: { DEFAULT: "#0D9488", light: "#5EEAD4" },
-        background: "#F9FAFB",
-        surface: "#FFFFFF",
-        "surface-muted": "#F3F4F6",
-        "text-primary": "#1F2937",
-        "text-secondary": "#4B5563",
-        "text-muted": "#9CA3AF",
-        border: "#E5E7EB",
+        // Yorug'/qorong'u rejimlar orasida almashadigan tokenlar — statik hex
+        // emas, CSS o'zgaruvchisi orqali (NativeWind v4 `vars()`, ildiz
+        // _layout.tsx'da o'rnatiladi, lib/theme.ts'dagi useResolvedTheme'ga
+        // qarab). Brend ranglari (yuqorida) ikkala rejimda ham bir xil qoladi.
+        background: "var(--color-background)",
+        surface: "var(--color-surface)",
+        "surface-muted": "var(--color-surface-muted)",
+        "text-primary": "var(--color-text-primary)",
+        "text-secondary": "var(--color-text-secondary)",
+        "text-muted": "var(--color-text-muted)",
+        border: "var(--color-border)",
         success: "#57B894",
         warning: "#E7A83F",
         danger: "#E0506F",

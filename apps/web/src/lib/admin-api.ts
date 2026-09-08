@@ -116,7 +116,7 @@ export const adminApi = {
     },
     update: (
       id: string,
-      patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "highContrast" | "notificationsEnabled" | "isBlocked">>
+      patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "isBlocked">>
     ) => request<User>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
     delete: (id: string) => request<{ ok: true }>(`/users/${id}`, { method: "DELETE" }),
   },

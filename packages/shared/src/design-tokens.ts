@@ -27,16 +27,35 @@ export const colors = {
   warning: "#E7A83F",
   danger: "#E0506F",
 
-  // Yuqori kontrast rejimi (Profil sozlamasi — funksional bo'lmagan talab: default
-  // yuqori kontrast, kattalashtirish imkoniyati)
-  highContrast: {
-    background: "#FFFFFF",
-    textPrimary: "#000000",
-    textSecondary: "#1A1A1A",
-    border: "#000000",
-    primary: "#B01446",
-  },
 } as const;
+
+// Qorong'u rejim — faqat fon/matn/chegara tokenlari almashadi (brend ranglari
+// — primary/secondary/accent/success/warning/danger/nav — ikkala rejimda ham
+// bir xil qoladi, xuddi `[data-mode="pregnancy"]` faqat primary'ni almashtirgani
+// kabi). Web `globals.css`dagi `[data-theme="dark"]` bloki va mobil
+// `lib/theme.ts`dagi `useThemeColors()` shu qiymatlardan o'qiydi.
+export const darkColors = {
+  background: "#0B0F17",
+  surface: "#161B26",
+  surfaceMuted: "#1F2633",
+  textPrimary: "#F3F4F6",
+  textSecondary: "#B9C0CC",
+  textMuted: "#6B7280",
+  border: "#2A3140",
+} as const;
+
+// `colors`/`darkColors` `as const` bilan e'lon qilingani uchun har bir
+// tokenning tipi o'zining ANIQ hex literaliga teng (masalan "#F9FAFB") — ikki
+// rejimdan birini shartli qaytaradigan funksiya shu literallarni birlashtira
+// olmaydi, shuning uchun qaytish tipi keng (oddiy `string`) qilib olinadi.
+export type ColorPalette = { [K in keyof typeof colors]: string };
+
+/** Joriy hal qilingan mavzuga (light/dark) mos to'liq rang to'plamini
+ * qaytaradi — web (MuiThemeProvider) va mobil (useThemeColors) bir xil
+ * manbadan o'qiydi, alohida takrorlanmaydi. */
+export function resolveThemeColors(mode: "light" | "dark"): ColorPalette {
+  return mode === "dark" ? { ...colors, ...darkColors } : colors;
+}
 
 export const fontScale = {
   normal: { body: 16, small: 13, h1: 28, h2: 22, h3: 18, button: 17 },

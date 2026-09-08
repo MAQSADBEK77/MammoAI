@@ -26,7 +26,9 @@ export interface User {
   region: string | null;
   language: Language;
   fontScale: "normal" | "large";
-  highContrast: boolean;
+  /** Yorug'/Qorong'u/Tizim bo'yicha avtomatik — "system" bo'lsa qurilma/brauzer
+   * `prefers-color-scheme`iga qarab hal qilinadi (har ikkala ilovada). */
+  theme: "light" | "dark" | "system";
   notificationsEnabled: boolean;
   createdAt: string;
   /** Foydalanuvchi yuklagan profil surati — kichik rasm sifatida base64 data URI. */

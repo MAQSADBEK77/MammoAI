@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { localDateStr, type CyclePhase } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useThemeColors } from "@/lib/theme";
 
 export type DayMarker = "period" | "predicted";
 
@@ -44,6 +45,7 @@ export function MonthCalendar({
   onNextMonth?: () => void;
 }) {
   const { dict } = useI18n();
+  const themeColors = useThemeColors();
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
   const firstDay = new Date(year, month, 1);
@@ -59,13 +61,13 @@ export function MonthCalendar({
     <View>
       <View className="mb-3 flex-row items-center justify-between">
         <Pressable onPress={onPrevMonth} disabled={!onPrevMonth} className="h-8 w-8 items-center justify-center rounded-full active:bg-surface-muted">
-          {onPrevMonth && <MaterialCommunityIcons name="chevron-left" size={18} color="#4B5563" />}
+          {onPrevMonth && <MaterialCommunityIcons name="chevron-left" size={18} color={themeColors.textSecondary} />}
         </Pressable>
         <Text className="font-bold text-text-primary">
           {dict.common.months[month]} {year}
         </Text>
         <Pressable onPress={onNextMonth} disabled={!onNextMonth} className="h-8 w-8 items-center justify-center rounded-full active:bg-surface-muted">
-          {onNextMonth && <MaterialCommunityIcons name="chevron-right" size={18} color="#4B5563" />}
+          {onNextMonth && <MaterialCommunityIcons name="chevron-right" size={18} color={themeColors.textSecondary} />}
         </Pressable>
       </View>
 
