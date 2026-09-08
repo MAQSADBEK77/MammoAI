@@ -3,13 +3,22 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { WaterDropOutlined, MedicalServicesOutlined, DateRangeOutlined, GppMaybeOutlined, MenuBookOutlined, ChevronRight } from "@mui/icons-material";
+import { Dialog, DialogTitle, DialogContent } from "@mui/material";
+import {
+  WaterDropOutlined,
+  MedicalServicesOutlined,
+  DateRangeOutlined,
+  GppMaybeOutlined,
+  MenuBookOutlined,
+  ChevronRight,
+  EditOutlined,
+} from "@mui/icons-material";
 import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card, FloatingTag, LoadingSpinner, ScreenHeader, IconChip, Badge } from "@/components/ui";
+import { Button, Card, FloatingTag, LoadingSpinner, ScreenHeader, IconChip, Badge, DateWheelPicker } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
@@ -48,6 +57,9 @@ export function CycleScreen() {
   const [selectedDate, setSelectedDate] = useState<string>(() => localDateStr());
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
+  const [editingLastPeriod, setEditingLastPeriod] = useState(false);
+  const [lastPeriodDraft, setLastPeriodDraft] = useState<string>(() => localDateStr());
+  const [savingLastPeriod, setSavingLastPeriod] = useState(false);
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
@@ -131,6 +143,21 @@ export function CycleScreen() {
     setMood(existing?.mood ?? null);
     setSymptoms(existing?.symptoms ?? []);
     setLogging(true);
+  }
+
+  function openEditLastPeriod() {
+    setLastPeriodDraft(data!.settings.lastPeriodStart ?? today);
+    setEditingLastPeriod(true);
+  }
+
+  async function saveLastPeriod() {
+    setSavingLastPeriod(true);
+    try {
+      setData(await api.cycle.updateSettings({ lastPeriodStart: lastPeriodDraft }));
+      setEditingLastPeriod(false);
+    } finally {
+      setSavingLastPeriod(false);
+    }
   }
 
   async function pickMood(m: Mood) {
@@ -262,6 +289,24 @@ export function CycleScreen() {
             onClick={() => openLogging(today, todayLog)}
           />
         </div>
+      </div>
+
+      {/* Kalendar tepasida, uning ichidagi oy-o'tish o'qlariga xalaqit
+          bermaydigan alohida qatorda — "Batafsil kiritish" yorlig'i bilan
+          bir xil uslub (foydalanuvchi so'rovi: oxirgi hayz sanasini
+          tuzatib bo'lish kerak, masalan noto'g'ri kiritilgan/unutilgan
+          bo'lsa). */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-text-secondary">{dict.cycle.calendarTitle}</p>
+        <button
+          type="button"
+          onClick={openEditLastPeriod}
+          title={dict.cycle.editLastPeriodLabel}
+          aria-label={dict.cycle.editLastPeriodLabel}
+          className="tap-target flex h-8 w-8 items-center justify-center rounded-full bg-surface-muted text-text-secondary active:scale-95"
+        >
+          <EditOutlined sx={{ fontSize: 16 }} />
+        </button>
       </div>
 
       <Card className="rounded-[20px]!">
@@ -417,6 +462,34 @@ export function CycleScreen() {
           {dict.cycle.addLogButton}
         </Button>
       </div>
+
+      {/* Oxirgi hayz sanasini to'g'ridan-to'g'ri tuzatish — kalendar tepasidagi
+          qalamcha tugmasi bilan ochiladi (foydalanuvchi so'rovi). Kam
+          kuzatuv tarixi bo'lgan foydalanuvchilarda bu qiymat halqa/bashorat
+          hisobiga to'g'ridan-to'g'ri ta'sir qiladi (server/views.ts —
+          2+ sikl aniqlangan bo'lsa, moslashuvchan algoritm haqiqiy
+          yozuvlar asosida ustunlik qiladi, bu holda sozlama shunchaki
+          zaxira qiymat sifatida saqlanadi). */}
+      <Dialog open={editingLastPeriod} onClose={() => setEditingLastPeriod(false)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700 }}>{dict.onboarding.lastPeriodQuestion}</DialogTitle>
+        <DialogContent className="space-y-4 pb-2!">
+          <DateWheelPicker
+            value={lastPeriodDraft}
+            onChange={setLastPeriodDraft}
+            monthLabels={dict.common.months}
+            minYear={new Date().getFullYear() - 1}
+            maxYear={new Date().getFullYear()}
+          />
+          <div className="flex gap-2 pb-4">
+            <Button variant="ghost" onClick={() => setEditingLastPeriod(false)} disabled={savingLastPeriod}>
+              {dict.common.cancel}
+            </Button>
+            <Button className="flex-1" onClick={saveLastPeriod} disabled={savingLastPeriod}>
+              {dict.common.save}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

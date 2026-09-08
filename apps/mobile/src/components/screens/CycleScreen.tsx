@@ -4,13 +4,14 @@ import { router } from "expo-router";
 import clsx from "clsx";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Portal, Dialog } from "react-native-paper";
 import type { CycleLog, CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, FloatingTag, IconChip, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, DateWheelPicker, FloatingTag, IconChip, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
@@ -50,6 +51,9 @@ export function CycleScreen() {
   const [selectedDate, setSelectedDate] = useState<string>(() => localDateStr());
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
+  const [editingLastPeriod, setEditingLastPeriod] = useState(false);
+  const [lastPeriodDraft, setLastPeriodDraft] = useState<string>(() => localDateStr());
+  const [savingLastPeriod, setSavingLastPeriod] = useState(false);
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
@@ -132,6 +136,21 @@ export function CycleScreen() {
     setMood(existing?.mood ?? null);
     setSymptoms(existing?.symptoms ?? []);
     setLogging(true);
+  }
+
+  function openEditLastPeriod() {
+    setLastPeriodDraft(data!.settings.lastPeriodStart ?? today);
+    setEditingLastPeriod(true);
+  }
+
+  async function saveLastPeriod() {
+    setSavingLastPeriod(true);
+    try {
+      setData(await api.cycle.updateSettings({ lastPeriodStart: lastPeriodDraft }));
+      setEditingLastPeriod(false);
+    } finally {
+      setSavingLastPeriod(false);
+    }
   }
 
   async function pickMood(m: Mood) {
@@ -261,6 +280,20 @@ export function CycleScreen() {
             onPress={() => openLogging(today, todayLog)}
           />
         </View>
+      </View>
+
+      {/* Kalendar tepasida, uning ichidagi oy-o'tish o'qlariga xalaqit
+          bermaydigan alohida qatorda (foydalanuvchi so'rovi: oxirgi hayz
+          sanasini tuzatib bo'lish kerak). */}
+      <View className="flex-row items-center justify-between">
+        <Text className="text-sm font-semibold text-text-secondary">{dict.cycle.calendarTitle}</Text>
+        <Pressable
+          onPress={openEditLastPeriod}
+          accessibilityLabel={dict.cycle.editLastPeriodLabel}
+          className="h-8 w-8 items-center justify-center rounded-full bg-surface-muted active:scale-95"
+        >
+          <MaterialCommunityIcons name="pencil-outline" size={16} color={themeColors.textSecondary} />
+        </Pressable>
       </View>
 
       <Card style={{ borderRadius: 20 }}>
@@ -420,6 +453,31 @@ export function CycleScreen() {
 
         <Button onPress={() => openLogging(today, todayLog)}>{dict.cycle.addLogButton}</Button>
       </View>
+
+      {/* Oxirgi hayz sanasini to'g'ridan-to'g'ri tuzatish — kalendar
+          tepasidagi qalamcha tugmasi bilan ochiladi. */}
+      <Portal>
+        <Dialog visible={editingLastPeriod} onDismiss={() => setEditingLastPeriod(false)} style={{ borderRadius: 24 }}>
+          <Dialog.Title>{dict.onboarding.lastPeriodQuestion}</Dialog.Title>
+          <Dialog.Content className="gap-4">
+            <DateWheelPicker
+              value={lastPeriodDraft}
+              onChange={setLastPeriodDraft}
+              monthLabels={dict.common.months}
+              minYear={new Date().getFullYear() - 1}
+              maxYear={new Date().getFullYear()}
+            />
+            <View className="flex-row gap-2 pb-2">
+              <Button variant="ghost" onPress={() => setEditingLastPeriod(false)} disabled={savingLastPeriod}>
+                {dict.common.cancel}
+              </Button>
+              <Button className="flex-1" onPress={saveLastPeriod} disabled={savingLastPeriod}>
+                {dict.common.save}
+              </Button>
+            </View>
+          </Dialog.Content>
+        </Dialog>
+      </Portal>
     </View>
   );
 }

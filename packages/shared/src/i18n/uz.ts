@@ -278,6 +278,8 @@ const uz = {
     riskQuizCardSubtitle: "2 daqiqada xavf darajangizni bilib oling",
     cycleLengthLabel: "Sikl uzunligi",
     periodLengthLabel: "Hayz davomiyligi",
+    calendarTitle: "Kalendar",
+    editLastPeriodLabel: "Oxirgi hayz sanasini o'zgartirish",
     daysUnit: (n: number) => `${n} kun`,
     recentLogsTitle: "So'nggi yozuvlar",
     viewAllLogsLabel: "Barchasini ko'rish",

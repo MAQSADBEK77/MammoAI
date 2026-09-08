@@ -275,6 +275,8 @@ const en: Dictionary = {
     riskQuizCardSubtitle: "Find out your risk level in 2 minutes",
     cycleLengthLabel: "Cycle length",
     periodLengthLabel: "Period length",
+    calendarTitle: "Calendar",
+    editLastPeriodLabel: "Change last period date",
     daysUnit: (n: number) => `${n} days`,
     recentLogsTitle: "Recent entries",
     viewAllLogsLabel: "View all",

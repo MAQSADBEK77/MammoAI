@@ -273,6 +273,8 @@ const ru: Dictionary = {
     riskQuizCardSubtitle: "Узнайте уровень риска за 2 минуты",
     cycleLengthLabel: "Длина цикла",
     periodLengthLabel: "Длительность менструации",
+    calendarTitle: "Календарь",
+    editLastPeriodLabel: "Изменить дату последней менструации",
     daysUnit: (n: number) => `${n} дн.`,
     recentLogsTitle: "Последние записи",
     viewAllLogsLabel: "Смотреть все",
