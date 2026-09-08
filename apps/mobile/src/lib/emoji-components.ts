@@ -80,7 +80,9 @@ import E_1fa79 from "../../assets/emoji/1fa79.svg";
 import E_1fa7a from "../../assets/emoji/1fa7a.svg";
 import E_1fac0 from "../../assets/emoji/1fac0.svg";
 import E_1fad0 from "../../assets/emoji/1fad0.svg";
+import E_2600 from "../../assets/emoji/2600.svg";
 import E_2696 from "../../assets/emoji/2696.svg";
+import E_2699 from "../../assets/emoji/2699.svg";
 import E_2705 from "../../assets/emoji/2705.svg";
 import E_2728 from "../../assets/emoji/2728.svg";
 import E_2753 from "../../assets/emoji/2753.svg";
@@ -165,7 +167,9 @@ export const EMOJI_COMPONENTS: Record<string, FunctionComponent<SvgProps>> = {
   "1fa7a": E_1fa7a,
   "1fac0": E_1fac0,
   "1fad0": E_1fad0,
+  "2600": E_2600,
   "2696": E_2696,
+  "2699": E_2699,
   "2705": E_2705,
   "2728": E_2728,
   "2753": E_2753,

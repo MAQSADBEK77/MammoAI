@@ -22,10 +22,10 @@ const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: "en", label: "English" },
 ];
 
-const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem" }[] = [
-  { value: "light", labelKey: "themeLight" },
-  { value: "dark", labelKey: "themeDark" },
-  { value: "system", labelKey: "themeSystem" },
+const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem"; emoji: string }[] = [
+  { value: "light", labelKey: "themeLight", emoji: "☀️" },
+  { value: "dark", labelKey: "themeDark", emoji: "🌙" },
+  { value: "system", labelKey: "themeSystem", emoji: "⚙️" },
 ];
 
 const DRAWER_WIDTH = 300;
@@ -204,8 +204,9 @@ export function AppDrawer() {
                   <Pressable
                     key={opt.value}
                     onPress={() => save({ theme: opt.value })}
-                    className={clsx("rounded-full px-2.5 py-1.5", user.theme === opt.value ? "bg-primary" : "bg-surface-muted")}
+                    className={clsx("flex-row items-center gap-1 rounded-full px-2.5 py-1.5", user.theme === opt.value ? "bg-primary" : "bg-surface-muted")}
                   >
+                    <Emoji e={opt.emoji} size={12} />
                     <Text className={clsx("text-xs font-semibold", user.theme === opt.value ? "text-white" : "text-text-secondary")}>
                       {dict.profile[opt.labelKey]}
                     </Text>

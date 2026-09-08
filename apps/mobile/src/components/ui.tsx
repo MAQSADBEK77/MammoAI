@@ -25,7 +25,7 @@ import {
 } from "react-native-paper";
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
 import { colors, glass, gradients } from "@mammoai/shared";
-import { useModeAccent, useThemeColors } from "@/lib/theme";
+import { useModeAccent, useResolvedTheme, useThemeColors } from "@/lib/theme";
 import { Emoji } from "@/components/Emoji";
 
 // Foydalanuvchi so'roviga ko'ra ("hamma joyga Material UI ishlat — iconlardan
@@ -103,8 +103,18 @@ export function IconButton({
   tone?: "surface" | "glass" | "dark" | "primary";
   size?: number;
 }) {
+  const themeColors = useThemeColors();
+  const resolvedTheme = useResolvedTheme();
   const bg =
-    tone === "surface" ? "#FFFFFF" : tone === "dark" ? "#241127" : tone === "primary" ? "#F43F7F" : "rgba(255,255,255,0.7)";
+    tone === "surface"
+      ? themeColors.surface
+      : tone === "dark"
+        ? "#241127"
+        : tone === "primary"
+          ? "#F43F7F"
+          : resolvedTheme === "dark"
+            ? glass.dark
+            : glass.light;
   return (
     <PaperIconButton
       icon={() => icon}
@@ -125,12 +135,25 @@ export function Card({
   variant = "default",
   ...props
 }: ViewProps & { className?: string; variant?: CardVariant }) {
-  const variantClass = variant === "flat" ? "bg-surface-muted" : variant === "glass" ? "bg-white/60 border border-white/70" : "bg-surface";
+  // "glass" — asl uslub yorug' fon ustiga oq shaffoflik bilan "shisha effekti"
+  // beradi; qorong'u rejimda XUDDI SHU oq rang to'q fon bilan aralashib xira
+  // kulrangga aylanib, ustidagi matn o'qilmay qolardi — shuning uchun
+  // qorong'u rejimda oq o'rniga ilovaning o'z (yangi emas) to'q lavanda-siyoh
+  // "glass.dark" tokeni ishlatiladi (suzuvchi pastki navigatsiya panelidagi
+  // bilan bir xil rang). `bg-white/60` klassik NativeWind opacity klassi
+  // runtime'da CSS o'zgaruvchisidan foydalana olmaydi, shuning uchun inline
+  // style orqali.
+  const resolvedTheme = useResolvedTheme();
+  const glassStyle =
+    variant === "glass"
+      ? { backgroundColor: resolvedTheme === "dark" ? glass.dark : glass.light, borderWidth: 1, borderColor: glass.border }
+      : undefined;
+  const variantClass = variant === "flat" ? "bg-surface-muted" : variant === "default" ? "bg-surface" : undefined;
   return (
     <PaperCard
       mode="contained"
       className={clsx("rounded-[28px] p-5", variantClass, className)}
-      style={[{ borderRadius: 28 }, variant === "flat" ? undefined : shadowStyle("card"), style]}
+      style={[{ borderRadius: 28 }, variant === "flat" ? undefined : shadowStyle("card"), glassStyle, style]}
       {...props}
     >
       {children}
@@ -236,10 +259,15 @@ export function Badge({ tone = "muted", children }: { tone?: keyof typeof BADGE_
  * kichik statistika kartochkasi (referens: "32 Completed Week" / "08 Remaining Week").
  */
 export function FloatingTag({ icon, value, label }: { icon?: ReactNode; value: string; label: string }) {
+  // `Card`ning "glass" varianti bilan bir xil sabab: oq shaffoflik qorong'u
+  // fonda xira kulrangga aylanadi — dark rejimda ilovaning o'z to'q lavanda-
+  // siyoh "glass.darkStrong" tokeni ishlatiladi.
+  const resolvedTheme = useResolvedTheme();
+  const bg = resolvedTheme === "dark" ? glass.darkStrong : glass.lightStrong;
   return (
     <View
-      className="flex-row items-center gap-2 rounded-2xl bg-white/85 px-3.5 py-2.5"
-      style={{ borderWidth: 1, borderColor: "rgba(255,255,255,0.7)", ...shadowStyle("soft") }}
+      className="flex-row items-center gap-2 rounded-2xl px-3.5 py-2.5"
+      style={{ backgroundColor: bg, borderWidth: 1, borderColor: glass.border, ...shadowStyle("soft") }}
     >
       {icon}
       <View>
@@ -431,9 +459,10 @@ function OrbitDot({ index, color }: { index: number; color: string }) {
  */
 export function LoadingSpinner({ label: _label }: { label?: string }) {
   const accent = useModeAccent();
+  const resolvedTheme = useResolvedTheme();
   return (
     <View style={StyleSheet.absoluteFill}>
-      <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={30} tint={resolvedTheme === "dark" ? "dark" : "light"} style={StyleSheet.absoluteFill} />
       <View className="flex-1 items-center justify-center">
         <View style={{ width: ORBIT_RADIUS * 2, height: ORBIT_RADIUS * 2 }}>
           {Array.from({ length: ORBIT_DOT_COUNT }).map((_, i) => (

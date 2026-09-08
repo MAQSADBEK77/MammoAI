@@ -75,6 +75,18 @@
   --color-text-secondary: #b9c0cc;
   --color-text-muted: #6b7280;
   --color-border: #2a3140;
+
+  /* "Shisha" effekti (.glass-card/.floating-tag) yorug' rejimda oq
+     (rgba 255,255,255) ustiga qurilgan — qorong'u fonda xuddi shu oq rang
+     yarim shaffoflik bilan qo'shilsa, oq va to'q fon o'rtacha xira KULRANG
+     rangga aylanib, ustidagi matn deyarli o'qilmay qolardi. Shuning uchun
+     oq o'rniga ilovaning o'zida ALLAQACHON bor to'q lavanda-siyoh rang
+     ishlatiladi (xuddi suzuvchi pastki navigatsiya panelidagi kabi —
+     design-tokens.ts#glass.dark/darkStrong bilan bir xil qiymat) — yangi
+     palitra emas, mavjud tokendan. */
+  --glass-light: rgba(36, 17, 39, 0.6);
+  --glass-light-strong: rgba(36, 17, 39, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.12);
 }
 
 html {

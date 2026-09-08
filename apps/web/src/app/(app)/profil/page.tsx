@@ -14,10 +14,10 @@ import { Switch, Select, MenuItem } from "@mui/material";
 import clsx from "clsx";
 import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, Brightness6Outlined as ThemeIcon, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen } from "@mui/icons-material";
 
-const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem" }[] = [
-  { value: "light", labelKey: "themeLight" },
-  { value: "dark", labelKey: "themeDark" },
-  { value: "system", labelKey: "themeSystem" },
+const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem"; emoji: string }[] = [
+  { value: "light", labelKey: "themeLight", emoji: "☀️" },
+  { value: "dark", labelKey: "themeDark", emoji: "🌙" },
+  { value: "system", labelKey: "themeSystem", emoji: "⚙️" },
 ];
 
 // Profil "REJIMNI TANLANG" — App.pdf §5 dagi 7 ta maqsaddan uchtasi shu yerdan
@@ -498,10 +498,11 @@ export default function ProfilePage() {
                 key={opt.value}
                 onClick={() => save({ theme: opt.value })}
                 className={clsx(
-                  "tap-target rounded-full px-3 text-sm font-semibold",
+                  "tap-target flex items-center gap-1.5 rounded-full px-3 text-sm font-semibold",
                   user.theme === opt.value ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
                 )}
               >
+                <Emoji e={opt.emoji} size={16} />
                 {dict.profile[opt.labelKey]}
               </button>
             ))}

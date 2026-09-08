@@ -30,10 +30,10 @@ const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: "en", label: "English" },
 ];
 
-const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem" }[] = [
-  { value: "light", labelKey: "themeLight" },
-  { value: "dark", labelKey: "themeDark" },
-  { value: "system", labelKey: "themeSystem" },
+const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem"; emoji: string }[] = [
+  { value: "light", labelKey: "themeLight", emoji: "☀️" },
+  { value: "dark", labelKey: "themeDark", emoji: "🌙" },
+  { value: "system", labelKey: "themeSystem", emoji: "⚙️" },
 ];
 
 /**
@@ -163,10 +163,11 @@ export function AppDrawer() {
                     key={opt.value}
                     onClick={() => save({ theme: opt.value })}
                     className={clsx(
-                      "tap-target rounded-full px-3 text-xs font-semibold",
+                      "tap-target flex items-center gap-1 rounded-full px-3 text-xs font-semibold",
                       user.theme === opt.value ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
                     )}
                   >
+                    <Emoji e={opt.emoji} size={13} />
                     {dict.profile[opt.labelKey]}
                   </button>
                 ))}

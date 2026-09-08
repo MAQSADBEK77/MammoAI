@@ -131,7 +131,15 @@ export function IconButton({
         ? { backgroundColor: "var(--color-nav)", color: "#fff", "&:hover": { filter: "brightness(1.1)" } }
         : tone === "primary"
           ? { backgroundColor: "var(--color-primary)", color: "#fff", "&:hover": { filter: "brightness(1.05)" } }
-          : { backgroundColor: "var(--glass-light-strong)", border: "1px solid var(--glass-border)", backdropFilter: "blur(10px)", "&:hover": { backgroundColor: "rgba(255,255,255,0.9)" } };
+          : {
+              backgroundColor: "var(--glass-light-strong)",
+              border: "1px solid var(--glass-border)",
+              backdropFilter: "blur(10px)",
+              // Qattiq yozilgan oq emas — `--glass-light-strong` allaqachon
+              // rejimga qarab (yorug'/qorong'u) to'g'ri rangga aylanadi,
+              // hover holatida shunchaki birozgina yorqinlashtiriladi.
+              "&:hover": { filter: "brightness(1.08)" },
+            };
   return (
     <MuiIconButton onClick={onClick} className={className} sx={{ width: size, height: size, ...toneSx }}>
       {icon}
