@@ -7,6 +7,7 @@ import { SessionProvider } from "@/lib/session";
 import { MuiThemeProvider } from "@/lib/mui-theme";
 import { IllustrationsProvider } from "@/lib/illustrations";
 import { AnalyticsProvider } from "@/lib/analytics";
+import { TelegramFullscreenSetup } from "@/lib/telegram";
 
 // Iliq, yumaloq shrift — o'zbek (lotin) va rus (kirill) ikkalasini ham qamrab oladi.
 const nunito = Nunito({ subsets: ["latin", "cyrillic"], variable: "--font-body" });
@@ -82,6 +83,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             telegram.org'dan yuklanadi. Oddiy brauzerda zararsiz — window.Telegram
             aniqlanmaydi, lib/telegram.ts shunga qarab ishlaydi. */}
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+        {/* Sarlavha panelini shaffof qilib, ilovani ekranning yuqori qismigacha
+            kengaytiradi (foydalanuvchi so'rovi) + bo'shab qolgan joyni
+            --tg-safe-area-top/bottom CSS o'zgaruvchisi orqali e'lon qiladi
+            (lib/telegram.ts). Oddiy brauzerda zararsiz — hech narsa qilmaydi. */}
+        <TelegramFullscreenSetup />
         <I18nProvider>
           <SessionProvider>
             <IllustrationsProvider>

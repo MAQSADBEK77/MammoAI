@@ -27,7 +27,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-background pb-24">
-      <div className="mx-auto max-w-2xl px-4 pt-4">
+      {/* Telegram Mini App'da fullscreen sarlavha paneli shaffof holda shu
+          yerning ustida qoladi (lib/telegram.ts) — `--tg-safe-area-top`
+          oddiy brauzerda 0px, Mini App'da esa panel balandligiga teng
+          bo'lib, burger-menyu tugmasi tugmalar ostida qolib ketmaydi. */}
+      <div className="mx-auto max-w-2xl px-4 pt-4" style={{ paddingTop: "calc(var(--tg-safe-area-top) + 1rem)" }}>
         <AppDrawer />
       </div>
       <div className="mx-auto max-w-2xl px-4 pt-2">{children}</div>

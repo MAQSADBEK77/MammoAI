@@ -561,7 +561,7 @@ function OnboardingPageInner() {
   return (
     <div
       className={clsx(
-        "mx-auto flex max-w-md flex-col px-6 pt-8",
+        "mx-auto flex max-w-md flex-col px-6",
         // Pastki masofa avvalgi py-8'dan (32px) ATAYLAB kattaroq — mobil brauzerning
         // pastki asboblar paneli (Safari/Chrome) Orqaga/Keyingi tugmasiga "yopishib"
         // qolmasligi uchun. env(safe-area-inset-bottom) PWA/notch'li qurilmada
@@ -575,6 +575,9 @@ function OnboardingPageInner() {
         // olib chiqib qo'yardi).
         step === "welcome" ? "h-dvh bg-aurora-cycle" : "h-dvh bg-background"
       )}
+      // Telegram Mini App'da fullscreen sarlavha paneli shaffof holda tepada
+      // qoladi (lib/telegram.ts) — oddiy brauzerda --tg-safe-area-top 0px.
+      style={{ paddingTop: "calc(var(--tg-safe-area-top) + 2rem)" }}
     >
       {step !== "welcome" && step !== "analyzing" && (
         <div className="mb-6 shrink-0">

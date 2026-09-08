@@ -40,6 +40,12 @@
 
 :root {
   --font-scale: 1;
+  /* Telegram Mini App'da fullscreen rejimida shaffof qolgan sarlavha
+     panelidan (yopish/menyu tugmalari) himoya qilish uchun qo'shimcha bo'sh
+     joy — lib/telegram.ts#useTelegramFullscreen tomonidan o'rnatiladi.
+     Oddiy brauzerda 0px bo'lib qoladi. */
+  --tg-safe-area-top: 0px;
+  --tg-safe-area-bottom: 0px;
 }
 
 [data-font-scale="large"] {
