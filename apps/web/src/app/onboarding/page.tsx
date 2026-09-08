@@ -325,6 +325,17 @@ function OnboardingPageInner() {
   const age = CURRENT_YEAR - survey.birthYear;
   const isMinor = age > 0 && age < 18;
 
+  // Telegram Mini App orqali kirgan (telefon Telegram'ning o'zi orqali
+  // tasdiqlangan) foydalanuvchi — akkaunt/telefon-tasdiqlash qadamlari
+  // ("welcome", "account_choice", "account_identifier", "phone_verify")
+  // butunlay ortiqcha, Mini App'ni ochishning o'zi "welcome", tasdiqlash esa
+  // Telegram orqali allaqachon bo'lgan. LEKIN "language" qadami ATAYLAB
+  // saqlanadi — avval bu ham o'tkazib yuborilib, o'rniga hisob Telegram
+  // klientining o'z tilidan (`language_code`) yaratilardi (foydalanuvchi
+  // so'roviga ko'ra bekor qilindi, /api/auth/telegram-miniapp/finish endi
+  // doim "uz" bilan yaratadi) — foydalanuvchi tilni O'ZI, shu qadamda tanlaydi.
+  const isFromTelegram = searchParams.get("fromTelegram") === "1" && !!user?.phone;
+
   // Bosqichlar ro'yxati maqsad/yoshga qarab dinamik shakllanadi (App.pdf §7-10).
   const steps = useMemo<Step[]>(() => {
     const base: Step[] = [
@@ -338,39 +349,29 @@ function OnboardingPageInner() {
       "age",
       "goal",
     ];
-    if (!survey.primaryGoal) return [...base, "analyzing"];
-
-    const tail: Step[] = [];
-    if (needsCycleInfo(survey.primaryGoal)) {
-      tail.push(
-        "cycle_regularity",
-        "cycle_lengths",
-        "last_period",
-        "typical_symptoms",
-        "period_attitude",
-        "health_conditions"
-      );
-    }
-    if (needsPersonalHealthQuestions(survey.primaryGoal)) tail.push("family_history", "last_checkup");
-    if (needsHeightWeight(survey.primaryGoal)) tail.push("height_weight");
-    tail.push("notifications", "analyzing");
-    return [...base, ...tail];
-  }, [survey.primaryGoal]);
-
-  // Telegram Mini App orqali kirgan (telefon Telegram'ning o'zi orqali
-  // tasdiqlangan) foydalanuvchi uchun — akkaunt/telefon-tasdiqlash qadamlarini
-  // butunlay o'tkazib yuboramiz, to'g'ridan-to'g'ri profil savollariga o'tadi.
-  const skippedTelegramStepRef = useRef(false);
-  useEffect(() => {
-    if (skippedTelegramStepRef.current) return;
-    if (searchParams.get("fromTelegram") !== "1" || !user?.phone) return;
-    const nextIndex = steps.indexOf("privacy");
-    if (nextIndex > 0) {
-      skippedTelegramStepRef.current = true;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStepIndex(nextIndex);
-    }
-  }, [searchParams, user, steps]);
+    const withTail = (list: Step[]): Step[] => {
+      if (!survey.primaryGoal) return [...list, "analyzing"];
+      const tail: Step[] = [];
+      if (needsCycleInfo(survey.primaryGoal)) {
+        tail.push(
+          "cycle_regularity",
+          "cycle_lengths",
+          "last_period",
+          "typical_symptoms",
+          "period_attitude",
+          "health_conditions"
+        );
+      }
+      if (needsPersonalHealthQuestions(survey.primaryGoal)) tail.push("family_history", "last_checkup");
+      if (needsHeightWeight(survey.primaryGoal)) tail.push("height_weight");
+      tail.push("notifications", "analyzing");
+      return [...list, ...tail];
+    };
+    const filtered = isFromTelegram
+      ? base.filter((s) => !["welcome", "account_choice", "account_identifier", "phone_verify"].includes(s))
+      : base;
+    return withTail(filtered);
+  }, [survey.primaryGoal, isFromTelegram]);
 
   const step = steps[stepIndex];
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));

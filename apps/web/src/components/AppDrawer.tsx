@@ -162,13 +162,14 @@ export function AppDrawer() {
                   <button
                     key={opt.value}
                     onClick={() => save({ theme: opt.value })}
+                    title={dict.profile[opt.labelKey]}
+                    aria-label={dict.profile[opt.labelKey]}
                     className={clsx(
-                      "tap-target flex items-center gap-1 rounded-full px-3 text-xs font-semibold",
-                      user.theme === opt.value ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
+                      "tap-target flex items-center justify-center rounded-full px-2.5",
+                      user.theme === opt.value ? "bg-primary" : "bg-surface-muted"
                     )}
                   >
-                    <Emoji e={opt.emoji} size={13} />
-                    {dict.profile[opt.labelKey]}
+                    <Emoji e={opt.emoji} size={15} />
                   </button>
                 ))}
               </div>

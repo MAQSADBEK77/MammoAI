@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { extractUzPhoneDigits, type Language } from "@mammoai/shared";
+import { extractUzPhoneDigits } from "@mammoai/shared";
 import { ApiError, jsonError } from "@/server/api-utils";
 import {
   createUserWithIdentifier,
@@ -16,8 +16,6 @@ import { signSession, SESSION_COOKIE, sessionCookieOptions } from "@/server/sess
 interface FinishBody {
   initData: string;
 }
-
-const SUPPORTED_LANGUAGES: Language[] = ["uz", "uz-cyrl", "ru", "en"];
 
 /**
  * Foydalanuvchi Telegram'da "Telefon raqamimni ulashish" popup'ini
@@ -42,15 +40,19 @@ export async function POST(request: NextRequest) {
     const phone = extractUzPhoneDigits(rawPhone);
     if (!phone) throw new ApiError(400, "Faqat O'zbekiston telefon raqamlari qo'llab-quvvatlanadi");
 
-    const language: Language = SUPPORTED_LANGUAGES.includes(tgUser.language_code as Language)
-      ? (tgUser.language_code as Language)
-      : "uz";
     const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ").trim() || null;
 
+    // Til Telegram klientining o'zidan (`language_code`) OLINMAYDI — bu avval
+    // shunday edi, lekin foydalanuvchi so'roviga ko'ra bekor qilindi: odam
+    // Telegram interfeysini istalgan tilda ishlatishi mumkin, bu uning
+    // ilova ichidagi tanlovi bilan bir xil bo'lishi shart emas. Standart
+    // ("uz") bilan yaratiladi, keyin onboarding'ning "language" qadamida
+    // (fromTelegram=1 bo'lsa ham SAQLANADI, boshqa Telegram-orqali
+    // qadamlardan farqli — apps/web/src/app/onboarding/page.tsx) o'zi tanlaydi.
     const existing = await findUserByIdentifier(phone);
     const { user, tokenVersion } = existing
       ? { user: existing, tokenVersion: existing.tokenVersion }
-      : await createUserWithIdentifier(phone, language);
+      : await createUserWithIdentifier(phone, "uz");
 
     await linkTelegramToUser(user.id, { telegramUserId, name: fullName, avatarUrl: tgUser.photo_url ?? null });
     await deleteMiniAppPending(telegramUserId);

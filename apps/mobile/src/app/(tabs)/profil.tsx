@@ -471,12 +471,10 @@ export default function ProfileScreen() {
                 <Pressable
                   key={opt.value}
                   onPress={() => save({ theme: opt.value })}
-                  className={clsx("min-h-[40px] flex-row items-center gap-1.5 rounded-full px-3 justify-center", user.theme === opt.value ? "bg-primary" : "bg-surface-muted")}
+                  accessibilityLabel={dict.profile[opt.labelKey]}
+                  className={clsx("min-h-[40px] items-center justify-center rounded-full px-3", user.theme === opt.value ? "bg-primary" : "bg-surface-muted")}
                 >
-                  <Emoji e={opt.emoji} size={14} />
-                  <Text className={clsx("text-sm font-semibold", user.theme === opt.value ? "text-white" : "text-text-secondary")}>
-                    {dict.profile[opt.labelKey]}
-                  </Text>
+                  <Emoji e={opt.emoji} size={16} />
                 </Pressable>
               ))}
             </View>

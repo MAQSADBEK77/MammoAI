@@ -204,12 +204,10 @@ export function AppDrawer() {
                   <Pressable
                     key={opt.value}
                     onPress={() => save({ theme: opt.value })}
-                    className={clsx("flex-row items-center gap-1 rounded-full px-2.5 py-1.5", user.theme === opt.value ? "bg-primary" : "bg-surface-muted")}
+                    accessibilityLabel={dict.profile[opt.labelKey]}
+                    className={clsx("items-center justify-center rounded-full px-2.5 py-1.5", user.theme === opt.value ? "bg-primary" : "bg-surface-muted")}
                   >
-                    <Emoji e={opt.emoji} size={12} />
-                    <Text className={clsx("text-xs font-semibold", user.theme === opt.value ? "text-white" : "text-text-secondary")}>
-                      {dict.profile[opt.labelKey]}
-                    </Text>
+                    <Emoji e={opt.emoji} size={14} />
                   </Pressable>
                 ))}
               </View>

@@ -497,13 +497,14 @@ export default function ProfilePage() {
               <button
                 key={opt.value}
                 onClick={() => save({ theme: opt.value })}
+                title={dict.profile[opt.labelKey]}
+                aria-label={dict.profile[opt.labelKey]}
                 className={clsx(
-                  "tap-target flex items-center gap-1.5 rounded-full px-3 text-sm font-semibold",
-                  user.theme === opt.value ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
+                  "tap-target flex items-center justify-center rounded-full px-3",
+                  user.theme === opt.value ? "bg-primary" : "bg-surface-muted"
                 )}
               >
-                <Emoji e={opt.emoji} size={16} />
-                {dict.profile[opt.labelKey]}
+                <Emoji e={opt.emoji} size={17} />
               </button>
             ))}
           </div>
