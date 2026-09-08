@@ -91,15 +91,30 @@ interface TelegramBotInfo {
 }
 
 /**
+ * Chat oynasining pastki qismida, xabar yozish maydoni yonida doimiy ko'rinib
+ * turadigan tugma (foydalanuvchi so'rovi — Telegram'ning "Menu Button"
+ * funksiyasi, boshqa botlarda "Поиск" kabi matnli tugma sifatida ko'rinishi
+ * mumkin). `chat_id` berilmasa — HAMMA foydalanuvchi uchun standart bo'lib
+ * o'rnatiladi (alohida har bir chat uchun sozlash shart emas). Bosilganda
+ * Mini App'ni (`/tg`) to'g'ridan-to'g'ri ochadi — "Start" bosish yoki biror
+ * buyruq yozish shart emas.
+ */
+export async function setTelegramMenuButton(text: string, url: string, tokenOverride?: string): Promise<void> {
+  await callTelegramApi("setChatMenuButton", { menu_button: { type: "web_app", text, web_app: { url } } }, tokenOverride);
+}
+
+/**
  * Yangi token saqlanganda chaqiriladi — tokenni tekshiradi (getMe), username'ni
- * keshlaydi va webhook'ni bizning API manzilimizga o'rnatadi (foydalanuvchi
- * qo'lda hech narsa qilishi shart emas).
+ * keshlaydi, webhook'ni bizning API manzilimizga o'rnatadi VA pastki
+ * "Menu Button"ni Mini App'ga ulaydi (foydalanuvchi qo'lda hech narsa
+ * qilishi shart emas).
  */
 export async function setTelegramBotToken(token: string, publicBaseUrl: string): Promise<TelegramBotInfo> {
   const info = await callTelegramApi<TelegramBotInfo>("getMe", undefined, token);
   await setSetting(SETTING_TOKEN, token);
   await setSetting(SETTING_USERNAME, info.username);
   await callTelegramApi("setWebhook", { url: `${publicBaseUrl}/api/telegram/webhook` }, token);
+  await setTelegramMenuButton("📲 Ilovani ochish", `${publicBaseUrl}/tg`, token);
   return info;
 }
 
