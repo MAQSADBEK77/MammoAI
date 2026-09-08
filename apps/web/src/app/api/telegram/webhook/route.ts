@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { Language } from "@mammoai/shared";
-import { confirmMiniAppContact, confirmPhoneViaContact, registerTelegramStart } from "@/server/repo";
+import { confirmMiniAppContact, confirmPhoneViaContact, recordTelegramBotStart, registerTelegramStart } from "@/server/repo";
 import { miniAppInlineKeyboard, removeKeyboard, requestContactKeyboard, sendTelegramMessage } from "@/server/telegram-bot";
 
 interface TelegramUpdate {
@@ -8,7 +8,7 @@ interface TelegramUpdate {
     text?: string;
     chat?: { id: number };
     contact?: { phone_number: string; user_id?: number };
-    from?: { id: number };
+    from?: { id: number; first_name?: string; username?: string };
   };
 }
 
@@ -96,6 +96,14 @@ export async function POST(request: NextRequest) {
     if (!chatId) return NextResponse.json({ ok: true });
 
     if (message?.text?.startsWith("/start")) {
+      // Token bilan yoki tokensiz — HAR bir "/start" shu yerda yoziladi
+      // (admin panelning "hammaga xabar yuborish" ro'yxati uchun, hatto
+      // hech qachon akkaunt yaratmagan bo'lsa ham).
+      await recordTelegramBotStart(String(chatId), {
+        telegramUserId: message.from?.id != null ? String(message.from.id) : null,
+        firstName: message.from?.first_name ?? null,
+        username: message.from?.username ?? null,
+      });
       const token = message.text.slice("/start".length).trim();
       if (!token) {
         // Odatiy holat — kimdir botni o'zi topib (qidiruv, ulashish va h.k.)

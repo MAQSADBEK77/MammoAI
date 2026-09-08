@@ -397,6 +397,50 @@ export async function notifyUserViaTelegram(userId: string, text: string): Promi
   }
 }
 
+/** Botga "/start" bosilgan HAR SAFAR chaqiriladi (webhook route.ts) — token
+ * bilan yoki tokensiz, akkaunt yaratilgan-yaratilmaganidan qat'i nazar.
+ * Admin paneldan "hammaga xabar yuborish" shu yozuvlarga tayanadi, shuning
+ * uchun keyinroq akkaunt yaratmagan (onboarding'ni tashlab ketgan) odamlar
+ * ham yo'qolib qolmasligi kerak. `ON CONFLICT` — qayta "Start" bosilganda
+ * ism/username yangilanishi mumkin (Telegram profilini o'zgartirgan bo'lsa),
+ * lekin `first_started_at` o'zgarmaydi. */
+export async function recordTelegramBotStart(
+  chatId: string,
+  info: { telegramUserId?: string | null; firstName?: string | null; username?: string | null }
+): Promise<void> {
+  await ensureSchema();
+  const now = new Date().toISOString();
+  await sql`
+    INSERT INTO telegram_bot_starts (chat_id, telegram_user_id, first_name, username, first_started_at, last_started_at)
+    VALUES (${chatId}, ${info.telegramUserId ?? null}, ${info.firstName ?? null}, ${info.username ?? null}, ${now}, ${now})
+    ON CONFLICT (chat_id) DO UPDATE SET
+      telegram_user_id = COALESCE(EXCLUDED.telegram_user_id, telegram_bot_starts.telegram_user_id),
+      first_name = COALESCE(EXCLUDED.first_name, telegram_bot_starts.first_name),
+      username = COALESCE(EXCLUDED.username, telegram_bot_starts.username),
+      last_started_at = EXCLUDED.last_started_at
+  `;
+}
+
+/** "Hammaga xabar yuborish" (admin broadcast) uchun manzil ro'yxati —
+ * `telegram_bot_starts` (har qanday /start, akkauntsiz ham) VA
+ * `users.telegram_user_id` (allaqachon ro'yxatdan o'tgan, lekin bu jadval
+ * qo'shilishidan OLDIN "Start" bosgan bo'lishi mumkin bo'lganlar) birlashtirilib,
+ * takrorlanganlar olib tashlanadi. Test/bloklangan akkauntlar chiqarib
+ * tashlanadi (is_test_account/is_blocked) — xom `telegram_bot_starts`
+ * yozuvlarida bunday bayroq yo'q, ular har doim kiritiladi. */
+export async function listTelegramBroadcastChatIds(): Promise<string[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT DISTINCT chat_id FROM (
+      SELECT chat_id FROM telegram_bot_starts
+      UNION
+      SELECT telegram_user_id AS chat_id FROM users
+      WHERE telegram_user_id IS NOT NULL AND is_test_account = FALSE AND is_blocked = FALSE
+    ) combined
+  `) as unknown as { chat_id: string }[];
+  return rows.map((r) => r.chat_id);
+}
+
 // ---------------------------------------------------------------------------
 // Onboarding
 // ---------------------------------------------------------------------------

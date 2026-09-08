@@ -181,6 +181,8 @@ export const adminApi = {
     get: () => request<TelegramBotSettings>("/telegram-bot"),
     update: (patch: { token?: string; name?: string; description?: string; shortDescription?: string }) =>
       request<{ ok: true }>("/telegram-bot", { method: "PATCH", body: JSON.stringify(patch) }),
+    broadcastRecipients: () => request<{ recipients: number }>("/telegram-bot/broadcast"),
+    broadcast: (text: string) => request<{ total: number; sent: number; failed: number }>("/telegram-bot/broadcast", { method: "POST", body: JSON.stringify({ text }) }),
   },
   aiSettings: {
     get: () => request<AiSettings>("/ai-settings"),

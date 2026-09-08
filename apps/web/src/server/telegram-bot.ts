@@ -38,6 +38,31 @@ export async function sendTelegramMessage(chatId: string, text: string, replyMar
   await callTelegramApi("sendMessage", { chat_id: chatId, text, reply_markup: replyMarkup });
 }
 
+const BROADCAST_BATCH_SIZE = 20;
+const BROADCAST_BATCH_DELAY_MS = 1000;
+
+/** Admin panel — "hammaga xabar yuborish" (repo.ts#listTelegramBroadcastChatIds
+ * ro'yxatiga). Ketma-ket emas, kichik partiyalarda (Telegram'ning umumiy
+ * ~30/soniya chegarasidan xavfsiz pastda) — bitta bloklangan/o'chirilgan
+ * chat butun jarayonni to'xtatmasligi uchun har bir yuborish alohida
+ * xato ushlanadi (`Promise.allSettled`). */
+export async function broadcastTelegramMessage(chatIds: string[], text: string): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+  for (let i = 0; i < chatIds.length; i += BROADCAST_BATCH_SIZE) {
+    const batch = chatIds.slice(i, i + BROADCAST_BATCH_SIZE);
+    const results = await Promise.allSettled(batch.map((chatId) => sendTelegramMessage(chatId, text)));
+    for (const result of results) {
+      if (result.status === "fulfilled") sent++;
+      else failed++;
+    }
+    if (i + BROADCAST_BATCH_SIZE < chatIds.length) {
+      await new Promise((resolve) => setTimeout(resolve, BROADCAST_BATCH_DELAY_MS));
+    }
+  }
+  return { sent, failed };
+}
+
 /** "Telefon raqamimni ulashish" tugmasi bilan klaviatura — foydalanuvchi
  * bosganda Telegram o'zi (haqiqiy, hisobga bog'langan) raqamni yuboradi. */
 export function requestContactKeyboard(buttonText: string): Record<string, unknown> {

@@ -315,6 +315,21 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // Botga "/start" bosgan HAR BIR chat — token bilan yoki tokensiz, akkaunt
+    // yaratilgan-yaratilmaganidan qat'i nazar (masalan onboarding'ni tugatmay
+    // tashlab ketgan bo'lsa ham). Admin paneldan "hammaga xabar yuborish"
+    // (broadcast) shu jadvaldagi + `users.telegram_user_id`dagi chat_id'larga
+    // yuboriladi (repo.ts#listTelegramBroadcastChatIds).
+    sql`
+      CREATE TABLE IF NOT EXISTS telegram_bot_starts (
+        chat_id TEXT PRIMARY KEY,
+        telegram_user_id TEXT,
+        first_name TEXT,
+        username TEXT,
+        first_started_at TEXT NOT NULL,
+        last_started_at TEXT NOT NULL
+      )
+    `,
   ]);
 
   // 1.5-bosqich: eski (allaqachon mavjud) jadvallarga yangi ustunlar qo'shish —

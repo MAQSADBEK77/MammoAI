@@ -21,6 +21,11 @@ export default function AdminTelegramBotPage() {
   const [description, setDescription] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
+  const [broadcastText, setBroadcastText] = useState("");
+  const [broadcastRecipients, setBroadcastRecipients] = useState<number | null>(null);
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState<{ total: number; sent: number; failed: number } | null>(null);
+
   function load() {
     adminApi.telegramBot
       .get()
@@ -31,6 +36,10 @@ export default function AdminTelegramBotPage() {
         setDescription(res.description ?? "");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"));
+    adminApi.telegramBot
+      .broadcastRecipients()
+      .then((res) => setBroadcastRecipients(res.recipients))
+      .catch(() => setBroadcastRecipients(null));
   }
 
   useEffect(() => {
@@ -53,6 +62,27 @@ export default function AdminTelegramBotPage() {
       setError(err instanceof Error ? err.message : "Saqlashda xatolik — token noto'g'ri bo'lishi mumkin");
     } finally {
       setSavingToken(false);
+    }
+  }
+
+  async function sendBroadcast() {
+    const text = broadcastText.trim();
+    if (!text) return;
+    const recipientsLabel = broadcastRecipients != null ? `${broadcastRecipients} kishiga` : "botga \"Start\" bosgan hammaga";
+    if (!window.confirm(`Bu xabar ${recipientsLabel} yuboriladi va uni bekor qilib bo'lmaydi. Davom etasizmi?\n\n"${text}"`)) return;
+    setSendingBroadcast(true);
+    setError(null);
+    setSuccess(null);
+    setBroadcastResult(null);
+    try {
+      const result = await adminApi.telegramBot.broadcast(text);
+      setBroadcastResult(result);
+      setBroadcastText("");
+      setSuccess(`Xabar yuborildi — ${result.sent}/${result.total} muvaffaqiyatli.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Xabar yuborishda xatolik");
+    } finally {
+      setSendingBroadcast(false);
     }
   }
 
@@ -165,6 +195,41 @@ export default function AdminTelegramBotPage() {
         <div className="flex justify-end">
           <Button onClick={saveProfile} disabled={savingProfile || !settings.hasToken}>
             {savingProfile ? "Saqlanmoqda…" : "Profilni saqlash"}
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-base font-bold text-text-primary">Hammaga xabar yuborish</h2>
+          <p className="mt-1 text-xs text-text-secondary">
+            Botga hech bo&apos;lmasa bir marta &quot;Start&quot; bosgan HAR BIR kishiga (akkaunt yaratgan-yaratmaganidan qat&apos;i nazar) bitta
+            matnli xabar yuboradi.{" "}
+            {broadcastRecipients != null ? (
+              <span className="font-semibold text-text-primary">Hozircha {broadcastRecipients} kishi.</span>
+            ) : null}
+          </p>
+        </div>
+
+        <textarea
+          value={broadcastText}
+          onChange={(e) => setBroadcastText(e.target.value)}
+          maxLength={4096}
+          rows={5}
+          placeholder="Xabar matni…"
+          className={`${inputClass()} h-auto! resize-none py-3`}
+        />
+        <p className="-mt-2 text-right text-xs text-text-muted">{broadcastText.length}/4096</p>
+
+        {broadcastResult && (
+          <p className="text-sm text-text-secondary">
+            Natija: {broadcastResult.sent} ta yetkazildi, {broadcastResult.failed} ta muvaffaqiyatsiz (jami {broadcastResult.total}).
+          </p>
+        )}
+
+        <div className="flex justify-end">
+          <Button onClick={sendBroadcast} disabled={sendingBroadcast || !broadcastText.trim() || !settings.hasToken}>
+            {sendingBroadcast ? "Yuborilmoqda…" : "Hammaga yuborish"}
           </Button>
         </div>
       </Card>
