@@ -26,7 +26,7 @@ export default function ArticleDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-3 pb-8">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="gap-4 pb-8">
         <Badge>{dict.articles.categories[article.category]}</Badge>
         <Text className="text-2xl font-bold text-text-primary">{article.title}</Text>
         <Card>

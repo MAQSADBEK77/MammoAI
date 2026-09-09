@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
-import { LoadingSpinner, ScreenHeader, SegmentedControl } from "@/components/ui";
+import { LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
 
 const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
@@ -100,28 +100,42 @@ export default function YordamchiScreen() {
           qolib ketmasligi uchun qo'lda joy ajratiladi (web'dagi xuddi shu muammoning
           tuzatilishi bilan bir xil sabab). */}
       <KeyboardAvoidingView className="flex-1 pb-24" behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View className="px-4 pt-2">
+        <View className="gap-4 px-4 pt-2">
           <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
             <MaterialCommunityIcons name="menu" size={22} color={themeColors.textPrimary} />
           </Pressable>
-          <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
-          <Text className="-mt-3 mb-2 text-xs text-text-muted">{dict.chat.disclaimer}</Text>
-          <View className="mb-2">
-            <SegmentedControl
-              value={tab}
-              onChange={setTab}
-              options={[
-                { value: "chat", label: dict.chat.chatTab },
-                { value: "stats", label: dict.chat.statisticsTab },
-              ]}
-            />
-          </View>
-          {tab === "chat" && patterns.length > 0 && (
-            <View className="mb-2 rounded-2xl border border-warning/20 bg-warning/5 p-4">
-              <Text className="text-sm font-bold text-warning">{dict.chat.patternBannerTitle}</Text>
-              <Text className="mt-1 text-sm text-text-secondary">{dict.chat.patternBannerBody}</Text>
+          <View className="gap-4">
+            <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
+            <Text className="-mt-2 text-xs text-text-muted">{dict.chat.disclaimer}</Text>
+
+            {/* web: bu yerda umumiy SegmentedControl emas, ikkita mustaqil
+                to'liq-enli pilla tugma (gap-2) ishlatiladi — Klinikalar
+                ekranidagi guruhlangan segmentdan uslubiy jihatdan ataylab
+                farq qiladi, shuning uchun bu yerda ham xuddi shunday. */}
+            <View className="flex-row gap-2">
+              {(["chat", "stats"] as const).map((t) => (
+                <Pressable
+                  key={t}
+                  onPress={() => setTab(t)}
+                  className={clsx(
+                    "tap-target flex-1 items-center justify-center rounded-full px-4 py-2",
+                    tab === t ? "bg-primary" : "bg-surface-muted"
+                  )}
+                >
+                  <Text className={clsx("text-sm font-semibold", tab === t ? "text-white" : "text-text-secondary")}>
+                    {t === "chat" ? dict.chat.chatTab : dict.chat.statisticsTab}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
-          )}
+
+            {tab === "chat" && patterns.length > 0 && (
+              <View className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
+                <Text className="text-sm font-bold text-warning">{dict.chat.patternBannerTitle}</Text>
+                <Text className="mt-1 text-sm text-text-secondary">{dict.chat.patternBannerBody}</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {tab === "stats" ? (
@@ -174,7 +188,9 @@ export default function YordamchiScreen() {
                       <Text className="flex-1 text-sm font-medium text-text-primary">{dict.feedback.chatPromptQuestion}</Text>
                       <View className="flex-row items-center gap-1">
                         <Pressable onPress={() => answerFeedbackPrompt(1)} className="h-8 w-8 items-center justify-center rounded-full active:bg-success/10">
-                          <MaterialCommunityIcons name="thumb-up-outline" size={18} color="#16A34A" />
+                          {/* web: `text-success` (#57B894) — Tailwind'ning umumiy
+                              yashil rangi (#16A34A) emas, ilovaning o'z tokeni. */}
+                          <MaterialCommunityIcons name="thumb-up-outline" size={18} color="#57B894" />
                         </Pressable>
                         <Pressable onPress={() => answerFeedbackPrompt(0)} className="h-8 w-8 items-center justify-center rounded-full active:bg-danger/10">
                           <MaterialCommunityIcons name="thumb-down-outline" size={18} color="#E0506F" />

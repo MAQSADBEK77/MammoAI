@@ -6,6 +6,7 @@ import type { CyclePhase } from "@mammoai/shared";
 import { getFertilityLevel, CYCLE_PHASE_EMOJI, gradientStops, colors } from "@mammoai/shared";
 import { useI18n } from "../lib/i18n";
 import { Emoji } from "./Emoji";
+import { shadowStyle } from "./ui";
 
 const PHASE_COLOR: Record<CyclePhase, string> = {
   menstrual: colors.primary,
@@ -27,7 +28,8 @@ export function PhaseCard({ phase }: { phase: CyclePhase }) {
       colors={gradientStops(color)}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={{ borderRadius: 24, padding: 20 }}
+      // web'da `shadow-lg` bor — mobil versiyada yo'q edi, karta yassi ko'rinardi.
+      style={{ borderRadius: 24, padding: 20, ...shadowStyle("soft") }}
     >
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-row items-center gap-1.5">

@@ -178,7 +178,7 @@ export function CycleScreen() {
   }
 
   return (
-    <View className="gap-6">
+    <View className="gap-5">
       <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
 
       {data.isIrregular && (
@@ -253,7 +253,7 @@ export function CycleScreen() {
         <Text className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.detailedLogButton}</Text>
         <View className="flex-row gap-2.5">
           <QuickCard
-            icon={<MaterialCommunityIcons name="water-outline" size={20} color={todayLog?.flow ? "#FFFFFF" : "#F43F7F"} />}
+            icon={<MaterialCommunityIcons name="water-outline" size={20} color={todayLog?.flow ? "#FFFFFF" : themeColors.textSecondary} />}
             tone="primary"
             label={dict.cycle.flowCardLabel}
             valueIcon={todayLog?.flow ? <Emoji e={FLOW_EMOJI[todayLog.flow]} size={12} /> : undefined}
@@ -261,7 +261,7 @@ export function CycleScreen() {
             onPress={() => openLogging(today, todayLog)}
           />
           <QuickCard
-            icon={<MaterialCommunityIcons name="medical-bag" size={20} color={todayLog?.symptoms.length ? "#FFFFFF" : "#0D9488"} />}
+            icon={<MaterialCommunityIcons name="medical-bag" size={20} color={todayLog?.symptoms.length ? "#FFFFFF" : themeColors.textSecondary} />}
             tone="accent"
             label={dict.cycle.symptomsCardLabel}
             value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}

@@ -7,7 +7,7 @@ import type { PregnancyResponse, VitalType } from "@mammoai/shared";
 import { getMilestoneForWeek, getVitalTone, gradients, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { useThemeColors } from "@/lib/theme";
+import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader, TextField } from "@/components/ui";
@@ -16,18 +16,22 @@ import { Emoji } from "@/components/Emoji";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
 const VITAL_ICON: Record<VitalType, keyof typeof MaterialCommunityIcons.glyphMap> = { heart_rate: "heart-outline", blood_pressure: "chart-line", weight: "scale-bathroom", temperature: "thermometer" };
-const VITAL_ICON_COLOR: Record<VitalType, string> = {
-  heart_rate: "#F43F7F",
-  blood_pressure: "#7C3AED",
-  weight: "#0D9488",
-  temperature: "#E7A83F",
-};
 
 /** "Asosiy" (asosiy.tsx) tabining Homiladorlik-rejim tarkibi — ilgari alohida
  * /homiladorlik ekrani edi. O'zining SafeAreaView/ScrollView'i yo'q. */
 export function PregnancyScreen() {
   const { dict } = useI18n();
   const themeColors = useThemeColors();
+  const accent = useModeAccent();
+  // web: `bg-primary/10 text-primary` — bu ekran doim homiladorlik/tayyorgarlik
+  // rejimida ko'rsatilgani uchun "primary" binafsha/moviy-yashil bo'lishi
+  // mumkin; qolganlari (secondary/accent/warning) rejimga qarab o'zgarmaydi.
+  const VITAL_ICON_COLOR: Record<VitalType, string> = {
+    heart_rate: accent.primary,
+    blood_pressure: "#7C3AED",
+    weight: "#0D9488",
+    temperature: "#E7A83F",
+  };
   const { resolve: resolveIllustration } = useIllustrations();
   const { onboardingProfile } = useSession();
   const [data, setData] = useState<PregnancyResponse | null>(null);

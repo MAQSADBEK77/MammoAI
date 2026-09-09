@@ -3,6 +3,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { gradientStops, colors } from "@mammoai/shared";
 import { Emoji } from "@/components/Emoji";
+import { shadowStyle } from "@/components/ui";
 
 const ICON_EMOJI: Record<string, string> = {
   seed: "🌱",
@@ -27,7 +28,8 @@ export function SizeIllustration({ icon }: { icon: string }) {
       colors={gradientStops(colors.accent)}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={{ width: size, height: size, borderRadius: size / 2, alignItems: "center", justifyContent: "center", alignSelf: "center" }}
+      // web'da `shadow-md` bor — bu yerda yo'q edi, doira tekis ko'rinardi.
+      style={{ width: size, height: size, borderRadius: size / 2, alignItems: "center", justifyContent: "center", alignSelf: "center", ...shadowStyle("card") }}
     >
       <Emoji e={ICON_EMOJI[icon] ?? "🤰"} size={size * 0.45} />
     </LinearGradient>

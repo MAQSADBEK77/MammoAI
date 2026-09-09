@@ -1,5 +1,6 @@
 import { WebView } from "react-native-webview";
 import type { Clinic } from "@mammoai/shared";
+import { useThemeColors } from "@/lib/theme";
 
 // Yandex/Google Maps API kaliti berilmagan — WebView ichida keyless OpenStreetMap +
 // Leaflet (CDN'dan) ko'rsatiladi. Web versiyasidagi bilan bir xil mantiq
@@ -32,11 +33,13 @@ function buildHtml(clinics: Clinic[]): string {
 }
 
 export function ClinicsMap({ clinics }: { clinics: Clinic[] }) {
+  // web: `rounded-[28px] border border-border` — chegara chizig'i yo'q edi.
+  const themeColors = useThemeColors();
   return (
     <WebView
       originWhitelist={["*"]}
       source={{ html: buildHtml(clinics) }}
-      style={{ height: 320, borderRadius: 28, overflow: "hidden" }}
+      style={{ height: 320, borderRadius: 28, overflow: "hidden", borderWidth: 1, borderColor: themeColors.border }}
     />
   );
 }

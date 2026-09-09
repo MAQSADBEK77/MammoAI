@@ -9,10 +9,10 @@ import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import type { BloodType, CycleSettings, Goal, Language } from "@mammoai/shared";
-import { BLOOD_TYPES, getModeAccentColors, gradientStops, colors, gradients, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
+import { BLOOD_TYPES, getModeAccentColors, colors, gradients, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { useThemeColors } from "@/lib/theme";
+import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { clearToken } from "@/lib/storage";
 import { useDrawer } from "@/lib/drawer";
@@ -47,6 +47,7 @@ export default function ProfileScreen() {
   const { user, onboardingProfile, refresh } = useSession();
   const { openDrawer } = useDrawer();
   const themeColors = useThemeColors();
+  const accent = useModeAccent();
 
   const [editingHeader, setEditingHeader] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
@@ -335,8 +336,8 @@ export default function ProfileScreen() {
               disabled={saving}
               className="flex-row items-center gap-1 rounded-full px-2.5 py-1 active:opacity-60"
             >
-              {editingInfo ? <MaterialCommunityIcons name="check" size={14} color={colors.primaryDark} /> : <MaterialCommunityIcons name="pencil-outline" size={14} color={colors.primaryDark} />}
-              <Text className="text-xs font-semibold" style={{ color: colors.primaryDark }}>
+              {editingInfo ? <MaterialCommunityIcons name="check" size={14} color={accent.primaryDark} /> : <MaterialCommunityIcons name="pencil-outline" size={14} color={accent.primaryDark} />}
+              <Text className="text-xs font-semibold" style={{ color: accent.primaryDark }}>
                 {editingInfo ? dict.profile.doneButton : dict.profile.editButton}
               </Text>
             </Pressable>
@@ -496,7 +497,7 @@ export default function ProfileScreen() {
         <Card className="gap-1">
           <SettingsRow icon="❓" label={dict.profile.helpTitle} last>
             <Pressable onPress={() => Linking.openURL(`tel:${dict.profile.helpPhoneValue.replace(/\s/g, "")}`)}>
-              <Text className="text-right text-sm font-semibold" style={{ color: colors.primaryDark }}>
+              <Text className="text-right text-sm font-semibold" style={{ color: accent.primaryDark }}>
                 {dict.profile.helpPhoneValue}
               </Text>
             </Pressable>
@@ -598,11 +599,14 @@ function SettingsRow({
   last?: boolean;
 }) {
   const isIconName = /^[a-z0-9-]+$/.test(icon);
+  const accent = useModeAccent();
   return (
     <View className={clsx("flex-row items-center justify-between gap-3 py-2.5", !last && "border-b border-border")}>
       <View className="flex-row items-center gap-3">
         <LinearGradient
-          colors={gradientStops(colors.primary)}
+          // web: `from-primary to-primary-dark` — joriy rejim rangiga qarab
+          // almashadi, `colors.primary` statik importidan emas.
+          colors={[accent.primary, accent.primaryDark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" }}

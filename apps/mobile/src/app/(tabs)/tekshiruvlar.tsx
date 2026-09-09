@@ -13,11 +13,14 @@ import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/c
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const STATUS_ICON: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = { pending: "clock-outline", done: "check-circle-outline", overdue: "alert-circle-outline" };
-const STATUS_ICON_COLOR = { pending: "#9CA3AF", done: "#57B894", overdue: "#E0506F" } as const;
 
 export default function ChecklistScreen() {
   const { dict } = useI18n();
   const themeColors = useThemeColors();
+  // web: "pending" holati `text-text-muted` (CSS o'zgaruvchi) ishlatadi —
+  // qorong'u rejimda o'zgaradi; bu yerda avval qattiq yozilgan yorug' rejim
+  // kulrangi (#9CA3AF) doim bir xil qolardi.
+  const STATUS_ICON_COLOR = { pending: themeColors.textMuted, done: "#57B894", overdue: "#E0506F" } as const;
   const { openDrawer } = useDrawer();
   const { resolve: resolveIllustration } = useIllustrations();
   const [data, setData] = useState<ChecklistResponse | null>(null);

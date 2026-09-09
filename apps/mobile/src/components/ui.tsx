@@ -24,7 +24,7 @@ import {
   TouchableRipple,
 } from "react-native-paper";
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
-import { colors, glass, gradients } from "@mammoai/shared";
+import { glass, gradients } from "@mammoai/shared";
 import { useModeAccent, useResolvedTheme, useThemeColors } from "@/lib/theme";
 import { Emoji } from "@/components/Emoji";
 
@@ -50,6 +50,7 @@ export function Button({
   // Hayz=pushti, Homiladorlik=binafsha, Tayyorgarlik=moviy-yashil), haqiqiy
   // Material bosish effekti uchun TouchableRipple ichida.
   const accent = useModeAccent();
+  const themeColors = useThemeColors();
   if (variant === "primary") {
     return (
       <TouchableRipple
@@ -78,7 +79,12 @@ export function Button({
       onPress={onPress as () => void}
       className={className}
       buttonColor={variant === "dark" ? "#241127" : variant === "secondary" ? "#C4B5FD" : undefined}
-      textColor={variant === "secondary" ? "#1F2937" : variant === "ghost" ? "#4B5563" : undefined}
+      // "secondary" foni doim och-binafsha (temaga bog'liq emas) — matni ham
+      // doim to'q, aks holda qorong'u rejimda deyarli oq matn shu fonda
+      // o'qilmay qoladi (web bilan bir xil tuzatish, ui.tsx#buttonSx'ga q.).
+      // "ghost"ning esa foni yo'q — u qaysi sirt ustida tursa o'sha bilan
+      // birga qorong'ulashadi, shuning uchun matni ham temaga mos.
+      textColor={variant === "secondary" ? "#1F2937" : variant === "ghost" ? themeColors.textSecondary : undefined}
       contentStyle={{ minHeight: 48 }}
       style={{ borderRadius: 999, justifyContent: "center" }}
       labelStyle={{ fontWeight: "600", fontSize: 16 }}
@@ -105,16 +111,21 @@ export function IconButton({
 }) {
   const themeColors = useThemeColors();
   const resolvedTheme = useResolvedTheme();
+  const accent = useModeAccent();
   const bg =
     tone === "surface"
       ? themeColors.surface
       : tone === "dark"
         ? "#241127"
         : tone === "primary"
-          ? "#F43F7F"
-          : resolvedTheme === "dark"
-            ? glass.dark
-            : glass.light;
+          ? // web: `var(--color-primary)` — joriy maqsadga (hayz/homiladorlik)
+            // qarab almashadi, qattiq yozilgan pushti emas.
+            accent.primary
+          : // web'da bu tugma "glass-light-strong" (0.82 xiralik) ishlatadi, oddiy
+            // "glass-light" (0.62) emas — bir xillik uchun shu yerda ham "Strong".
+            resolvedTheme === "dark"
+            ? glass.darkStrong
+            : glass.lightStrong;
   return (
     <PaperIconButton
       icon={() => icon}
@@ -234,15 +245,24 @@ export function ScreenHeader({
 }
 
 const BADGE_TONES: Record<string, { bg: string; text: string }> = {
-  muted: { bg: "#F3F4F6", text: "#4B5563" },
   success: { bg: "#57B89426", text: "#57B894" },
   warning: { bg: "#E7A83F26", text: "#E7A83F" },
   danger: { bg: "#E0506F26", text: "#E0506F" },
-  primary: { bg: "#FFB3CB", text: "#D62A63" },
 };
 
-export function Badge({ tone = "muted", children }: { tone?: keyof typeof BADGE_TONES; children: ReactNode }) {
-  const t = BADGE_TONES[tone];
+export function Badge({ tone = "muted", children }: { tone?: "muted" | "success" | "warning" | "danger" | "primary"; children: ReactNode }) {
+  // web'dagi Badge "muted" (surface-muted) va "primary" (primary-light/-dark)
+  // tonlari CSS o'zgaruvchidan o'qigani uchun mos ravishda qorong'u rejim va
+  // joriy rejim (hayz/homiladorlik) rangiga qarab avtomatik almashadi — bu
+  // yerda ham xuddi shunday, qattiq yozilgan yorug' rejim rangi o'rniga.
+  const themeColors = useThemeColors();
+  const accent = useModeAccent();
+  const t: { bg: string; text: string } =
+    tone === "muted"
+      ? { bg: themeColors.surfaceMuted, text: themeColors.textSecondary }
+      : tone === "primary"
+        ? { bg: accent.primaryLight, text: accent.primaryDark }
+        : BADGE_TONES[tone];
   return (
     <PaperChip
       compact
@@ -267,7 +287,19 @@ export function FloatingTag({ icon, value, label }: { icon?: ReactNode; value: s
   return (
     <View
       className="flex-row items-center gap-2 rounded-2xl px-3.5 py-2.5"
-      style={{ backgroundColor: bg, borderWidth: 1, borderColor: glass.border, ...shadowStyle("soft") }}
+      style={{
+        backgroundColor: bg,
+        borderWidth: 1,
+        borderColor: glass.border,
+        // web'ning `.floating-tag` (globals.css) aniq qiymatlari:
+        // `0 8px 24px rgba(59, 27, 69, 0.12)` — umumiy "soft" preset'dan
+        // ozgina farq qiladi (radius/opacity), shu yerda aynan mos qilindi.
+        shadowColor: "#3B1B45",
+        shadowOpacity: 0.12,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 4,
+      }}
     >
       {icon}
       <View>
@@ -305,8 +337,11 @@ export function StatTile({
     : "bg-surface";
   const textTone = active ? "text-white" : "text-text-primary";
   const subTone = active ? "text-white/75" : "text-text-secondary";
+  // web'ning aniq qiymati: faol holatda "nav" rangidan 20% xiralik soya
+  // (`shadowStyle("soft")` umumiy preseti #3B1B45/10% ishlatadi — mos emas).
+  const activeShadow = { shadowColor: "#241127", shadowOpacity: 0.2, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 };
   return (
-    <View className={clsx("flex-1 gap-3 rounded-3xl p-4", toneBg)} style={active ? shadowStyle("soft") : shadowStyle("card")}>
+    <View className={clsx("flex-1 gap-3 rounded-3xl p-4", toneBg)} style={active ? activeShadow : shadowStyle("card")}>
       <View className="flex-row items-center gap-1.5">
         {icon}
         <Text className={clsx("text-xs font-semibold", subTone)}>{label}</Text>
@@ -340,10 +375,16 @@ export function SegmentedControl<T extends string>({
 }
 
 export function ProgressBar({ value, tone = "primary" }: { value: number; tone?: "primary" | "secondary" | "accent" }) {
-  const barColor = tone === "secondary" ? "#7C3AED" : tone === "accent" ? "#0D9488" : "#F43F7F";
+  const accent = useModeAccent();
+  const themeColors = useThemeColors();
+  const barColor = tone === "secondary" ? "#7C3AED" : tone === "accent" ? "#0D9488" : accent.primary;
   return (
     <View className="overflow-hidden rounded-full">
-      <PaperProgressBar progress={Math.min(100, Math.max(0, value)) / 100} color={barColor} style={{ height: 12, borderRadius: 999, backgroundColor: "#F3F4F6" }} />
+      <PaperProgressBar
+        progress={Math.min(100, Math.max(0, value)) / 100}
+        color={barColor}
+        style={{ height: 12, borderRadius: 999, backgroundColor: themeColors.surfaceMuted }}
+      />
     </View>
   );
 }
@@ -385,6 +426,11 @@ export function TextField({
   /** Chap tomonda ko'rsatiladigan ikona (masalan, qidiruv maydonidagi lupa). */
   icon?: ReactNode;
 }) {
+  // web'ning xom `<input>`lari `border-border bg-surface text-text-primary`
+  // ishlatadi (qorong'u rejimda ham to'g'ri chiqadi) — bu yerda avval qattiq
+  // yozilgan yorug' rejim rangi (#E5E7EB/#FFFFFF/#1F2937) bo'lgan, qorong'u
+  // rejimda oq quti bo'lib qolardi.
+  const themeColors = useThemeColors();
   return (
     <PaperTextInput
       mode="outlined"
@@ -393,9 +439,9 @@ export function TextField({
       placeholder={placeholder}
       keyboardType={keyboardType}
       left={icon ? <PaperTextInput.Icon icon={() => icon} /> : undefined}
-      outlineStyle={{ borderRadius: 16, borderColor: "#E5E7EB" }}
-      style={{ minHeight: 48, backgroundColor: "#FFFFFF" }}
-      contentStyle={{ fontSize: 16, color: "#1F2937" }}
+      outlineStyle={{ borderRadius: 16, borderColor: themeColors.border }}
+      style={{ minHeight: 48, backgroundColor: themeColors.surface }}
+      contentStyle={{ fontSize: 16, color: themeColors.textPrimary }}
     />
   );
 }
@@ -507,6 +553,10 @@ export function WheelPicker<T>({
   const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
   const index = options.indexOf(value);
   const themeColors = useThemeColors();
+  // web: `border-primary bg-primary-light/15` (CSS o'zgaruvchi) — Homiladorlik
+  // ekranida ham shu WheelPicker ishlatiladi, shuning uchun qattiq yozilgan
+  // pushti emas, joriy rejim rangi (useModeAccent) kerak.
+  const accent = useModeAccent();
 
   // Tashqi `value` o'zgarganda (masalan oy almashganda kun ustuni qayta
   // hisoblanganda) ham mos qatorga scroll qilamiz.
@@ -529,7 +579,7 @@ export function WheelPicker<T>({
       <View
         pointerEvents="none"
         className="absolute inset-x-0 z-10 rounded-2xl border-2"
-        style={{ height: WHEEL_ITEM_HEIGHT, top: (WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS) / 2 - WHEEL_ITEM_HEIGHT / 2, borderColor: colors.primary, backgroundColor: `${colors.primaryLight}40` }}
+        style={{ height: WHEEL_ITEM_HEIGHT, top: (WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS) / 2 - WHEEL_ITEM_HEIGHT / 2, borderColor: accent.primary, backgroundColor: `${accent.primaryLight}40` }}
       />
       {/* Yuqori/pastki xiralashish — iOS wheel'idagi kabi (LinearGradient, mask-image RN'da yo'q). */}
       <LinearGradient

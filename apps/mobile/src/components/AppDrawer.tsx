@@ -11,6 +11,7 @@ import type { Language } from "@mammoai/shared";
 import { gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { useDrawer } from "@/lib/drawer";
 import { api } from "@/lib/api";
 import { Emoji } from "@/components/Emoji";
@@ -41,6 +42,8 @@ export function AppDrawer() {
   const { open, closeDrawer } = useDrawer();
   const { dict, language, setLanguage } = useI18n();
   const { user, refresh } = useSession();
+  const accent = useModeAccent();
+  const themeColors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [languagePickerOpen, setLanguagePickerOpen] = useState(false);
 
@@ -89,7 +92,9 @@ export function AppDrawer() {
         </Animated.View>
 
         <Animated.View
-          style={[{ position: "absolute", left: 0, top: 0, bottom: 0, width: DRAWER_WIDTH, backgroundColor: "#FFFFFF" }, panelStyle]}
+          // web: `bg-surface` — qorong'u rejimda o'zgaradi; qattiq yozilgan
+          // oq bo'lganda qorong'u rejimda panel yorqin oq bo'lib qolardi.
+          style={[{ position: "absolute", left: 0, top: 0, bottom: 0, width: DRAWER_WIDTH, backgroundColor: themeColors.surface }, panelStyle]}
         >
           <LinearGradient
             colors={gradients.profile}
@@ -130,7 +135,7 @@ export function AppDrawer() {
                 onPress={() => go(item.href)}
                 className="flex-row items-center gap-3 px-5 py-3 active:bg-surface-muted"
               >
-                <MaterialCommunityIcons name={item.icon} size={20} color="#F43F7F" />
+                <MaterialCommunityIcons name={item.icon} size={20} color={accent.primary} />
                 <Text className="font-semibold text-text-primary">{item.label}</Text>
               </Pressable>
             ))}
@@ -218,7 +223,7 @@ export function AppDrawer() {
               <Switch
                 value={user.notificationsEnabled}
                 onValueChange={() => save({ notificationsEnabled: !user.notificationsEnabled })}
-                color="#F43F7F"
+                color={accent.primary}
               />
             </View>
           </View>

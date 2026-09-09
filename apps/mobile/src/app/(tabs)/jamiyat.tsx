@@ -2,11 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable, TextInput, Share, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import clsx from "clsx";
 import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
-import { useThemeColors } from "@/lib/theme";
+import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
 import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@/components/ui";
@@ -47,6 +48,7 @@ function Toggle({ checked, onPress }: { checked: boolean; onPress: () => void })
 export default function CommunityScreen() {
   const { dict } = useI18n();
   const themeColors = useThemeColors();
+  const accent = useModeAccent();
   const { openDrawer } = useDrawer();
 
   const [stats, setStats] = useState<CommunityStats | null>(null);
@@ -348,20 +350,27 @@ export default function CommunityScreen() {
                 <Card key={post.id} className="gap-3">
                   <View className="flex-row items-start justify-between gap-2">
                     <View className="flex-1 flex-row items-center gap-2.5">
-                      <View
-                        className={clsx(
-                          "h-9 w-9 items-center justify-center overflow-hidden rounded-full",
-                          post.isAnonymous ? "bg-nav" : "bg-primary"
-                        )}
-                      >
-                        {!post.isAnonymous && post.authorAvatarUrl ? (
-                          <Image source={{ uri: post.authorAvatarUrl }} className="h-full w-full" />
-                        ) : post.isAnonymous ? (
+                      {post.isAnonymous ? (
+                        <View className="h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-nav">
                           <MaterialCommunityIcons name="incognito" size={16} color="#FFFFFF" />
-                        ) : (
-                          <MaterialCommunityIcons name="account-outline" size={16} color="#FFFFFF" />
-                        )}
-                      </View>
+                        </View>
+                      ) : (
+                        // web: `bg-gradient-to-br from-primary to-secondary` —
+                        // ikki rangli gradient, yassi "bg-primary" emas (avval
+                        // shu yerda soddalashtirilgan edi).
+                        <LinearGradient
+                          colors={[accent.primary, "#7C3AED"]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", overflow: "hidden" }}
+                        >
+                          {post.authorAvatarUrl ? (
+                            <Image source={{ uri: post.authorAvatarUrl }} className="h-full w-full" />
+                          ) : (
+                            <MaterialCommunityIcons name="account-outline" size={16} color="#FFFFFF" />
+                          )}
+                        </LinearGradient>
+                      )}
                       <View className="flex-1">
                         <Text className="text-sm font-semibold text-text-primary" numberOfLines={1}>
                           {post.isAnonymous ? dict.community.anonymousAuthor : (post.authorName ?? dict.profile.noNameFallback)}
@@ -439,7 +448,12 @@ export default function CommunityScreen() {
                           disabled={!commentDraft[post.id]?.trim()}
                           className="tap-target items-center justify-center rounded-full bg-secondary-light px-4 active:scale-95 disabled:opacity-50"
                         >
-                          <Text className="text-xs font-semibold text-text-primary">{dict.community.sendCommentButton}</Text>
+                          {/* Fon doim fiksati och-binafsha — matn ham doim to'q
+                              (text-text-primary emas — qorong'u rejimda deyarli
+                              oq bo'lib, shu yorug' fonda o'qilmay qolardi). */}
+                          <Text className="text-xs font-semibold" style={{ color: "#1F2937" }}>
+                            {dict.community.sendCommentButton}
+                          </Text>
                         </Pressable>
                       </View>
                     </View>
@@ -450,7 +464,9 @@ export default function CommunityScreen() {
 
             {posts.length < total && (
               <Button variant="secondary" onPress={loadMore} disabled={loadingMore}>
-                <Text className="text-sm font-semibold text-text-primary">{loadingMore ? dict.common.loading : dict.community.loadMoreButton}</Text>
+                <Text className="text-sm font-semibold" style={{ color: "#1F2937" }}>
+                  {loadingMore ? dict.common.loading : dict.community.loadMoreButton}
+                </Text>
               </Button>
             )}
           </>

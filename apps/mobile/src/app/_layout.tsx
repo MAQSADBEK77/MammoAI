@@ -7,7 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { resolveThemeColors } from "@mammoai/shared";
 import { I18nProvider } from "@/lib/i18n";
 import { SessionProvider } from "@/lib/session";
-import { useResolvedTheme } from "@/lib/theme";
+import { useModeAccent, useResolvedTheme } from "@/lib/theme";
 import { IllustrationsProvider } from "@/lib/illustrations";
 import { DynamicPaperProvider } from "@/lib/paper-theme";
 import { DrawerProvider } from "@/lib/drawer";
@@ -31,6 +31,12 @@ function AnalyticsMount() {
 function ThemedApp() {
   const resolvedTheme = useResolvedTheme();
   const colors = resolveThemeColors(resolvedTheme);
+  // web'ning globals.css'idagi `[data-mode="pregnancy"|"planning_pregnancy"]`
+  // bilan bir xil: "primary" tokeni joriy maqsadga (hayz/homiladorlik/
+  // tayyorgarlik) qarab almashadi, shu orqali tailwind.config.js'dagi
+  // "bg-primary"/"text-primary" ishlatilgan HAR BIR ekran (alohida
+  // useModeAccent() chaqirmasa ham) avtomatik to'g'ri rangda chiqadi.
+  const accent = useModeAccent();
   const themeVars = vars({
     "--color-background": colors.background,
     "--color-surface": colors.surface,
@@ -39,6 +45,9 @@ function ThemedApp() {
     "--color-text-secondary": colors.textSecondary,
     "--color-text-muted": colors.textMuted,
     "--color-border": colors.border,
+    "--color-primary": accent.primary,
+    "--color-primary-dark": accent.primaryDark,
+    "--color-primary-light": accent.primaryLight,
   });
 
   return (

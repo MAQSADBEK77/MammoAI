@@ -133,7 +133,20 @@ export function MonthCalendar({
                     isToday ? "border-2 border-dashed border-primary-dark" : isMenstrualDay && "border-2 border-primary-dark"
                   )}
                 >
-                  <Text className={clsx("text-sm font-medium", marker === "period" ? "text-white" : "text-text-secondary")}>
+                  <Text
+                    className={clsx(
+                      "text-sm font-medium",
+                      // web: hayz (haqiqiy yoki bashorat) va lyuteal-fallback kunlar
+                      // to'q pushti matn oladi (`text-primary-dark`), boshqa fazalar
+                      // esa oddiy kulrang — bu yerda ham xuddi shunday, avval hamma
+                      // narsa (period'dan tashqari) kulrang bo'lib qolgan edi.
+                      marker === "period"
+                        ? "text-white"
+                        : marker === "predicted" || (!marker && !phaseBg && phase === "menstrual")
+                          ? "text-primary-dark"
+                          : "text-text-secondary"
+                    )}
+                  >
                     {Number(date.slice(-2))}
                   </Text>
                   {isOvulation && <View className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-accent" />}

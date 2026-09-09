@@ -9,7 +9,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: "#F43F7F", dark: "#D62A63", light: "#FFB3CB" },
+        // `primary` CSS o'zgaruvchi orqali — web'da bo'lgani kabi (globals.css
+        // `[data-mode="pregnancy"|"planning_pregnancy"]`) joriy maqsadga (hayz/
+        // homiladorlik/tayyorgarlik) qarab butunlay boshqa rangga almashishi
+        // uchun (ildiz _layout.tsx'da vars() bilan o'rnatiladi, useModeAccent
+        // bilan bir xil manbadan). Statik hex bo'lganda "bg-primary"/
+        // "text-primary" ishlatilgan barcha ekranlar homiladorlik rejimida
+        // ham pushti bo'lib qolardi — web esa binafsha/moviy-yashilga o'tadi.
+        primary: { DEFAULT: "var(--color-primary)", dark: "var(--color-primary-dark)", light: "var(--color-primary-light)" },
         secondary: { DEFAULT: "#7C3AED", light: "#C4B5FD" },
         accent: { DEFAULT: "#0D9488", light: "#5EEAD4" },
         // Yorug'/qorong'u rejimlar orasida almashadigan tokenlar — statik hex

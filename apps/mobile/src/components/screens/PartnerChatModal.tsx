@@ -6,7 +6,7 @@ import { Avatar } from "react-native-paper";
 import clsx from "clsx";
 import type { PartnerChatMessage } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
-import { useThemeColors } from "@/lib/theme";
+import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
 import { LoadingSpinner } from "@/components/ui";
@@ -31,6 +31,7 @@ export function PartnerChatModal({
 }) {
   const { dict } = useI18n();
   const themeColors = useThemeColors();
+  const accent = useModeAccent();
   const [messages, setMessages] = useState<PartnerChatMessage[] | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -84,9 +85,9 @@ export function PartnerChatModal({
             {partnerAvatarUrl ? (
               <Avatar.Image size={36} source={{ uri: partnerAvatarUrl }} />
             ) : initials ? (
-              <Avatar.Text size={36} label={initials} style={{ backgroundColor: "#FFB3CB" }} />
+              <Avatar.Text size={36} label={initials} style={{ backgroundColor: accent.primaryLight }} />
             ) : (
-              <Avatar.Icon size={36} icon={() => <Emoji e="🙂" size={18} />} style={{ backgroundColor: "#FFB3CB" }} />
+              <Avatar.Icon size={36} icon={() => <Emoji e="🙂" size={18} />} style={{ backgroundColor: accent.primaryLight }} />
             )}
             <Text className="font-bold text-text-primary">{partnerName}</Text>
           </View>
@@ -107,8 +108,8 @@ export function PartnerChatModal({
                 <View className={clsx("flex-row", item.isOwn ? "justify-end" : "justify-start")}>
                   <View
                     className={clsx(
-                      "max-w-[80%] rounded-2xl px-4 py-2",
-                      item.isOwn ? "rounded-br-md bg-primary" : "rounded-bl-md bg-surface-muted"
+                      "max-w-[75%] rounded-2xl px-4 py-2",
+                      item.isOwn ? "rounded-br-sm bg-primary" : "rounded-bl-sm bg-surface-muted"
                     )}
                   >
                     <Text className={clsx("text-sm leading-relaxed", item.isOwn ? "text-white" : "text-text-primary")}>{item.body}</Text>
@@ -124,12 +125,12 @@ export function PartnerChatModal({
               onChangeText={setDraft}
               placeholder={dict.partner.messagePlaceholder}
               placeholderTextColor="#9CA3AF"
-              className="min-h-[44px] flex-1 rounded-full border border-border bg-background px-4 text-base text-text-primary"
+              className="min-h-[48px] flex-1 rounded-full border border-border bg-background px-4 text-base text-text-primary"
             />
             <Pressable
               onPress={send}
               disabled={!draft.trim() || sending}
-              className={clsx("h-11 w-11 items-center justify-center rounded-full bg-primary", (!draft.trim() || sending) && "opacity-50")}
+              className={clsx("h-12 w-12 items-center justify-center rounded-full bg-primary", (!draft.trim() || sending) && "opacity-50")}
             >
               <MaterialCommunityIcons name="send" size={18} color="#FFFFFF" />
             </Pressable>

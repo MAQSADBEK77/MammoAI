@@ -7,7 +7,7 @@ import clsx from "clsx";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { getClinicRating, getClinicHours, isTopClinic } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
-import { useThemeColors } from "@/lib/theme";
+import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile, TextField } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
@@ -29,6 +29,7 @@ const SPECIALTIES: ClinicSpecialty[] = [
 export function ClinicsScreen() {
   const { dict } = useI18n();
   const themeColors = useThemeColors();
+  const accent = useModeAccent();
   const { checklistItemId } = useLocalSearchParams<{ checklistItemId?: string }>();
 
   const [clinics, setClinics] = useState<Clinic[] | null>(null);
@@ -107,7 +108,7 @@ export function ClinicsScreen() {
                 <View className="flex-1 gap-1.5">
                   {isTop && (
                     <View className="flex-row items-center gap-1 self-start rounded-full bg-primary-light/60 px-2.5 py-1">
-                      <MaterialCommunityIcons name="star" size={13} color="#D62A63" />
+                      <MaterialCommunityIcons name="star" size={13} color={accent.primaryDark} />
                       <Text className="text-xs font-bold text-primary-dark">{dict.clinics.topClinicBadge}</Text>
                     </View>
                   )}
@@ -147,8 +148,13 @@ export function ClinicsScreen() {
                       Linking.openURL(`tel:${clinic.phone}`);
                     }}
                   >
-                    <MaterialCommunityIcons name="phone-outline" size={16} color={themeColors.textPrimary} />
-                    <Text className="text-sm font-semibold text-text-primary">{dict.clinics.callButton}</Text>
+                    {/* "secondary" fon doim fiksati och-binafsha — matn/ikonka
+                        ham doim to'q (themeColors.textPrimary emas — qorong'u
+                        rejimda deyarli oq bo'lib, shu fonda o'qilmay qolardi). */}
+                    <MaterialCommunityIcons name="phone-outline" size={16} color="#1F2937" />
+                    <Text className="text-sm font-semibold" style={{ color: "#1F2937" }}>
+                      {dict.clinics.callButton}
+                    </Text>
                   </Button>
                 </View>
                 <View className="flex-1">

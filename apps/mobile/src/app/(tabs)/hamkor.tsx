@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable, Alert, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
+import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Portal, Dialog, Switch, Avatar } from "react-native-paper";
 import type { PartnerShareSettings, PartnerStatusResponse } from "@mammoai/shared";
-import { MOOD_EMOJI, formatDateDisplay } from "@mammoai/shared";
+import { MOOD_EMOJI, formatDateDisplay, gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
-import { useThemeColors } from "@/lib/theme";
+import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
 import { Button, Card, LoadingSpinner, ScreenHeader, Badge } from "@/components/ui";
@@ -22,6 +23,7 @@ import { PartnerChatModal } from "@/components/screens/PartnerChatModal";
 export default function HamkorScreen() {
   const { dict } = useI18n();
   const themeColors = useThemeColors();
+  const accent = useModeAccent();
   const { openDrawer } = useDrawer();
   const [status, setStatus] = useState<PartnerStatusResponse | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
@@ -104,7 +106,15 @@ export default function HamkorScreen() {
 
         {!status.linked ? (
           <>
-            <View className="gap-2 rounded-[28px] bg-primary-light/30 p-6">
+            {/* web: `bg-aurora-hero` — doimiy pushti→lavanda gradient, oddiy
+                yassi rang emas (avval shu yerda "bg-primary-light/30" bilan
+                yassi rangga soddalashtirilgan edi). */}
+            <LinearGradient
+              colors={gradients.hero}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ borderRadius: 28, padding: 24, gap: 8 }}
+            >
               <View className="flex-row items-center justify-center gap-1">
                 <Emoji e="🐰" size={36} />
                 <Emoji e="❤️" size={36} />
@@ -112,11 +122,11 @@ export default function HamkorScreen() {
               </View>
               <Text className="text-center text-lg font-bold text-text-primary">{dict.partner.heroTitle}</Text>
               <Text className="text-center text-sm text-text-secondary">{dict.partner.heroDescription}</Text>
-            </View>
+            </LinearGradient>
 
             <Card className="flex-row items-start gap-3">
               <View className="h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
-                <MaterialCommunityIcons name="chart-bar" size={20} color="#F43F7F" />
+                <MaterialCommunityIcons name="chart-bar" size={20} color={accent.primary} />
               </View>
               <View className="flex-1">
                 <Text className="font-semibold text-text-primary">{dict.partner.featureSharingTitle}</Text>
@@ -155,9 +165,9 @@ export default function HamkorScreen() {
             <Card className="gap-3">
               <View className="flex-row items-center gap-3">
                 {initials ? (
-                  <Avatar.Text size={48} label={initials} style={{ backgroundColor: "#FFB3CB" }} />
+                  <Avatar.Text size={48} label={initials} style={{ backgroundColor: accent.primaryLight }} />
                 ) : (
-                  <Avatar.Icon size={48} icon={() => <Emoji e="🙂" size={24} />} style={{ backgroundColor: "#FFB3CB" }} />
+                  <Avatar.Icon size={48} icon={() => <Emoji e="🙂" size={24} />} style={{ backgroundColor: accent.primaryLight }} />
                 )}
                 <View className="min-w-0 flex-1">
                   <View className="flex-row items-center gap-1.5">
@@ -172,8 +182,15 @@ export default function HamkorScreen() {
               <View className="flex-row gap-2">
                 <View className="flex-1">
                   <Button variant="secondary" onPress={() => setChatOpen(true)}>
-                    <MaterialCommunityIcons name="chat-outline" size={16} color={themeColors.textPrimary} />
-                    <Text className="text-sm font-semibold text-text-primary"> {dict.partner.messageButton}</Text>
+                    {/* "secondary" tugmaning foni doim FIKSATI och-binafsha —
+                        ikonka ham shu fon ustida o'qilishi uchun doim to'q
+                        (themeColors.textPrimary emas — u qorong'u rejimda
+                        deyarli oq bo'lib, shu yorug' fonda yo'qolib qolardi). */}
+                    <MaterialCommunityIcons name="chat-outline" size={16} color="#1F2937" />
+                    <Text className="text-sm font-semibold" style={{ color: "#1F2937" }}>
+                      {" "}
+                      {dict.partner.messageButton}
+                    </Text>
                   </Button>
                 </View>
                 <View className="flex-1">
@@ -218,7 +235,7 @@ export default function HamkorScreen() {
 
             {status.linkedSince && (
               <Card className="bg-primary-light/30">
-                <Text className="text-sm font-semibold" style={{ color: "#D62A63" }}>
+                <Text className="text-sm font-semibold" style={{ color: accent.primaryDark }}>
                   {daysAgo <= 0 ? dict.partner.connectedToday : dict.partner.connectedDaysAgo(daysAgo)}
                 </Text>
               </Card>
@@ -239,7 +256,7 @@ export default function HamkorScreen() {
               <Text className="text-xs text-text-muted">{dict.partner.yourCodeLabel}</Text>
               <Pressable onPress={copyCode} className="flex-row items-center gap-1.5">
                 <Text className="text-xl font-extrabold text-primary">{status.myInviteCode ?? "…"}</Text>
-                <MaterialCommunityIcons name="content-copy" size={16} color="#F43F7F" />
+                <MaterialCommunityIcons name="content-copy" size={16} color={accent.primary} />
               </Pressable>
               <Text className="text-xs text-text-muted">{dict.partner.sendCodeHint}</Text>
             </View>
@@ -319,13 +336,14 @@ function SharingRow({
   onChange: () => void;
   last?: boolean;
 }) {
+  const accent = useModeAccent();
   return (
     <View className={`flex-row items-center justify-between gap-3 py-2 ${last ? "" : "border-b border-border"}`}>
       <View className="flex-row items-center gap-2.5">
         <Emoji e={icon} />
         <Text className="text-sm font-medium text-text-primary">{label}</Text>
       </View>
-      <Switch value={checked} onValueChange={onChange} color="#F43F7F" />
+      <Switch value={checked} onValueChange={onChange} color={accent.primary} />
     </View>
   );
 }

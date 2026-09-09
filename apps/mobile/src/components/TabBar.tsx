@@ -33,7 +33,11 @@ export function TabIcon({ focused, children }: { focused: boolean; children: Rea
   }
   return (
     <LinearGradient
-      colors={[accent.primary, accent.primaryDark]}
+      // web: `bg-gradient-to-br from-primary to-secondary` — pushti/joriy
+      // rejim rangidan BINAFSHAGA o'tadigan ikki rangli gradient, bir xil
+      // rangning to'qroq tusiga (primaryDark) emas (bu yerda avval shunday
+      // xato bo'lgan — monoxrom ko'rinardi).
+      colors={[accent.primary, "#7C3AED"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" }}
