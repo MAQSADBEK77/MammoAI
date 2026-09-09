@@ -68,6 +68,7 @@ const uz = {
     loginIdentifierTitle: "Akkauntingizga kirish uchun telefon raqamingizni kiriting",
     identifierPlaceholder: "+998901234567",
     invalidIdentifier: "To'g'ri telefon raqam kiriting",
+    identifierNetworkError: "Internet aloqasini tekshirib, qayta urinib ko'ring",
     welcomeBackMessage: "Xush kelibsiz! Akkauntingiz topildi.",
     phoneVerifyTitle: "Telegram orqali tasdiqlang",
     phoneVerifyIntro:

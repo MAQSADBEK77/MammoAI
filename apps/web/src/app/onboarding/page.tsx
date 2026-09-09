@@ -23,6 +23,7 @@ import {
   colors,
   formatUzPhoneInput,
   extractUzPhoneDigits,
+  ApiError,
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -392,8 +393,12 @@ function OnboardingPageInner() {
       setCodeSent(false);
       setVerifyCode("");
       goNext();
-    } catch {
-      setErrorMessage(dict.auth.invalidIdentifier);
+    } catch (error) {
+      // Server haqiqatan formatni rad etsa — o'zining aniq xabari (ApiError.message)
+      // ko'rsatiladi. `fetch` tarmoq xatosida (internet yo'q va h.k.) oddiy Error
+      // uloqtiradi — bu holatda "raqamingiz noto'g'ri" degan noto'g'ri xulosaga
+      // kelmaslik uchun alohida, to'g'ri xabar ko'rsatiladi.
+      setErrorMessage(error instanceof ApiError ? error.message : dict.auth.identifierNetworkError);
     } finally {
       setSubmitting(false);
     }

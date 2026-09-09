@@ -29,6 +29,7 @@ import {
   gradients,
   formatUzPhoneInput,
   extractUzPhoneDigits,
+  ApiError,
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -344,8 +345,14 @@ export default function OnboardingScreen() {
       setCodeSent(false);
       setVerifyCode("");
       goNext();
-    } catch {
-      setErrorMessage(dict.auth.invalidIdentifier);
+    } catch (error) {
+      // Server haqiqatan formatni rad etsa — o'zining aniq xabari (ApiError.message,
+      // masalan "To'g'ri telefon raqam kiriting") ko'rsatiladi. Lekin `fetch` tarmoq
+      // xatosida (internet yo'q, DNS ishlamadi va h.k.) oddiy `TypeError` uloqtiradi —
+      // bu holatda "raqamingiz noto'g'ri" degan XATO xulosaga kelmaslik uchun alohida,
+      // to'g'ri xabar ko'rsatiladi (avval ikkalasi ham bitta umumiy "noto'g'ri raqam"
+      // xabariga tushib, haqiqiy sababni chalkashtirib yuborardi).
+      setErrorMessage(error instanceof ApiError ? error.message : dict.auth.identifierNetworkError);
     } finally {
       setSubmitting(false);
     }
