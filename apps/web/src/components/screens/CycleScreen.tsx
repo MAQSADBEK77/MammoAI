@@ -7,7 +7,6 @@ import { Dialog, DialogTitle, DialogContent } from "@mui/material";
 import {
   WaterDropOutlined,
   MedicalServicesOutlined,
-  DateRangeOutlined,
   GppMaybeOutlined,
   MenuBookOutlined,
   ChevronRight,
@@ -18,7 +17,7 @@ import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJ
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card, FloatingTag, LoadingSpinner, ScreenHeader, IconChip, Badge, DateWheelPicker } from "@/components/ui";
+import { Button, Card, LoadingSpinner, ScreenHeader, IconChip, Badge, DateWheelPicker } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
@@ -217,18 +216,6 @@ export function CycleScreen() {
           </div>
         )}
 
-        <div className="mt-4 flex justify-center gap-3">
-          <FloatingTag
-            icon={<DateRangeOutlined sx={{ fontSize: 18 }} className="text-primary" />}
-            value={dict.cycle.daysUnit(data.settings.averageCycleLength)}
-            label={dict.cycle.cycleLengthLabel}
-          />
-          <FloatingTag
-            icon={<WaterDropOutlined sx={{ fontSize: 18 }} className="text-primary" />}
-            value={dict.cycle.daysUnit(data.settings.averagePeriodLength)}
-            label={dict.cycle.periodLengthLabel}
-          />
-        </div>
         {data.prediction && (
           <p className="mt-3 text-center text-xs text-text-muted">
             {data.prediction.cyclesAnalyzed > 0

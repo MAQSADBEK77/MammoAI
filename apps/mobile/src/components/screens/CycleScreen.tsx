@@ -11,7 +11,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, DateWheelPicker, FloatingTag, IconChip, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, DateWheelPicker, IconChip, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
@@ -178,7 +178,7 @@ export function CycleScreen() {
   }
 
   return (
-    <View className="gap-5">
+    <View className="gap-6">
       <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
 
       {data.isIrregular && (
@@ -209,18 +209,6 @@ export function CycleScreen() {
             </View>
           )}
 
-          <View className="mt-4 flex-row gap-3">
-            <FloatingTag
-              icon={<MaterialCommunityIcons name="calendar-range-outline" size={18} color="#F43F7F" />}
-              value={dict.cycle.daysUnit(data.settings.averageCycleLength)}
-              label={dict.cycle.cycleLengthLabel}
-            />
-            <FloatingTag
-              icon={<MaterialCommunityIcons name="water-outline" size={18} color="#F43F7F" />}
-              value={dict.cycle.daysUnit(data.settings.averagePeriodLength)}
-              label={dict.cycle.periodLengthLabel}
-            />
-          </View>
           {data.prediction && (
             <Text className="mt-3 text-center text-xs text-text-muted">
               {data.prediction.cyclesAnalyzed > 0
