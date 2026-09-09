@@ -39,18 +39,22 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: "rgba(255,255,255,0.5)",
         tabBarShowLabel: true,
         tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginTop: -2 },
-        tabBarItemStyle: { paddingTop: 6 },
+        // Foydalanuvchi so'rovi: ikonalar panelning chetiga juda yaqin turardi —
+        // yuqori/pastki ichki bo'shliq oshirildi (6px -> 10/8px).
+        tabBarItemStyle: { paddingTop: 10, paddingBottom: 8 },
         // Suzuvchi, tungi-siyoh pilla panel — referens UI-kitlardagi uslub.
         tabBarStyle: {
           position: "absolute",
           left: 16,
           right: 16,
           bottom: insets.bottom + 10,
-          height: 66,
+          height: 74,
           borderRadius: 32,
           borderTopWidth: 0,
           backgroundColor: "transparent",
-          paddingHorizontal: 6,
+          // Chekka ikonalar (Asosiy/Yordamchi) panelning yumaloq chetiga
+          // yopishib qolmasligi uchun (foydalanuvchi so'rovi).
+          paddingHorizontal: 14,
           elevation: 10,
           shadowColor: "#000",
           shadowOpacity: 0.28,
