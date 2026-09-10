@@ -3,9 +3,17 @@
 // Muhim arxitektura qarori: alohida "xotira" saqlash tizimi yo'q. Foydalanuvchi
 // haqidagi hamma narsa (onboarding profili, sikl/simptom/kayfiyat tarixi,
 // homiladorlik profili) allaqachon strukturaланган holda bazada bor —
-// buildUserContext() har safar shu ma'lumotni o'qib, Claude'ga system prompt
+// buildUserContext() har safar shu ma'lumotni o'qib, modelga system prompt
 // ichida kontekst sifatida beradi. Shu tufayli AI "eslab qoladi": foydalanuvchi
 // oldin nima yozgan bo'lsa (cycle_logs orqali), keyingi suhbatda ham ko'rinadi.
+//
+// Model: Google Gemini (bepul reja — foydalanuvchi so'rovi: Anthropic hisobida
+// kredit tugagach, pullik emas, bepul limitli providerga o'tildi). Gemini'ning
+// OpenAI-mos ("OpenAI compatibility") REST qatlami ishlatiladi
+// (https://ai.google.dev/gemini-api/docs/openai) — shu tufayli so'rov/javob
+// shakli standart OpenAI chat-completions bilan bir xil, providerni yana
+// almashtirish kerak bo'lsa ham minimal o'zgarish bilan bo'ladi. Kalitni
+// https://aistudio.google.com/apikey'dan bepul olish mumkin.
 
 import { ApiError } from "./api-utils";
 import {
@@ -19,17 +27,17 @@ import {
 import { dictionaries, getPregnancyStatus } from "@mammoai/shared";
 import type { ChatMessage, Language, Symptom, SymptomPattern, User } from "@mammoai/shared";
 
-const SETTING_KEY = "anthropic_api_key";
-const CLAUDE_MODEL = "claude-sonnet-5";
+const SETTING_KEY = "gemini_api_key";
+const GEMINI_MODEL = "gemini-2.5-flash";
 const CONTEXT_LOG_LIMIT = 6; // oxirgi N ta kunlik yozuv — system promptga to'liq tafsilot bilan
 const PATTERN_WINDOW_DAYS = 90;
 const PATTERN_MIN_OCCURRENCES = 3;
 
-export async function getAnthropicApiKey(): Promise<string | null> {
+export async function getGeminiApiKey(): Promise<string | null> {
   return getSetting(SETTING_KEY);
 }
 
-export async function setAnthropicApiKey(key: string): Promise<void> {
+export async function setGeminiApiKey(key: string): Promise<void> {
   await setSetting(SETTING_KEY, key);
 }
 
@@ -138,45 +146,47 @@ async function getSystemPrompt(user: User, context: string, patterns: SymptomPat
   return parts.join("\n\n");
 }
 
-interface ClaudeContentBlock {
-  type: string;
-  text?: string;
+interface GeminiChatChoice {
+  message?: { content?: string };
 }
 
-interface ClaudeMessagesResponse {
-  content: ClaudeContentBlock[];
+interface GeminiChatResponse {
+  choices?: GeminiChatChoice[];
 }
 
-async function callClaude(systemPrompt: string, history: { role: "user" | "assistant"; content: string }[]): Promise<string> {
-  const apiKey = await getAnthropicApiKey();
-  if (!apiKey) throw new ApiError(500, "AI yordamchi hali sozlanmagan — admin panelda Anthropic API kalitini qo'shing");
+// Gemini'ning OpenAI-mos endpointi standart OpenAI chat-completions shaklida
+// ishlaydi: alohida top-level `system` maydon o'rniga `messages` massivi
+// ichida "system" rolli birinchi element beriladi, javob esa
+// `choices[0].message.content`'da qaytadi (Anthropic'ning `content[].text`
+// blok-massividan farqli).
+async function callGemini(systemPrompt: string, history: { role: "user" | "assistant"; content: string }[]): Promise<string> {
+  const apiKey = await getGeminiApiKey();
+  if (!apiKey) throw new ApiError(500, "AI yordamchi hali sozlanmagan — admin panelda Gemini API kalitini qo'shing");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: CLAUDE_MODEL,
+      model: GEMINI_MODEL,
       max_tokens: 1024,
-      system: systemPrompt,
-      messages: history,
+      messages: [{ role: "system", content: systemPrompt }, ...history],
     }),
   });
 
-  const json = (await res.json().catch(() => null)) as (ClaudeMessagesResponse & { error?: { message?: string } }) | null;
+  const json = (await res.json().catch(() => null)) as (GeminiChatResponse & { error?: { message?: string } }) | null;
   if (!res.ok || !json) {
     throw new ApiError(502, json?.error?.message ?? "AI yordamchidan javob olishda xatolik yuz berdi");
   }
-  const text = json.content?.find((block) => block.type === "text")?.text;
+  const text = json.choices?.[0]?.message?.content;
   if (!text) throw new ApiError(502, "AI yordamchidan bo'sh javob keldi");
   return text;
 }
 
 /** Foydalanuvchi xabariga AI javobini tayyorlaydi: kontekst+pattern quradi,
- * Claude'ni chaqiradi. Chaqiruvchi (route) xabarlarni saqlash bilan
+ * Gemini'ni chaqiradi. Chaqiruvchi (route) xabarlarni saqlash bilan
  * shug'ullanadi — bu funksiya sof "javob hisoblash" qatlami. */
 export async function generateAssistantReply(
   user: User,
@@ -187,7 +197,7 @@ export async function generateAssistantReply(
     detectSymptomPatterns(user.id),
   ]);
   const systemPrompt = await getSystemPrompt(user, context, patterns);
-  const reply = await callClaude(
+  const reply = await callGemini(
     systemPrompt,
     history.map((m) => ({ role: m.role, content: m.content }))
   );

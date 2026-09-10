@@ -60,7 +60,7 @@ export default function AdminAiSettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-text-primary">AI Yordamchi</h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Foydalanuvchilarning &quot;Yordamchi&quot; bo&apos;limidagi suhbatlarini Claude (Anthropic) API orqali boshqaradi.
+          Foydalanuvchilarning &quot;Yordamchi&quot; bo&apos;limidagi suhbatlarini Google Gemini API orqali boshqaradi.
         </p>
       </div>
 
@@ -74,14 +74,14 @@ export default function AdminAiSettingsPage() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-text-secondary">Anthropic API kaliti</p>
+          <p className="text-sm font-semibold text-text-secondary">Gemini API kaliti</p>
           {settings.maskedKey && <p className="text-xs text-text-muted">Joriy: {settings.maskedKey}</p>}
           <div className="flex gap-2">
             <input
               type="password"
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="sk-ant-..."
+              placeholder="AIza..."
               className={inputClass()}
             />
             <Button onClick={saveKey} disabled={saving || !keyInput.trim()} className="shrink-0 px-5!">
@@ -89,7 +89,7 @@ export default function AdminAiSettingsPage() {
             </Button>
           </div>
           <p className="text-xs text-text-muted">
-            Kalitni <code className="rounded bg-surface-muted px-1">console.anthropic.com</code> → API Keys bo&apos;limidan olish mumkin.
+            Kalitni (bepul) <code className="rounded bg-surface-muted px-1">aistudio.google.com/apikey</code> orqali olish mumkin.
           </p>
         </div>
       </Card>
