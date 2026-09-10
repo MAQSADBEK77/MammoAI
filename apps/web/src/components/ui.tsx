@@ -49,10 +49,15 @@ function buttonSx(variant: ButtonVariant) {
       };
     case "secondary":
       return {
+        // Fon "secondary-light" — background/surface/text kabi qorong'u rejimda
+        // ALMASHMAYDIGAN doimiy och-binafsha rang (design-tokens.ts). Matn rangi
+        // avval `var(--color-text-primary)` edi — bu qorong'u rejimda deyarli
+        // OQ rangga aylanadi va och-binafsha fon ustida deyarli o'qilmay qoladi
+        // (past kontrast). Shuning uchun matn ham fon kabi DOIMIY to'q rangda.
         backgroundColor: "var(--color-secondary-light)",
-        color: "var(--color-text-primary)",
+        color: "#1F2937",
         "&:hover": { filter: "brightness(0.97)" },
-        "&.Mui-disabled": { backgroundColor: "var(--color-secondary-light)", color: "var(--color-text-primary)", opacity: 0.5 },
+        "&.Mui-disabled": { backgroundColor: "var(--color-secondary-light)", color: "#1F2937", opacity: 0.5 },
       };
     case "dark":
       return {
