@@ -267,7 +267,11 @@ const uz = {
     moodLabel: "Kayfiyat",
     symptomsLabel: "Alomatlar",
     nextPeriodIn: (days: number) =>
-      days <= 0 ? "Hayzingiz bugun kutilmoqda" : `Keyingi hayzingiz ${days} kundan keyin`,
+      days === 0
+        ? "Hayzingiz bugun kutilmoqda"
+        : days > 0
+          ? `Keyingi hayzingiz ${days} kundan keyin`
+          : `Hayzingiz ${Math.abs(days)} kun kechikmoqda`,
     fertileWindowLabel: "Unumdor kunlar oynasi",
     irregularBannerTitle: "3+ oy tartibsiz tsikl aniqlandi",
     irregularBannerAction: "Tekshiruvdan o'tishni ko'rib chiqing",
@@ -638,6 +642,7 @@ const uz = {
     periodToday: "Bugun hayzingiz boshlanishi kutilmoqda 🩷",
     periodTomorrow: "Ertaga hayzingiz boshlanishi kutilmoqda — tayyorgarlik ko'ring 🩷",
     periodSoon: (days: number) => `${days} kundan keyin hayzingiz boshlanadi 🩷`,
+    periodLate: (days: number) => `Hayzingiz ${days} kun kechikmoqda — bu me'yorda bo'lishi ham mumkin, lekin kuzatib boring 🩷`,
     fertileWindow: "Siz hozir unumdor oyna ichidasiz",
   },
 

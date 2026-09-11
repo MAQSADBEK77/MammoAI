@@ -262,7 +262,11 @@ const ru: Dictionary = {
     moodLabel: "Настроение",
     symptomsLabel: "Симптомы",
     nextPeriodIn: (days: number) =>
-      days <= 0 ? "Менструация ожидается сегодня" : `Следующая менструация через ${days} дн.`,
+      days === 0
+        ? "Менструация ожидается сегодня"
+        : days > 0
+          ? `Следующая менструация через ${days} дн.`
+          : `Менструация задерживается на ${Math.abs(days)} дн.`,
     fertileWindowLabel: "Окно фертильности",
     irregularBannerTitle: "Обнаружена нерегулярность цикла 3+ месяца",
     irregularBannerAction: "Рассмотрите визит к врачу",
@@ -626,6 +630,7 @@ const ru: Dictionary = {
     periodToday: "Сегодня ожидается начало менструации 🩷",
     periodTomorrow: "Завтра ожидается начало менструации — подготовьтесь 🩷",
     periodSoon: (days: number) => `Менструация начнётся через ${days} дн. 🩷`,
+    periodLate: (days: number) => `Менструация задерживается на ${days} дн. — это тоже может быть нормой, но понаблюдайте 🩷`,
     fertileWindow: "Сейчас у вас окно фертильности",
   },
 

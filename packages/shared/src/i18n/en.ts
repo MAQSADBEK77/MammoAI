@@ -264,7 +264,11 @@ const en: Dictionary = {
     moodLabel: "Mood",
     symptomsLabel: "Symptoms",
     nextPeriodIn: (days: number) =>
-      days <= 0 ? "Your period is expected today" : `Your next period is in ${days} days`,
+      days === 0
+        ? "Your period is expected today"
+        : days > 0
+          ? `Your next period is in ${days} days`
+          : `Your period is ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} late`,
     fertileWindowLabel: "Fertile window",
     irregularBannerTitle: "3+ months of irregular cycles detected",
     irregularBannerAction: "Consider getting a checkup",
@@ -628,6 +632,7 @@ const en: Dictionary = {
     periodToday: "Your period is expected to start today 🩷",
     periodTomorrow: "Your period is expected to start tomorrow — get ready 🩷",
     periodSoon: (days: number) => `Your period starts in ${days} days 🩷`,
+    periodLate: (days: number) => `Your period is ${days} day${days === 1 ? "" : "s"} late — that can be normal too, but keep an eye on it 🩷`,
     fertileWindow: "You're currently in your fertile window",
   },
 

@@ -13,6 +13,10 @@ import { createSystemNotification, getCycleSettings, hasLoggedToday, listCycleLo
 import { sendTelegramMessage } from "./telegram-bot";
 
 const PERIOD_SOON_DAYS_AHEAD = 2; // shuncha kun (yoki kamroq) qolganda "yaqinlashmoqda" xabari beriladi
+// Kechikish shundan ko'p kun davom etsa, endi "kechikayapti" deb tinimsiz
+// eslatmaylik — bu holatda ko'proq ehtimol tartibsizlik/homiladorlik/yozishni
+// to'xtatgan, kunlik "kechikish o'sib bormoqda" xabari foydali emas, zerikarli.
+const PERIOD_LATE_MAX_DAYS_TO_NOTIFY = 7;
 
 async function buildReminderMessage(userId: string, language: Language): Promise<string | null> {
   const dict = dictionaries[language];
@@ -31,6 +35,9 @@ async function buildReminderMessage(userId: string, language: Language): Promise
     if (prediction.daysUntilNextPeriod === 1) return dict.reminders.periodTomorrow;
     if (prediction.daysUntilNextPeriod > 1 && prediction.daysUntilNextPeriod <= PERIOD_SOON_DAYS_AHEAD) {
       return dict.reminders.periodSoon(prediction.daysUntilNextPeriod);
+    }
+    if (prediction.daysUntilNextPeriod < 0 && prediction.daysUntilNextPeriod >= -PERIOD_LATE_MAX_DAYS_TO_NOTIFY) {
+      return dict.reminders.periodLate(-prediction.daysUntilNextPeriod);
     }
     if (today >= prediction.fertileWindowStart && today <= prediction.fertileWindowEnd) {
       return dict.reminders.fertileWindow;

@@ -1,7 +1,7 @@
 // Hayz tsikli bashorati — spec §2: "ilova keyingi tsiklni bashorat qiladi".
 // Oddiy arifmetika, ML kerak emas.
 
-import type { CycleLog, CycleSettings } from "../types";
+import type { CycleLog, CycleSettings, FlowLevel } from "../types";
 
 export const DEFAULT_CYCLE_LENGTH = 28;
 export const DEFAULT_PERIOD_LENGTH = 5;
@@ -36,20 +36,35 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-/** Kunlik loglar ichida "sikl boshlanishi" kunlarini aniqlaydi: flow mavjud
- * kun, va undan oldingi flow kunidan CYCLE_GAP_DAYSdan ko'proq vaqt o'tgan
- * bo'lsa (yoki ro'yxatdagi birinchi flow kuni bo'lsa). Oddiy streak-detection —
+/** Kunlik loglar ichida "sikl boshlanishi" kunlarini aniqlaydi: ketma-ket
+ * (CYCLE_GAP_DAYS ichida) flow kunlari bitta "streak"ka guruhlanadi, streak
+ * ichidan birinchi kun — potentsial boshlanish. Oddiy streak-detection —
  * server/insights.ts'dagi Statistika bilan BIR XIL mantiq (bir marta shu yerda
- * yozilib, ikkalasida ham shu funksiya ishlatiladi). */
+ * yozilib, ikkalasida ham shu funksiya ishlatiladi).
+ *
+ * MUHIM: faqat KAMIDA BITTA haqiqiy (spotting BO'LMAGAN) oqim kuni bor
+ * streaklar "hayz boshlanishi" deb hisoblanadi. Aks holda tarqoq, yakka
+ * "spotting" kunlari (ovulyatsiya qon tomchilashi, implantatsiya, stress —
+ * hammasi keng tarqalgan va hayz EMAS) yangi sikl deb noto'g'ri hisoblanib,
+ * o'rtacha sikl uzunligini (demak — bashoratni) buzib yuborardi. Streak
+ * spotting bilan boshlanib, keyin haqiqiy oqimga o'tsa (real holat) — baribir
+ * hisoblanadi, boshlanish sanasi o'zgarmaydi. */
 export function detectPeriodStarts(logs: Pick<CycleLog, "date" | "flow">[]): string[] {
-  const flowDates = [...new Set(logs.filter((l) => l.flow).map((l) => l.date))].sort();
-  const starts: string[] = [];
-  for (let i = 0; i < flowDates.length; i++) {
-    if (i === 0 || daysBetween(flowDates[i - 1], flowDates[i]) > CYCLE_GAP_DAYS) {
-      starts.push(flowDates[i]);
+  const flowByDate = new Map<string, FlowLevel>();
+  for (const l of logs) if (l.flow) flowByDate.set(l.date, l.flow);
+  const flowDates = [...flowByDate.keys()].sort();
+
+  const streaks: string[][] = [];
+  for (const date of flowDates) {
+    const current = streaks[streaks.length - 1];
+    if (current && daysBetween(current[current.length - 1], date) <= CYCLE_GAP_DAYS) {
+      current.push(date);
+    } else {
+      streaks.push([date]);
     }
   }
-  return starts;
+
+  return streaks.filter((streak) => streak.some((d) => flowByDate.get(d) !== "spotting")).map((streak) => streak[0]);
 }
 
 /** Aniqlangan sikl boshlanishlari orasidagi kunlar farqi (oxirgi `limit` tasi). */
@@ -148,15 +163,18 @@ export function predictCycle(
   const cycleLength = settings.averageCycleLength || DEFAULT_CYCLE_LENGTH;
   const periodLength = settings.averagePeriodLength || DEFAULT_PERIOD_LENGTH;
 
-  // Bugungi kungacha necha tsikl o'tganini hisoblab, keyingi bashoratni topamiz.
-  const daysSinceLast = daysBetween(settings.lastPeriodStart, today);
-  let cyclesElapsed = Math.floor(daysSinceLast / cycleLength);
-  // Chekka holat: `daysSinceLast` aynan cycleLength'ga karrali bo'lsa (masalan
-  // aynan 28 kun o'tgan, 28 kunlik sikl) — bugun AYNAN navbatdagi hayz kuni,
-  // shuning uchun bitta ORTIQCHA sikl qo'shib yubormaslik kerak (aks holda
-  // bashorat bir butun sikl uzoqqa "sakrab ketardi").
-  if (daysSinceLast > 0 && daysSinceLast % cycleLength === 0) cyclesElapsed -= 1;
-  const nextPeriodStart = addDays(settings.lastPeriodStart, (cyclesElapsed + 1) * cycleLength);
+  // Bashorat DOIM eng oxirgi tasdiqlangan boshlanishdan bitta cycleLength
+  // keyingi sanani ko'rsatadi — necha kun o'tganidan qat'iy nazar. ILGARI: necha
+  // "sikl o'tdi" deb hisoblab, kechikkanda bashoratni bir butun sikl OLDINGA
+  // "sakratib" yuborardi (masalan 28 kunlik siklda 1 kun kechiksa ham, ilova
+  // 27 kun qoldi deb ko'rsatardi — chunki keyingi-keyingi siklga sakrab
+  // ketardi). Bu haqiqiy kechikishni yashirib, foydalanuvchiga noto'g'ri
+  // xotirjamlik berardi — aslida "hayz kechikayapti" degan holat sikl
+  // kuzatuvida eng muhim signallardan biri. Endi yangi haqiqiy hayz
+  // `cycle_logs`ga kiritilmaguncha "kutilgan sana" o'zgarmaydi;
+  // `daysUntilNextPeriod` shunchaki MANFIY bo'lib, kechikish sifatida
+  // ko'rsatiladi (UI: dict.cycle.nextPeriodIn, dict.reminders.periodLate).
+  const nextPeriodStart = addDays(settings.lastPeriodStart, cycleLength);
   const nextPeriodEnd = addDays(nextPeriodStart, periodLength - 1);
 
   // Unumdor oyna — ovulyatsiyadan ~5 kun oldin, 1 kun keyin (tsikl oxiridan 14 kun oldin taxminiy).
