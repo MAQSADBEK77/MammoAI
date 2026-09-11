@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jsonError, ApiError } from "@/server/api-utils";
-import { createUserWithIdentifier, findUserByIdentifier, getOnboardingProfile, verifyPhoneCode } from "@/server/repo";
+import { createUserWithIdentifier, findUserByIdentifier, getOnboardingProfile, hasPremiumAccess, verifyPhoneCode } from "@/server/repo";
 import { signSession, SESSION_COOKIE, sessionCookieOptions } from "@/server/session";
 
 interface VerifyBody {
@@ -28,9 +28,11 @@ export async function POST(request: NextRequest) {
       : await createUserWithIdentifier(result.phone, result.language);
 
     const token = signSession({ sub: user.id, tokenVersion });
+    const [onboardingProfile, hasPremium] = await Promise.all([getOnboardingProfile(user.id), hasPremiumAccess(user.id)]);
     const res = NextResponse.json({
       user,
-      onboardingProfile: await getOnboardingProfile(user.id),
+      onboardingProfile,
+      hasPremium,
       token,
       isNewAccount: !existing,
     });

@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, TextInput, FlatList, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import clsx from "clsx";
 import type { ChatMessage, InsightsSummary, SymptomPattern } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useThemeColors } from "@/lib/theme";
+import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
-import { LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Button, Card, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
+import { Emoji } from "@/components/Emoji";
 
 const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
 
@@ -24,6 +27,7 @@ export default function YordamchiScreen() {
   const { dict } = useI18n();
   const themeColors = useThemeColors();
   const { openDrawer } = useDrawer();
+  const { hasPremium } = useSession();
   const [tab, setTab] = useState<"chat" | "stats">("chat");
 
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
@@ -38,17 +42,18 @@ export default function YordamchiScreen() {
   const [feedbackAnswered, setFeedbackAnswered] = useState(false);
 
   useEffect(() => {
+    if (!hasPremium) return;
     api.chat
       .list()
       .then((res) => setMessages(res.messages))
       .catch(() => setMessages([]));
-  }, []);
+  }, [hasPremium]);
 
   useEffect(() => {
-    if (tab === "stats" && !insights) {
+    if (hasPremium && tab === "stats" && !insights) {
       api.insights.get().then(setInsights).catch(() => {});
     }
-  }, [tab, insights]);
+  }, [hasPremium, tab, insights]);
 
   const assistantReplyCount = useMemo(() => (messages ?? []).filter((m) => m.role === "assistant").length, [messages]);
   const showFeedbackPrompt = tab === "chat" && !feedbackPromptDismissed && !feedbackAnswered && assistantReplyCount >= FEEDBACK_PROMPT_AFTER_REPLIES;
@@ -79,6 +84,39 @@ export default function YordamchiScreen() {
     } catch {
       // Fikr yuborishda xato bo'lsa ham suhbatga xalaqit bermaydi.
     }
+  }
+
+  if (!hasPremium) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="gap-4 px-4 pt-2">
+          <Pressable onPress={openDrawer} className="h-9 w-9 items-center justify-center rounded-full bg-surface active:scale-95">
+            <MaterialCommunityIcons name="menu" size={22} color={themeColors.textPrimary} />
+          </Pressable>
+          <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
+        </View>
+        <View className="flex-1 items-center justify-center px-6">
+          <Card className="w-full items-center gap-3 py-8">
+            <View className="h-14 w-14 items-center justify-center rounded-full bg-primary">
+              <MaterialCommunityIcons name="crown-outline" size={26} color="#FFFFFF" />
+            </View>
+            <Text className="text-lg font-bold text-text-primary">{dict.chat.premiumTitle}</Text>
+            <Text className="text-center text-sm text-text-secondary">{dict.chat.premiumBody}</Text>
+            <View className="w-full gap-1.5">
+              {[dict.chat.premiumBenefit1, dict.chat.premiumBenefit2, dict.chat.premiumBenefit3].map((b) => (
+                <View key={b} className="flex-row items-center gap-2">
+                  <Emoji e="✨" size={14} />
+                  <Text className="text-sm text-text-secondary">{b}</Text>
+                </View>
+              ))}
+            </View>
+            <View className="mt-2 w-full">
+              <Button onPress={() => router.push("/fikr")}>{dict.chat.premiumCta}</Button>
+            </View>
+          </Card>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   if (!messages) {

@@ -618,3 +618,20 @@ export interface TractionSummary {
     applicable: boolean;
   };
 }
+
+// ---------------------------------------------------------------------------
+// Obuna (Premium) — AI Yordamchi + chuqur Statistika pullik, qolgani bepul.
+// Hozircha to'lov provayderi ulanmagan — admin panel orqali qo'lda
+// faollashtiriladi (server/repo.ts#grantPremium izohiga qarang).
+// ---------------------------------------------------------------------------
+
+export interface Subscription {
+  userId: string;
+  plan: "premium";
+  /** `null` — muddatsiz. */
+  expiresAt: string | null;
+  grantedBy: string;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

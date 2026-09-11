@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { deleteUser, getOnboardingProfile, updateUser } from "@/server/repo";
+import { deleteUser, getOnboardingProfile, hasPremiumAccess, updateUser } from "@/server/repo";
 import { jsonError, requireUser } from "@/server/api-utils";
 import { SESSION_COOKIE } from "@/server/session";
 import type { User } from "@mammoai/shared";
@@ -7,7 +7,8 @@ import type { User } from "@mammoai/shared";
 export async function GET(request: NextRequest) {
   try {
     const user = await requireUser(request);
-    return NextResponse.json({ user, onboardingProfile: await getOnboardingProfile(user.id) });
+    const [onboardingProfile, hasPremium] = await Promise.all([getOnboardingProfile(user.id), hasPremiumAccess(user.id)]);
+    return NextResponse.json({ user, onboardingProfile, hasPremium });
   } catch (error) {
     return jsonError(error);
   }
@@ -20,7 +21,8 @@ export async function PATCH(request: NextRequest) {
       Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl">
     >;
     const updated = await updateUser(user.id, patch);
-    return NextResponse.json({ user: updated, onboardingProfile: await getOnboardingProfile(user.id) });
+    const [onboardingProfile, hasPremium] = await Promise.all([getOnboardingProfile(user.id), hasPremiumAccess(user.id)]);
+    return NextResponse.json({ user: updated, onboardingProfile, hasPremium });
   } catch (error) {
     return jsonError(error);
   }

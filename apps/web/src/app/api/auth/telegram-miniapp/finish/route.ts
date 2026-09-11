@@ -8,6 +8,7 @@ import {
   getMiniAppPendingPhone,
   getOnboardingProfile,
   getUserById,
+  hasPremiumAccess,
   linkTelegramToUser,
 } from "@/server/repo";
 import { requireVerifiedTelegramUser } from "@/server/telegram-miniapp-auth";
@@ -59,9 +60,11 @@ export async function POST(request: NextRequest) {
     const freshUser = (await getUserById(user.id)) ?? user;
 
     const token = signSession({ sub: user.id, tokenVersion });
+    const [onboardingProfile, hasPremium] = await Promise.all([getOnboardingProfile(user.id), hasPremiumAccess(user.id)]);
     const res = NextResponse.json({
       user: freshUser,
-      onboardingProfile: await getOnboardingProfile(user.id),
+      onboardingProfile,
+      hasPremium,
       token,
       isNewAccount: !existing,
     });

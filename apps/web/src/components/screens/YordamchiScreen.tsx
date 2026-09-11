@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
+import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined, WorkspacePremiumRounded } from "@mui/icons-material";
 import type { ChatMessage, InsightsSummary, SymptomPattern } from "@mammoai/shared";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { ScreenHeader, LoadingSpinner } from "@/components/ui";
+import { ScreenHeader, LoadingSpinner, Card, Button } from "@/components/ui";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
+import { Emoji } from "@/components/Emoji";
 
 const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
 
@@ -21,6 +24,8 @@ const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
  */
 export function YordamchiScreen() {
   const { dict } = useI18n();
+  const { hasPremium } = useSession();
+  const router = useRouter();
   const [tab, setTab] = useState<"chat" | "stats">("chat");
 
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
@@ -36,17 +41,17 @@ export function YordamchiScreen() {
   const [feedbackAnswered, setFeedbackAnswered] = useState(false);
 
   useEffect(() => {
+    if (!hasPremium) return;
     api.chat
       .list()
       .then((res) => setMessages(res.messages))
       .catch(() => setMessages([]));
-  }, []);
+  }, [hasPremium]);
 
   useEffect(() => {
-    if (tab === "stats" && !insights) {
-      api.insights.get().then(setInsights).catch(() => {});
-    }
-  }, [tab, insights]);
+    if (!hasPremium || tab !== "stats" || insights) return;
+    api.insights.get().then(setInsights).catch(() => {});
+  }, [hasPremium, tab, insights]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -87,6 +92,32 @@ export function YordamchiScreen() {
     } catch {
       // Fikr yuborishda xato bo'lsa ham suhbatga xalaqit bermaydi — jimgina o'tkazib yuboriladi.
     }
+  }
+
+  if (!hasPremium) {
+    return (
+      <div className="flex flex-col gap-4">
+        <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
+        <Card className="flex flex-col items-center gap-3 py-8 text-center">
+          <div className="bg-aurora-cycle flex h-14 w-14 items-center justify-center rounded-full">
+            <WorkspacePremiumRounded sx={{ fontSize: 26 }} className="text-white" />
+          </div>
+          <h2 className="text-lg font-bold text-text-primary">{dict.chat.premiumTitle}</h2>
+          <p className="max-w-sm text-sm text-text-secondary">{dict.chat.premiumBody}</p>
+          <ul className="flex flex-col gap-1.5 self-start text-sm text-text-secondary">
+            {[dict.chat.premiumBenefit1, dict.chat.premiumBenefit2, dict.chat.premiumBenefit3].map((b) => (
+              <li key={b} className="flex items-center gap-2">
+                <Emoji e="✨" size={14} />
+                {b}
+              </li>
+            ))}
+          </ul>
+          <Button className="mt-2" onClick={() => router.push("/fikr")}>
+            {dict.chat.premiumCta}
+          </Button>
+        </Card>
+      </div>
+    );
   }
 
   return (

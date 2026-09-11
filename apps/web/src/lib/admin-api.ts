@@ -14,6 +14,7 @@ import type {
   Language,
   LibraryIllustration,
   OnboardingProfile,
+  Subscription,
   TractionSummary,
   User,
 } from "@mammoai/shared";
@@ -180,6 +181,20 @@ export const adminApi = {
   },
   traction: {
     get: (days: number) => request<TractionSummary>(`/traction?days=${days}`),
+  },
+  subscriptions: {
+    list: (params: { search?: string; limit?: number; offset?: number }) => {
+      const q = new URLSearchParams();
+      if (params.search) q.set("search", params.search);
+      if (params.limit) q.set("limit", String(params.limit));
+      if (params.offset) q.set("offset", String(params.offset));
+      return request<{ subscriptions: (Subscription & { name: string | null; phone: string | null; active: boolean })[]; total: number }>(
+        `/subscriptions?${q.toString()}`
+      );
+    },
+    grant: (userId: string, payload: { durationDays: number | null; note?: string | null }) =>
+      request<{ subscription: Subscription }>(`/subscriptions/${userId}`, { method: "POST", body: JSON.stringify(payload) }),
+    revoke: (userId: string) => request<{ ok: true }>(`/subscriptions/${userId}`, { method: "DELETE" }),
   },
   telegramBot: {
     get: () => request<TelegramBotSettings>("/telegram-bot"),

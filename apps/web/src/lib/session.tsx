@@ -13,6 +13,9 @@ interface SessionContextValue {
   status: SessionStatus;
   user: User | null;
   onboardingProfile: OnboardingProfile | null;
+  /** AI Yordamchi + chuqur Statistika — Premium. To'lov provayderi hali
+   * ulanmagan, admin panel orqali qo'lda beriladi (server/repo.ts#grantPremium). */
+  hasPremium: boolean;
   /** `user.theme` "system" bo'lganda OS/brauzer afzalligiga qarab hal qilingan
    * aniq qiymat — MuiThemeProvider shundan o'qiydi (CSS o'zgaruvchilariga
    * bog'liq bo'lmagan MUI palette.mode uchun). */
@@ -33,6 +36,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [user, setUser] = useState<User | null>(null);
   const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
+  const [hasPremium, setHasPremium] = useState(false);
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => (systemPrefersDark() ? "dark" : "light"));
   const { setLanguage } = useI18n();
 
@@ -40,6 +44,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     (res: MeResponse) => {
       setUser(res.user);
       setOnboardingProfile(res.onboardingProfile);
+      setHasPremium(res.hasPremium);
       setLanguage(res.user.language);
       setStatus(res.onboardingProfile ? "onboarded" : "anonymous");
     },
@@ -54,6 +59,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setStatus("anonymous");
       setUser(null);
       setOnboardingProfile(null);
+      setHasPremium(false);
     }
   }, [applyMeResponse]);
 
@@ -105,8 +111,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [onboardingProfile?.primaryGoal]);
 
   const value = useMemo<SessionContextValue>(
-    () => ({ status, user, onboardingProfile, resolvedTheme, refresh, applyMeResponse }),
-    [status, user, onboardingProfile, resolvedTheme, refresh, applyMeResponse]
+    () => ({ status, user, onboardingProfile, hasPremium, resolvedTheme, refresh, applyMeResponse }),
+    [status, user, onboardingProfile, hasPremium, resolvedTheme, refresh, applyMeResponse]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

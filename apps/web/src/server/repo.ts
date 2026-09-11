@@ -41,6 +41,7 @@ import type {
   RiskQuizAnswers,
   RiskQuizResult,
   RiskLevel,
+  Subscription,
   Symptom,
   TractionSummary,
   User,
@@ -779,6 +780,113 @@ export async function getPregnancyAlbumPhoto(userId: string, id: string): Promis
     SELECT blob_pathname FROM pregnancy_album_photos WHERE id = ${id} AND user_id = ${userId}
   `) as unknown as { blob_pathname: string }[];
   return rows[0] ? { blobPathname: rows[0].blob_pathname } : null;
+}
+
+// ---------------------------------------------------------------------------
+// Obuna (Premium) — izoh uchun packages/shared/src/types.ts#Subscription'ga
+// qarang. Holat (aktiv/muddati o'tgan) SAQLANMAYDI — har doim `expires_at`dan
+// hisoblanadi, shu bilan ikkita maydon orasidagi sinxronizatsiya xatosining
+// oldi olinadi.
+// ---------------------------------------------------------------------------
+
+interface SubscriptionRow {
+  user_id: string;
+  plan: string;
+  expires_at: string | null;
+  granted_by: string;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function subscriptionFromRow(row: SubscriptionRow): Subscription {
+  return {
+    userId: row.user_id,
+    plan: "premium",
+    expiresAt: row.expires_at,
+    grantedBy: row.granted_by,
+    note: row.note,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function getSubscription(userId: string): Promise<Subscription | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM subscriptions WHERE user_id = ${userId}`) as unknown as SubscriptionRow[];
+  return rows[0] ? subscriptionFromRow(rows[0]) : null;
+}
+
+/** `getSubscription` + shu yerda vaqtni tekshirishni takrorlamaslik uchun —
+ * chat/statistika route'lari shu bittasini chaqirishi kifoya. */
+export async function hasPremiumAccess(userId: string): Promise<boolean> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT 1 FROM subscriptions
+    WHERE user_id = ${userId} AND (expires_at IS NULL OR (expires_at)::timestamptz > now())
+  `) as unknown as unknown[];
+  return rows.length > 0;
+}
+
+/** Admin panel orqali qo'lda faollashtirish — to'lov provayderi ulanmaguncha
+ * shu yagona yo'l (masalan mijoz Click/Payme'ga to'g'ridan-to'g'ri o'tkazma
+ * qilgach). Kelajakda haqiqiy to'lov webhook'i ham aynan shu funksiyani
+ * chaqiradi, faqat `grantedBy`ni provayder nomiga o'zgartirib. */
+export async function grantPremium(
+  userId: string,
+  input: { durationDays: number | null; note: string | null; grantedBy?: string }
+): Promise<Subscription> {
+  await ensureSchema();
+  const createdAt = now();
+  const expiresAt = input.durationDays ? new Date(Date.now() + input.durationDays * 86400000).toISOString() : null;
+  const grantedBy = input.grantedBy ?? "admin";
+  await sql`
+    INSERT INTO subscriptions (user_id, plan, expires_at, granted_by, note, created_at, updated_at)
+    VALUES (${userId}, 'premium', ${expiresAt}, ${grantedBy}, ${input.note}, ${createdAt}, ${createdAt})
+    ON CONFLICT (user_id) DO UPDATE SET
+      expires_at = EXCLUDED.expires_at, granted_by = EXCLUDED.granted_by, note = EXCLUDED.note, updated_at = EXCLUDED.updated_at
+  `;
+  return { userId, plan: "premium", expiresAt, grantedBy, note: input.note, createdAt, updatedAt: createdAt };
+}
+
+export async function revokePremium(userId: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM subscriptions WHERE user_id = ${userId}`;
+}
+
+export async function listSubscriptionsAdmin(params: { search?: string; limit?: number; offset?: number }): Promise<{
+  subscriptions: (Subscription & { name: string | null; phone: string | null; active: boolean })[];
+  total: number;
+}> {
+  await ensureSchema();
+  const limit = params.limit ?? 30;
+  const offset = params.offset ?? 0;
+  const q = params.search?.trim();
+  const searchPattern = q ? `%${q}%` : null;
+  const searchClause = searchPattern ? sql`AND (u.name ILIKE ${searchPattern} OR u.phone ILIKE ${searchPattern})` : sql``;
+
+  const rows = (await sql`
+    SELECT s.*, u.name, u.phone
+    FROM subscriptions s
+    JOIN users u ON u.id = s.user_id
+    WHERE TRUE ${searchClause}
+    ORDER BY s.updated_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `) as unknown as (SubscriptionRow & { name: string | null; phone: string | null })[];
+
+  const [{ count }] = (await sql`
+    SELECT count(*)::int as count FROM subscriptions s JOIN users u ON u.id = s.user_id WHERE TRUE ${searchClause}
+  `) as unknown as { count: number }[];
+
+  return {
+    total: count,
+    subscriptions: rows.map((r) => ({
+      ...subscriptionFromRow(r),
+      name: r.name,
+      phone: r.phone,
+      active: r.expires_at === null || new Date(r.expires_at) > new Date(),
+    })),
+  };
 }
 
 export async function getKicksToday(userId: string): Promise<number> {

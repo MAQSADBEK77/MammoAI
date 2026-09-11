@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, jsonError, requireUser } from "@/server/api-utils";
 import { generateAssistantReply } from "@/server/ai-chat";
-import { countChatMessagesToday, listChatMessages, saveChatMessage } from "@/server/repo";
+import { countChatMessagesToday, hasPremiumAccess, listChatMessages, saveChatMessage } from "@/server/repo";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const DAILY_MESSAGE_LIMIT = 100;
@@ -13,6 +13,12 @@ const HISTORY_LIMIT = 20; // Claude'ga yuboriladigan oxirgi xabarlar soni
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser(request);
+    // Premium: AI Yordamchi (foydalanuvchi so'roviga ko'ra) — 402 Payment
+    // Required, mijoz shu statusni ko'rib alohida paywall ko'rsatadi
+    // (oddiy xato emas).
+    if (!(await hasPremiumAccess(user.id))) {
+      throw new ApiError(402, "AI Yordamchi Premium funksiya");
+    }
     const body = (await request.json()) as { content?: string };
     const content = body.content?.trim();
     if (!content) return NextResponse.json({ error: "Xabar matni bo'sh" }, { status: 400 });

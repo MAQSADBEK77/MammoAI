@@ -64,6 +64,7 @@ export interface ApiClientConfig {
 export interface MeResponse {
   user: User;
   onboardingProfile: OnboardingProfile | null;
+  hasPremium: boolean;
 }
 
 export interface PhoneCodeStartPayload {

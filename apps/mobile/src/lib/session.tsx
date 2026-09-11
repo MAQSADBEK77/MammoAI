@@ -10,6 +10,9 @@ interface SessionContextValue {
   status: SessionStatus;
   user: User | null;
   onboardingProfile: OnboardingProfile | null;
+  /** AI Yordamchi + chuqur Statistika — Premium. To'lov provayderi hali
+   * ulanmagan, admin panel orqali qo'lda beriladi (server/repo.ts#grantPremium). */
+  hasPremium: boolean;
   refresh: () => Promise<void>;
   applyMeResponse: (res: MeResponse) => void;
 }
@@ -20,12 +23,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [user, setUser] = useState<User | null>(null);
   const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
+  const [hasPremium, setHasPremium] = useState(false);
   const { setLanguage } = useI18n();
 
   const applyMeResponse = useCallback(
     (res: MeResponse) => {
       setUser(res.user);
       setOnboardingProfile(res.onboardingProfile);
+      setHasPremium(res.hasPremium);
       setLanguage(res.user.language);
       setStatus(res.onboardingProfile ? "onboarded" : "anonymous");
     },
@@ -45,6 +50,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setStatus("anonymous");
       setUser(null);
       setOnboardingProfile(null);
+      setHasPremium(false);
     }
   }, [applyMeResponse]);
 
@@ -57,8 +63,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<SessionContextValue>(
-    () => ({ status, user, onboardingProfile, refresh, applyMeResponse }),
-    [status, user, onboardingProfile, refresh, applyMeResponse]
+    () => ({ status, user, onboardingProfile, hasPremium, refresh, applyMeResponse }),
+    [status, user, onboardingProfile, hasPremium, refresh, applyMeResponse]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

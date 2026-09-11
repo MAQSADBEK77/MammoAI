@@ -32,7 +32,10 @@ export async function POST(request: NextRequest) {
       syncChecklistForUser(user.id, profile),
     ]);
 
-    return NextResponse.json({ user: updatedUser, onboardingProfile: profile });
+    // hasPremium: false — onboarding doim yangi/hali obunasiz akkaunt uchun
+    // (obuna faqat admin tomonidan mavjud akkauntga qo'lda beriladi, hech
+    // qachon onboarding paytida bo'lmaydi) — qo'shimcha so'rov shart emas.
+    return NextResponse.json({ user: updatedUser, onboardingProfile: profile, hasPremium: false });
   } catch (error) {
     return jsonError(error);
   }

@@ -274,6 +274,27 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // Obuna (Premium) — foydalanuvchi so'roviga ko'ra: AI Yordamchi + chuqur
+    // Statistika pullik, qolgan hammasi (kuzatuv, jamiyat, hamkor) bepul
+    // qoladi. Hozircha AVTOMATIK to'lov provayderi ULANMAGAN (Click/Payme
+    // uchun merchant ro'yxatdan o'tish kerak — foydalanuvchining o'zi qilishi
+    // kerak, keyin API kalit beriladi) — shu oraliqda admin panel orqali
+    // QO'LDA faollashtiriladi (masalan mijoz Click/Payme'ga to'g'ridan-to'g'ri
+    // o'tkazma qilgach). Bitta qatorda foydalanuvchining JORIY holati (tarix
+    // emas) — cycle_settings kabi singleton naqsh. Holat SAQLANMAYDI, har doim
+    // `expires_at`dan HISOBLANADI (NULL = muddatsiz) — ikkita maydon orasida
+    // sinxronizatsiya xatosi bo'lmasligi uchun.
+    sql`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        plan TEXT NOT NULL DEFAULT 'premium',
+        expires_at TEXT,
+        granted_by TEXT NOT NULL DEFAULT 'admin',
+        note TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `,
     sql`
       CREATE TABLE IF NOT EXISTS checklist_items (
         id TEXT PRIMARY KEY,
