@@ -397,6 +397,12 @@ async function initSchema() {
     // qaytarib bo'lmaydigan DROP COLUMN'dan qochish uchun), shunchaki endi kod
     // hech qayerda o'qimaydi/yozmaydi.
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'system'`,
+    // Haqiqiy telefon push-bildirishnomasi (Expo Push API) — roadmap 10-band.
+    // Bitta ustun, bitta qurilma (soddalik uchun — foydalanuvchi yangi
+    // qurilmada kirsa eskisi ustidan yoziladi, ko'p-qurilma qo'llab-quvvatlash
+    // V1'da yo'q). NULL = hali ro'yxatga olinmagan (ruxsat berilmagan yoki
+    // FCM/APNs hali sozlanmagan bo'lishi mumkin).
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS expo_push_token TEXT`,
   ]);
 
   // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.

@@ -11,6 +11,9 @@ import { deriveAdaptiveCycleSettings, dictionaries, predictCycle } from "@mammoa
 import type { Language } from "@mammoai/shared";
 import { createSystemNotification, getCycleSettings, hasLoggedToday, listCycleLogs, listUsersForDailyReminders } from "./repo";
 import { sendTelegramMessage } from "./telegram-bot";
+import { sendExpoPushNotification } from "./push-notifications";
+
+const REMINDER_PUSH_TITLE = "MammoAI 🌸";
 
 const PERIOD_SOON_DAYS_AHEAD = 2; // shuncha kun (yoki kamroq) qolganda "yaqinlashmoqda" xabari beriladi
 // Kechikish shundan ko'p kun davom etsa, endi "kechikayapti" deb tinimsiz
@@ -79,20 +82,33 @@ export async function runDailyReminders(): Promise<DailyReminderResult[]> {
     }
 
     let telegramSent = false;
-    let telegramError: string | undefined;
-    try {
-      await sendTelegramMessage(user.telegramUserId, message);
-      telegramSent = true;
-    } catch (error) {
-      telegramError = error instanceof Error ? error.message : String(error);
+    let pushSent = false;
+    let deliveryError: string | undefined;
+    if (user.telegramUserId) {
+      try {
+        await sendTelegramMessage(user.telegramUserId, message);
+        telegramSent = true;
+      } catch (error) {
+        deliveryError = error instanceof Error ? error.message : String(error);
+      }
+    }
+    if (user.expoPushToken) {
+      try {
+        await sendExpoPushNotification(user.expoPushToken, { title: REMINDER_PUSH_TITLE, body: message });
+        pushSent = true;
+      } catch (error) {
+        // Telegram xatosi ustidan yozib yubormaslik uchun — faqat ikkalasi ham
+        // muvaffaqiyatsiz bo'lsagina saqlanadi.
+        if (!telegramSent) deliveryError = error instanceof Error ? error.message : String(error);
+      }
     }
     try {
       await createSystemNotification(user.id, "daily_reminder", message);
     } catch {
-      // Ilova ichidagi yozuv muvaffaqiyatsiz bo'lsa ham — bot xabari
+      // Ilova ichidagi yozuv muvaffaqiyatsiz bo'lsa ham — boshqa kanallar
       // (agar yuborilgan bo'lsa) baribir foydalanuvchiga yetgan.
     }
-    results.push({ userId: user.id, sent: telegramSent, message, error: telegramError });
+    results.push({ userId: user.id, sent: telegramSent || pushSent, message, error: telegramSent || pushSent ? undefined : deliveryError });
   }
 
   return results;

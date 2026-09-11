@@ -13,11 +13,13 @@ import { DynamicPaperProvider } from "@/lib/paper-theme";
 import { DrawerProvider } from "@/lib/drawer";
 import { AppDrawer } from "@/components/AppDrawer";
 import { useAnalytics } from "@/lib/analytics";
+import { usePushTokenRegistration } from "@/lib/push-notifications";
 
 /** `useAnalytics` expo-router'ning global yo'l kontekstiga muhtoj — shuning
  * uchun `<Stack>` bilan bir qatorda, alohida (ko'rinmas) komponentda chaqiriladi. */
 function AnalyticsMount() {
   useAnalytics();
+  usePushTokenRegistration();
   return null;
 }
 

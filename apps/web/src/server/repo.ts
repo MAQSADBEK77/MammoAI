@@ -381,22 +381,50 @@ export async function confirmMiniAppContact(telegramUserId: string, phone: strin
   return rows.length > 0;
 }
 
-/** Foydalanuvchining Telegram'i bog'langan va bildirishnoma yoqilgan bo'lsa,
- * bot orqali xabar yuboradi (push o'rniga — Mini App'da native push yo'q).
- * Xato bo'lsa ham jimgina yutiladi — asosiy amal (izoh/xabar yaratish) buzilmasligi kerak. */
-export async function notifyUserViaTelegram(userId: string, text: string): Promise<void> {
+/** Foydalanuvchini IKKALA kanal orqali xabardor qiladi (bittasi yo'q bo'lsa,
+ * boshqasi baribir ishlaydi): Telegram bog'langan bo'lsa bot orqali, HAQIQIY
+ * telefon push-bildirishnomasi ro'yxatga olingan bo'lsa Expo Push orqali
+ * (server/push-notifications.ts — roadmap 10-band, ilgari faqat Telegram
+ * bor edi). `notifications_enabled` ikkalasi uchun ham hurmat qilinadi.
+ * Xato bo'lsa ham jimgina yutiladi — asosiy amal (izoh/xabar yaratish)
+ * buzilmasligi kerak. */
+export async function notifyUser(userId: string, payload: { title: string; text: string }): Promise<void> {
   try {
     await ensureSchema();
     const rows = (await sql`
-      SELECT telegram_user_id, notifications_enabled FROM users WHERE id = ${userId}
-    `) as unknown as { telegram_user_id: string | null; notifications_enabled: boolean }[];
+      SELECT telegram_user_id, expo_push_token, notifications_enabled FROM users WHERE id = ${userId}
+    `) as unknown as { telegram_user_id: string | null; expo_push_token: string | null; notifications_enabled: boolean }[];
     const row = rows[0];
-    if (!row?.telegram_user_id || !row.notifications_enabled) return;
-    const { sendTelegramMessage } = await import("./telegram-bot");
-    await sendTelegramMessage(row.telegram_user_id, text);
+    if (!row || !row.notifications_enabled) return;
+
+    const tasks: Promise<void>[] = [];
+    if (row.telegram_user_id) {
+      // Telegram xabarida alohida "sarlavha" maydoni yo'q — bitta matnga
+      // birlashtiriladi (push'da esa title/body alohida ko'rsatiladi).
+      tasks.push(
+        import("./telegram-bot").then(({ sendTelegramMessage }) =>
+          sendTelegramMessage(row.telegram_user_id!, `${payload.title}\n${payload.text}`)
+        )
+      );
+    }
+    if (row.expo_push_token) {
+      tasks.push(
+        import("./push-notifications").then(({ sendExpoPushNotification }) =>
+          sendExpoPushNotification(row.expo_push_token!, { title: payload.title, body: payload.text })
+        )
+      );
+    }
+    await Promise.all(tasks);
   } catch {
-    // Bot xabari yuborilmasa ham asosiy amal davom etadi.
+    // Bildirishnoma yuborilmasa ham asosiy amal davom etadi.
   }
+}
+
+/** Mobil ilova OS push ruxsatini olgach chaqiradi (POST /api/push-token) —
+ * bitta ustun, bitta qurilma (V1, ko'p-qurilma qo'llab-quvvatlash yo'q). */
+export async function setExpoPushToken(userId: string, token: string): Promise<void> {
+  await ensureSchema();
+  await sql`UPDATE users SET expo_push_token = ${token} WHERE id = ${userId}`;
 }
 
 /** Botga "/start" bosilgan HAR SAFAR chaqiriladi (webhook route.ts) — token
@@ -2244,7 +2272,7 @@ export async function addCommunityComment(
       INSERT INTO notifications (id, user_id, actor_user_id, type, post_id, comment_id, is_anonymous_actor, created_at)
       VALUES (${randomUUID()}, ${post.user_id}, ${userId}, 'comment_on_post', ${postId}, ${id}, ${payload.isAnonymous}, ${now()})
     `;
-    await notifyUserViaTelegram(post.user_id, `💬 Postingizga yangi izoh qoldirildi:\n"${payload.body}"`);
+    await notifyUser(post.user_id, { title: "💬 Postingizga yangi izoh qoldirildi", text: payload.body });
   }
   const author = await getUserById(userId);
   return {
@@ -2358,14 +2386,21 @@ export async function createSystemNotification(userId: string, type: "daily_remi
 
 /** Kunlik eslatma (server/daily-reminders.ts) uchun — faqat Telegram bog'langan,
  * bildirishnoma yoqilgan va test/bloklangan bo'lmagan foydalanuvchilar. */
-export async function listUsersForDailyReminders(): Promise<{ id: string; language: Language; telegramUserId: string }[]> {
+/** Kunlik eslatma uchun — kamida BITTA yetkazish kanali bor foydalanuvchilar
+ * (Telegram VA/YOKI haqiqiy push token). Ilgari FAQAT Telegram bog'langanlar
+ * qamrab olinardi — mobil ilovadan foydalanadigan, lekin Telegram bog'lamagan
+ * foydalanuvchilar hech qachon kunlik eslatma olmasdi (roadmap 10-band bilan
+ * tuzatildi). */
+export async function listUsersForDailyReminders(): Promise<
+  { id: string; language: Language; telegramUserId: string | null; expoPushToken: string | null }[]
+> {
   await ensureSchema();
   const rows = (await sql`
-    SELECT id, language, telegram_user_id FROM users
-    WHERE telegram_user_id IS NOT NULL AND notifications_enabled = TRUE
+    SELECT id, language, telegram_user_id, expo_push_token FROM users
+    WHERE (telegram_user_id IS NOT NULL OR expo_push_token IS NOT NULL) AND notifications_enabled = TRUE
       AND is_test_account = FALSE AND is_blocked = FALSE
-  `) as unknown as { id: string; language: Language; telegram_user_id: string }[];
-  return rows.map((r) => ({ id: r.id, language: r.language, telegramUserId: r.telegram_user_id }));
+  `) as unknown as { id: string; language: Language; telegram_user_id: string | null; expo_push_token: string | null }[];
+  return rows.map((r) => ({ id: r.id, language: r.language, telegramUserId: r.telegram_user_id, expoPushToken: r.expo_push_token }));
 }
 
 export async function hasLoggedToday(userId: string): Promise<boolean> {
@@ -2507,7 +2542,7 @@ export async function sendPartnerChatMessage(userId: string, body: string): Prom
     INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
     VALUES (${randomUUID()}, ${partnerId}, ${userId}, 'partner_message', ${body}, ${createdAt})
   `;
-  await notifyUserViaTelegram(partnerId, `💌 Hamkoringizdan yangi xabar:\n"${body}"`);
+  await notifyUser(partnerId, { title: "💌 Hamkoringizdan yangi xabar", text: body });
   return { id, body, isOwn: true, createdAt };
 }
 

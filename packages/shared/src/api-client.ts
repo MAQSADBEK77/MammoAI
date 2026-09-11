@@ -282,6 +282,9 @@ export function createApiClient(config: ApiClientConfig) {
     notifications: {
       list: () => request<{ notifications: AppNotification[]; unreadCount: number }>("/api/notifications"),
       markAllRead: () => request<{ ok: true }>("/api/notifications/read-all", { method: "POST" }),
+      /** Haqiqiy telefon push-bildirishnomasi uchun (mobil, expo-notifications) —
+       * OS ruxsati berilgach chaqiriladi. Web'da ishlatilmaydi. */
+      registerPushToken: (token: string) => request<{ ok: true }>("/api/push-token", { method: "POST", body: JSON.stringify({ token }) }),
     },
     partner: {
       status: () => request<PartnerStatusResponse>("/api/partner"),
