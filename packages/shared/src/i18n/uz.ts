@@ -352,6 +352,22 @@ const uz = {
     },
   },
 
+  gamification: {
+    cycleScreenStreakPill: (days: number) => `🔥 ${days} kun`,
+    achievementsTitle: "Yutuqlar",
+    currentStreakLabel: "Joriy ketma-ketlik",
+    longestStreakLabel: "Eng uzun ketma-ketlik",
+    totalLogsLabel: "Jami yozuvlar",
+    daysUnit: "kun",
+    badges: {
+      first_log: { name: "Birinchi qadam", desc: "Birinchi kunlik yozuvingizni qo'shdingiz" },
+      week_streak: { name: "1 haftalik", desc: "7 kun ketma-ket kuzatuv" },
+      month_streak: { name: "1 oylik", desc: "30 kun ketma-ket kuzatuv" },
+      hundred_logs: { name: "100 ta yozuv", desc: "Jami 100 ta kunlik yozuv" },
+      loyal_90: { name: "Sodiq kuzatuvchi", desc: "90 kun ketma-ket kuzatuv" },
+    },
+  },
+
   pregnancy: {
     title: "Homiladorlik",
     weekLabel: (week: number) => `${week}-hafta`,

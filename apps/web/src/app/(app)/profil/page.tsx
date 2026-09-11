@@ -10,6 +10,7 @@ import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
+import { AchievementsCard } from "@/components/AchievementsCard";
 import { Switch, Select, MenuItem } from "@mui/material";
 import clsx from "clsx";
 import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, Brightness6Outlined as ThemeIcon, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen } from "@mui/icons-material";
@@ -326,6 +327,8 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <AchievementsCard />
 
       {onboardingProfile && (
         <Card className="space-y-3">

@@ -46,6 +46,7 @@ export function CycleScreen() {
   const { onboardingProfile } = useSession();
   const router = useRouter();
   const [data, setData] = useState<CycleResponse | null>(null);
+  const [streakDays, setStreakDays] = useState<number | null>(null);
   const [logging, setLogging] = useState(false);
   const [logDate, setLogDate] = useState<string>(() => localDateStr());
   const [flow, setFlow] = useState<FlowLevel | null>(null);
@@ -65,6 +66,11 @@ export function CycleScreen() {
 
   useEffect(() => {
     api.cycle.get().then(setData);
+    // Gamifikatsiya (roadmap) — muvaffaqiyatsiz bo'lsa ham asosiy ekran ishlayveradi.
+    api.gamification
+      .get()
+      .then((g) => setStreakDays(g.currentStreakDays))
+      .catch(() => {});
   }, []);
 
   if (!data) {
@@ -185,7 +191,20 @@ export function CycleScreen() {
 
   return (
     <div className="space-y-5">
-      <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
+      <div className="flex items-start justify-between gap-3">
+        <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
+        {/* Gamifikatsiya — kalendar/asosiy oqimga halaqit qilmaydigan joyda,
+            faqat streak 1+ bo'lganda ko'rinadi (yangi userga bo'sh "0 kun"
+            ko'rsatib chalg'itmaslik uchun). */}
+        {!!streakDays && (
+          <button
+            onClick={() => router.push("/profil")}
+            className="tap-target shrink-0 rounded-full bg-warning/15 px-3 py-1.5 text-xs font-bold text-warning"
+          >
+            {dict.gamification.cycleScreenStreakPill(streakDays)}
+          </button>
+        )}
+      </div>
 
       {data.isIrregular && (
         <Card className="bg-warning/10">

@@ -347,6 +347,22 @@ const en: Dictionary = {
     },
   },
 
+  gamification: {
+    cycleScreenStreakPill: (days: number) => `🔥 ${days}d`,
+    achievementsTitle: "Achievements",
+    currentStreakLabel: "Current streak",
+    longestStreakLabel: "Longest streak",
+    totalLogsLabel: "Total logs",
+    daysUnit: "days",
+    badges: {
+      first_log: { name: "First step", desc: "You added your first daily log" },
+      week_streak: { name: "Week streak", desc: "7 days of tracking in a row" },
+      month_streak: { name: "Month streak", desc: "30 days of tracking in a row" },
+      hundred_logs: { name: "100 logs", desc: "100 daily logs in total" },
+      loyal_90: { name: "Loyal tracker", desc: "90 days of tracking in a row" },
+    },
+  },
+
   pregnancy: {
     title: "Pregnancy",
     weekLabel: (week: number) => `Week ${week}`,

@@ -41,6 +41,7 @@ import type {
   User,
 } from "./types";
 import type { CyclePrediction } from "./logic/cycle";
+import type { BadgeId } from "./logic/gamification";
 import type { PregnancyStatus } from "./logic/pregnancy";
 import type { IllustrationSlotKey } from "./illustration-library";
 
@@ -324,6 +325,11 @@ export function createApiClient(config: ApiClientConfig) {
       /** AI Yordamchi ekranining "Statistika" segmenti — sikl uzunligi
        * tarixi, simptom chastotasi, kayfiyat taqsimoti, og'riqli kunlar/sikl. */
       get: () => request<{ summary: InsightsSummary; patterns: SymptomPattern[]; aiInsight: string | null }>("/api/insights"),
+    },
+    gamification: {
+      /** Kunlik yozuv ketma-ketligi + yutuq nishonlari — Premium emas. */
+      get: () =>
+        request<{ currentStreakDays: number; longestStreakDays: number; totalLogsCount: number; badges: BadgeId[] }>("/api/gamification"),
     },
     feedback: {
       submit: (payload: FeedbackSubmission) =>

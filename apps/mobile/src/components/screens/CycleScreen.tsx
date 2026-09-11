@@ -41,6 +41,7 @@ export function CycleScreen() {
   const { onboardingProfile } = useSession();
   const themeColors = useThemeColors();
   const [data, setData] = useState<CycleResponse | null>(null);
+  const [streakDays, setStreakDays] = useState<number | null>(null);
   const [logging, setLogging] = useState(false);
   const [logDate, setLogDate] = useState<string>(() => localDateStr());
   const [flow, setFlow] = useState<FlowLevel | null>(null);
@@ -60,6 +61,10 @@ export function CycleScreen() {
 
   useEffect(() => {
     api.cycle.get().then(setData);
+    api.gamification
+      .get()
+      .then((g) => setStreakDays(g.currentStreakDays))
+      .catch(() => {});
   }, []);
 
   if (!data) {
@@ -179,7 +184,16 @@ export function CycleScreen() {
 
   return (
     <View className="gap-5">
-      <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="flex-1">
+          <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
+        </View>
+        {!!streakDays && (
+          <Pressable onPress={() => router.push("/(tabs)/profil")} className="shrink-0 rounded-full bg-warning/15 px-3 py-1.5">
+            <Text className="text-xs font-bold text-warning">{dict.gamification.cycleScreenStreakPill(streakDays)}</Text>
+          </Pressable>
+        )}
+      </View>
 
       {data.isIrregular && (
         <Card className="bg-warning/10">

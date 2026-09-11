@@ -18,6 +18,7 @@ import { clearToken } from "@/lib/storage";
 import { useDrawer } from "@/lib/drawer";
 import { Card, TextField } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
+import { AchievementsCard } from "@/components/AchievementsCard";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const MODES: { goal: Goal; icon: string }[] = [
@@ -296,6 +297,8 @@ export default function ProfileScreen() {
             </View>
           </LinearGradient>
         </Animated.View>
+
+        <AchievementsCard />
 
         {onboardingProfile && (
           <Card className="gap-3">

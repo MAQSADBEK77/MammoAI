@@ -345,6 +345,22 @@ const ru: Dictionary = {
     },
   },
 
+  gamification: {
+    cycleScreenStreakPill: (days: number) => `🔥 ${days} дн.`,
+    achievementsTitle: "Достижения",
+    currentStreakLabel: "Текущая серия",
+    longestStreakLabel: "Самая длинная серия",
+    totalLogsLabel: "Всего записей",
+    daysUnit: "дн.",
+    badges: {
+      first_log: { name: "Первый шаг", desc: "Вы добавили первую дневную запись" },
+      week_streak: { name: "Неделя подряд", desc: "7 дней подряд отслеживания" },
+      month_streak: { name: "Месяц подряд", desc: "30 дней подряд отслеживания" },
+      hundred_logs: { name: "100 записей", desc: "Всего 100 дневных записей" },
+      loyal_90: { name: "Преданный пользователь", desc: "90 дней подряд отслеживания" },
+    },
+  },
+
   pregnancy: {
     title: "Беременность",
     weekLabel: (week: number) => `${week}-я неделя`,
