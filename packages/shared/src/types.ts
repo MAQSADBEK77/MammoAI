@@ -16,7 +16,11 @@ export type Goal =
   | "checkups"
   | "understand_body"
   | "skin"
-  | "partner_tracking";
+  | "partner_tracking"
+  // 40+ yosh ayollar uchun (roadmap) — sikl bashorati endi ma'noli emas
+  // (tabiiy ravishda tartibsizlashadi/to'xtaydi), shuning uchun bashorat/
+  // kalendar-bashorat o'rniga simptom kuzatuviga urg'u beriladi.
+  | "perimenopause";
 
 export interface User {
   id: string;
@@ -92,7 +96,12 @@ export type Symptom =
   | "insomnia"
   | "fatigue"
   | "irritability"
-  | "difficulty_concentrating";
+  | "difficulty_concentrating"
+  // Perimenopauza rejimi uchun qo'shildi (roadmap) — bu ikkalasi perimenopauzaning
+  // eng xarakterli belgilari, mavjud ro'yxatdagi hech biri ularni qamramaydi.
+  // Boshqa rejimlardagi foydalanuvchilar ham xohlasa qayd etishi mumkin.
+  | "hot_flashes"
+  | "night_sweats";
 
 export interface CycleLog {
   id: string;

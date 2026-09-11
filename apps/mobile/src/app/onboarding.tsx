@@ -200,6 +200,8 @@ const SYMPTOM_ICON: Record<Symptom, string> = {
   fatigue: "😴",
   irritability: "😠",
   difficulty_concentrating: "💭",
+  hot_flashes: "🥵",
+  night_sweats: "💦",
 };
 
 const HEALTH_CONDITION_ICON: Record<HealthCondition, string> = {
@@ -318,7 +320,10 @@ export default function OnboardingScreen() {
     ];
     if (!survey.primaryGoal) return [...base, "analyzing"];
     const tail: Step[] = [];
-    if (needsCycleInfo(survey.primaryGoal)) {
+    if (survey.primaryGoal === "perimenopause") {
+      // Web onboarding/page.tsx bilan bir xil — izoh o'sha yerda.
+      tail.push("typical_symptoms", "health_conditions");
+    } else if (needsCycleInfo(survey.primaryGoal)) {
       tail.push("cycle_regularity", "cycle_lengths", "last_period", "typical_symptoms", "period_attitude", "health_conditions");
     }
     if (needsPersonalHealthQuestions(survey.primaryGoal)) tail.push("family_history", "last_checkup");
@@ -498,6 +503,7 @@ export default function OnboardingScreen() {
   }
 
   const goalOptions = isMinor ? MINOR_GOALS : ADULT_GOALS;
+  const symptomOptions = survey.primaryGoal === "perimenopause" ? [...SYMPTOM_OPTIONS, "hot_flashes" as const, "night_sweats" as const] : SYMPTOM_OPTIONS;
 
   return (
     <View style={{ flex: 1 }}>
@@ -734,7 +740,7 @@ export default function OnboardingScreen() {
             <View className="gap-4">
               <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</Text>
               <View className="flex-row flex-wrap gap-2">
-                {SYMPTOM_OPTIONS.map((sym) => (
+                {symptomOptions.map((sym) => (
                   <View key={sym} style={{ width: "48%" }}>
                     <IconChip
                       label={dict.cycle.symptoms[sym]}

@@ -187,6 +187,7 @@ const ru: Dictionary = {
       understand_body: "Лучше понимать своё тело",
       skin: "Улучшить состояние кожи",
       partner_tracking: "Следить за партнёршей (женой)",
+      perimenopause: "Отслеживать перименопаузу (40+)",
     },
 
     pregnantQuestion: "Вы сейчас беременны?",
@@ -270,6 +271,8 @@ const ru: Dictionary = {
     fertileWindowLabel: "Окно фертильности",
     irregularBannerTitle: "Обнаружена нерегулярность цикла 3+ месяца",
     irregularBannerAction: "Рассмотрите визит к врачу",
+    perimenopauseCardTitle: "Отслеживание перименопаузы",
+    perimenopauseCardBody: "В этот период нерегулярность цикла — это естественно. Вместо прогноза отслеживайте свои симптомы (приливы, сон, настроение).",
     ringEmptyLabel: "Отметьте дату последней менструации для прогноза",
     predictionBasisHistory: (n: number) => `Рассчитано на основе последних ${n} циклов`,
     predictionBasisEstimate: "Приблизительно — станет точнее по мере наблюдений",
@@ -329,6 +332,8 @@ const ru: Dictionary = {
       fatigue: "Усталость",
       irritability: "Раздражительность",
       difficulty_concentrating: "Трудности с концентрацией",
+      hot_flashes: "Приливы жара",
+      night_sweats: "Ночная потливость",
     },
   },
 

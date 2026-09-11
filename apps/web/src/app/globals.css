@@ -68,6 +68,14 @@
   --color-primary-light: #5eead4;
 }
 
+/* Perimenopauza — packages/shared/src/logic/goal.ts#getModeAccentColors bilan
+   qiymat jihatdan bir xil (qolgan rejimlardan ataylab farqli, iliq amber). */
+[data-mode="perimenopause"] {
+  --color-primary: #d97706;
+  --color-primary-dark: #92400e;
+  --color-primary-light: #fde68a;
+}
+
 /* Qorong'u rejim — packages/shared/src/design-tokens.ts#darkColors bilan
    qiymat jihatdan bir xil ushlab turiladi. `data-theme` atributi har doim
    HAL QILINGAN aniq qiymatga ("light" yoki "dark") o'rnatiladi (lib/session.tsx),

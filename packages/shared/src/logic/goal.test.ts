@@ -24,11 +24,39 @@ describe("goalToLandingTab", () => {
     expect(goalToLandingTab("checkups")).toBe("checkups");
   });
 
-  it("qolgan barcha maqsadlar (cycle, wellbeing, understand_body, skin) — 'cycle'ga tushadi", () => {
+  it("qolgan barcha maqsadlar (cycle, wellbeing, understand_body, skin, perimenopause) — 'cycle'ga tushadi", () => {
     expect(goalToLandingTab("cycle")).toBe("cycle");
     expect(goalToLandingTab("wellbeing")).toBe("cycle");
     expect(goalToLandingTab("understand_body")).toBe("cycle");
     expect(goalToLandingTab("skin")).toBe("cycle");
+    expect(goalToLandingTab("perimenopause")).toBe("cycle");
+  });
+});
+
+describe("perimenopause (roadmap: 40+ yosh ayollar uchun rejim)", () => {
+  it("18+ ro'yxatida bor, kichiklar ro'yxatida yo'q", () => {
+    expect(ADULT_GOALS).toContain("perimenopause");
+    expect(MINOR_GOALS).not.toContain("perimenopause");
+  });
+
+  it("sikl bashorati savollari (needsCycleInfo) SO'RALMAYDI — bashorat endi ma'noli emas", () => {
+    expect(needsCycleInfo("perimenopause")).toBe(false);
+  });
+
+  it("shaxsiy sog'liq savollari (oilaviy tarix/oxirgi tekshiruv) BARIBIR so'raladi", () => {
+    expect(needsPersonalHealthQuestions("perimenopause")).toBe(true);
+  });
+
+  it("bo'y-vazn so'ralmaydi", () => {
+    expect(needsHeightWeight("perimenopause")).toBe(false);
+  });
+
+  it("o'ziga xos, boshqa rejimlardan farqli rangga ega", () => {
+    const perimenopause = getModeAccentColors("perimenopause");
+    const cycle = getModeAccentColors("cycle");
+    const pregnancy = getModeAccentColors("pregnancy");
+    expect(perimenopause.primary).not.toBe(cycle.primary);
+    expect(perimenopause.primary).not.toBe(pregnancy.primary);
   });
 });
 

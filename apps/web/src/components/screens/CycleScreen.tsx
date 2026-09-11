@@ -63,6 +63,10 @@ export function CycleScreen() {
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
+  // Perimenopauzada bashorat/kalendar-prognoz ko'rsatish ma'nosiz (tsikl
+  // tabiiy ravishda tartibsizlashadi) — shu bo'limlar (halqa, "tartibsiz"
+  // ogohlantirishi) yashiriladi, o'rniga simptom kuzatuviga urg'u beriladi.
+  const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
 
   useEffect(() => {
     api.cycle.get().then(setData);
@@ -206,43 +210,57 @@ export function CycleScreen() {
         )}
       </div>
 
-      {data.isIrregular && (
-        <Card className="bg-warning/10">
-          <p className="font-semibold text-text-primary">{dict.cycle.irregularBannerTitle}</p>
-          <p className="mt-1 text-sm text-text-secondary">{dict.cycle.irregularBannerAction}</p>
+      {isPerimenopause ? (
+        // Bashorat halqasi o'rniga — perimenopauzada "necha kun qoldi" degan
+        // savolning o'zi ma'nosiz, shuning uchun ilovaning boshqa rejimlaridagi
+        // "tartibsiz sikl" ogohlantirishi ham ko'rsatilmaydi (bu yerda
+        // tartibsizlik KUTILGAN holat, xavotir belgisi emas).
+        <Card className="animate-fade-in-up flex flex-col items-center gap-2 py-8 text-center">
+          <Emoji e="🌇" size={36} />
+          <p className="text-lg font-bold text-text-primary">{dict.cycle.perimenopauseCardTitle}</p>
+          <p className="max-w-sm text-sm text-text-secondary">{dict.cycle.perimenopauseCardBody}</p>
         </Card>
+      ) : (
+        <>
+          {data.isIrregular && (
+            <Card className="bg-warning/10">
+              <p className="font-semibold text-text-primary">{dict.cycle.irregularBannerTitle}</p>
+              <p className="mt-1 text-sm text-text-secondary">{dict.cycle.irregularBannerAction}</p>
+            </Card>
+          )}
+
+          <Card variant="glass" className="animate-fade-in-up flex flex-col items-center">
+            <button onClick={() => !dayInCycle && openLogging(today, todayLog)} className="w-full">
+              <CycleRing
+                dayInCycle={dayInCycle ?? 1}
+                cycleLength={data.settings.averageCycleLength}
+                label={dict.cycle.title}
+                sublabel={data.prediction ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod) : dict.cycle.ringEmptyLabel}
+              />
+            </button>
+            {periodDay && (
+              <div className="mt-4 flex justify-center">
+                <Badge tone="primary">
+                  {isMinor && (
+                    <>
+                      <Emoji e="🐰" size={14} />{" "}
+                    </>
+                  )}
+                  {dict.cycle.periodDayBadge(periodDay)}
+                </Badge>
+              </div>
+            )}
+
+            {data.prediction && (
+              <p className="mt-3 text-center text-xs text-text-muted">
+                {data.prediction.cyclesAnalyzed > 0
+                  ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
+                  : dict.cycle.predictionBasisEstimate}
+              </p>
+            )}
+          </Card>
+        </>
       )}
-
-      <Card variant="glass" className="animate-fade-in-up flex flex-col items-center">
-        <button onClick={() => !dayInCycle && openLogging(today, todayLog)} className="w-full">
-          <CycleRing
-            dayInCycle={dayInCycle ?? 1}
-            cycleLength={data.settings.averageCycleLength}
-            label={dict.cycle.title}
-            sublabel={data.prediction ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod) : dict.cycle.ringEmptyLabel}
-          />
-        </button>
-        {periodDay && (
-          <div className="mt-4 flex justify-center">
-            <Badge tone="primary">
-              {isMinor && (
-                <>
-                  <Emoji e="🐰" size={14} />{" "}
-                </>
-              )}
-              {dict.cycle.periodDayBadge(periodDay)}
-            </Badge>
-          </div>
-        )}
-
-        {data.prediction && (
-          <p className="mt-3 text-center text-xs text-text-muted">
-            {data.prediction.cyclesAnalyzed > 0
-              ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
-              : dict.cycle.predictionBasisEstimate}
-          </p>
-        )}
-      </Card>
 
       {/* Kunlik kayfiyat so'rovi — Figma referens: kalendar tepasida, faqat
           "o'zini qanday his qilyapti" so'raladi, bosilgan zahoti saqlanadi va

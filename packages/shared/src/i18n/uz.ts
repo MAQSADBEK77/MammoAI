@@ -192,6 +192,7 @@ const uz = {
       understand_body: "Tanamni yaxshiroq tushunish",
       skin: "Terimni yaxshilash",
       partner_tracking: "Hamkorimni (ayolimni) kuzatish",
+      perimenopause: "Perimenopauzani kuzatish (40+)",
     },
 
     pregnantQuestion: "Hozir homiladormisiz?",
@@ -275,6 +276,8 @@ const uz = {
     fertileWindowLabel: "Unumdor kunlar oynasi",
     irregularBannerTitle: "3+ oy tartibsiz tsikl aniqlandi",
     irregularBannerAction: "Tekshiruvdan o'tishni ko'rib chiqing",
+    perimenopauseCardTitle: "Perimenopauza kuzatuvi",
+    perimenopauseCardBody: "Bu davrda tsikl tartibsizlashishi — tabiiy holat. Bashorat o'rniga belgilaringizni (issiqlik bosishi, uyqu, kayfiyat) kuzatib boring.",
     ringEmptyLabel: "Bashorat qilish uchun oxirgi hayz sanasini belgilang",
     predictionBasisHistory: (n: number) => `So'nggi ${n} ta sikl asosida hisoblangan`,
     predictionBasisEstimate: "Taxminiy — ko'proq kuzatuv qilsangiz aniqroq bo'ladi",
@@ -334,6 +337,8 @@ const uz = {
       fatigue: "Charchoq",
       irritability: "Asabiylashish",
       difficulty_concentrating: "Diqqatni jamlashga qiynalish",
+      hot_flashes: "Issiqlik bosishi",
+      night_sweats: "Tungi terlash",
     },
   },
 

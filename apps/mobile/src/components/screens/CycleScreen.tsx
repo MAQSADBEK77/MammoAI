@@ -58,6 +58,7 @@ export function CycleScreen() {
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
+  const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
 
   useEffect(() => {
     api.cycle.get().then(setData);
@@ -195,43 +196,56 @@ export function CycleScreen() {
         )}
       </View>
 
-      {data.isIrregular && (
-        <Card className="bg-warning/10">
-          <Text className="font-semibold text-text-primary">{dict.cycle.irregularBannerTitle}</Text>
-          <Text className="mt-1 text-sm text-text-secondary">{dict.cycle.irregularBannerAction}</Text>
-        </Card>
-      )}
+      {isPerimenopause ? (
+        // Web CycleScreen.tsx bilan bir xil — izoh o'sha yerda.
+        <Animated.View entering={FadeInUp.duration(450)}>
+          <Card className="items-center gap-2 py-8">
+            <Emoji e="🌇" size={36} />
+            <Text className="text-center text-lg font-bold text-text-primary">{dict.cycle.perimenopauseCardTitle}</Text>
+            <Text className="text-center text-sm text-text-secondary">{dict.cycle.perimenopauseCardBody}</Text>
+          </Card>
+        </Animated.View>
+      ) : (
+        <>
+          {data.isIrregular && (
+            <Card className="bg-warning/10">
+              <Text className="font-semibold text-text-primary">{dict.cycle.irregularBannerTitle}</Text>
+              <Text className="mt-1 text-sm text-text-secondary">{dict.cycle.irregularBannerAction}</Text>
+            </Card>
+          )}
 
-      <Animated.View entering={FadeInUp.duration(450)}>
-        <Card variant="glass" className="items-center">
-          <Pressable onPress={() => !dayInCycle && openLogging(today, todayLog)}>
-            <CycleRing
-              dayInCycle={dayInCycle ?? 1}
-              cycleLength={data.settings.averageCycleLength}
-              label={dict.cycle.title}
-              sublabel={data.prediction ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod) : dict.cycle.ringEmptyLabel}
-            />
-          </Pressable>
-          {periodDay && (
-            <View className="mt-4 items-center">
-              <Badge tone="primary">
-                <View className="flex-row items-center gap-1">
-                  {isMinor && <Emoji e="🐰" size={14} />}
-                  <Text>{dict.cycle.periodDayBadge(periodDay)}</Text>
+          <Animated.View entering={FadeInUp.duration(450)}>
+            <Card variant="glass" className="items-center">
+              <Pressable onPress={() => !dayInCycle && openLogging(today, todayLog)}>
+                <CycleRing
+                  dayInCycle={dayInCycle ?? 1}
+                  cycleLength={data.settings.averageCycleLength}
+                  label={dict.cycle.title}
+                  sublabel={data.prediction ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod) : dict.cycle.ringEmptyLabel}
+                />
+              </Pressable>
+              {periodDay && (
+                <View className="mt-4 items-center">
+                  <Badge tone="primary">
+                    <View className="flex-row items-center gap-1">
+                      {isMinor && <Emoji e="🐰" size={14} />}
+                      <Text>{dict.cycle.periodDayBadge(periodDay)}</Text>
+                    </View>
+                  </Badge>
                 </View>
-              </Badge>
-            </View>
-          )}
+              )}
 
-          {data.prediction && (
-            <Text className="mt-3 text-center text-xs text-text-muted">
-              {data.prediction.cyclesAnalyzed > 0
-                ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
-                : dict.cycle.predictionBasisEstimate}
-            </Text>
-          )}
-        </Card>
-      </Animated.View>
+              {data.prediction && (
+                <Text className="mt-3 text-center text-xs text-text-muted">
+                  {data.prediction.cyclesAnalyzed > 0
+                    ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
+                    : dict.cycle.predictionBasisEstimate}
+                </Text>
+              )}
+            </Card>
+          </Animated.View>
+        </>
+      )}
 
       {/* Kunlik kayfiyat so'rovi — Figma referens: kalendar tepasida, faqat
           "o'zini qanday his qilyapti" so'raladi, bosilgan zahoti saqlanadi va

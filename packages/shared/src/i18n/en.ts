@@ -189,6 +189,7 @@ const en: Dictionary = {
       understand_body: "Understand my body better",
       skin: "Improve my skin",
       partner_tracking: "Track my partner (wife)",
+      perimenopause: "Track perimenopause (40+)",
     },
 
     pregnantQuestion: "Are you currently pregnant?",
@@ -272,6 +273,8 @@ const en: Dictionary = {
     fertileWindowLabel: "Fertile window",
     irregularBannerTitle: "3+ months of irregular cycles detected",
     irregularBannerAction: "Consider getting a checkup",
+    perimenopauseCardTitle: "Perimenopause tracking",
+    perimenopauseCardBody: "Irregular cycles are natural during this time. Instead of a prediction, keep an eye on your symptoms (hot flashes, sleep, mood).",
     ringEmptyLabel: "Set your last period date to see predictions",
     predictionBasisHistory: (n: number) => `Calculated from your last ${n} cycles`,
     predictionBasisEstimate: "Estimated — logging more cycles will make this more accurate",
@@ -331,6 +334,8 @@ const en: Dictionary = {
       fatigue: "Fatigue",
       irritability: "Irritability",
       difficulty_concentrating: "Difficulty concentrating",
+      hot_flashes: "Hot flashes",
+      night_sweats: "Night sweats",
     },
   },
 

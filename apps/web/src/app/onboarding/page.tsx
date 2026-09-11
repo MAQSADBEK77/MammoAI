@@ -265,6 +265,8 @@ const SYMPTOM_ICON: Record<Symptom, string> = {
   fatigue: "😴",
   irritability: "😠",
   difficulty_concentrating: "💭",
+  hot_flashes: "🥵",
+  night_sweats: "💦",
 };
 
 const HEALTH_CONDITION_ICON: Record<HealthCondition, string> = {
@@ -353,7 +355,13 @@ function OnboardingPageInner() {
     const withTail = (list: Step[]): Step[] => {
       if (!survey.primaryGoal) return [...list, "analyzing"];
       const tail: Step[] = [];
-      if (needsCycleInfo(survey.primaryGoal)) {
+      if (survey.primaryGoal === "perimenopause") {
+        // Sikl bashorati (regularity/lengths/last_period) va hayzga munosabat
+        // savollari (period_attitude) SO'RALMAYDI — bashorat endi ma'noli
+        // emas. Simptom va ma'lum sog'liq holatlari savollari esa AYNAN shu
+        // rejim uchun eng muhimi, shuning uchun alohida qoldiriladi.
+        tail.push("typical_symptoms", "health_conditions");
+      } else if (needsCycleInfo(survey.primaryGoal)) {
         tail.push(
           "cycle_regularity",
           "cycle_lengths",
@@ -571,6 +579,9 @@ function OnboardingPageInner() {
   }
 
   const goalOptions = isMinor ? MINOR_GOALS : ADULT_GOALS;
+  // Perimenopauzaning eng xarakterli belgilari umumiy ro'yxatda yo'q — faqat
+  // shu rejim tanlanganda qo'shiladi (boshqalar uchun ro'yxatni cheklamaslik).
+  const symptomOptions = survey.primaryGoal === "perimenopause" ? [...SYMPTOM_OPTIONS, "hot_flashes" as const, "night_sweats" as const] : SYMPTOM_OPTIONS;
 
   return (
     <div
@@ -862,7 +873,7 @@ function OnboardingPageInner() {
           <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</h2>
             <div className="grid grid-cols-2 gap-2">
-              {SYMPTOM_OPTIONS.map((sym) => (
+              {symptomOptions.map((sym) => (
                 <IconChip
                   key={sym}
                   label={dict.cycle.symptoms[sym]}
