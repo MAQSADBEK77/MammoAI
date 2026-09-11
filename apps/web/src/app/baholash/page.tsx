@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { RISK_QUIZ_QUESTIONS, computeRiskScore, riskLevelFromScore } from "@mammoai/shared";
 import type { RiskQuizAnswers, RiskLevel } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { trackEvent } from "@/lib/analytics";
 import { Badge, Button, Card, LoadingSpinner, ProgressBar } from "@/components/ui";
 
 const SRC_KEY = "mammoai_qr_src";
@@ -54,12 +55,17 @@ function QuizBody() {
   const [result, setResult] = useState<{ score: number; level: RiskLevel } | null>(null);
 
   useEffect(() => {
+    const src = searchParams.get("src")?.trim() || "direct";
     try {
-      const src = searchParams.get("src")?.trim() || "direct";
       sessionStorage.setItem(SRC_KEY, src);
     } catch {
       // sessionStorage bloklangan bo'lsa — manba kuzatilmaydi, lekin test o'zi ishlayveradi.
     }
+    // Konversiyadan OLDINGI "haqiqiy skanerlash" hodisasi — Traction Dashboard
+    // (admin/traction) shu bilan skanerlar/ro'yxatdan-o'tishlar konversiyasini
+    // manba bo'yicha hisoblaydi. Mavjud `signup_from_qr:<src>` faqat
+    // muvaffaqiyatli ro'yxatdan o'tishda yuboriladi (onboarding/page.tsx).
+    trackEvent(`qr_scan:${src}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

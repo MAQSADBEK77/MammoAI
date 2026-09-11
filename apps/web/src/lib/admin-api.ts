@@ -14,6 +14,7 @@ import type {
   Language,
   LibraryIllustration,
   OnboardingProfile,
+  TractionSummary,
   User,
 } from "@mammoai/shared";
 
@@ -176,6 +177,9 @@ export const adminApi = {
       if (params.offset) q.set("offset", String(params.offset));
       return request<{ users: AnalyticsUserSummary[]; total: number }>(`/analytics/users?${q.toString()}`);
     },
+  },
+  traction: {
+    get: (days: number) => request<TractionSummary>(`/traction?days=${days}`),
   },
   telegramBot: {
     get: () => request<TelegramBotSettings>("/telegram-bot"),

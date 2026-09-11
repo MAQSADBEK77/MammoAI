@@ -378,6 +378,14 @@ function OnboardingPageInner() {
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
   const goBack = () => setStepIndex((i) => Math.max(i - 1, 0));
 
+  // Har bir bosqichga kirilganda — Traction Dashboard (admin/traction) shu
+  // orqali onboarding'ning qaysi bosqichida ko'p tashlab ketishayotganini
+  // hisoblaydi ("most abandoned screen"). Tugagach onboarding_profiles paydo
+  // bo'ladi, shuning uchun bu hodisa faqat TUGATMAGANLAR uchun ma'noli bo'ladi.
+  useEffect(() => {
+    trackEvent(`onboarding_step:${step}`);
+  }, [step]);
+
   function toggleArrayValue<T>(arr: T[], value: T): T[] {
     return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
   }

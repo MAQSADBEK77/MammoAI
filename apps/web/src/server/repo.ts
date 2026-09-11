@@ -42,6 +42,7 @@ import type {
   RiskQuizResult,
   RiskLevel,
   Symptom,
+  TractionSummary,
   User,
 } from "@mammoai/shared";
 import {
@@ -1484,6 +1485,366 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
     })),
     topButtons: topButtonsRows.map((r) => ({ label: r.label, path: r.path, count: r.count })),
     qrSignups: qrSignupRows.map((r) => ({ source: r.source, count: r.count })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Traction Dashboard — foydalanuvchi so'roviga ko'ra ("Demo Day'ni kutma,
+// birinchi kundan raqamlarni yig'"): AARRR ko'rsatkichlari bitta joyda.
+// Mumkin bo'lgan joyda MAVJUD jadvallardan hisoblanadi; ikkita yangi
+// hodisa shu funksiya bilan birga qo'shildi — `qr_scan:<src>` (baholash/page.tsx,
+// QR havolasi ochilgan zahoti, konversiyadan OLDIN) va
+// `onboarding_step:<step>` (onboarding/page.tsx + mobile onboarding.tsx, har bir
+// bosqichga kirilganda) — bular bugundan boshlab to'planadi, tarixiy ma'lumot
+// yo'q (shuning uchun `*Tracked` bayroqlari bilan izohlanadi, 0 emas
+// "hali yo'q" sifatida UI'da ko'rsatiladi).
+// ---------------------------------------------------------------------------
+
+const GROWTH_SOURCE_PATTERNS: { key: "school" | "university" | "clinic"; re: RegExp }[] = [
+  { key: "school", re: /maktab|school/i },
+  { key: "university", re: /universitet|university|uni-|talaba|student/i },
+  { key: "clinic", re: /klinika|clinic|shifoxona|poliklinika/i },
+];
+
+// Chat'da ko'p so'raladigan mavzularni taxminan aniqlash uchun kalit so'zlar —
+// haqiqiy NLP/klasterlash emas, oddiy ILIKE moslashtirish (V1, admin panelda
+// shunday deb izohlangan).
+const QUESTION_TOPIC_KEYWORDS: { topic: string; words: string[] }[] = [
+  { topic: "Og'riq/spazm", words: ["og'riq", "ogriq", "og'riyapti", "spazm", "болит", "боль"] },
+  { topic: "Sikl kechikishi", words: ["kechik", "kelmadi", "задерж", "задержка"] },
+  { topic: "Homiladorlik belgisi", words: ["homila", "homiladorman", "beremen", "беремен"] },
+  { topic: "Ajralma/ranglar", words: ["ajralma", "выделен"] },
+  { topic: "Kontratseptsiya", words: ["kontraseptsiya", "tabletka", "prezervativ", "spiral", "контрацепт"] },
+  { topic: "Ovulyatsiya", words: ["ovulyatsiya", "овуляц"] },
+  { topic: "Diyeta/vazn", words: ["vazn", "diyeta", "ozish", "вес", "похуд"] },
+  { topic: "Kayfiyat/stress", words: ["kayfiyat", "stress", "depress", "настроен", "стресс"] },
+];
+
+export async function getTractionSummary(days: number): Promise<TractionSummary> {
+  await ensureSchema();
+  const clampedDays = Math.min(Math.max(Math.round(days) || 30, 1), 180);
+  const sinceInterval = `${clampedDays} days`;
+
+  const [
+    // --- Acquisition (davr bilan cheklangan) ---
+    [{ count: registrations }],
+    [{ count: telegramStarts }],
+    [{ count: websiteVisitors }],
+    [{ count: qrScansTotal }],
+    qrScansBySourceRows,
+    qrSignupsBySourceRows,
+    // --- Activation (jami, doim butun tarix) ---
+    [{ count: totalUsers }],
+    [{ count: completedOnboarding }],
+    [{ count: loggedFirstPeriod }],
+    [{ count: addedFirstSymptom }],
+    [{ count: usedChatbot }],
+    // --- Engagement (DAU/WAU/MAU — doim qat'iy 1/7/30 kun) ---
+    [{ count: dau }],
+    [{ count: wau }],
+    [{ count: mau }],
+    [{ count: sessions30d }],
+    [{ count: symptomEntriesTotal }],
+    [{ count: chatMessagesTotal }],
+    // --- Retention (kohort, doim jami) ---
+    [{ cohort: d1Cohort, returned: d1Returned }],
+    [{ cohort: d7Cohort, returned: d7Returned }],
+    [{ cohort: d30Cohort, returned: d30Returned }],
+    // --- Product (davr bilan cheklangan) ---
+    mostUsedFeatureRows,
+    abandonedOnboardingRows,
+    questionMessageRows,
+    symptomRows,
+    // --- Quality (davr bilan cheklangan) ---
+    [{ count: complaintsCount }],
+    recentComplaintRows,
+  ] = (await Promise.all([
+    sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval`,
+    sql`SELECT count(*)::int as count FROM telegram_bot_starts WHERE (first_started_at)::timestamptz >= now() - ${sinceInterval}::interval`,
+    sql`SELECT count(DISTINCT session_id)::int as count FROM analytics_events WHERE platform = 'web' AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval`,
+    sql`SELECT count(*)::int as count FROM analytics_events WHERE type = 'click' AND label LIKE 'qr_scan:%' AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval`,
+    sql`
+      SELECT substring(label from 'qr_scan:(.*)') as source, count(*)::int as count
+      FROM analytics_events
+      WHERE type = 'click' AND label LIKE 'qr_scan:%' AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+      GROUP BY source ORDER BY count DESC LIMIT 20
+    `,
+    sql`
+      SELECT substring(label from 'signup_from_qr:(.*)') as source, count(*)::int as count
+      FROM analytics_events
+      WHERE type = 'click' AND label LIKE 'signup_from_qr:%' AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+      GROUP BY source ORDER BY count DESC LIMIT 20
+    `,
+    sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE`,
+    sql`SELECT count(*)::int as count FROM onboarding_profiles o JOIN users u ON u.id = o.user_id AND u.is_test_account = FALSE`,
+    sql`SELECT count(DISTINCT cl.user_id)::int as count FROM cycle_logs cl JOIN users u ON u.id = cl.user_id AND u.is_test_account = FALSE WHERE cl.flow IS NOT NULL`,
+    sql`SELECT count(DISTINCT cl.user_id)::int as count FROM cycle_logs cl JOIN users u ON u.id = cl.user_id AND u.is_test_account = FALSE WHERE cl.symptoms <> '[]'`,
+    sql`SELECT count(DISTINCT cm.user_id)::int as count FROM chat_messages cm JOIN users u ON u.id = cm.user_id AND u.is_test_account = FALSE WHERE cm.role = 'user'`,
+    sql`
+      SELECT count(DISTINCT a.user_id)::int as count FROM (
+        SELECT user_id, created_at FROM analytics_events WHERE user_id IS NOT NULL AND (created_at)::timestamptz >= now() - interval '1 day'
+        UNION ALL
+        SELECT user_id, created_at FROM cycle_logs WHERE (created_at)::timestamptz >= now() - interval '1 day'
+        UNION ALL
+        SELECT user_id, created_at FROM chat_messages WHERE (created_at)::timestamptz >= now() - interval '1 day'
+      ) a JOIN users u ON u.id = a.user_id AND u.is_test_account = FALSE
+    `,
+    sql`
+      SELECT count(DISTINCT a.user_id)::int as count FROM (
+        SELECT user_id, created_at FROM analytics_events WHERE user_id IS NOT NULL AND (created_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, created_at FROM cycle_logs WHERE (created_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, created_at FROM chat_messages WHERE (created_at)::timestamptz >= now() - interval '7 days'
+      ) a JOIN users u ON u.id = a.user_id AND u.is_test_account = FALSE
+    `,
+    sql`
+      SELECT count(DISTINCT a.user_id)::int as count FROM (
+        SELECT user_id, created_at FROM analytics_events WHERE user_id IS NOT NULL AND (created_at)::timestamptz >= now() - interval '30 days'
+        UNION ALL
+        SELECT user_id, created_at FROM cycle_logs WHERE (created_at)::timestamptz >= now() - interval '30 days'
+        UNION ALL
+        SELECT user_id, created_at FROM chat_messages WHERE (created_at)::timestamptz >= now() - interval '30 days'
+      ) a JOIN users u ON u.id = a.user_id AND u.is_test_account = FALSE
+    `,
+    sql`SELECT count(DISTINCT session_id)::int as count FROM analytics_events WHERE (created_at)::timestamptz >= now() - interval '30 days'`,
+    sql`SELECT count(*)::int as count FROM cycle_logs cl JOIN users u ON u.id = cl.user_id AND u.is_test_account = FALSE WHERE cl.symptoms <> '[]'`,
+    sql`SELECT count(*)::int as count FROM chat_messages cm JOIN users u ON u.id = cm.user_id AND u.is_test_account = FALSE WHERE cm.role = 'user'`,
+    // Retention: klassik kohort — ro'yxatdan o'tgan kundan aynan N kun keyin
+    // qaytganlar. Kohort faqat shu N-kun chegarasidan allaqachon o'tgan
+    // foydalanuvchilarni qamraydi (aks holda "hali kelmagan" kunni hisoblab
+    // foizni sun'iy pasaytirib yuboradi).
+    sql`
+      WITH cohort AS (
+        SELECT id as user_id, (created_at)::timestamptz::date as signup_date
+        FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz::date <= now()::date - interval '1 day'
+      ), activity AS (
+        SELECT user_id, (created_at)::timestamptz::date as d FROM analytics_events WHERE user_id IS NOT NULL
+        UNION SELECT user_id, (created_at)::timestamptz::date FROM cycle_logs
+        UNION SELECT user_id, (created_at)::timestamptz::date FROM chat_messages
+      )
+      SELECT count(*)::int as cohort,
+        count(*) FILTER (WHERE EXISTS (SELECT 1 FROM activity a WHERE a.user_id = cohort.user_id AND a.d = cohort.signup_date + 1))::int as returned
+      FROM cohort
+    `,
+    sql`
+      WITH cohort AS (
+        SELECT id as user_id, (created_at)::timestamptz::date as signup_date
+        FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz::date <= now()::date - interval '7 days'
+      ), activity AS (
+        SELECT user_id, (created_at)::timestamptz::date as d FROM analytics_events WHERE user_id IS NOT NULL
+        UNION SELECT user_id, (created_at)::timestamptz::date FROM cycle_logs
+        UNION SELECT user_id, (created_at)::timestamptz::date FROM chat_messages
+      )
+      SELECT count(*)::int as cohort,
+        count(*) FILTER (WHERE EXISTS (SELECT 1 FROM activity a WHERE a.user_id = cohort.user_id AND a.d = cohort.signup_date + 7))::int as returned
+      FROM cohort
+    `,
+    sql`
+      WITH cohort AS (
+        SELECT id as user_id, (created_at)::timestamptz::date as signup_date
+        FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz::date <= now()::date - interval '30 days'
+      ), activity AS (
+        SELECT user_id, (created_at)::timestamptz::date as d FROM analytics_events WHERE user_id IS NOT NULL
+        UNION SELECT user_id, (created_at)::timestamptz::date FROM cycle_logs
+        UNION SELECT user_id, (created_at)::timestamptz::date FROM chat_messages
+      )
+      SELECT count(*)::int as cohort,
+        count(*) FILTER (WHERE EXISTS (SELECT 1 FROM activity a WHERE a.user_id = cohort.user_id AND a.d = cohort.signup_date + 30))::int as returned
+      FROM cohort
+    `,
+    sql`
+      SELECT path, count(*)::int as view_count
+      FROM analytics_events
+      WHERE type = 'pageview' AND path IS NOT NULL AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+      GROUP BY path ORDER BY view_count DESC LIMIT 30
+    `,
+    // Onboardingni tugatmagan (onboarding_profiles yo'q) foydalanuvchilarning
+    // shu seansdagi ENG OXIRGI "onboarding_step:<step>" hodisasi — ya'ni qaysi
+    // bosqichda "tiqilib qolishgan". `onboarding_step:*` hodisasi shu ishlash
+    // bilan birga qo'shildi — tarixiy ma'lumot yo'q, bugundan boshlab yig'iladi.
+    sql`
+      WITH ranked AS (
+        SELECT e.user_id, substring(e.label from 'onboarding_step:(.*)') as step,
+          row_number() OVER (PARTITION BY e.session_id ORDER BY e.created_at DESC) as rn
+        FROM analytics_events e
+        LEFT JOIN onboarding_profiles o ON o.user_id = e.user_id
+        WHERE e.type = 'click' AND e.label LIKE 'onboarding_step:%' AND o.user_id IS NULL
+          AND (e.created_at)::timestamptz >= now() - ${sinceInterval}::interval
+      )
+      SELECT step, count(*)::int as count FROM ranked WHERE rn = 1 GROUP BY step ORDER BY count DESC LIMIT 10
+    `,
+    sql`
+      SELECT content FROM chat_messages cm
+      JOIN users u ON u.id = cm.user_id AND u.is_test_account = FALSE
+      WHERE cm.role = 'user' AND (cm.created_at)::timestamptz >= now() - ${sinceInterval}::interval
+    `,
+    sql`
+      SELECT value as symptom, count(*)::int as count
+      FROM cycle_logs cl
+      JOIN users u ON u.id = cl.user_id AND u.is_test_account = FALSE
+      CROSS JOIN LATERAL jsonb_array_elements_text(cl.symptoms::jsonb) as value
+      WHERE (cl.created_at)::timestamptz >= now() - ${sinceInterval}::interval
+      GROUP BY value ORDER BY count DESC LIMIT 10
+    `,
+    sql`
+      SELECT count(*)::int as count FROM feedback_responses f
+      JOIN users u ON u.id = f.user_id AND u.is_test_account = FALSE
+      WHERE f.rating = 0 AND (f.created_at)::timestamptz >= now() - ${sinceInterval}::interval
+    `,
+    sql`
+      SELECT f.message, f.created_at FROM feedback_responses f
+      JOIN users u ON u.id = f.user_id AND u.is_test_account = FALSE
+      WHERE f.message IS NOT NULL AND (f.created_at)::timestamptz >= now() - ${sinceInterval}::interval
+      ORDER BY f.created_at DESC LIMIT 10
+    `,
+  ])) as unknown as [
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { source: string; count: number }[],
+    { source: string; count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { count: number }[],
+    { cohort: number; returned: number }[],
+    { cohort: number; returned: number }[],
+    { cohort: number; returned: number }[],
+    { path: string; view_count: number }[],
+    { step: string | null; count: number }[],
+    { content: string }[],
+    { symptom: string; count: number }[],
+    { count: number }[],
+    { message: string | null; created_at: string }[],
+  ];
+
+  // Sahifa yo'lini o'qish mumkin xususiyatga aylantiradi — mobile (expo-router
+  // guruh segmentlari, masalan "/(tabs)/asosiy") va web ("/asosiy") bir xil
+  // ekranga tegishli bo'lsa bitta yorliq ostida birlashtiriladi.
+  const FEATURE_LABELS: Record<string, string> = {
+    asosiy: "Bosh sahifa / Tsikl",
+    tsikl: "Tsikl",
+    yordamchi: "AI Yordamchi",
+    jamiyat: "Jamiyat",
+    hamkor: "Hamkor",
+    tekshiruvlar: "Tekshiruvlar",
+    profil: "Profil",
+    homiladorlik: "Homiladorlik",
+    "xavf-testi": "Xavf-testi",
+    maqolalar: "Maqolalar",
+    klinikalar: "Klinikalar",
+    baholash: "QR-baholash",
+  };
+  function normalizeFeaturePath(path: string): string {
+    const segment = path.replace(/\(tabs\)\/?/g, "").split("/").filter(Boolean)[0] ?? path;
+    return FEATURE_LABELS[segment] ?? segment;
+  }
+  const featureAgg = new Map<string, number>();
+  for (const r of mostUsedFeatureRows) {
+    const label = normalizeFeaturePath(r.path);
+    featureAgg.set(label, (featureAgg.get(label) ?? 0) + r.view_count);
+  }
+  const mostUsedFeatures = [...featureAgg.entries()]
+    .map(([label, viewCount]) => ({ label, viewCount }))
+    .sort((a, b) => b.viewCount - a.viewCount)
+    .slice(0, 8);
+
+  const topicCounts = new Map<string, number>();
+  for (const row of questionMessageRows) {
+    const text = row.content.toLowerCase();
+    for (const { topic, words } of QUESTION_TOPIC_KEYWORDS) {
+      if (words.some((w) => text.includes(w))) {
+        topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1);
+        break; // bitta xabar — birinchi mos kelgan mavzuga, takror sanamaslik uchun
+      }
+    }
+  }
+  const mostCommonQuestionTopics = [...topicCounts.entries()]
+    .map(([topic, count]) => ({ topic, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  const growthBuckets = { school: 0, university: 0, clinic: 0, other: 0 };
+  for (const row of qrSignupsBySourceRows) {
+    const match = GROWTH_SOURCE_PATTERNS.find((p) => p.re.test(row.source));
+    if (match) growthBuckets[match.key] += row.count;
+    else growthBuckets.other += row.count;
+  }
+  const taggedQrSignups = qrSignupsBySourceRows.reduce((sum, r) => sum + r.count, 0);
+  const organic = Math.max(0, registrations - taggedQrSignups);
+
+  function pct(returned: number, cohort: number): number | null {
+    return cohort > 0 ? Math.round((returned / cohort) * 1000) / 10 : null;
+  }
+
+  return {
+    periodDays: clampedDays,
+    acquisition: {
+      qrScansTotal,
+      qrScansTracked: true,
+      qrScansBySource: qrScansBySourceRows,
+      qrSignupsBySource: qrSignupsBySourceRows,
+      websiteVisitors,
+      telegramStarts,
+      registrations,
+      conversionRate: telegramStarts > 0 ? Math.round((registrations / telegramStarts) * 1000) / 10 : null,
+    },
+    activation: {
+      totalUsers,
+      completedOnboarding,
+      loggedFirstPeriod,
+      addedFirstSymptom,
+      usedChatbot,
+    },
+    engagement: {
+      dau,
+      wau,
+      mau,
+      sessionsPerActiveUser: mau > 0 ? Math.round((sessions30d / mau) * 10) / 10 : 0,
+      symptomsLoggedPerUser: addedFirstSymptom > 0 ? Math.round((symptomEntriesTotal / addedFirstSymptom) * 10) / 10 : 0,
+      chatMessagesPerUser: usedChatbot > 0 ? Math.round((chatMessagesTotal / usedChatbot) * 10) / 10 : 0,
+    },
+    retention: {
+      d1: pct(d1Returned, d1Cohort),
+      d1CohortSize: d1Cohort,
+      d7: pct(d7Returned, d7Cohort),
+      d7CohortSize: d7Cohort,
+      d30: pct(d30Returned, d30Cohort),
+      d30CohortSize: d30Cohort,
+    },
+    product: {
+      mostUsedFeatures,
+      mostAbandonedOnboardingSteps: abandonedOnboardingRows
+        .filter((r): r is { step: string; count: number } => !!r.step)
+        .map((r) => ({ step: r.step, count: r.count })),
+      onboardingStepsTracked: true,
+      mostCommonQuestionTopics,
+      mostCommonSymptoms: symptomRows.map((r) => ({ symptom: r.symptom, count: r.count })),
+    },
+    quality: {
+      complaintsCount,
+      recentComplaints: recentComplaintRows.map((r) => ({ message: r.message, createdAt: r.created_at })),
+    },
+    growth: {
+      school: growthBuckets.school,
+      university: growthBuckets.university,
+      clinic: growthBuckets.clinic,
+      organic,
+      other: growthBuckets.other,
+      referralTracked: false,
+    },
+    revenue: {
+      applicable: false,
+    },
   };
 }
 

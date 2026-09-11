@@ -527,3 +527,79 @@ export interface AnalyticsUserSummary {
   lastActiveAt: string | null;
   topPath: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Traction Dashboard — investor/demo-day uchun bitta ekranda AARRR
+// (Acquisition/Activation/Retention/Referral/Revenue kengaytirilgan)
+// ko'rsatkichlar. Mumkin bo'lgan joyda MAVJUD jadvallardan (users,
+// analytics_events, cycle_logs, chat_messages, telegram_bot_starts,
+// feedback_responses) real hisoblanadi — yangi kuzatuv talab qiladigan
+// joylar (`tracked: false`) hozircha nol/bo'sh qaytaradi va "bugundan
+// boshlab yig'ilyapti" deb izohlanadi (server/repo.ts#getTractionSummary).
+// ---------------------------------------------------------------------------
+
+export interface TractionSummary {
+  /** Acquisition/Product/Growth bo'limlari shu oynaga qarab hisoblanadi. */
+  periodDays: number;
+  acquisition: {
+    qrScansTotal: number;
+    qrScansTracked: boolean;
+    qrScansBySource: { source: string; count: number }[];
+    qrSignupsBySource: { source: string; count: number }[];
+    websiteVisitors: number;
+    telegramStarts: number;
+    registrations: number;
+    /** registrations / telegramStarts, 0..1 (telegram start bot bilan majburiy bosqich). */
+    conversionRate: number | null;
+  };
+  /** Har doim JAMI (davr bilan cheklanmagan) — "hozirgacha nechta foydalanuvchi faollashgan". */
+  activation: {
+    totalUsers: number;
+    completedOnboarding: number;
+    loggedFirstPeriod: number;
+    addedFirstSymptom: number;
+    usedChatbot: number;
+  };
+  /** DAU/WAU/MAU ta'rifi bo'yicha doim 1/7/30 kunlik oyna — `periodDays`ga bog'liq emas. */
+  engagement: {
+    dau: number;
+    wau: number;
+    mau: number;
+    sessionsPerActiveUser: number;
+    symptomsLoggedPerUser: number;
+    chatMessagesPerUser: number;
+  };
+  /** Klassik kohort saqlanish — ro'yxatdan o'tgan kundan aynan N kun keyin
+   * qaytganlar foizi. `cohortSize` yetarli bo'lmasa (hali N kun o'tmagan
+   * foydalanuvchilar) foiz `null`. */
+  retention: {
+    d1: number | null;
+    d1CohortSize: number;
+    d7: number | null;
+    d7CohortSize: number;
+    d30: number | null;
+    d30CohortSize: number;
+  };
+  product: {
+    mostUsedFeatures: { label: string; viewCount: number }[];
+    mostAbandonedOnboardingSteps: { step: string; count: number }[];
+    onboardingStepsTracked: boolean;
+    mostCommonQuestionTopics: { topic: string; count: number }[];
+    mostCommonSymptoms: { symptom: string; count: number }[];
+  };
+  quality: {
+    complaintsCount: number;
+    recentComplaints: { message: string | null; createdAt: string }[];
+  };
+  growth: {
+    school: number;
+    university: number;
+    clinic: number;
+    organic: number;
+    other: number;
+    referralTracked: boolean;
+  };
+  revenue: {
+    applicable: boolean;
+  };
+}

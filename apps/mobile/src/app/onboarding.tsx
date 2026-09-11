@@ -35,6 +35,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useThemeColors } from "@/lib/theme";
 import { useIllustrations } from "@/lib/illustrations";
+import { trackClick } from "@/lib/analytics";
 import { api } from "@/lib/api";
 import { Button, DateWheelPicker, IconChip, ProgressBar, TextField, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
@@ -329,6 +330,12 @@ export default function OnboardingScreen() {
   const step = steps[stepIndex];
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
   const goBack = () => setStepIndex((i) => Math.max(i - 1, 0));
+
+  // Web onboarding/page.tsx bilan bir xil — Traction Dashboard (admin/traction)
+  // "eng ko'p tashlab ketiladigan bosqich"ni shu hodisadan hisoblaydi.
+  useEffect(() => {
+    trackClick("/onboarding", `onboarding_step:${step}`);
+  }, [step]);
 
   function toggleArrayValue<T>(arr: T[], value: T): T[] {
     return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
