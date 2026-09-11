@@ -8,7 +8,10 @@ import { getToken, setToken } from "./storage";
 // Android emulyatori uchun standart manzilga tushamiz.
 const DEFAULT_DEV_URL = "http://10.0.2.2:3000"; // Android emulyatoridan hostga yo'l
 
-const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_DEV_URL;
+// Export qilingan — private (autentifikatsiyalangan) fayl/rasm URL'lari uchun
+// (masalan homiladorlik albomi), <Image source={{uri: baseUrl + relativeUrl}}>
+// to'liq manzil qurishi kerak bo'lgan joylarda.
+export const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_DEV_URL;
 
 export const api = createApiClient({
   baseUrl,

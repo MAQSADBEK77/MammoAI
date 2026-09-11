@@ -400,6 +400,17 @@ const ru: Dictionary = {
       pineapple: "ананас",
       watermelon: "арбуз",
     },
+    albumTitle: "Альбом беременности",
+    albumSubtitle: "Загрузите фото живота/малыша — на память о каждой неделе",
+    albumAddButton: "Добавить фото",
+    albumUploading: "Загрузка…",
+    albumEmpty: "Пока нет фото — добавьте первое",
+    albumWeekBadge: (week: number) => `${week} нед.`,
+    albumNoWeek: "Неделя не указана",
+    albumDeleteConfirm: "Удалить это фото?",
+    albumUploadError: "Ошибка при загрузке фото",
+    albumNoteLabel: "Заметка (необязательно)",
+    albumNotePlaceholder: "Например: сегодня впервые почувствовала шевеление…",
   },
 
   checklist: {

@@ -11,6 +11,7 @@ import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { Pregnancy3DViewer } from "@/components/Pregnancy3DViewer";
+import { PregnancyAlbum } from "@/components/PregnancyAlbum";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
 const VITAL_ICON: Record<VitalType, typeof Heart> = { heart_rate: Heart, blood_pressure: Activity, weight: Scale, temperature: Thermometer };
@@ -330,6 +331,8 @@ export function PregnancyScreen() {
           ))}
         </div>
       </div>
+
+      <PregnancyAlbum currentWeek={status.currentWeek} />
     </div>
   );
 }

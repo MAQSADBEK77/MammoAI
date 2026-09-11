@@ -12,6 +12,7 @@ import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader, TextField } from "@/components/ui";
 import { Pregnancy3DViewer } from "@/components/Pregnancy3DViewer";
+import { PregnancyAlbum } from "@/components/PregnancyAlbum";
 import { Emoji } from "@/components/Emoji";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
@@ -320,6 +321,8 @@ export function PregnancyScreen() {
           </Card>
         ))}
       </View>
+
+      <PregnancyAlbum currentWeek={status.currentWeek} />
     </View>
   );
 }

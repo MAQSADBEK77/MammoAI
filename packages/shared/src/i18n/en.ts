@@ -402,6 +402,17 @@ const en: Dictionary = {
       pineapple: "a pineapple",
       watermelon: "a watermelon",
     },
+    albumTitle: "Pregnancy album",
+    albumSubtitle: "Upload a bump/baby photo — a keepsake for every week",
+    albumAddButton: "Add photo",
+    albumUploading: "Uploading…",
+    albumEmpty: "No photos yet — add your first one",
+    albumWeekBadge: (week: number) => `Week ${week}`,
+    albumNoWeek: "Week not set",
+    albumDeleteConfirm: "Delete this photo?",
+    albumUploadError: "Something went wrong uploading the photo",
+    albumNoteLabel: "Note (optional)",
+    albumNotePlaceholder: "E.g. felt the first kick today…",
   },
 
   checklist: {

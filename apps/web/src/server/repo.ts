@@ -723,6 +723,64 @@ export async function addPregnancyVisit(
   return { id, userId, label: visit.label, date: visit.date, clinicName: visit.clinicName, note: visit.note, createdAt };
 }
 
+// ---------------------------------------------------------------------------
+// Homiladorlik albomi — rasmning o'zi Vercel Blob'da (private), bu yerda
+// faqat metama'lumot (`blob_pathname` orqali bog'lanadi). "photoUrl" har doim
+// bizning proksi route'imizga ishora qiladi (server/views.ts emas, to'g'ridan-
+// to'g'ri route'da quriladi — chunki API_BASE kerak emas, nisbiy yo'l yetarli).
+// ---------------------------------------------------------------------------
+
+interface AlbumPhotoRow {
+  id: string;
+  pregnancy_week: number | null;
+  blob_pathname: string;
+  note: string | null;
+  created_at: string;
+}
+
+export async function listPregnancyAlbumPhotos(userId: string): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string }[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT id, pregnancy_week, blob_pathname, note, created_at
+    FROM pregnancy_album_photos WHERE user_id = ${userId} ORDER BY created_at DESC
+  `) as unknown as AlbumPhotoRow[];
+  return rows.map((r) => ({ id: r.id, pregnancyWeek: r.pregnancy_week, blobPathname: r.blob_pathname, note: r.note, createdAt: r.created_at }));
+}
+
+export async function addPregnancyAlbumPhoto(
+  userId: string,
+  entry: { pregnancyWeek: number | null; blobPathname: string; note: string | null }
+): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string }> {
+  await ensureSchema();
+  const id = randomUUID();
+  const createdAt = now();
+  await sql`
+    INSERT INTO pregnancy_album_photos (id, user_id, pregnancy_week, blob_pathname, note, created_at)
+    VALUES (${id}, ${userId}, ${entry.pregnancyWeek}, ${entry.blobPathname}, ${entry.note}, ${createdAt})
+  `;
+  return { id, pregnancyWeek: entry.pregnancyWeek, blobPathname: entry.blobPathname, note: entry.note, createdAt };
+}
+
+/** `blobPathname`ni ham qaytaradi — chaqiruvchi (route) shu yo'l bo'yicha
+ * Blob'dan HAM o'chirishi kerak (bo'lmasa faylning o'zi abadiy qolib ketadi). */
+export async function deletePregnancyAlbumPhoto(userId: string, id: string): Promise<string | null> {
+  await ensureSchema();
+  const rows = (await sql`
+    DELETE FROM pregnancy_album_photos WHERE id = ${id} AND user_id = ${userId} RETURNING blob_pathname
+  `) as unknown as { blob_pathname: string }[];
+  return rows[0]?.blob_pathname ?? null;
+}
+
+/** Bitta yozuvni (blob_pathname bilan) topadi — proksi route'da EGALIKNI
+ * tekshirish uchun (boshqa foydalanuvchining rasmini so'rab bo'lmasligi kerak). */
+export async function getPregnancyAlbumPhoto(userId: string, id: string): Promise<{ blobPathname: string } | null> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT blob_pathname FROM pregnancy_album_photos WHERE id = ${id} AND user_id = ${userId}
+  `) as unknown as { blob_pathname: string }[];
+  return rows[0] ? { blobPathname: rows[0].blob_pathname } : null;
+}
+
 export async function getKicksToday(userId: string): Promise<number> {
   await ensureSchema();
   const rows = (await sql`

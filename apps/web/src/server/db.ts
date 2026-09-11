@@ -256,6 +256,24 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // Homiladorlik albomi — foydalanuvchi o'zi yuklagan qorin/chaqaloq rasmlari,
+    // haftaga bog'langan holda ("bezakli frame" bilan ko'rsatiladi — UI'da,
+    // rasmning o'ziga PISHIRILMAYDI, shuning uchun keyin dizayn o'zgarsa qayta
+    // yuklash shart emas). Rasmning o'zi Postgres'da EMAS — Vercel Blob'da
+    // (private store, `blob_pathname` shu yerga ishora qiladi); bazada faqat
+    // yo'l saqlanadi. Sabab: bitta avatar (users.avatar_url, base64) bilan
+    // solishtirganda bu yerda ko'p va kattaroq rasm bo'lishi mumkin — bazani
+    // shishirib yubormaslik uchun (postgres-pool-hang-bug xotira eslatmasi).
+    sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_album_photos (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        pregnancy_week INTEGER,
+        blob_pathname TEXT NOT NULL,
+        note TEXT,
+        created_at TEXT NOT NULL
+      )
+    `,
     sql`
       CREATE TABLE IF NOT EXISTS checklist_items (
         id TEXT PRIMARY KEY,
@@ -426,6 +444,7 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_album_user ON pregnancy_album_photos(user_id, created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_community_posts_tag ON community_posts(tag, created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)`,

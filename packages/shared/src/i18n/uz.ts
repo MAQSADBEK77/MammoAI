@@ -407,6 +407,17 @@ const uz = {
       pineapple: "ananas",
       watermelon: "tarvuz",
     },
+    albumTitle: "Homiladorlik albomi",
+    albumSubtitle: "Qorin/chaqaloq rasmingizni yuklang — har hafta uchun chiroyli xotira",
+    albumAddButton: "Rasm qo'shish",
+    albumUploading: "Yuklanmoqda…",
+    albumEmpty: "Hali rasm yo'q — birinchisini qo'shing",
+    albumWeekBadge: (week: number) => `${week}-hafta`,
+    albumNoWeek: "Hafta belgilanmagan",
+    albumDeleteConfirm: "Bu rasmni o'chirmoqchimisiz?",
+    albumUploadError: "Rasm yuklashda xatolik yuz berdi",
+    albumNoteLabel: "Izoh (ixtiyoriy)",
+    albumNotePlaceholder: "Masalan: bugun birinchi tepkini his qildim…",
   },
 
   checklist: {

@@ -127,6 +127,21 @@ export interface PregnancyVisitLog {
   createdAt: string;
 }
 
+/** Homiladorlik albomi — foydalanuvchi o'zi yuklagan qorin/chaqaloq rasmi,
+ * haftaga bog'langan. `photoUrl` — bizning o'z serverimizdagi proksi yo'l
+ * (`/api/pregnancy/album/:id/photo`), rasmning o'zi Vercel Blob'da (private) —
+ * shuning uchun har doim sessiya orqali autentifikatsiyadan o'tadi, hech qachon
+ * ommaviy/taxmin qilib topiladigan URL emas. Bezakli "frame" rasmga
+ * PISHIRILMAGAN — UI'da chizib ko'rsatiladi (dizayn o'zgarsa qayta yuklash
+ * shart emas). */
+export interface PregnancyAlbumPhoto {
+  id: string;
+  pregnancyWeek: number | null;
+  photoUrl: string;
+  note: string | null;
+  createdAt: string;
+}
+
 // "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi qayd etadigan tezkor-jurnal
 // (yurak urishi, qon bosimi, vazn, harorat). E'TIBOR: bu tibbiy asbob/sensordan
 // emas, foydalanuvchi qo'lda kiritgan qiymat — shuning uchun UI'da har doim

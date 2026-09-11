@@ -29,6 +29,7 @@ import type {
   PartnerStatusResponse,
   PeriodAttitude,
   PregnancyProfile,
+  PregnancyAlbumPhoto,
   PregnancyVisitLog,
   PregnancyVitalLog,
   VitalType,
@@ -125,7 +126,13 @@ export interface OnboardingPayload {
 function createRequest(config: ApiClientConfig) {
   return async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const headers = new Headers(init.headers);
-    headers.set("Content-Type", "application/json");
+    // FormData (fayl yuklash, masalan homiladorlik albomi) uchun Content-Type
+    // QO'LDA o'rnatilmasligi kerak — brauzer/RN o'zi to'g'ri "multipart/
+    // form-data; boundary=..." qo'yishi shart, aks holda server body'ni
+    // parse qila olmaydi.
+    if (!(init.body instanceof FormData)) {
+      headers.set("Content-Type", "application/json");
+    }
 
     if (config.getAuthToken) {
       const token = await config.getAuthToken();
@@ -222,6 +229,13 @@ export function createApiClient(config: ApiClientConfig) {
       logKick: () => request<PregnancyResponse>("/api/pregnancy/kicks", { method: "POST" }),
       logVital: (payload: { type: VitalType; value: string; recordedAt?: string }) =>
         request<PregnancyResponse>("/api/pregnancy/vitals", { method: "POST", body: JSON.stringify(payload) }),
+      album: {
+        list: () => request<{ photos: PregnancyAlbumPhoto[] }>("/api/pregnancy/album"),
+        /** Chaqiruvchi (platform-specific UI) o'zi FormData quradi — "photo"
+         * (fayl), ixtiyoriy "pregnancyWeek"/"note" maydonlari bilan. */
+        upload: (form: FormData) => request<{ photo: PregnancyAlbumPhoto }>("/api/pregnancy/album", { method: "POST", body: form }),
+        remove: (id: string) => request<{ ok: true }>(`/api/pregnancy/album/${id}`, { method: "DELETE" }),
+      },
     },
     checklist: {
       list: () => request<ChecklistResponse>("/api/checklist"),
