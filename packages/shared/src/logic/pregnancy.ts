@@ -83,6 +83,39 @@ export function getMilestoneForWeek(week: number): WeeklyMilestone {
   );
 }
 
+// Haftalik o'lcham uchun AYLANTIRISH MUMKIN 3D model (foydalanuvchi so'rovi:
+// "3D rasmlarni qo'yish"). Haqiqiy tibbiy-realistik embrion/fetus 3D modellari
+// tekshirildi — deyarli hammasi pullik ekan (Sketchfab/CGTrader/TurboSquid
+// Store), bepul topilmadi. Foydalanuvchi bilan kelishilgan holda "yumshoq/
+// mehribon" uslubga o'tildi — mevalar bilan o'lcham taqqoslash (aksariyat
+// homiladorlik ilovalarida mashhur naqsh), poly.pizza'dan CC-BY 3.0 litsenziyali
+// (attribution: "Poly by Google") past-poligonli GLB modellar — ilova
+// `apps/web/public/models/fruit/<key>.glb`'da joylashgan, WEB'da to'g'ridan-
+// to'g'ri, MOBIL'da shu manzilga WebView orqali murojaat qilinadi (ikkalasi
+// ham bitta joyni ishlatadi, dublikat yo'q). Har bir icon uchun ANIQ mos meva
+// topilmagan joylarda (masalan "lime"/"corn"/"eggplant") o'lcham/shakl
+// jihatdan eng yaqin muqobil ishlatilgan (11 ta yuklangan modeldan).
+export const PREGNANCY_3D_MODEL_BY_ICON: Record<string, string> = {
+  seed: "blueberries",
+  raspberry: "grapes",
+  lime: "orange",
+  lemon: "lemon",
+  avocado: "avocado",
+  corn: "banana",
+  eggplant: "papaya",
+  coconut: "coconut",
+  pineapple: "pineapple",
+  watermelon: "watermelon",
+};
+
+/** GLB fayl nomi (kengaytmasiz) — platforma o'zi to'liq URL quradi: web
+ * nisbiy `/models/fruit/<key>.glb` (o'z origin'idan, local dev'da ham
+ * ishlaydi), mobil esa doim `https://mammo.uz/models/fruit/<key>.glb`
+ * (statik fayllar faqat web ilovada joylashgan, alohida CDN yo'q). */
+export function get3dModelKeyForIcon(icon: string): string {
+  return PREGNANCY_3D_MODEL_BY_ICON[icon] ?? "lemon";
+}
+
 // "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi kiritgan qiymatning keng tarqalgan
 // "normal" oralig'ida ekanini yumshoq ko'rsatish (tibbiy tashxis EMAS, faqat umumiy
 // yo'naltiruvchi belgi — App.pdf'dagi xavf-testi bilan bir xil ehtiyotkorlik).
