@@ -370,6 +370,13 @@ export function ProgressBar({ value, tone = "primary" }: { value: number; tone?:
   );
 }
 
+/** Flow/kayfiyat/simptom kabi belgilarni tanlash tugmasi — foydalanuvchi
+ * ko'rsatgan referens uslubga mos: doira ichida emoji, yorliq esa doiradan
+ * TASHQARIDA, pastda (Figma/Flo referens — filangan to'rtburchak chip emas,
+ * "doira ikonka + tagida matn" naqshi). Tanlangan holatda faqat doira fon
+ * rangi o'zgaradi, matn rangi ham primary'ga o'tadi — yorliqning o'zi fon
+ * olmaydi (mobile: components/ui.tsx'dagi bir xil komponent bilan bir xil
+ * naqsh). */
 export function IconChip({
   label,
   icon,
@@ -386,27 +393,39 @@ export function IconChip({
       value={label}
       selected={!!active}
       onChange={() => onClick?.()}
+      disableRipple
       sx={{
         flexDirection: "column",
         gap: 0.5,
-        borderRadius: "18px !important",
+        borderRadius: "16px !important",
         border: "none",
-        px: 1.5,
-        py: 1.5,
+        px: 0.5,
+        py: 0.5,
         textTransform: "none",
         fontSize: "0.75rem",
         fontWeight: 500,
         color: "var(--color-text-secondary)",
-        backgroundColor: "var(--color-surface-muted)",
+        backgroundColor: "transparent",
+        "&:hover": { backgroundColor: "color-mix(in srgb, var(--color-text-secondary) 8%, transparent)" },
         "&.Mui-selected": {
-          backgroundColor: "var(--color-primary)",
-          color: "#fff",
-          boxShadow: "0 6px 16px color-mix(in srgb, var(--color-primary) 30%, transparent)",
-          "&:hover": { backgroundColor: "var(--color-primary)" },
+          backgroundColor: "transparent",
+          color: "var(--color-primary)",
+          "&:hover": { backgroundColor: "color-mix(in srgb, var(--color-primary) 8%, transparent)" },
         },
       }}
     >
-      {icon && <span className="text-xl leading-none">{icon}</span>}
+      {icon && (
+        <span
+          className="flex items-center justify-center rounded-full text-xl leading-none"
+          style={{
+            width: 56,
+            height: 56,
+            backgroundColor: active ? "var(--color-primary)" : "var(--color-surface-muted)",
+          }}
+        >
+          {icon}
+        </span>
+      )}
       <span className="text-center leading-tight">{label}</span>
     </ToggleButton>
   );

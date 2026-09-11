@@ -389,6 +389,12 @@ export function ProgressBar({ value, tone = "primary" }: { value: number; tone?:
   );
 }
 
+/** Flow/kayfiyat/simptom kabi belgilarni tanlash tugmasi — foydalanuvchi
+ * ko'rsatgan referens uslubga mos: doira ichida emoji, yorliq esa doiradan
+ * TASHQARIDA, pastda (Figma/Flo referens — filangan to'rtburchak chip emas,
+ * "doira ikonka + tagida matn" naqshi). Tanlangan holatda faqat doira fon
+ * rangi o'zgaradi, matn rangi ham primary'ga o'tadi — yorliqning o'zi fon
+ * olmaydi. */
 export function IconChip({
   label,
   icon,
@@ -401,12 +407,15 @@ export function IconChip({
   onPress?: () => void;
 }) {
   return (
-    <TouchableRipple onPress={onPress} borderless style={{ borderRadius: 18, flex: 1 }}>
-      <View
-        className={clsx("min-h-[48px] flex-1 items-center justify-center gap-1 rounded-[18px] px-3 py-3", active ? "bg-primary" : "bg-surface-muted")}
-      >
-        {icon}
-        <Text className={clsx("text-center text-xs font-medium leading-tight", active ? "text-white" : "text-text-secondary")}>{label}</Text>
+    <TouchableRipple onPress={onPress} borderless style={{ borderRadius: 16, flex: 1 }}>
+      <View className="items-center gap-1.5 px-1 py-1">
+        <View className={clsx("h-14 w-14 items-center justify-center rounded-full", active ? "bg-primary" : "bg-surface-muted")}>{icon}</View>
+        <Text
+          className={clsx("text-center text-xs font-medium leading-tight", active ? "text-primary" : "text-text-secondary")}
+          numberOfLines={2}
+        >
+          {label}
+        </Text>
       </View>
     </TouchableRipple>
   );
