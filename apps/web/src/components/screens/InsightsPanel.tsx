@@ -131,6 +131,16 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
         </Card>
       )}
 
+      {summary.predictionAccuracy && (
+        <Card className="flex flex-col gap-1.5">
+          <p className="text-sm font-bold text-text-primary">{dict.chat.predictionAccuracyTitle}</p>
+          <p className="text-2xl font-extrabold text-text-primary">
+            {dict.chat.predictionAccuracySummary(summary.predictionAccuracy.avgErrorDays, summary.predictionAccuracy.within2DaysPct)}
+          </p>
+          <p className="text-xs text-text-muted">{dict.chat.predictionAccuracyHint}</p>
+        </Card>
+      )}
+
       {summary.cycleLengths.length > 0 && (
         <Card className="flex flex-col gap-3">
           <p className="text-sm font-bold text-text-primary">{dict.chat.cycleLengthChartTitle}</p>
@@ -170,6 +180,25 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
                 periodDays={p.periodDaysCount}
                 otherDays={p.otherDaysCount}
               />
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {summary.moodPhaseBreakdown.length > 0 && (
+        <Card className="flex flex-col gap-3">
+          <p className="text-sm font-bold text-text-primary">{dict.chat.moodPhaseChartTitle}</p>
+          <div className="flex items-center gap-4 text-[11px] font-semibold text-text-secondary">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-primary" /> {dict.chat.symptomPhasePeriodLabel}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-secondary/50" /> {dict.chat.symptomPhaseOtherLabel}
+            </span>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {summary.moodPhaseBreakdown.map((p) => (
+              <PhaseBreakdownRow key={p.mood} label={dict.cycle.moods[p.mood]} periodDays={p.periodDaysCount} otherDays={p.otherDaysCount} />
             ))}
           </div>
         </Card>

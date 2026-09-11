@@ -115,6 +115,16 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
         </Card>
       )}
 
+      {summary.predictionAccuracy && (
+        <Card className="gap-1.5">
+          <Text className="text-sm font-bold text-text-primary">{dict.chat.predictionAccuracyTitle}</Text>
+          <Text className="text-2xl font-extrabold text-text-primary">
+            {dict.chat.predictionAccuracySummary(summary.predictionAccuracy.avgErrorDays, summary.predictionAccuracy.within2DaysPct)}
+          </Text>
+          <Text className="text-xs text-text-muted">{dict.chat.predictionAccuracyHint}</Text>
+        </Card>
+      )}
+
       {summary.cycleLengths.length > 0 && (
         <Card className="gap-3">
           <Text className="text-sm font-bold text-text-primary">{dict.chat.cycleLengthChartTitle}</Text>
@@ -156,6 +166,27 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
                 periodDays={p.periodDaysCount}
                 otherDays={p.otherDaysCount}
               />
+            ))}
+          </View>
+        </Card>
+      )}
+
+      {summary.moodPhaseBreakdown.length > 0 && (
+        <Card className="gap-3">
+          <Text className="text-sm font-bold text-text-primary">{dict.chat.moodPhaseChartTitle}</Text>
+          <View className="flex-row items-center gap-4">
+            <View className="flex-row items-center gap-1.5">
+              <View className="h-2 w-2 rounded-full bg-primary" />
+              <Text className="text-[11px] font-semibold text-text-secondary">{dict.chat.symptomPhasePeriodLabel}</Text>
+            </View>
+            <View className="flex-row items-center gap-1.5">
+              <View className="h-2 w-2 rounded-full bg-secondary/50" />
+              <Text className="text-[11px] font-semibold text-text-secondary">{dict.chat.symptomPhaseOtherLabel}</Text>
+            </View>
+          </View>
+          <View className="gap-2.5">
+            {summary.moodPhaseBreakdown.map((p) => (
+              <PhaseBreakdownRow key={p.mood} label={dict.cycle.moods[p.mood]} periodDays={p.periodDaysCount} otherDays={p.otherDaysCount} />
             ))}
           </View>
         </Card>

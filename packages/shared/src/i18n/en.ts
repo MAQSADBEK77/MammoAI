@@ -642,6 +642,11 @@ const en: Dictionary = {
     symptomPhaseChartTitle: "When symptoms show up",
     symptomPhasePeriodLabel: "During period days",
     symptomPhaseOtherLabel: "Other days",
+    moodPhaseChartTitle: "When mood changes",
+    predictionAccuracyTitle: "Prediction accuracy",
+    predictionAccuracySummary: (avgError: number, within2Pct: number) =>
+      `${avgError}-day average error · ${within2Pct}% of the time within ±2 days`,
+    predictionAccuracyHint: "Calculated by testing past cycles retroactively — a real number, not a marketing claim.",
   },
 
   reminders: {

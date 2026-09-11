@@ -16,8 +16,10 @@ import type {
   InsightsSummary,
   Mood,
   MoodDistributionPoint,
+  MoodPhaseBreakdown,
   PainDaysPoint,
   PeriodLengthPoint,
+  PredictionAccuracy,
   RegularityScore,
   Symptom,
   SymptomFrequencyPoint,
@@ -31,9 +33,17 @@ const MIN_LOGS_FOR_DATA = 14;
 const REGULARITY_TREND_MIN_CYCLES = 4; // shundan kam bo'lsa yo'nalish haqida gapirish shoshqaloqlik bo'lardi
 const REGULARITY_TREND_THRESHOLD_DAYS = 2; // yarim-yarim o'rtachalar farqi shuncha kundan katta bo'lsagina yo'nalish e'lon qilinadi
 const PAIN_SYMPTOMS: Symptom[] = ["cramps", "back_pain", "headache"];
+const PREDICTION_BACKTEST_WINDOW = 6; // predictCycle/deriveAdaptiveCycleSettings'dagi ADAPTIVE_MAX_CYCLES bilan bir xil
+const PREDICTION_MIN_CYCLES = 4; // shundan kam o'tgan sikl bo'lsa, backtest ishonchli emas
 
 function daysBetween(a: string, b: string): number {
   return Math.round((new Date(`${b}T00:00:00Z`).getTime() - new Date(`${a}T00:00:00Z`).getTime()) / 86400000);
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 function monthsAgoStr(months: number): string {
@@ -121,6 +131,53 @@ function computeSymptomPhaseBreakdown(logs: CycleLog[], months: number): Symptom
     .sort((a, b) => b.periodDaysCount + b.otherDaysCount - (a.periodDaysCount + a.otherDaysCount));
 }
 
+/** symptomPhaseBreakdown bilan bir xil g'oya, kayfiyat uchun — "chuqurroq
+ * Statistika" so'roviga ko'ra qo'shildi. */
+function computeMoodPhaseBreakdown(logs: CycleLog[], months: number): MoodPhaseBreakdown[] {
+  const cutoff = monthsAgoStr(months);
+  const counts = new Map<Mood, { periodDaysCount: number; otherDaysCount: number }>();
+  for (const log of logs) {
+    if (log.date < cutoff || !log.mood) continue;
+    const entry = counts.get(log.mood) ?? { periodDaysCount: 0, otherDaysCount: 0 };
+    if (log.flow) entry.periodDaysCount++;
+    else entry.otherDaysCount++;
+    counts.set(log.mood, entry);
+  }
+  return [...counts.entries()]
+    .map(([mood, c]) => ({ mood, ...c }))
+    .sort((a, b) => b.periodDaysCount + b.otherDaysCount - (a.periodDaysCount + a.otherDaysCount));
+}
+
+/** Bashorat algoritmini ORQAGA QARAB sinaydi ("backtest") — har bir o'tgan
+ * sikl uchun, FAQAT o'sha paytda mavjud bo'lgan tarixdan (keyingi ma'lumot
+ * "kelajakdan qarab aldab" ishlatilmaydi) qancha kun deb bashorat qilingan
+ * bo'lardi, haqiqiy boshlanish sanasi bilan solishtiriladi. "Chuqurroq
+ * Statistika" so'roviga ko'ra — sikl algoritmidagi 2026-09-11 tuzatishlaridan
+ * keyin foydalanuvchiga shaffof, haqiqiy aniqlik raqamini ko'rsatish uchun. */
+function computePredictionAccuracy(logs: CycleLog[]): PredictionAccuracy | null {
+  const starts = detectPeriodStarts(logs);
+  if (starts.length < PREDICTION_MIN_CYCLES) return null;
+
+  const errors: number[] = [];
+  for (let i = PREDICTION_MIN_CYCLES - 1; i < starts.length; i++) {
+    // MUHIM: faqat i'DAN OLDINGI gap'lar (j < i) — starts[i]ni bashorat qilish
+    // uchun starts[i]ning o'ziga olib keladigan gap ISHLATILMASLIGI kerak,
+    // aks holda "kelajakdan qarab aldash" (data leakage) bo'lardi.
+    const priorGaps: number[] = [];
+    for (let j = 1; j < i; j++) priorGaps.push(daysBetween(starts[j - 1], starts[j]));
+    if (priorGaps.length === 0) continue;
+    const recentGaps = priorGaps.slice(-PREDICTION_BACKTEST_WINDOW);
+    const avgGap = recentGaps.reduce((sum, g) => sum + g, 0) / recentGaps.length;
+    const predictedDate = addDays(starts[i - 1], Math.round(avgGap));
+    errors.push(Math.abs(daysBetween(predictedDate, starts[i])));
+  }
+  if (errors.length === 0) return null;
+
+  const avgErrorDays = Math.round((errors.reduce((sum, e) => sum + e, 0) / errors.length) * 10) / 10;
+  const within2Days = errors.filter((e) => e <= 2).length;
+  return { avgErrorDays, within2DaysPct: Math.round((within2Days / errors.length) * 100), cyclesEvaluated: errors.length };
+}
+
 function computeMoodDistribution(logs: CycleLog[], months: number): MoodDistributionPoint[] {
   const cutoff = monthsAgoStr(months);
   const counts = new Map<Mood, number>();
@@ -159,7 +216,9 @@ export async function getInsightsSummary(userId: string): Promise<InsightsSummar
     regularity: computeRegularityScore(logs),
     symptomFrequency: computeSymptomFrequency(logs, FREQUENCY_WINDOW_MONTHS),
     symptomPhaseBreakdown: computeSymptomPhaseBreakdown(logs, FREQUENCY_WINDOW_MONTHS),
+    moodPhaseBreakdown: computeMoodPhaseBreakdown(logs, FREQUENCY_WINDOW_MONTHS),
     moodDistribution: computeMoodDistribution(logs, FREQUENCY_WINDOW_MONTHS),
     painDaysPerCycle: computePainDaysPerCycle(logs, CYCLE_LENGTH_LIMIT),
+    predictionAccuracy: computePredictionAccuracy(logs),
   };
 }

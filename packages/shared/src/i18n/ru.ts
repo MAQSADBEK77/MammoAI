@@ -640,6 +640,11 @@ const ru: Dictionary = {
     symptomPhaseChartTitle: "Когда проявляются симптомы",
     symptomPhasePeriodLabel: "В дни менструации",
     symptomPhaseOtherLabel: "В другие дни",
+    moodPhaseChartTitle: "Когда меняется настроение",
+    predictionAccuracyTitle: "Точность прогноза",
+    predictionAccuracySummary: (avgError: number, within2Pct: number) =>
+      `В среднем ошибка ${avgError} дн. · ${within2Pct}% случаев точно в пределах ±2 дн.`,
+    predictionAccuracyHint: "Рассчитано ретроспективно по прошлым циклам — реальная цифра, не реклама.",
   },
 
   reminders: {

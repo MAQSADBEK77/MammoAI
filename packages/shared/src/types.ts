@@ -403,6 +403,27 @@ export interface SymptomPhaseBreakdown {
   otherDaysCount: number;
 }
 
+/** Kayfiyat sikl davomida QACHON ko'proq uchrashi — symptomPhaseBreakdown
+ * bilan bir xil g'oya, faqat kayfiyat uchun ("hayz paytida ko'proq charchoq
+ * his qilasizmi, yoki sikl davomida doimiymi"). */
+export interface MoodPhaseBreakdown {
+  mood: Mood;
+  periodDaysCount: number;
+  otherDaysCount: number;
+}
+
+/** Bashorat algoritmi tarixda qanchalik aniq bo'lganini orqaga qarab (backtest)
+ * o'lchaydi — har bir o'tgan sikl uchun "o'sha vaqtda mavjud bo'lgan tarixdan
+ * qancha kun deb bashorat qilingan bo'lardi" bilan haqiqiy boshlanish sanasi
+ * solishtiriladi. Shaffoflik uchun: foydalanuvchiga "bizning bashoratimiz
+ * o'rtacha N kun xato bilan ishlaydi" ko'rsatish — reklama emas, haqiqiy raqam. */
+export interface PredictionAccuracy {
+  avgErrorDays: number;
+  /** Bashorat haqiqiy sanadan ±2 kun ichida to'g'ri chiqqan sikllar foizi. */
+  within2DaysPct: number;
+  cyclesEvaluated: number;
+}
+
 export interface InsightsSummary {
   /** Kamida 2 ta aniqlangan sikl yoki 14 ta log bo'lmasa false — bo'sh holat. */
   hasEnoughData: boolean;
@@ -411,8 +432,11 @@ export interface InsightsSummary {
   regularity: RegularityScore | null;
   symptomFrequency: SymptomFrequencyPoint[];
   symptomPhaseBreakdown: SymptomPhaseBreakdown[];
+  moodPhaseBreakdown: MoodPhaseBreakdown[];
   moodDistribution: MoodDistributionPoint[];
   painDaysPerCycle: PainDaysPoint[];
+  /** `null` — hali 4 tadan kam o'tgan sikl bor, ishonchli baholash uchun yetarli emas. */
+  predictionAccuracy: PredictionAccuracy | null;
 }
 
 // ---------------------------------------------------------------------------
