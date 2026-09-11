@@ -80,6 +80,23 @@ npm run dev:web              # backend fon rejimida ishlab tursin
 npm run dev:mobile           # Expo dev server, QR kodni Expo Go bilan skanerlang
 ```
 
+## Test
+
+Sof mantiq (sikl bashorati, homiladorlik hisob-kitoblari, xavf-testi, checklist
+qoidalari va h.k. — `packages/shared/src/logic/`) uchun avtomatlashtirilgan unit
+testlar (Vitest). Har push/PR'da GitHub Actions orqali avtomatik ishga tushadi
+(`.github/workflows/ci.yml`) — typecheck + test + lint.
+
+```bash
+npm test                                    # barcha logic testlarni ishga tushiradi
+npm run test:watch --workspace=packages/shared   # rivojlantirish paytida (watch rejimi)
+```
+
+Backend route'lar/DB — bu testlarga kirmaydi (haqiqiy Postgres talab qiladi);
+ular loyihaning o'zida o'rnatilgan naqsh bo'yicha to'g'ridan-to'g'ri (ehtiyotkorlik
+bilan, `is_test_account` yozuvlari bilan, keyin tozalab) real bazaga qarshi qo'lda
+tekshiriladi.
+
 ## Muhim eslatmalar (keyingi bosqich uchun)
 
 - **Klinikalar** (`apps/web/scripts/seed.ts`) — namunaviy/demo yozuvlar, haqiqiy
