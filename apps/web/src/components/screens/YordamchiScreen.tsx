@@ -35,7 +35,7 @@ export function YordamchiScreen() {
   const [patterns, setPatterns] = useState<SymptomPattern[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const [insights, setInsights] = useState<{ summary: InsightsSummary; patterns: SymptomPattern[] } | null>(null);
+  const [insights, setInsights] = useState<{ summary: InsightsSummary; patterns: SymptomPattern[]; aiInsight: string | null } | null>(null);
 
   const [feedbackPromptDismissed, setFeedbackPromptDismissed] = useState(false);
   const [feedbackAnswered, setFeedbackAnswered] = useState(false);
@@ -156,7 +156,7 @@ export function YordamchiScreen() {
 
       {tab === "stats" ? (
         insights ? (
-          <InsightsPanel summary={insights.summary} patterns={insights.patterns} />
+          <InsightsPanel summary={insights.summary} patterns={insights.patterns} aiInsight={insights.aiInsight} />
         ) : (
           <div className="flex flex-1 items-center justify-center">
             <LoadingSpinner label={dict.common.loading} />

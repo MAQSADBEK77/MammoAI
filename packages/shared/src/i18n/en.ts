@@ -647,6 +647,7 @@ const en: Dictionary = {
     predictionAccuracySummary: (avgError: number, within2Pct: number) =>
       `${avgError}-day average error · ${within2Pct}% of the time within ±2 days`,
     predictionAccuracyHint: "Calculated by testing past cycles retroactively — a real number, not a marketing claim.",
+    aiInsightTitle: "AI analysis",
   },
 
   reminders: {

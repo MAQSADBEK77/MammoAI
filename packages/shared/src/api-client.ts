@@ -323,7 +323,7 @@ export function createApiClient(config: ApiClientConfig) {
     insights: {
       /** AI Yordamchi ekranining "Statistika" segmenti — sikl uzunligi
        * tarixi, simptom chastotasi, kayfiyat taqsimoti, og'riqli kunlar/sikl. */
-      get: () => request<{ summary: InsightsSummary; patterns: SymptomPattern[] }>("/api/insights"),
+      get: () => request<{ summary: InsightsSummary; patterns: SymptomPattern[]; aiInsight: string | null }>("/api/insights"),
     },
     feedback: {
       submit: (payload: FeedbackSubmission) =>

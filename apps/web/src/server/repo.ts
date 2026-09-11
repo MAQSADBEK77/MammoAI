@@ -644,6 +644,15 @@ export async function listCycleLogs(userId: string, limit = 180): Promise<CycleL
   return rows.map(cycleLogFromRow);
 }
 
+/** Faqat AI'ning proaktiv tahlilini QAYTA generatsiya qilish kerakmi-yo'qmi
+ * tekshirish uchun (server/active-insights.ts) — to'liq ro'yxatni o'qishdan
+ * ancha arzon. */
+export async function countCycleLogs(userId: string): Promise<number> {
+  await ensureSchema();
+  const [{ count }] = (await sql`SELECT count(*)::int as count FROM cycle_logs WHERE user_id = ${userId}`) as unknown as { count: number }[];
+  return count;
+}
+
 export async function upsertCycleLog(
   userId: string,
   log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms">
@@ -915,6 +924,39 @@ export async function listSubscriptionsAdmin(params: { search?: string; limit?: 
       active: r.expires_at === null || new Date(r.expires_at) > new Date(),
     })),
   };
+}
+
+// ---------------------------------------------------------------------------
+// AI'ning proaktiv ("faol") tahlili — izoh uchun db.ts#ai_active_insights'ga
+// qarang. Bitta userga bitta joriy yozuv (cycle_settings kabi singleton naqsh).
+// ---------------------------------------------------------------------------
+
+export interface ActiveInsight {
+  content: string;
+  logsCountAtGeneration: number;
+  generatedAt: string;
+}
+
+export async function getActiveInsight(userId: string): Promise<ActiveInsight | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT content, logs_count_at_generation, generated_at FROM ai_active_insights WHERE user_id = ${userId}`) as unknown as {
+    content: string;
+    logs_count_at_generation: number;
+    generated_at: string;
+  }[];
+  const r = rows[0];
+  return r ? { content: r.content, logsCountAtGeneration: r.logs_count_at_generation, generatedAt: r.generated_at } : null;
+}
+
+export async function saveActiveInsight(userId: string, input: { content: string; logsCountAtGeneration: number }): Promise<void> {
+  await ensureSchema();
+  const generatedAt = now();
+  await sql`
+    INSERT INTO ai_active_insights (user_id, content, logs_count_at_generation, generated_at)
+    VALUES (${userId}, ${input.content}, ${input.logsCountAtGeneration}, ${generatedAt})
+    ON CONFLICT (user_id) DO UPDATE SET
+      content = EXCLUDED.content, logs_count_at_generation = EXCLUDED.logs_count_at_generation, generated_at = EXCLUDED.generated_at
+  `;
 }
 
 export async function getKicksToday(userId: string): Promise<number> {

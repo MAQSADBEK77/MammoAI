@@ -1,7 +1,10 @@
 import { ScrollView, View, Text } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import type { InsightsSummary, SymptomPattern } from "@mammoai/shared";
+import { gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 
 function formatShortDate(dateStr: string): string {
   const [, month, day] = dateStr.split("-");
@@ -75,7 +78,17 @@ function PhaseBreakdownRow({ label, periodDays, otherDays }: { label: string; pe
   );
 }
 
-export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary; patterns: SymptomPattern[] }) {
+export function InsightsPanel({
+  summary,
+  patterns,
+  aiInsight,
+}: {
+  summary: InsightsSummary;
+  patterns: SymptomPattern[];
+  /** AI'ning proaktiv tahlili (server/active-insights.ts) — `null` bo'lsa
+   * shunchaki ko'rsatilmaydi, qolgan Statistika baribir to'liq ishlaydi. */
+  aiInsight?: string | null;
+}) {
   const { dict } = useI18n();
 
   if (!summary.hasEnoughData) {
@@ -87,6 +100,16 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
 
   return (
     <ScrollView className="flex-1" contentContainerClassName="gap-4 px-4 pb-4">
+      {aiInsight && (
+        <LinearGradient colors={gradients.cycle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 28, padding: 20, gap: 6 }}>
+          <View className="flex-row items-center gap-1.5">
+            <Emoji e="✨" size={14} />
+            <Text className="text-sm font-bold text-white">{dict.chat.aiInsightTitle}</Text>
+          </View>
+          <Text className="text-sm leading-relaxed text-white/90">{aiInsight}</Text>
+        </LinearGradient>
+      )}
+
       {patterns.length > 0 && (
         <View className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
           <Text className="text-sm font-bold text-warning">{dict.chat.patternBannerTitle}</Text>

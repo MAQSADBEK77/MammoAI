@@ -5,6 +5,7 @@ import clsx from "clsx";
 import type { InsightsSummary, SymptomPattern } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui";
+import { Emoji } from "@/components/Emoji";
 
 function formatShortDate(dateStr: string): string {
   const [, month, day] = dateStr.split("-");
@@ -89,7 +90,18 @@ function PhaseBreakdownRow({ label, periodDays, otherDays }: { label: string; pe
   );
 }
 
-export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary; patterns: SymptomPattern[] }) {
+export function InsightsPanel({
+  summary,
+  patterns,
+  aiInsight,
+}: {
+  summary: InsightsSummary;
+  patterns: SymptomPattern[];
+  /** AI'ning proaktiv tahlili (server/active-insights.ts) — `null` bo'lsa
+   * (hali yetarli ma'lumot yo'q yoki Gemini vaqtincha ishlamadi) shunchaki
+   * ko'rsatilmaydi, qolgan Statistika baribir to'liq ishlaydi. */
+  aiInsight?: string | null;
+}) {
   const { dict } = useI18n();
 
   if (!summary.hasEnoughData) {
@@ -101,6 +113,16 @@ export function InsightsPanel({ summary, patterns }: { summary: InsightsSummary;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+      {aiInsight && (
+        <Card className="bg-aurora-cycle flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <Emoji e="✨" size={14} />
+            <p className="text-sm font-bold text-white">{dict.chat.aiInsightTitle}</p>
+          </div>
+          <p className="text-sm leading-relaxed text-white/90">{aiInsight}</p>
+        </Card>
+      )}
+
       {patterns.length > 0 && (
         <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
           <p className="text-sm font-bold text-warning">{dict.chat.patternBannerTitle}</p>

@@ -159,7 +159,11 @@ interface GeminiChatResponse {
 // ichida "system" rolli birinchi element beriladi, javob esa
 // `choices[0].message.content`'da qaytadi (Anthropic'ning `content[].text`
 // blok-massividan farqli).
-async function callGemini(systemPrompt: string, history: { role: "user" | "assistant"; content: string }[]): Promise<string> {
+// export qilingan — server/active-insights.ts (roadmap: "AI chatbotni to'liq
+// faol tahlil qiladigan qilish") xuddi shu Gemini chaqiruv infratuzilmasini
+// qayta ishlatadi, faqat boshqa system prompt/kontekst bilan (chat javobi
+// emas — foydalanuvchi so'ramasdan proaktiv tahlil).
+export async function callGemini(systemPrompt: string, history: { role: "user" | "assistant"; content: string }[]): Promise<string> {
   const apiKey = await getGeminiApiKey();
   if (!apiKey) throw new ApiError(500, "AI yordamchi hali sozlanmagan — admin panelda Gemini API kalitini qo'shing");
 

@@ -645,6 +645,7 @@ const ru: Dictionary = {
     predictionAccuracySummary: (avgError: number, within2Pct: number) =>
       `В среднем ошибка ${avgError} дн. · ${within2Pct}% случаев точно в пределах ±2 дн.`,
     predictionAccuracyHint: "Рассчитано ретроспективно по прошлым циклам — реальная цифра, не реклама.",
+    aiInsightTitle: "Анализ ИИ",
   },
 
   reminders: {

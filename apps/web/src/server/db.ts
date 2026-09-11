@@ -295,6 +295,20 @@ async function initSchema() {
         updated_at TEXT NOT NULL
       )
     `,
+    // AI Yordamchining PROAKTIV tahlili ("faol tahlil" — roadmap) — foydalanuvchi
+    // biror narsa so'ramasdan, Statistika ochilganda Gemini hisoblangan
+    // ko'rsatkichlarni (sikl uzunligi, simptomlar, kayfiyat va h.k.) tabiiy
+    // tilda talqin qiladi. Har chaqiruvda QAYTA generatsiya qilinmaydi (API
+    // xarajati) — `logs_count_at_generation` orqali faqat yangi log qo'shilgan
+    // yoki 7 kundan ko'p vaqt o'tgan bo'lsa yangilanadi (server/active-insights.ts).
+    sql`
+      CREATE TABLE IF NOT EXISTS ai_active_insights (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        logs_count_at_generation INTEGER NOT NULL,
+        generated_at TEXT NOT NULL
+      )
+    `,
     sql`
       CREATE TABLE IF NOT EXISTS checklist_items (
         id TEXT PRIMARY KEY,

@@ -653,6 +653,7 @@ const uz = {
     predictionAccuracySummary: (avgError: number, within2Pct: number) =>
       `O'rtacha ${avgError} kun xato · ${within2Pct}% holatda ±2 kun ichida to'g'ri chiqqan`,
     predictionAccuracyHint: `So'nggi sikllarni orqaga qarab tekshirib hisoblangan — reklama emas, haqiqiy raqam.`,
+    aiInsightTitle: "AI tahlili",
   },
 
   // Kunlik eslatmalar — bot orqali (server/daily-reminders.ts) va ilova ichidagi
