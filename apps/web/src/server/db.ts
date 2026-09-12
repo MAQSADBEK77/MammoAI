@@ -556,6 +556,17 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // CONTENT-001: homiladorlikning har bir haftasi uchun admin-tahrirlanadigan
+    // matn — boshqa jadvallarga bog'liq emas, istalgan bosqichda yaratilishi mumkin.
+    sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_week_content (
+        week INTEGER PRIMARY KEY,
+        size_label TEXT NOT NULL,
+        baby_development TEXT NOT NULL,
+        mother_changes TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `,
     // Audit-jurnal — kim, qachon, nima qilgani. `admin_label`ning o'zi
     // saqlanadi (FK emas) — shunda admin hisobi keyinchalik o'chirilsa ham
     // tarixiy yozuv "kim qilgani"ni yo'qotmaydi.

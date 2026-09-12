@@ -40,6 +40,7 @@ import type {
   PregnancyProfile,
   PregnancyVisitLog,
   PregnancyVitalLog,
+  PregnancyWeekContent,
   VitalType,
   ReferralAction,
   RiskQuizAnswers,
@@ -2547,6 +2548,61 @@ export async function countOpenCommunityReports(): Promise<number> {
   await ensureSchema();
   const [{ count }] = (await sql`SELECT count(*)::int as count FROM community_reports WHERE status = 'open'`) as unknown as { count: number }[];
   return count;
+}
+
+// --- CONTENT-001: homiladorlik haftalik kontenti ----------------------------
+
+function pregnancyWeekContentFromRow(row: {
+  week: number;
+  size_label: string;
+  baby_development: string;
+  mother_changes: string;
+  updated_at: string;
+}): PregnancyWeekContent {
+  return { week: row.week, sizeLabel: row.size_label, babyDevelopment: row.baby_development, motherChanges: row.mother_changes, updatedAt: row.updated_at };
+}
+
+/** `null` — hali admin panel/seed orqali kiritilmagan (chaqiruvchi eski
+ * statik meva-qiyoslash tizimiga tushadi — PregnancyWeekImage/getMilestoneForWeek). */
+export async function getPregnancyWeekContent(week: number): Promise<PregnancyWeekContent | null> {
+  await ensureSchema();
+  const clamped = Math.min(42, Math.max(1, Math.round(week)));
+  const rows = (await sql`SELECT * FROM pregnancy_week_content WHERE week = ${clamped}`) as unknown as {
+    week: number;
+    size_label: string;
+    baby_development: string;
+    mother_changes: string;
+    updated_at: string;
+  }[];
+  return rows[0] ? pregnancyWeekContentFromRow(rows[0]) : null;
+}
+
+export async function listPregnancyWeekContent(): Promise<PregnancyWeekContent[]> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM pregnancy_week_content ORDER BY week ASC`) as unknown as {
+    week: number;
+    size_label: string;
+    baby_development: string;
+    mother_changes: string;
+    updated_at: string;
+  }[];
+  return rows.map(pregnancyWeekContentFromRow);
+}
+
+export async function upsertPregnancyWeekContent(
+  week: number,
+  patch: { sizeLabel: string; babyDevelopment: string; motherChanges: string }
+): Promise<PregnancyWeekContent> {
+  await ensureSchema();
+  const updatedAt = now();
+  await sql`
+    INSERT INTO pregnancy_week_content (week, size_label, baby_development, mother_changes, updated_at)
+    VALUES (${week}, ${patch.sizeLabel}, ${patch.babyDevelopment}, ${patch.motherChanges}, ${updatedAt})
+    ON CONFLICT (week) DO UPDATE SET
+      size_label = EXCLUDED.size_label, baby_development = EXCLUDED.baby_development,
+      mother_changes = EXCLUDED.mother_changes, updated_at = EXCLUDED.updated_at
+  `;
+  return { week, ...patch, updatedAt };
 }
 
 // --- ADMIN-001: alohida admin hisoblari va audit-jurnal ---------------------

@@ -34,6 +34,7 @@ import type {
   PregnancyAlbumPhoto,
   PregnancyVisitLog,
   PregnancyVitalLog,
+  PregnancyWeekContent,
   VitalType,
   ReferralAction,
   RiskQuizAnswers,
@@ -241,6 +242,8 @@ export function createApiClient(config: ApiClientConfig) {
       logKick: () => request<PregnancyResponse>("/api/pregnancy/kicks", { method: "POST" }),
       logVital: (payload: { type: VitalType; value: string; recordedAt?: string }) =>
         request<PregnancyResponse>("/api/pregnancy/vitals", { method: "POST", body: JSON.stringify(payload) }),
+      // CONTENT-001 — admin panel orqali tahrirlanadigan haftalik kontent.
+      weekContent: (week: number) => request<{ content: PregnancyWeekContent | null }>(`/api/pregnancy/week-content/${week}`),
       album: {
         list: () => request<{ photos: PregnancyAlbumPhoto[] }>("/api/pregnancy/album"),
         /** Chaqiruvchi (platform-specific UI) o'zi FormData quradi — "photo"

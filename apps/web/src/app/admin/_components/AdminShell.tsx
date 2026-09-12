@@ -20,6 +20,7 @@ const NAV_ITEMS: { href: string; label: string; icon: string; exact?: boolean }[
   { href: "/admin/feedback", label: "Fikr-mulohazalar", icon: "💬" },
   { href: "/admin/clinics", label: "Klinikalar", icon: "🏥" },
   { href: "/admin/articles", label: "Maqolalar", icon: "📰" },
+  { href: "/admin/pregnancy-content", label: "Homiladorlik kontenti", icon: "🤰" },
   { href: "/admin/illustrations", label: "Illyustratsiyalar", icon: "🖼️" },
   { href: "/admin/admins", label: "Adminlar", icon: "🛡️" },
 ];

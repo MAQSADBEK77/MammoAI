@@ -427,6 +427,8 @@ const ru: Dictionary = {
     articlesCardTitle: "Интересные статьи",
     completedWeekLabel: "Прошло недель",
     remainingWeekLabel: "Осталось недель",
+    babyDevelopmentTitle: "Ваш малыш на этой неделе",
+    motherChangesTitle: "Что происходит с вами",
     vitalsTitle: "Показатели здоровья",
     vitalsDisclaimer: "Значения вводите вы сами — не с медицинского прибора. Это не медицинский диагноз.",
     vitalsLabels: {

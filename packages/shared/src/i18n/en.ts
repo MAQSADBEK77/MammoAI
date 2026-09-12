@@ -429,6 +429,8 @@ const en: Dictionary = {
     articlesCardTitle: "Interesting articles",
     completedWeekLabel: "Weeks completed",
     remainingWeekLabel: "Weeks remaining",
+    babyDevelopmentTitle: "Your baby this week",
+    motherChangesTitle: "What's changing for you",
     vitalsTitle: "Health metrics",
     vitalsDisclaimer: "Values you enter yourself — not from a medical device. This is not a medical diagnosis.",
     vitalsLabels: {

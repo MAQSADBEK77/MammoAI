@@ -12,6 +12,7 @@
 import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "../src/server/db";
 import { getCycleSettings, upsertCycleLog, deleteCycleLog, listCycleLogs, updateCycleSettings } from "../src/server/repo";
+import { getPregnancyWeekContent, upsertPregnancyWeekContent } from "../src/server/repo";
 import {
   createCommunityPost,
   createCommunityReport,
@@ -165,6 +166,19 @@ async function main() {
   } finally {
     if (createdAdminId) await deleteAdminUser(createdAdminId);
   }
+
+  // --- CONTENT-001: homiladorlik haftalik kontenti ---
+  const emptyContent = await getPregnancyWeekContent(17);
+  assert(emptyContent === null, "CONTENT-001: hali kiritilmagan hafta uchun null qaytadi (chaqiruvchi eski tizimga tushadi)");
+
+  await upsertPregnancyWeekContent(17, { sizeLabel: "nok", babyDevelopment: "Test rivojlanish matni", motherChanges: "Test o'zgarish matni" });
+  const filled = await getPregnancyWeekContent(17);
+  assert(filled?.sizeLabel === "nok", "kiritilgandan keyin to'g'ri qiymat qaytadi");
+
+  await upsertPregnancyWeekContent(17, { sizeLabel: "olma", babyDevelopment: "Yangilangan matn", motherChanges: "Yangilangan matn 2" });
+  const updated = await getPregnancyWeekContent(17);
+  assert(updated?.sizeLabel === "olma", "qayta yozish (upsert) eskisini yangilaydi, ikkinchi qator yaratmaydi");
+  await sql`DELETE FROM pregnancy_week_content WHERE week = 17`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {

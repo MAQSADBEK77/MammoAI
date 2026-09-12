@@ -151,6 +151,19 @@ export interface PregnancyAlbumPhoto {
   createdAt: string;
 }
 
+// CONTENT-001 — homiladorlikning har bir haftasi uchun admin-tahrirlanadigan
+// matn (chaqaloq rivojlanishi + onaning o'zgarishlari). Ilgari faqat statik
+// meva-o'lcham qiyoslash bor edi (i18n'da qattiq yozilgan) — endi bazadan,
+// admin panel orqali, ilova relizisiz yangilanadi.
+export interface PregnancyWeekContent {
+  week: number; // 1-42
+  sizeLabel: string;
+  /** Tashxis/tibbiy maslahat EMAS — umumiy, ma'lumot beruvchi tavsif. */
+  babyDevelopment: string;
+  motherChanges: string;
+  updatedAt: string;
+}
+
 // "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi qayd etadigan tezkor-jurnal
 // (yurak urishi, qon bosimi, vazn, harorat). E'TIBOR: bu tibbiy asbob/sensordan
 // emas, foydalanuvchi qo'lda kiritgan qiymat — shuning uchun UI'da har doim

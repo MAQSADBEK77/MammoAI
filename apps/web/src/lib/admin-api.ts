@@ -15,6 +15,7 @@ import type {
   Language,
   LibraryIllustration,
   OnboardingProfile,
+  PregnancyWeekContent,
   Subscription,
   TractionSummary,
   User,
@@ -134,6 +135,12 @@ export const adminApi = {
   },
   auditLog: {
     list: () => request<{ entries: AdminAuditEntry[] }>("/audit-log"),
+  },
+  // CONTENT-001 — homiladorlik haftalik kontenti.
+  pregnancyContent: {
+    list: () => request<{ weeks: PregnancyWeekContent[] }>("/pregnancy-content"),
+    update: (week: number, patch: { sizeLabel: string; babyDevelopment: string; motherChanges: string }) =>
+      request<{ content: PregnancyWeekContent }>(`/pregnancy-content/${week}`, { method: "PATCH", body: JSON.stringify(patch) }),
   },
   users: {
     list: (params: { search?: string; limit?: number; offset?: number }) => {

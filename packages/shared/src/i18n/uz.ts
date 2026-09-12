@@ -443,6 +443,9 @@ const uz = {
     articlesCardTitle: "Qiziqarli maqolalar",
     completedWeekLabel: "O'tgan hafta",
     remainingWeekLabel: "Qolgan hafta",
+    // CONTENT-001 — admin panel orqali tahrirlanadigan haftalik kontent sarlavhalari.
+    babyDevelopmentTitle: "Chaqalog'ingiz bu hafta",
+    motherChangesTitle: "Sizda nima o'zgaradi",
     vitalsTitle: "Sog'liq ko'rsatkichlari",
     vitalsDisclaimer: "O'zingiz kiritgan qiymatlar — tibbiy asbobdan emas. Bu tibbiy tashxis emas.",
     vitalsLabels: {

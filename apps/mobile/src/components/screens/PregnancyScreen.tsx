@@ -3,7 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import type { PregnancyResponse, VitalType } from "@mammoai/shared";
+import type { PregnancyResponse, PregnancyWeekContent, VitalType } from "@mammoai/shared";
 import { getMilestoneForWeek, getVitalTone, gradients, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -36,6 +36,8 @@ export function PregnancyScreen() {
   const { resolve: resolveIllustration } = useIllustrations();
   const { onboardingProfile } = useSession();
   const [data, setData] = useState<PregnancyResponse | null>(null);
+  // CONTENT-001 — web'dagi PregnancyScreen.tsx bilan bir xil, izoh o'sha yerda.
+  const [weekContent, setWeekContent] = useState<PregnancyWeekContent | null>(null);
   const [lmpInput, setLmpInput] = useState("");
   const [addingVisit, setAddingVisit] = useState(false);
   const [visitLabel, setVisitLabel] = useState("");
@@ -65,6 +67,15 @@ export function PregnancyScreen() {
   useEffect(() => {
     api.pregnancy.get().then(setData);
   }, []);
+
+  const currentWeek = data?.status?.currentWeek;
+  useEffect(() => {
+    if (!currentWeek) return;
+    api.pregnancy
+      .weekContent(currentWeek)
+      .then((res) => setWeekContent(res.content))
+      .catch(() => setWeekContent(null));
+  }, [currentWeek]);
 
   if (!data) {
     return <LoadingSpinner label={dict.common.loading} />;
@@ -106,7 +117,7 @@ export function PregnancyScreen() {
 
   const { status } = data;
   const milestone = getMilestoneForWeek(status.currentWeek);
-  const sizeLabel = dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
+  const sizeLabel = weekContent?.sizeLabel ?? dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
   const progressPct = (status.currentWeek / 40) * 100;
   const weeksRemaining = Math.max(0, 40 - status.currentWeek);
   const greeting = (
@@ -149,6 +160,20 @@ export function PregnancyScreen() {
           </View>
         </LinearGradient>
       </Animated.View>
+
+      {/* CONTENT-001 — web'dagi PregnancyScreen.tsx bilan bir xil, izoh o'sha yerda. */}
+      {weekContent && (
+        <View className="gap-3">
+          <Card className="gap-1.5">
+            <Text className="text-sm font-bold text-text-primary">{dict.pregnancy.babyDevelopmentTitle}</Text>
+            <Text className="text-sm text-text-secondary">{weekContent.babyDevelopment}</Text>
+          </Card>
+          <Card className="gap-1.5">
+            <Text className="text-sm font-bold text-text-primary">{dict.pregnancy.motherChangesTitle}</Text>
+            <Text className="text-sm text-text-secondary">{weekContent.motherChanges}</Text>
+          </Card>
+        </View>
+      )}
 
       <Animated.View entering={FadeInUp.duration(450).delay(80)} className="gap-2">
         <Text className="text-base font-bold text-text-primary">{dict.pregnancy.vitalsTitle}</Text>

@@ -21,6 +21,7 @@ const ACTION_LABELS: Record<string, string> = {
   user_deleted: "Foydalanuvchini o'chirdi",
   admin_created: "Yangi admin qo'shdi",
   admin_deleted: "Adminni o'chirdi",
+  pregnancy_content_updated: "Homiladorlik kontentini yangiladi",
 };
 
 function formatDateTime(value: string): string {

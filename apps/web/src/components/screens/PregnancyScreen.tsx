@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
-import type { PregnancyResponse, VitalType } from "@mammoai/shared";
+import type { PregnancyResponse, PregnancyWeekContent, VitalType } from "@mammoai/shared";
 import { getMilestoneForWeek, getVitalTone, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -29,6 +29,10 @@ export function PregnancyScreen() {
   const { resolve } = useIllustrations();
   const { onboardingProfile } = useSession();
   const [data, setData] = useState<PregnancyResponse | null>(null);
+  // CONTENT-001: admin panel orqali tahrirlanadigan haftalik kontent —
+  // topilmasa (hali kiritilmagan hafta) eski statik meva-qiyoslash tizimiga
+  // (getMilestoneForWeek) tushiladi.
+  const [weekContent, setWeekContent] = useState<PregnancyWeekContent | null>(null);
   const [lmpInput, setLmpInput] = useState("");
   const [addingVisit, setAddingVisit] = useState(false);
   const [visitLabel, setVisitLabel] = useState("");
@@ -43,6 +47,15 @@ export function PregnancyScreen() {
   useEffect(() => {
     api.pregnancy.get().then(setData);
   }, []);
+
+  const currentWeek = data?.status?.currentWeek;
+  useEffect(() => {
+    if (!currentWeek) return;
+    api.pregnancy
+      .weekContent(currentWeek)
+      .then((res) => setWeekContent(res.content))
+      .catch(() => setWeekContent(null));
+  }, [currentWeek]);
 
   async function saveVital() {
     if (!loggingVital || !vitalInput.trim()) return;
@@ -99,7 +112,9 @@ export function PregnancyScreen() {
 
   const { status } = data;
   const milestone = getMilestoneForWeek(status.currentWeek);
-  const sizeLabel = dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
+  // CONTENT-001: admin-tahrirlangan qiymat ustunlik qiladi, topilmasa eski
+  // statik i18n ro'yxatiga tushiladi (izoh — weekContent state e'lonida).
+  const sizeLabel = weekContent?.sizeLabel ?? dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
   const progressPct = (status.currentWeek / 40) * 100;
   const weeksRemaining = Math.max(0, 40 - status.currentWeek);
   const greeting = (
@@ -139,6 +154,22 @@ export function PregnancyScreen() {
           <p className="text-sm font-semibold text-white">{dict.pregnancy.daysRemaining(status.daysRemaining)}</p>
         </div>
       </div>
+
+      {/* CONTENT-001: admin panel orqali tahrirlanadigan haftalik matn —
+          tashxis emas, faqat umumiy ma'lumot (izoh — vitalsDisclaimer
+          bilan bir xil ehtiyotkorlik). Kiritilmagan hafta uchun ko'rsatilmaydi. */}
+      {weekContent && (
+        <div className="space-y-3">
+          <Card className="space-y-1.5">
+            <p className="text-sm font-bold text-text-primary">{dict.pregnancy.babyDevelopmentTitle}</p>
+            <p className="text-sm text-text-secondary">{weekContent.babyDevelopment}</p>
+          </Card>
+          <Card className="space-y-1.5">
+            <p className="text-sm font-bold text-text-primary">{dict.pregnancy.motherChangesTitle}</p>
+            <p className="text-sm text-text-secondary">{weekContent.motherChanges}</p>
+          </Card>
+        </div>
+      )}
 
       {/* Sog'liq ko'rsatkichlari — foydalanuvchi o'zi qayd etadigan tezkor-jurnal. */}
       <div className="space-y-2">

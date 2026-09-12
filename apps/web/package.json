@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "seed": "node --env-file=.env.local --import tsx scripts/seed.ts",
+    "seed:pregnancy-content": "node --env-file=.env.local --import tsx scripts/seed-pregnancy-content.ts",
     "test:integration": "node --import tsx scripts/integration-test.ts"
   },
   "dependencies": {
