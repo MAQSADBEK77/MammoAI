@@ -437,6 +437,7 @@ const uz = {
     albumNoWeek: "Hafta belgilanmagan",
     albumDeleteConfirm: "Bu rasmni o'chirmoqchimisiz?",
     albumUploadError: "Rasm yuklashda xatolik yuz berdi",
+    albumInvalidFormat: "Faqat rasm fayllari (JPEG/PNG) qabul qilinadi — video yuklab bo'lmaydi",
     albumNoteLabel: "Izoh (ixtiyoriy)",
     albumNotePlaceholder: "Masalan: bugun birinchi tepkini his qildim…",
   },

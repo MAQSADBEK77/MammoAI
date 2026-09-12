@@ -432,6 +432,7 @@ const en: Dictionary = {
     albumNoWeek: "Week not set",
     albumDeleteConfirm: "Delete this photo?",
     albumUploadError: "Something went wrong uploading the photo",
+    albumInvalidFormat: "Only image files (JPEG/PNG) are accepted — video can't be uploaded",
     albumNoteLabel: "Note (optional)",
     albumNotePlaceholder: "E.g. felt the first kick today…",
   },

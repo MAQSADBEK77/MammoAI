@@ -38,8 +38,18 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
 
   function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setPendingFile(file);
     e.target.value = ""; // xuddi shu faylni qayta tanlasa ham onChange ishga tushishi uchun
+    if (!file) return;
+    // `accept` atributi ba'zi qurilmalarda (ayniqsa mobil brauzer) video
+    // tanlashni to'liq bloklamaydi — foydalanuvchi buni real qurilmada
+    // ko'rsatgan (video tanlab, keyin serverda noaniq xatolik ko'rgan).
+    // Shuning uchun bu yerda ANIQ tekshiruv — darhol, tarmoqqa yubormasdan.
+    if (!file.type.startsWith("image/")) {
+      setError(dict.pregnancy.albumInvalidFormat);
+      return;
+    }
+    setError(null);
+    setPendingFile(file);
   }
 
   async function confirmUpload() {
@@ -75,7 +85,7 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
         <p className="text-xs text-text-secondary">{dict.pregnancy.albumSubtitle}</p>
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFileSelected} />
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileSelected} />
 
       {pendingFile ? (
         <div className="flex flex-col gap-3 rounded-2xl bg-surface-muted p-4">

@@ -6,7 +6,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import clsx from "clsx";
 import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
+import { goalToDefaultCommunityTag } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
@@ -50,11 +52,15 @@ export default function CommunityScreen() {
   const themeColors = useThemeColors();
   const accent = useModeAccent();
   const { openDrawer } = useDrawer();
+  const { onboardingProfile } = useSession();
 
   const [stats, setStats] = useState<CommunityStats | null>(null);
   const [posts, setPosts] = useState<CommunityPost[] | null>(null);
   const [total, setTotal] = useState(0);
-  const [tag, setTag] = useState<CommunityTag | "all">("all");
+  // Web'dagi jamiyat/page.tsx bilan bir xil — izoh o'sha yerda.
+  const [tag, setTag] = useState<CommunityTag | "all">(() =>
+    onboardingProfile ? goalToDefaultCommunityTag(onboardingProfile.primaryGoal) : "all"
+  );
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [notifications, setNotifications] = useState<AppNotification[] | null>(null);

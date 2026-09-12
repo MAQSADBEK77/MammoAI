@@ -3,6 +3,7 @@ import {
   ADULT_GOALS,
   MINOR_GOALS,
   goalToLandingTab,
+  goalToDefaultCommunityTag,
   isPregnancyGoal,
   needsHeightWeight,
   needsCycleInfo,
@@ -122,5 +123,32 @@ describe("getModeAccentColors", () => {
   it("cycle va boshqa maqsadlar — standart pushti rang beradi", () => {
     expect(getModeAccentColors("cycle").primary).toBe("#F43F7F");
     expect(getModeAccentColors("wellbeing").primary).toBe("#F43F7F");
+  });
+});
+
+describe("goalToDefaultCommunityTag", () => {
+  it("pregnancy — 'pregnancy' tegiga", () => {
+    expect(goalToDefaultCommunityTag("pregnancy")).toBe("pregnancy");
+  });
+
+  it("planning_pregnancy — 'pregnancy'GA EMAS, 'general'ga (regression: foydalanuvchi buni tasdiqlangan xato deb ko'rsatgan)", () => {
+    expect(goalToDefaultCommunityTag("planning_pregnancy")).toBe("general");
+    expect(goalToDefaultCommunityTag("planning_pregnancy")).not.toBe("pregnancy");
+  });
+
+  it("cycle-oilaviy maqsadlar (cycle/wellbeing/understand_body/skin) — 'cycle' tegiga", () => {
+    expect(goalToDefaultCommunityTag("cycle")).toBe("cycle");
+    expect(goalToDefaultCommunityTag("wellbeing")).toBe("cycle");
+    expect(goalToDefaultCommunityTag("understand_body")).toBe("cycle");
+    expect(goalToDefaultCommunityTag("skin")).toBe("cycle");
+  });
+
+  it("checkups — 'checkups' tegiga", () => {
+    expect(goalToDefaultCommunityTag("checkups")).toBe("checkups");
+  });
+
+  it("mos aniq tegi yo'qlar (partner_tracking, perimenopause) — 'general'ga", () => {
+    expect(goalToDefaultCommunityTag("partner_tracking")).toBe("general");
+    expect(goalToDefaultCommunityTag("perimenopause")).toBe("general");
   });
 });

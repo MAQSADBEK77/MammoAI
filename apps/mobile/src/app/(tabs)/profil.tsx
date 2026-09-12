@@ -114,13 +114,15 @@ export default function ProfileScreen() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
+      // PregnancyAlbum.tsx'dagi bilan bir xil tuzatish — izoh o'sha yerda.
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.6,
       base64: true,
     });
     if (result.canceled || !result.assets?.[0]?.base64) return;
+    if (result.assets[0].type && result.assets[0].type !== "image") return;
     await save({ avatarUrl: `data:image/jpeg;base64,${result.assets[0].base64}` });
   }
 

@@ -430,6 +430,7 @@ const ru: Dictionary = {
     albumNoWeek: "Неделя не указана",
     albumDeleteConfirm: "Удалить это фото?",
     albumUploadError: "Ошибка при загрузке фото",
+    albumInvalidFormat: "Принимаются только изображения (JPEG/PNG) — видео загрузить нельзя",
     albumNoteLabel: "Заметка (необязательно)",
     albumNotePlaceholder: "Например: сегодня впервые почувствовала шевеление…",
   },

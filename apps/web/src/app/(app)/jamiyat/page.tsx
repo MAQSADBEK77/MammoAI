@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
+import { goalToDefaultCommunityTag } from "@mammoai/shared";
 import { NotificationsNoneOutlined as Bell, Favorite, FavoriteBorderOutlined, ChatBubbleOutlineOutlined as MessageCircle, ShareOutlined as Share2, DeleteOutlined as Trash2, PersonOutlined as UserRound, VisibilityOffOutlined as VenetianMask } from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@/components/ui";
 
@@ -40,11 +42,16 @@ function FilterChip({ active, label, onClick }: { active: boolean; label: string
 
 export default function CommunityPage() {
   const { dict } = useI18n();
+  const { onboardingProfile } = useSession();
 
   const [stats, setStats] = useState<CommunityStats | null>(null);
   const [posts, setPosts] = useState<CommunityPost[] | null>(null);
   const [total, setTotal] = useState(0);
-  const [tag, setTag] = useState<CommunityTag | "all">("all");
+  // Foydalanuvchi so'roviga ko'ra: ochilganda avval o'z rejimiga mos guruh
+  // ko'rinadi ("Barchasi" emas) — keyin o'zi xohlagancha o'zgartira oladi.
+  const [tag, setTag] = useState<CommunityTag | "all">(() =>
+    onboardingProfile ? goalToDefaultCommunityTag(onboardingProfile.primaryGoal) : "all"
+  );
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [notifications, setNotifications] = useState<AppNotification[] | null>(null);

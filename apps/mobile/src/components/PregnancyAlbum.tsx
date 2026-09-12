@@ -30,8 +30,18 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
   async function pick() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: "images", allowsEditing: true, aspect: [1, 1], quality: 0.6 });
+    // `mediaTypes: "images"` (yakka satr) ba'zi qurilmalarda video tanlashni
+    // to'liq bloklamagani real qurilmada ko'rsatildi — massiv shakli
+    // (`["images"]`) yangi tavsiya etilgan API, ishonchliroq. Shundan keyin
+    // ham (masalan "Browse files" orqali) video tanlansa, natijadagi
+    // `asset.type`ni ANIQ tekshiramiz — server bilan bog'lanmasdan darhol rad etamiz.
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.6 });
     if (result.canceled || !result.assets?.[0]?.uri) return;
+    if (result.assets[0].type && result.assets[0].type !== "image") {
+      setError(dict.pregnancy.albumInvalidFormat);
+      return;
+    }
+    setError(null);
     setPending({ uri: result.assets[0].uri });
   }
 

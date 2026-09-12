@@ -568,13 +568,25 @@ export function WheelPicker<T>({
   const accent = useModeAccent();
 
   // Tashqi `value` o'zgarganda (masalan oy almashganda kun ustuni qayta
-  // hisoblanganda) ham mos qatorga scroll qilamiz.
+  // hisoblanganda) ham mos qatorga scroll qilamiz. `contentOffset` (pastda,
+  // ScrollView'ning o'zida) BOSHLANG'ICH holatni to'g'ridan-to'g'ri, hech
+  // qanday vaqt/animatsiya poygasisiz o'rnatadi — bu effekt FAQAT keyingi
+  // (mount'dan KEYINGI) o'zgarishlar uchun. Ilgari faqat mount'da
+  // `requestAnimationFrame` bilan scroll qilinardi — ScrollView hali
+  // joylashuvni (layout) tugatmagan qurilmalarda bu chaqiruv content
+  // hajmi "0"ga yaqin bo'lgan paytda ishlab, scroll YUQORIGA (eng birinchi
+  // qator — masalan 1930-yillar) qisqartirilib qolar edi (haqiqiy bug,
+  // real qurilma skrinshotida tasdiqlangan).
+  const isFirstRender = useRef(true);
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     if (index === -1) return;
-    const id = requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: index * WHEEL_ITEM_HEIGHT, animated: false }));
-    return () => cancelAnimationFrame(id);
+    scrollRef.current?.scrollTo({ y: index * WHEEL_ITEM_HEIGHT, animated: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.length]);
+  }, [options.length, value]);
 
   function handleMomentumEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
     const idx = Math.min(Math.max(Math.round(e.nativeEvent.contentOffset.y / WHEEL_ITEM_HEIGHT), 0), options.length - 1);
@@ -607,6 +619,9 @@ export function WheelPicker<T>({
         snapToInterval={WHEEL_ITEM_HEIGHT}
         decelerationRate="fast"
         onMomentumScrollEnd={handleMomentumEnd}
+        // Boshlang'ich holatni layout/animatsiya poygasisiz to'g'ridan-to'g'ri
+        // o'rnatadi (yuqoridagi izohga qarang — asosiy tuzatish shu).
+        contentOffset={{ x: 0, y: index === -1 ? 0 : index * WHEEL_ITEM_HEIGHT }}
       >
         <View style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
         {options.map((opt, i) => (

@@ -2,7 +2,7 @@
 // yo'naltirilishi kerakligini aniqlaydi. Platformaga xos yo'l emas, mavhum
 // "tab" qaytaradi — web/mobil har biri o'z yo'liga map qiladi.
 
-import type { Goal } from "../types";
+import type { CommunityTag, Goal } from "../types";
 
 export type LandingTab = "cycle" | "pregnancy" | "checkups" | "partner";
 
@@ -72,4 +72,20 @@ export function getModeAccentColors(goal: Goal): ModeAccentColors {
     return { primary: "#D97706", primaryDark: "#92400E", primaryLight: "#FDE68A" };
   }
   return { primary: "#F43F7F", primaryDark: "#D62A63", primaryLight: "#FFB3CB" };
+}
+
+/** Jamiyat (community) ekrani ochilganda avval qaysi teg tanlangan holda
+ * ko'rsatilishi — foydalanuvchi so'roviga ko'ra: "o'z rejimiga mos guruh
+ * BIRINCHI ko'rinsin, keyin o'zi o'zgartira olsin" (hammaga "Barchasi"
+ * emas). MUHIM: `planning_pregnancy` ATAYLAB "pregnancy"ga EMAS,
+ * "general"ga tushadi — bu hali homilador emas, tayyorgarlik ko'rayotgan
+ * rejim, alohida community teg yo'q ekan (4 tasi: cycle/pregnancy/
+ * checkups/general), shuning uchun uni "Homiladorlik" tegiga aralashtirib
+ * yubormaslik kerak (foydalanuvchi aynan shu xatoni ko'rsatdi). */
+export function goalToDefaultCommunityTag(goal: Goal): CommunityTag {
+  if (goal === "pregnancy") return "pregnancy";
+  if (goal === "checkups") return "checkups";
+  if (goal === "cycle" || goal === "wellbeing" || goal === "understand_body" || goal === "skin") return "cycle";
+  // planning_pregnancy, partner_tracking, perimenopause — mos aniq teg yo'q.
+  return "general";
 }
