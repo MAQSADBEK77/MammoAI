@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { BloodType, CycleResponse, Goal, Language } from "@mammoai/shared";
+import type { BloodType, BlockedUserEntry, CycleResponse, Goal, Language } from "@mammoai/shared";
 import { BLOOD_TYPES, getModeAccentColors, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -11,7 +11,7 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { AchievementsCard } from "@/components/AchievementsCard";
-import { Switch, Select, MenuItem } from "@mui/material";
+import { Switch, Select, MenuItem, Dialog, DialogTitle, DialogContent } from "@mui/material";
 import clsx from "clsx";
 import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, Brightness6Outlined as ThemeIcon, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen } from "@mui/icons-material";
 
@@ -89,6 +89,12 @@ export default function ProfilePage() {
   const [cycleSettings, setCycleSettings] = useState<CycleResponse["settings"] | null>(null);
   const [actionFlash, setActionFlash] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+
+  // COMM-001: "Bloklangan foydalanuvchilar" — jamiyatda bloklangan hisoblarni
+  // shu yerdan (maxfiylik bilan bir joyda) ko'rib, xohlasa blokdan chiqarish.
+  const [blockedOpen, setBlockedOpen] = useState(false);
+  const [blockedList, setBlockedList] = useState<BlockedUserEntry[] | null>(null);
+  const [unblockingId, setUnblockingId] = useState<string | null>(null);
 
   useEffect(() => {
     api.cycle.get().then((res) => {
@@ -221,6 +227,21 @@ export default function ProfilePage() {
   function flash(message: string) {
     setActionFlash(message);
     setTimeout(() => setActionFlash(null), 2000);
+  }
+
+  function openBlockedList() {
+    setBlockedOpen(true);
+    api.community.blocked.list().then((res) => setBlockedList(res.blocked));
+  }
+
+  async function unblock(userId: string) {
+    setUnblockingId(userId);
+    try {
+      const res = await api.community.blocked.remove(userId);
+      setBlockedList(res.blocked);
+    } finally {
+      setUnblockingId(null);
+    }
   }
 
   async function shareApp() {
@@ -526,6 +547,15 @@ export default function ProfilePage() {
         </Card>
       </Link>
 
+      {/* COMM-001: jamiyatda bloklangan hisoblarni boshqarish. */}
+      <button type="button" onClick={openBlockedList} className="w-full text-left">
+        <Card interactive className="space-y-1">
+          <SettingsRow icon="🚫" label={dict.community.blockedUsersTitle} last>
+            <span className="text-text-muted">›</span>
+          </SettingsRow>
+        </Card>
+      </button>
+
       <Card className="space-y-1">
         <SettingsRow icon="❓" label={dict.profile.helpTitle} last>
           <a href={`tel:${dict.profile.helpPhoneValue.replace(/\s/g, "")}`} className="text-right text-sm font-semibold text-primary-dark">
@@ -601,6 +631,32 @@ export default function ProfilePage() {
           {actionFlash ?? (savedFlash ? dict.profile.savedMessage : dict.common.loading)}
         </p>
       )}
+
+      {/* COMM-001: bloklangan foydalanuvchilar ro'yxati + blokdan chiqarish. */}
+      <Dialog open={blockedOpen} onClose={() => setBlockedOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>{dict.community.blockedUsersTitle}</DialogTitle>
+        <DialogContent className="flex flex-col gap-2 pb-5!">
+          {!blockedList ? (
+            <p className="py-4 text-center text-sm text-text-muted">{dict.common.loading}</p>
+          ) : blockedList.length === 0 ? (
+            <p className="py-4 text-center text-sm text-text-muted">{dict.community.blockedUsersEmpty}</p>
+          ) : (
+            blockedList.map((b) => (
+              <div key={b.userId} className="flex items-center justify-between gap-3 rounded-2xl bg-surface-muted px-4 py-2.5">
+                <span className="text-sm font-medium text-text-primary">{b.name ?? dict.community.blockedAnonymousLabel}</span>
+                <button
+                  type="button"
+                  onClick={() => unblock(b.userId)}
+                  disabled={unblockingId === b.userId}
+                  className="rounded-full px-3 py-1 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
+                >
+                  {dict.community.unblockButton}
+                </button>
+              </div>
+            ))
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

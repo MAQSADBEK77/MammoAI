@@ -328,6 +328,39 @@ export interface CommunityComment {
   createdAt: string;
 }
 
+// COMM-001 — jamiyat moderatsiyasi: shikoyat + bloklash.
+export type CommunityReportTargetType = "post" | "comment";
+export type CommunityReportReason = "spam" | "harassment" | "misinformation" | "medical_emergency" | "other";
+export type CommunityReportStatus = "open" | "resolved" | "dismissed";
+
+/** Admin moderatsiya navbatida ko'rsatiladigan — postning/izohning o'zi bilan
+ * birga (moderator qaror qabul qilishi uchun kontekst kerak). */
+export interface CommunityReportAdmin {
+  id: string;
+  targetType: CommunityReportTargetType;
+  postId: string;
+  commentId: string | null;
+  reason: CommunityReportReason;
+  note: string | null;
+  status: CommunityReportStatus;
+  createdAt: string;
+  reporterName: string | null;
+  /** Shikoyat qilingan matnning o'zi — post yoki izoh, kontekst uchun. */
+  targetBody: string;
+  targetAuthorName: string | null;
+  /** Shikoyat qilingan mazmun hali mavjudmi (o'chirilmaganmi). */
+  targetExists: boolean;
+}
+
+/** Foydalanuvchining o'zi bloklagan hisoblar ro'yxati (profil/jamiyatda
+ * "bloklangan foydalanuvchilar"ni boshqarish uchun). */
+export interface BlockedUserEntry {
+  userId: string;
+  /** Bloklangan payt anonim bo'lgan bo'lsa yoki ismi kiritilmagan bo'lsa `null`. */
+  name: string | null;
+  blockedAt: string;
+}
+
 /** Hamkor bilan haqiqiy (ikki tomonlama) suhbat xabari. */
 export interface PartnerChatMessage {
   id: string;

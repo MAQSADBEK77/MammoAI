@@ -510,6 +510,42 @@ async function initSchema() {
     sql`ALTER TABLE notifications ALTER COLUMN actor_user_id DROP NOT NULL`,
   ]);
 
+  // 2.7-bosqich: COMM-001 (moderatsiya) — ikkalasi ham yuqoridagi
+  // community_posts/community_comments/users allaqachon mavjud bo'lgandan
+  // KEYIN yaratiladi (xuddi notifications kabi — "2.6-bosqich"dagi bug bilan
+  // bir xil sababga ko'ra tartib muhim).
+  await Promise.all([
+    // Shikoyat — post yoki izohga, sabab + ixtiyoriy izoh bilan. Anonim
+    // postlarda ham ishlaydi (moderator postning haqiqiy egasini ko'radi,
+    // hisobot qoldiruvchi buni bilishi shart emas).
+    sql`
+      CREATE TABLE IF NOT EXISTS community_reports (
+        id TEXT PRIMARY KEY,
+        reporter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        target_type TEXT NOT NULL,
+        post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+        comment_id TEXT REFERENCES community_comments(id) ON DELETE CASCADE,
+        reason TEXT NOT NULL,
+        note TEXT,
+        status TEXT NOT NULL DEFAULT 'open',
+        created_at TEXT NOT NULL,
+        resolved_at TEXT
+      )
+    `,
+    // Bloklash — muallifning IDsi orqali (klient hech qachon ID'ni o'zi
+    // ko'rmaydi, "shu postni yozganni bloklash" server tomonda hal qilinadi —
+    // shuning uchun anonim post muallifini ham, ismini bilmasdan, bloklash
+    // mumkin).
+    sql`
+      CREATE TABLE IF NOT EXISTS blocked_users (
+        blocker_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        blocked_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (blocker_id, blocked_id)
+      )
+    `,
+  ]);
+
   // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
   await Promise.all([
     sql`CREATE INDEX IF NOT EXISTS idx_phone_verifications_created ON phone_verifications(created_at)`,
@@ -531,6 +567,8 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id, created_at ASC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback_responses(created_at DESC)`,
     sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_user_id ON users(telegram_user_id) WHERE telegram_user_id IS NOT NULL`,
+    sql`CREATE INDEX IF NOT EXISTS idx_community_reports_status ON community_reports(status, created_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_blocked_users_blocker ON blocked_users(blocker_id)`,
   ]);
 }
 

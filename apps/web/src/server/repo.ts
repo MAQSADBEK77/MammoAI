@@ -12,8 +12,12 @@ import type {
   ChecklistItem,
   ChecklistItemType,
   Clinic,
+  BlockedUserEntry,
   CommunityComment,
   CommunityPost,
+  CommunityReportAdmin,
+  CommunityReportReason,
+  CommunityReportTargetType,
   ChatMessage,
   CommunityStats,
   CommunityTag,
@@ -2232,6 +2236,13 @@ function communityPostFromRow(row: CommunityPostRow, viewerId: string): Communit
   };
 }
 
+/** COMM-001: `blocked_users`ga qarab "NOT IN" sharti — bittasi tag filtriga,
+ * bittasi bloklanganlarni chiqarib tashlashga. Ikkalasi ham `listCommunityPosts`
+ * VA `listCommunityComments`da bir xil, shuning uchun alohida funksiya. */
+function excludeBlockedAuthorsFilter(viewerId: string) {
+  return sql`p.user_id NOT IN (SELECT blocked_id FROM blocked_users WHERE blocker_id = ${viewerId})`;
+}
+
 export async function listCommunityPosts(
   viewerId: string,
   params: { tag?: CommunityTag; limit?: number; offset?: number }
@@ -2239,17 +2250,17 @@ export async function listCommunityPosts(
   await ensureSchema();
   const limit = params.limit ?? 20;
   const offset = params.offset ?? 0;
-  const tagFilter = params.tag ? sql`WHERE p.tag = ${params.tag}` : sql``;
+  const conditions = params.tag ? sql`WHERE p.tag = ${params.tag} AND ${excludeBlockedAuthorsFilter(viewerId)}` : sql`WHERE ${excludeBlockedAuthorsFilter(viewerId)}`;
   const rows = (await sql`
     SELECT p.*, u.name as author_name, u.avatar_url as author_avatar_url,
       EXISTS(SELECT 1 FROM community_post_likes l WHERE l.post_id = p.id AND l.user_id = ${viewerId}) as viewer_liked
     FROM community_posts p
     JOIN users u ON u.id = p.user_id
-    ${tagFilter}
+    ${conditions}
     ORDER BY p.created_at DESC
     LIMIT ${limit} OFFSET ${offset}
   `) as unknown as CommunityPostRow[];
-  const [{ count }] = (await sql`SELECT count(*)::int as count FROM community_posts p ${tagFilter}`) as unknown as { count: number }[];
+  const [{ count }] = (await sql`SELECT count(*)::int as count FROM community_posts p ${conditions}`) as unknown as { count: number }[];
   return { posts: rows.map((row) => communityPostFromRow(row, viewerId)), total: count };
 }
 
@@ -2342,6 +2353,7 @@ export async function listCommunityComments(postId: string, viewerId: string): P
     FROM community_comments c
     JOIN users u ON u.id = c.user_id
     WHERE c.post_id = ${postId}
+      AND c.user_id NOT IN (SELECT blocked_id FROM blocked_users WHERE blocker_id = ${viewerId})
     ORDER BY c.created_at ASC
   `) as unknown as CommunityCommentRow[];
   return rows.map((row) => communityCommentFromRow(row, viewerId));
@@ -2411,6 +2423,130 @@ export async function getCommunityStats(): Promise<CommunityStats> {
     sql`SELECT count(*)::int as count FROM community_posts WHERE (created_at)::timestamptz >= now() - interval '1 day'`,
   ])) as unknown as [{ count: number }[], { count: number }[], { count: number }[]];
   return { totalMembers, totalPosts, postsToday };
+}
+
+// --- COMM-001: shikoyat va bloklash ----------------------------------------
+
+export async function createCommunityReport(
+  reporterId: string,
+  payload: { targetType: CommunityReportTargetType; postId: string; commentId?: string | null; reason: CommunityReportReason; note?: string | null }
+): Promise<void> {
+  await ensureSchema();
+  // Postning mavjudligini tekshiramiz — bo'lmasa 404 (masalan link eskirgan).
+  const postRows = (await sql`SELECT 1 FROM community_posts WHERE id = ${payload.postId}`) as unknown as unknown[];
+  if (postRows.length === 0) throw new ApiError(404, "Post topilmadi");
+  await sql`
+    INSERT INTO community_reports (id, reporter_id, target_type, post_id, comment_id, reason, note, status, created_at)
+    VALUES (${randomUUID()}, ${reporterId}, ${payload.targetType}, ${payload.postId}, ${payload.commentId ?? null}, ${payload.reason}, ${payload.note ?? null}, 'open', ${now()})
+  `;
+}
+
+/** `postId`/`commentId` orqali muallifni SERVER TOMONDA aniqlaydi — klient
+ * hech qachon xom `user_id`ni ko'rmaydi, shuning uchun anonim post muallifini
+ * ham, ismini bilmasdan, bloklash mumkin. O'zini-o'zi bloklashga urinish
+ * jimgina e'tiborsiz qoldiriladi (xato emas — foydalanuvchi buni bila olmaydi). */
+export async function blockCommunityPostAuthor(blockerId: string, postId: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`SELECT user_id FROM community_posts WHERE id = ${postId}`) as unknown as { user_id: string }[];
+  const row = rows[0];
+  if (!row) throw new ApiError(404, "Post topilmadi");
+  if (row.user_id === blockerId) return;
+  await sql`
+    INSERT INTO blocked_users (blocker_id, blocked_id, created_at) VALUES (${blockerId}, ${row.user_id}, ${now()})
+    ON CONFLICT (blocker_id, blocked_id) DO NOTHING
+  `;
+}
+
+export async function blockCommunityCommentAuthor(blockerId: string, commentId: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`SELECT user_id FROM community_comments WHERE id = ${commentId}`) as unknown as { user_id: string }[];
+  const row = rows[0];
+  if (!row) throw new ApiError(404, "Izoh topilmadi");
+  if (row.user_id === blockerId) return;
+  await sql`
+    INSERT INTO blocked_users (blocker_id, blocked_id, created_at) VALUES (${blockerId}, ${row.user_id}, ${now()})
+    ON CONFLICT (blocker_id, blocked_id) DO NOTHING
+  `;
+}
+
+export async function listBlockedUsers(blockerId: string): Promise<BlockedUserEntry[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT b.blocked_id as user_id, b.created_at, u.name
+    FROM blocked_users b
+    JOIN users u ON u.id = b.blocked_id
+    WHERE b.blocker_id = ${blockerId}
+    ORDER BY b.created_at DESC
+  `) as unknown as { user_id: string; created_at: string; name: string | null }[];
+  return rows.map((r) => ({ userId: r.user_id, name: r.name, blockedAt: r.created_at }));
+}
+
+export async function unblockUser(blockerId: string, blockedId: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM blocked_users WHERE blocker_id = ${blockerId} AND blocked_id = ${blockedId}`;
+}
+
+/** Admin moderatsiya navbati — faqat `status = 'open'`. Har bir yozuv shikoyat
+ * qilingan matnning o'zini ham olib keladi (moderator qaror qabul qilishi
+ * uchun postni alohida ochish shart emas). Post/izoh allaqachon o'chirilgan
+ * bo'lishi mumkin (masalan muallif o'zi o'chirgan) — `targetExists: false`. */
+export async function listOpenCommunityReports(limit = 50): Promise<CommunityReportAdmin[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT
+      r.id, r.target_type, r.post_id, r.comment_id, r.reason, r.note, r.status, r.created_at,
+      reporter.name as reporter_name,
+      COALESCE(c.body, p.body) as target_body,
+      COALESCE(c.body IS NOT NULL, p.body IS NOT NULL) as target_exists,
+      COALESCE(cu.name, pu.name) as target_author_name
+    FROM community_reports r
+    JOIN users reporter ON reporter.id = r.reporter_id
+    LEFT JOIN community_posts p ON p.id = r.post_id
+    LEFT JOIN users pu ON pu.id = p.user_id
+    LEFT JOIN community_comments c ON c.id = r.comment_id
+    LEFT JOIN users cu ON cu.id = c.user_id
+    WHERE r.status = 'open'
+    ORDER BY r.created_at ASC
+    LIMIT ${limit}
+  `) as unknown as {
+    id: string;
+    target_type: CommunityReportTargetType;
+    post_id: string;
+    comment_id: string | null;
+    reason: CommunityReportReason;
+    note: string | null;
+    status: "open" | "resolved" | "dismissed";
+    created_at: string;
+    reporter_name: string | null;
+    target_body: string | null;
+    target_exists: boolean;
+    target_author_name: string | null;
+  }[];
+  return rows.map((r) => ({
+    id: r.id,
+    targetType: r.target_type,
+    postId: r.post_id,
+    commentId: r.comment_id,
+    reason: r.reason,
+    note: r.note,
+    status: r.status,
+    createdAt: r.created_at,
+    reporterName: r.reporter_name,
+    targetBody: r.target_body ?? "(o'chirilgan)",
+    targetAuthorName: r.target_author_name,
+    targetExists: r.target_exists,
+  }));
+}
+
+export async function resolveCommunityReport(id: string, status: "resolved" | "dismissed"): Promise<void> {
+  await ensureSchema();
+  await sql`UPDATE community_reports SET status = ${status}, resolved_at = ${now()} WHERE id = ${id}`;
+}
+
+export async function countOpenCommunityReports(): Promise<number> {
+  await ensureSchema();
+  const [{ count }] = (await sql`SELECT count(*)::int as count FROM community_reports WHERE status = 'open'`) as unknown as { count: number }[];
+  return count;
 }
 
 // ---------------------------------------------------------------------------

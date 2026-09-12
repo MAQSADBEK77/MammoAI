@@ -644,6 +644,28 @@ const uz = {
     notificationCommentText: (name: string) => `${name} postingizga izoh qoldirdi`,
     notificationsEmpty: "Hozircha bildirishnoma yo'q",
     markAllReadButton: "Barchasini o'qilgan deb belgilash",
+    // COMM-001 — moderatsiya (shikoyat, bloklash, tibbiy-shoshilinch ogohlantirish).
+    moreOptionsLabel: "Ko'proq",
+    reportButton: "Shikoyat qilish",
+    blockAuthorButton: "Muallifni bloklash",
+    blockAuthorConfirm: "Bu foydalanuvchining barcha postlari/izohlari sizga endi ko'rinmaydi. Davom etasizmi?",
+    blockAuthorSuccess: "Bloklandi — bu foydalanuvchining kontenti endi sizga ko'rinmaydi",
+    reportDialogTitle: "Nima uchun shikoyat qilyapsiz?",
+    reportReasons: {
+      spam: "Spam yoki reklama",
+      harassment: "Haqorat yoki tahdid",
+      misinformation: "Noto'g'ri/zararli ma'lumot",
+      medical_emergency: "Shoshilinch tibbiy holat",
+      other: "Boshqa sabab",
+    },
+    reportNotePlaceholder: "Qo'shimcha izoh (ixtiyoriy)",
+    reportSubmitButton: "Yuborish",
+    reportSuccess: "Shikoyatingiz qabul qilindi — moderatorlar tez orada ko'rib chiqadi",
+    medicalConcernBanner: "⚕️ Bu shoshilinch tibbiy holatga o'xshaydi — iltimos, shifokorga yoki tez tibbiy yordamga murojaat qiling. Jamiyatdagi javoblar tibbiy maslahat emas.",
+    blockedUsersTitle: "Bloklangan foydalanuvchilar",
+    blockedUsersEmpty: "Hozircha hech kimni bloklamagansiz",
+    unblockButton: "Blokdan chiqarish",
+    blockedAnonymousLabel: "Anonim foydalanuvchi",
   },
 
   // Hamkor — kod orqali ikkita akkauntni bog'lash (Figma referens: "Hamkor" bo'limi).

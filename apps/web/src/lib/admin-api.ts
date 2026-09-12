@@ -10,6 +10,7 @@ import type {
   ClinicSpecialty,
   CommunityComment,
   CommunityPost,
+  CommunityReportAdmin,
   IllustrationSlotKey,
   Language,
   LibraryIllustration,
@@ -138,6 +139,12 @@ export const adminApi = {
         delete: (postId: string, commentId: string) =>
           request<{ ok: true }>(`/community/posts/${postId}/comments/${commentId}`, { method: "DELETE" }),
       },
+    },
+    // COMM-001 — moderatsiya navbati.
+    reports: {
+      list: () => request<{ reports: CommunityReportAdmin[] }>("/community/reports"),
+      resolve: (id: string, status: "resolved" | "dismissed") =>
+        request<{ reports: CommunityReportAdmin[] }>(`/community/reports/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
     },
   },
   clinics: {

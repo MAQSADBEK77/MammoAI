@@ -4,9 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Portal, Dialog } from "react-native-paper";
 import clsx from "clsx";
-import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
-import { goalToDefaultCommunityTag } from "@mammoai/shared";
+import type { AppNotification, CommunityComment, CommunityPost, CommunityReportReason, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
+import { detectsMedicalConcern, goalToDefaultCommunityTag } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useModeAccent, useThemeColors } from "@/lib/theme";
@@ -16,6 +17,7 @@ import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@
 
 const TAGS: CommunityTag[] = ["cycle", "pregnancy", "checkups", "general"];
 const PAGE_SIZE = 15;
+const REPORT_REASONS: CommunityReportReason[] = ["spam", "harassment", "misinformation", "medical_emergency", "other"];
 
 function formatRelativeTime(iso: string, dict: Dictionary): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -76,6 +78,13 @@ export default function CommunityScreen() {
 
   const [openComments, setOpenComments] = useState<Record<string, CommunityComment[] | undefined>>({});
   const [commentDraft, setCommentDraft] = useState<Record<string, string>>({});
+
+  // COMM-001 — web'dagi jamiyat/page.tsx bilan bir xil mantiq, izoh o'sha yerda.
+  const [reportTarget, setReportTarget] = useState<{ postId: string; commentId: string | null } | null>(null);
+  const [reportReason, setReportReason] = useState<CommunityReportReason | null>(null);
+  const [reportNote, setReportNote] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportDone, setReportDone] = useState(false);
 
   const loadPosts = useCallback((currentTag: CommunityTag | "all") => {
     setPosts(null);
@@ -211,6 +220,55 @@ export default function CommunityScreen() {
 
   function sharePost(post: CommunityPost) {
     Share.share({ message: `${dict.community.shareAppNameLabel}: ${post.body}` }).catch(() => {});
+  }
+
+  function openReportDialog(postId: string, commentId: string | null) {
+    setReportTarget({ postId, commentId });
+    setReportReason(null);
+    setReportNote("");
+    setReportDone(false);
+  }
+
+  /** Muallifni bloklash — postId/commentId server tomonda haqiqiy muallifga
+   * o'giriladi (anonim postda ham ishlaydi). */
+  function blockAuthor(postId: string, commentId: string | null) {
+    Alert.alert(dict.community.blockAuthorButton, dict.community.blockAuthorConfirm, [
+      { text: dict.common.cancel, style: "cancel" },
+      {
+        text: dict.community.blockAuthorButton,
+        style: "destructive",
+        onPress: async () => {
+          if (commentId) await api.community.blockCommentAuthor(postId, commentId);
+          else await api.community.blockPostAuthor(postId);
+          setOpenComments({});
+          loadPosts(tag);
+          Alert.alert(dict.community.blockAuthorSuccess);
+        },
+      },
+    ]);
+  }
+
+  function openActionsMenu(postId: string, commentId: string | null) {
+    Alert.alert(dict.community.moreOptionsLabel, undefined, [
+      { text: dict.community.reportButton, onPress: () => openReportDialog(postId, commentId) },
+      { text: dict.community.blockAuthorButton, style: "destructive", onPress: () => blockAuthor(postId, commentId) },
+      { text: dict.common.cancel, style: "cancel" },
+    ]);
+  }
+
+  async function submitReport() {
+    if (!reportTarget || !reportReason) return;
+    setReportSubmitting(true);
+    try {
+      if (reportTarget.commentId) {
+        await api.community.reportComment(reportTarget.postId, reportTarget.commentId, { reason: reportReason, note: reportNote.trim() || undefined });
+      } else {
+        await api.community.reportPost(reportTarget.postId, { reason: reportReason, note: reportNote.trim() || undefined });
+      }
+      setReportDone(true);
+    } finally {
+      setReportSubmitting(false);
+    }
   }
 
   if (!posts && !stats) {
@@ -384,10 +442,25 @@ export default function CommunityScreen() {
                         <Text className="text-[11px] text-text-muted">{formatRelativeTime(post.createdAt, dict)}</Text>
                       </View>
                     </View>
-                    <Badge tone="primary">{dict.community.tags[post.tag]}</Badge>
+                    <View className="flex-row items-center gap-1">
+                      <Badge tone="primary">{dict.community.tags[post.tag]}</Badge>
+                      {!post.isOwn && (
+                        <Pressable
+                          onPress={() => openActionsMenu(post.id, null)}
+                          className="h-7 w-7 items-center justify-center rounded-full active:bg-surface-muted"
+                        >
+                          <MaterialCommunityIcons name="dots-vertical" size={18} color={themeColors.textMuted} />
+                        </Pressable>
+                      )}
+                    </View>
                   </View>
 
                   <Text className="text-sm text-text-primary">{post.body}</Text>
+
+                  {/* COMM-001 — web'dagi bilan bir xil, izoh o'sha yerda. */}
+                  {detectsMedicalConcern(post.body) && (
+                    <Text className="rounded-2xl bg-warning/10 px-3 py-2 text-xs font-medium text-warning">{dict.community.medicalConcernBanner}</Text>
+                  )}
 
                   <View className="flex-row items-center gap-1 border-t border-border pt-2">
                     <Pressable onPress={() => toggleLike(post)} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl py-2 active:scale-95">
@@ -439,6 +512,14 @@ export default function CommunityScreen() {
                               <MaterialCommunityIcons name="trash-can-outline" size={13} color={themeColors.textMuted} />
                             </Pressable>
                           )}
+                          {!c.isOwn && (
+                            <Pressable
+                              onPress={() => openActionsMenu(post.id, c.id)}
+                              className="mt-0.5 h-6 w-6 items-center justify-center rounded-lg active:opacity-60"
+                            >
+                              <MaterialCommunityIcons name="dots-vertical" size={14} color={themeColors.textMuted} />
+                            </Pressable>
+                          )}
                         </View>
                       ))}
                       <View className="flex-row items-center gap-2">
@@ -478,6 +559,52 @@ export default function CommunityScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* COMM-001 — web'dagi jamiyat/page.tsx bilan bir xil, izoh o'sha yerda. */}
+      <Portal>
+        <Dialog visible={!!reportTarget} onDismiss={() => setReportTarget(null)} style={{ borderRadius: 24 }}>
+          <Dialog.Title>{dict.community.reportDialogTitle}</Dialog.Title>
+          <Dialog.Content className="gap-3 pb-4">
+            {reportDone ? (
+              <Text className="py-4 text-center text-sm font-medium text-success">{dict.community.reportSuccess}</Text>
+            ) : (
+              <>
+                <View className="gap-1.5">
+                  {REPORT_REASONS.map((r) => (
+                    <Pressable
+                      key={r}
+                      onPress={() => setReportReason(r)}
+                      className={clsx(
+                        "rounded-2xl border-2 px-4 py-2.5 active:scale-[0.98]",
+                        reportReason === r ? "border-primary bg-primary-light/40" : "border-border bg-surface"
+                      )}
+                    >
+                      <Text className={clsx("text-sm font-medium", reportReason === r ? "text-primary-dark" : "text-text-primary")}>
+                        {dict.community.reportReasons[r]}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <TextInput
+                  value={reportNote}
+                  onChangeText={setReportNote}
+                  placeholder={dict.community.reportNotePlaceholder}
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={2}
+                  textAlignVertical="top"
+                  className="min-h-[56px] rounded-2xl border border-border bg-surface px-4 py-2.5 text-base text-text-primary"
+                />
+                <Button onPress={submitReport} disabled={!reportReason || reportSubmitting}>
+                  <Text className="text-sm font-semibold text-white">
+                    {reportSubmitting ? dict.common.loading : dict.community.reportSubmitButton}
+                  </Text>
+                </Button>
+              </>
+            )}
+          </Dialog.Content>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 }

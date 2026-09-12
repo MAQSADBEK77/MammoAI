@@ -8,7 +8,8 @@ import * as ImagePicker from "expo-image-picker";
 import clsx from "clsx";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import type { BloodType, CycleSettings, Goal, Language } from "@mammoai/shared";
+import { Portal, Dialog } from "react-native-paper";
+import type { BlockedUserEntry, BloodType, CycleSettings, Goal, Language } from "@mammoai/shared";
 import { BLOOD_TYPES, getModeAccentColors, colors, gradients, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -67,6 +68,26 @@ export default function ProfileScreen() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [logsCount, setLogsCount] = useState<number | null>(null);
   const [cycleSettings, setCycleSettings] = useState<CycleSettings | null>(null);
+
+  // COMM-001 — web'dagi profil sahifasi bilan bir xil, izoh o'sha yerda.
+  const [blockedOpen, setBlockedOpen] = useState(false);
+  const [blockedList, setBlockedList] = useState<BlockedUserEntry[] | null>(null);
+  const [unblockingId, setUnblockingId] = useState<string | null>(null);
+
+  function openBlockedList() {
+    setBlockedOpen(true);
+    api.community.blocked.list().then((res) => setBlockedList(res.blocked));
+  }
+
+  async function unblock(userId: string) {
+    setUnblockingId(userId);
+    try {
+      const res = await api.community.blocked.remove(userId);
+      setBlockedList(res.blocked);
+    } finally {
+      setUnblockingId(null);
+    }
+  }
 
   useEffect(() => {
     api.cycle.get().then((res) => {
@@ -499,6 +520,15 @@ export default function ProfileScreen() {
           </Card>
         </Pressable>
 
+        {/* COMM-001 — web'dagi profil sahifasi bilan bir xil, izoh o'sha yerda. */}
+        <Pressable className="active:scale-[0.98]" onPress={openBlockedList}>
+          <Card className="gap-1">
+            <SettingsRow icon="🚫" label={dict.community.blockedUsersTitle} last>
+              <Text className="text-text-muted">›</Text>
+            </SettingsRow>
+          </Card>
+        </Pressable>
+
         <Card className="gap-1">
           <SettingsRow icon="❓" label={dict.profile.helpTitle} last>
             <Pressable onPress={() => Linking.openURL(`tel:${dict.profile.helpPhoneValue.replace(/\s/g, "")}`)}>
@@ -555,6 +585,29 @@ export default function ProfileScreen() {
           <ProfileActionButton label={dict.profile.deleteAccountButton} onPress={deleteAccount} disabled={deleting} tone="danger" />
         </View>
       </ScrollView>
+
+      {/* COMM-001 — web'dagi profil sahifasi bilan bir xil, izoh o'sha yerda. */}
+      <Portal>
+        <Dialog visible={blockedOpen} onDismiss={() => setBlockedOpen(false)} style={{ borderRadius: 24 }}>
+          <Dialog.Title>{dict.community.blockedUsersTitle}</Dialog.Title>
+          <Dialog.Content className="gap-2 pb-4">
+            {!blockedList ? (
+              <Text className="py-4 text-center text-sm text-text-muted">{dict.common.loading}</Text>
+            ) : blockedList.length === 0 ? (
+              <Text className="py-4 text-center text-sm text-text-muted">{dict.community.blockedUsersEmpty}</Text>
+            ) : (
+              blockedList.map((b) => (
+                <View key={b.userId} className="flex-row items-center justify-between gap-3 rounded-2xl bg-surface-muted px-4 py-2.5">
+                  <Text className="text-sm font-medium text-text-primary">{b.name ?? dict.community.blockedAnonymousLabel}</Text>
+                  <Pressable onPress={() => unblock(b.userId)} disabled={unblockingId === b.userId} className="rounded-full px-3 py-1 active:opacity-60">
+                    <Text className="text-xs font-semibold text-primary">{dict.community.unblockButton}</Text>
+                  </Pressable>
+                </View>
+              ))
+            )}
+          </Dialog.Content>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 }

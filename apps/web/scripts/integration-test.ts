@@ -12,6 +12,15 @@
 import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "../src/server/db";
 import { getCycleSettings, upsertCycleLog, deleteCycleLog, listCycleLogs, updateCycleSettings } from "../src/server/repo";
+import {
+  createCommunityPost,
+  createCommunityReport,
+  blockCommunityPostAuthor,
+  listCommunityPosts,
+  listOpenCommunityReports,
+  resolveCommunityReport,
+  unblockUser,
+} from "../src/server/repo";
 import { buildCycleResponse } from "../src/server/views";
 
 let failures = 0;
@@ -98,6 +107,38 @@ async function main() {
     assert(response.prediction!.nextPeriodStart === "2026-02-05", "yangi sikl uzunligi bashoratga darhol ta'sir qiladi (2026-01-01 + 35)");
   } finally {
     await sql`DELETE FROM users WHERE id = ${userId}`;
+  }
+
+  // --- COMM-001: shikoyat va bloklash ---
+  const userA = randomUUID();
+  const userB = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${userA}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${userB}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  try {
+    const post = await createCommunityPost(userA, { tag: "general", body: "Test post", isAnonymous: false });
+
+    const before = await listCommunityPosts(userB, {});
+    assert(before.posts.some((p) => p.id === post.id), "bloklashdan oldin postni ko'ra oladi");
+
+    await createCommunityReport(userB, { targetType: "post", postId: post.id, reason: "spam" });
+    const reports = await listOpenCommunityReports();
+    assert(reports.some((r) => r.postId === post.id && r.status === "open"), "COMM-001: shikoyat ochiq navbatga tushadi");
+
+    await blockCommunityPostAuthor(userB, post.id);
+    const afterBlock = await listCommunityPosts(userB, {});
+    assert(!afterBlock.posts.some((p) => p.id === post.id), "COMM-001: bloklangan muallifning posti endi ko'rinmaydi");
+
+    const report = reports.find((r) => r.postId === post.id)!;
+    await resolveCommunityReport(report.id, "resolved");
+    const reportsAfterResolve = await listOpenCommunityReports();
+    assert(!reportsAfterResolve.some((r) => r.id === report.id), "ko'rib chiqilgan shikoyat ochiq navbatda qolmaydi");
+
+    await unblockUser(userB, userA);
+    const afterUnblock = await listCommunityPosts(userB, {});
+    assert(afterUnblock.posts.some((p) => p.id === post.id), "COMM-001: blokdan chiqarilgach post yana ko'rinadi");
+  } finally {
+    await sql`DELETE FROM users WHERE id = ${userA}`;
+    await sql`DELETE FROM users WHERE id = ${userB}`;
   }
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);

@@ -6,11 +6,13 @@ import type {
   AnalyticsEventInput,
   AppNotification,
   Article,
+  BlockedUserEntry,
   BloodType,
   ChecklistResponse,
   Clinic,
   CommunityComment,
   CommunityPost,
+  CommunityReportReason,
   CommunityStats,
   CommunityTag,
   ChatMessage,
@@ -292,6 +294,20 @@ export function createApiClient(config: ApiClientConfig) {
       /** Izoh muallifi yoki post egasi o'chira oladi. */
       deleteComment: (postId: string, commentId: string) =>
         request<{ ok: true }>(`/api/community/posts/${postId}/comments/${commentId}`, { method: "DELETE" }),
+      // COMM-001 — moderatsiya.
+      reportPost: (postId: string, payload: { reason: CommunityReportReason; note?: string }) =>
+        request<{ ok: true }>(`/api/community/posts/${postId}/report`, { method: "POST", body: JSON.stringify(payload) }),
+      reportComment: (postId: string, commentId: string, payload: { reason: CommunityReportReason; note?: string }) =>
+        request<{ ok: true }>(`/api/community/posts/${postId}/comments/${commentId}/report`, { method: "POST", body: JSON.stringify(payload) }),
+      /** Postning haqiqiy muallifini SERVER TOMONDA aniqlab bloklaydi — klient
+       * xom user_id bilan ishlamaydi (anonim postda ham ishlaydi). */
+      blockPostAuthor: (postId: string) => request<{ ok: true }>(`/api/community/posts/${postId}/block-author`, { method: "POST" }),
+      blockCommentAuthor: (postId: string, commentId: string) =>
+        request<{ ok: true }>(`/api/community/posts/${postId}/comments/${commentId}/block-author`, { method: "POST" }),
+      blocked: {
+        list: () => request<{ blocked: BlockedUserEntry[] }>("/api/community/blocked"),
+        remove: (userId: string) => request<{ blocked: BlockedUserEntry[] }>(`/api/community/blocked/${userId}`, { method: "DELETE" }),
+      },
     },
     notifications: {
       list: () => request<{ notifications: AppNotification[]; unreadCount: number }>("/api/notifications"),

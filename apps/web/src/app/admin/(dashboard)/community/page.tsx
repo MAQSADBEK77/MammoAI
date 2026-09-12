@@ -1,12 +1,121 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { CommunityTag } from "@mammoai/shared";
+import type { CommunityReportAdmin, CommunityReportReason, CommunityTag } from "@mammoai/shared";
 import { adminApi, type AdminCommunityComment, type AdminCommunityPost } from "@/lib/admin-api";
 import { Card, Badge, Button } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 
 const PAGE_SIZE = 20;
+
+const REASON_LABELS: Record<CommunityReportReason, string> = {
+  spam: "Spam yoki reklama",
+  harassment: "Haqorat yoki tahdid",
+  misinformation: "Noto'g'ri/zararli ma'lumot",
+  medical_emergency: "Shoshilinch tibbiy holat",
+  other: "Boshqa sabab",
+};
+
+/** COMM-001: moderatsiya navbati — asosiy postlar ro'yxatidan ALOHIDA, chunki
+ * bu yerga faqat FOYDALANUVCHILAR shikoyat qilgan narsalar tushadi (ustuvor). */
+function ReportsQueue({ onContentDeleted }: { onContentDeleted: () => void }) {
+  const [reports, setReports] = useState<CommunityReportAdmin[] | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    adminApi.community.reports
+      .list()
+      .then((res) => setReports(res.reports))
+      .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"));
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function resolve(id: string, status: "resolved" | "dismissed") {
+    setBusyId(id);
+    try {
+      const res = await adminApi.community.reports.resolve(id, status);
+      setReports(res.reports);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Xatolik");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function deleteAndResolve(report: CommunityReportAdmin) {
+    if (!window.confirm("Shikoyat qilingan mazmunni butunlay o'chirishni tasdiqlaysizmi?")) return;
+    setBusyId(report.id);
+    try {
+      if (report.commentId) await adminApi.community.posts.comments.delete(report.postId, report.commentId);
+      else await adminApi.community.posts.delete(report.postId);
+      const res = await adminApi.community.reports.resolve(report.id, "resolved");
+      setReports(res.reports);
+      onContentDeleted();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Xatolik");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (!reports) return <Card className="py-10 text-center text-sm text-text-muted">Yuklanmoqda…</Card>;
+  if (reports.length === 0) return <Card className="py-10 text-center text-sm text-text-muted">Ochiq shikoyat yo&apos;q 🎉</Card>;
+
+  return (
+    <div className="flex flex-col gap-3">
+      {error && <Card className="border border-danger/20 bg-danger/5 text-sm font-medium text-danger">{error}</Card>}
+      {reports.map((r) => (
+        <Card key={r.id} className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Badge tone={r.reason === "medical_emergency" ? "danger" : "muted"}>{REASON_LABELS[r.reason]}</Badge>
+              <Badge tone="muted">{r.targetType === "post" ? "Post" : "Izoh"}</Badge>
+            </div>
+            <span className="text-xs text-text-muted">Shikoyatchi: {r.reporterName ?? "Ism yo'q"}</span>
+          </div>
+          <div className="rounded-2xl bg-surface-muted/60 p-3">
+            <p className="text-xs font-semibold text-text-secondary">{r.targetAuthorName ?? "Anonim/ism yo'q"}</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-text-primary">{r.targetBody}</p>
+            {!r.targetExists && <p className="mt-1 text-xs text-warning">Mazmun allaqachon o&apos;chirilgan</p>}
+          </div>
+          {r.note && <p className="text-sm text-text-secondary">Izoh: {r.note}</p>}
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 pt-3">
+            <button
+              type="button"
+              disabled={busyId === r.id}
+              onClick={() => resolve(r.id, "dismissed")}
+              className="rounded-full px-3 py-1.5 text-xs font-semibold text-text-secondary transition hover:bg-surface-muted disabled:opacity-50"
+            >
+              Bekor qilish (harakatsiz)
+            </button>
+            {r.targetExists && (
+              <button
+                type="button"
+                disabled={busyId === r.id}
+                onClick={() => deleteAndResolve(r)}
+                className="rounded-full px-3 py-1.5 text-xs font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-50"
+              >
+                Mazmunni o&apos;chirish
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={busyId === r.id}
+              onClick={() => resolve(r.id, "resolved")}
+              className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-105 disabled:opacity-50"
+            >
+              Ko&apos;rib chiqildi
+            </button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 const TAG_LABELS: Record<CommunityTag, string> = {
   cycle: "Tsikl",
@@ -22,6 +131,11 @@ function formatDate(value: string): string {
 }
 
 export default function AdminCommunityPage() {
+  // COMM-001: "Postlar" (mavjud, o'zgarmagan) va "Shikoyatlar" (yangi) ikkita
+  // alohida ko'rinish — shikoyatlar navbati boshqa ma'lumot manbaidan (ochiq
+  // holatdagilar) keladi, shuning uchun bir ro'yxatga aralashtirilmaydi.
+  const [view, setView] = useState<"posts" | "reports">("posts");
+
   const [posts, setPosts] = useState<AdminCommunityPost[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -134,14 +248,38 @@ export default function AdminCommunityPage() {
           <h1 className="text-2xl font-bold text-text-primary">Hamjamiyat</h1>
           <p className="mt-1 text-sm text-text-secondary">Jami {total} ta post — moderatsiya: tahrirlash, o&apos;chirish, izohlarni boshqarish</p>
         </div>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Matn yoki muallif bo'yicha qidirish…"
-          className="tap-target w-72 rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-        />
+        {view === "posts" && (
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Matn yoki muallif bo'yicha qidirish…"
+            className="tap-target w-72 rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        )}
       </div>
 
+      {/* COMM-001: postlar/shikoyatlar navbati o'rtasida almashtirish. */}
+      <div className="flex gap-2 border-b border-border">
+        <button
+          type="button"
+          onClick={() => setView("posts")}
+          className={`px-4 py-2 text-sm font-semibold transition ${view === "posts" ? "border-b-2 border-primary text-primary" : "text-text-secondary"}`}
+        >
+          Postlar
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("reports")}
+          className={`px-4 py-2 text-sm font-semibold transition ${view === "reports" ? "border-b-2 border-primary text-primary" : "text-text-secondary"}`}
+        >
+          Shikoyatlar navbati
+        </button>
+      </div>
+
+      {view === "reports" ? (
+        <ReportsQueue onContentDeleted={() => load(search, offset)} />
+      ) : (
+        <>
       {error && <Card className="border border-danger/20 bg-danger/5 text-sm font-medium text-danger">{error}</Card>}
 
       <div className="flex flex-col gap-3">
@@ -278,6 +416,8 @@ export default function AdminCommunityPage() {
           </Button>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

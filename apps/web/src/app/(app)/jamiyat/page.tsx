@@ -1,14 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { AppNotification, CommunityComment, CommunityPost, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
-import { goalToDefaultCommunityTag } from "@mammoai/shared";
-import { NotificationsNoneOutlined as Bell, Favorite, FavoriteBorderOutlined, ChatBubbleOutlineOutlined as MessageCircle, ShareOutlined as Share2, DeleteOutlined as Trash2, PersonOutlined as UserRound, VisibilityOffOutlined as VenetianMask } from "@mui/icons-material";
+import type { AppNotification, CommunityComment, CommunityPost, CommunityReportReason, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
+import { detectsMedicalConcern, goalToDefaultCommunityTag } from "@mammoai/shared";
+import { Dialog, DialogTitle, DialogContent, Menu, MenuItem } from "@mui/material";
+import {
+  NotificationsNoneOutlined as Bell,
+  Favorite,
+  FavoriteBorderOutlined,
+  ChatBubbleOutlineOutlined as MessageCircle,
+  ShareOutlined as Share2,
+  DeleteOutlined as Trash2,
+  PersonOutlined as UserRound,
+  VisibilityOffOutlined as VenetianMask,
+  MoreVertOutlined as MoreVert,
+} from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@/components/ui";
+
+const REPORT_REASONS: CommunityReportReason[] = ["spam", "harassment", "misinformation", "medical_emergency", "other"];
 
 const TAGS: CommunityTag[] = ["cycle", "pregnancy", "checkups", "general"];
 const PAGE_SIZE = 15;
@@ -67,6 +80,14 @@ export default function CommunityPage() {
 
   const [openComments, setOpenComments] = useState<Record<string, CommunityComment[] | undefined>>({});
   const [commentDraft, setCommentDraft] = useState<Record<string, string>>({});
+
+  // COMM-001 — moderatsiya: "..." menyusi (shikoyat/bloklash), shikoyat dialogi.
+  const [menuTarget, setMenuTarget] = useState<{ el: HTMLElement; postId: string; commentId: string | null } | null>(null);
+  const [reportTarget, setReportTarget] = useState<{ postId: string; commentId: string | null } | null>(null);
+  const [reportReason, setReportReason] = useState<CommunityReportReason | null>(null);
+  const [reportNote, setReportNote] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportDone, setReportDone] = useState(false);
 
   const loadPosts = useCallback((currentTag: CommunityTag | "all") => {
     setPosts(null);
@@ -197,6 +218,50 @@ export default function CommunityPage() {
       }
     } else if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(text);
+    }
+  }
+
+  function closeMenu() {
+    setMenuTarget(null);
+  }
+
+  function openReportDialog() {
+    if (!menuTarget) return;
+    setReportTarget({ postId: menuTarget.postId, commentId: menuTarget.commentId });
+    setReportReason(null);
+    setReportNote("");
+    setReportDone(false);
+    closeMenu();
+  }
+
+  /** Muallifni bloklash — postId/commentId server tomonda haqiqiy muallifga
+   * o'giriladi (bu yerda xom user_id bilan ishlamaymiz, anonim postda ham
+   * ishlaydi). Bloklangandan keyin oqim qayta yuklanadi — shu muallifning
+   * boshqa yozuvlari ham darhol yashiriladi. */
+  async function blockAuthorFromMenu() {
+    if (!menuTarget) return;
+    const { postId, commentId } = menuTarget;
+    closeMenu();
+    if (!window.confirm(dict.community.blockAuthorConfirm)) return;
+    if (commentId) await api.community.blockCommentAuthor(postId, commentId);
+    else await api.community.blockPostAuthor(postId);
+    setOpenComments({});
+    loadPosts(tag);
+    window.alert(dict.community.blockAuthorSuccess);
+  }
+
+  async function submitReport() {
+    if (!reportTarget || !reportReason) return;
+    setReportSubmitting(true);
+    try {
+      if (reportTarget.commentId) {
+        await api.community.reportComment(reportTarget.postId, reportTarget.commentId, { reason: reportReason, note: reportNote.trim() || undefined });
+      } else {
+        await api.community.reportPost(reportTarget.postId, { reason: reportReason, note: reportNote.trim() || undefined });
+      }
+      setReportDone(true);
+    } finally {
+      setReportSubmitting(false);
     }
   }
 
@@ -352,10 +417,28 @@ export default function CommunityPage() {
                       <p className="text-[11px] text-text-muted">{formatRelativeTime(post.createdAt, dict)}</p>
                     </div>
                   </div>
-                  <Badge tone="primary">{dict.community.tags[post.tag]}</Badge>
+                  <div className="flex items-center gap-1">
+                    <Badge tone="primary">{dict.community.tags[post.tag]}</Badge>
+                    {!post.isOwn && (
+                      <button
+                        type="button"
+                        onClick={(e) => setMenuTarget({ el: e.currentTarget, postId: post.id, commentId: null })}
+                        className="tap-target flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-muted"
+                        aria-label={dict.community.moreOptionsLabel}
+                      >
+                        <MoreVert sx={{ fontSize: 18 }} />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <p className="whitespace-pre-wrap text-sm text-text-primary">{post.body}</p>
+
+                {/* COMM-001: tibbiy-shoshilinch ko'rinishdagi postlarda ogohlantirish —
+                    tashxis emas, faqat shifokorga murojaat qilishni eslatish. */}
+                {detectsMedicalConcern(post.body) && (
+                  <p className="rounded-2xl bg-warning/10 px-3 py-2 text-xs font-medium text-warning">{dict.community.medicalConcernBanner}</p>
+                )}
 
                 <div className="flex items-center gap-1 border-t border-border pt-2">
                   <button
@@ -421,6 +504,15 @@ export default function CommunityPage() {
                             <Trash2 sx={{ fontSize: 13 }} />
                           </button>
                         )}
+                        {!c.isOwn && (
+                          <button
+                            onClick={(e) => setMenuTarget({ el: e.currentTarget, postId: post.id, commentId: c.id })}
+                            className="tap-target mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-muted"
+                            aria-label={dict.community.moreOptionsLabel}
+                          >
+                            <MoreVert sx={{ fontSize: 14 }} />
+                          </button>
+                        )}
                       </div>
                     ))}
                     <div className="flex gap-2">
@@ -448,6 +540,51 @@ export default function CommunityPage() {
           )}
         </div>
       )}
+
+      {/* COMM-001: "..." menyusi — shikoyat/bloklash, post yoki izohga qarab. */}
+      <Menu anchorEl={menuTarget?.el ?? null} open={!!menuTarget} onClose={closeMenu}>
+        <MenuItem onClick={openReportDialog}>{dict.community.reportButton}</MenuItem>
+        <MenuItem onClick={blockAuthorFromMenu} sx={{ color: "var(--color-danger)" }}>
+          {dict.community.blockAuthorButton}
+        </MenuItem>
+      </Menu>
+
+      <Dialog open={!!reportTarget} onClose={() => setReportTarget(null)} fullWidth maxWidth="xs">
+        <DialogTitle>{dict.community.reportDialogTitle}</DialogTitle>
+        <DialogContent className="flex flex-col gap-3 pb-5!">
+          {reportDone ? (
+            <p className="py-4 text-center text-sm font-medium text-success">{dict.community.reportSuccess}</p>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1.5">
+                {REPORT_REASONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setReportReason(r)}
+                    className={clsx(
+                      "tap-target rounded-2xl border-2 px-4 py-2.5 text-left text-sm font-medium transition",
+                      reportReason === r ? "border-primary bg-primary-light/40 text-primary-dark" : "border-border bg-surface text-text-primary"
+                    )}
+                  >
+                    {dict.community.reportReasons[r]}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={reportNote}
+                onChange={(e) => setReportNote(e.target.value)}
+                placeholder={dict.community.reportNotePlaceholder}
+                rows={2}
+                className="w-full resize-none rounded-2xl border border-border bg-surface px-4 py-2.5 text-sm text-text-primary outline-none focus:border-primary"
+              />
+              <Button className="w-full" onClick={submitReport} disabled={!reportReason || reportSubmitting}>
+                {reportSubmitting ? dict.common.loading : dict.community.reportSubmitButton}
+              </Button>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
