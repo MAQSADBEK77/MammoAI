@@ -113,9 +113,15 @@ export function CycleScreen() {
   }
 
   // Hayzning nechinchi kuni (bleeding) va sikldagi umumiy o'rni (halqa uchun) — App.pdf §12.
+  // MUHIM: `isStale` bo'lsa (oxirgi hayz sanasi juda eskirgan — real qurilmada
+  // ko'rilgan holat: "226 kun kechikmoqda") bu ikkalasi ATAYLAB hisoblanmaydi.
+  // Sabab: modulo orqali "sikldagi N-kun" chiqarish stale ma'lumotda soxta
+  // aniqlik beradi (masalan bir necha oy hech narsa qayd etilmagan bo'lsa ham
+  // "3-kun" deb ko'rsatib yuboradi) — bu holatda haqiqiy javob "bilmaymiz,
+  // ma'lumotni yangilang", raqam emas.
   let periodDay: number | null = null;
   let dayInCycle: number | null = null;
-  if (data.settings.lastPeriodStart) {
+  if (data.settings.lastPeriodStart && !data.prediction?.isStale) {
     const diff = Math.round(
       (new Date(today).getTime() - new Date(data.settings.lastPeriodStart).getTime()) / 86400000
     );
@@ -235,7 +241,13 @@ export function CycleScreen() {
                 dayInCycle={dayInCycle ?? 1}
                 cycleLength={data.settings.averageCycleLength}
                 label={dict.cycle.title}
-                sublabel={data.prediction ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod) : dict.cycle.ringEmptyLabel}
+                sublabel={
+                  data.prediction?.isStale
+                    ? dict.cycle.staleDataLabel
+                    : data.prediction
+                      ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)
+                      : dict.cycle.ringEmptyLabel
+                }
               />
             </button>
             {periodDay && (

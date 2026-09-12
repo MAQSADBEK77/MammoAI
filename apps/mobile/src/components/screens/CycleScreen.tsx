@@ -102,9 +102,11 @@ export function CycleScreen() {
     return `${d.getDate()}-${dict.common.months[d.getMonth()]}`;
   }
 
+  // Web CycleScreen.tsx bilan bir xil — izoh o'sha yerda (`isStale` bo'lsa
+  // soxta aniqlik bermaslik uchun ataylab hisoblanmaydi).
   let periodDay: number | null = null;
   let dayInCycle: number | null = null;
-  if (data.settings.lastPeriodStart) {
+  if (data.settings.lastPeriodStart && !data.prediction?.isStale) {
     const diff = Math.round((new Date(today).getTime() - new Date(data.settings.lastPeriodStart).getTime()) / 86400000);
     if (diff >= 0 && diff < data.settings.averagePeriodLength) periodDay = diff + 1;
     dayInCycle = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
@@ -221,7 +223,13 @@ export function CycleScreen() {
                   dayInCycle={dayInCycle ?? 1}
                   cycleLength={data.settings.averageCycleLength}
                   label={dict.cycle.title}
-                  sublabel={data.prediction ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod) : dict.cycle.ringEmptyLabel}
+                  sublabel={
+                    data.prediction?.isStale
+                      ? dict.cycle.staleDataLabel
+                      : data.prediction
+                        ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)
+                        : dict.cycle.ringEmptyLabel
+                  }
                 />
               </Pressable>
               {periodDay && (

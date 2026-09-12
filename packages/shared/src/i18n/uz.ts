@@ -279,6 +279,7 @@ const uz = {
     perimenopauseCardTitle: "Perimenopauza kuzatuvi",
     perimenopauseCardBody: "Bu davrda tsikl tartibsizlashishi — tabiiy holat. Bashorat o'rniga belgilaringizni (issiqlik bosishi, uyqu, kayfiyat) kuzatib boring.",
     ringEmptyLabel: "Bashorat qilish uchun oxirgi hayz sanasini belgilang",
+    staleDataLabel: "Ma'lumot eskirgan — oxirgi hayz sanasini yangilang",
     predictionBasisHistory: (n: number) => `So'nggi ${n} ta sikl asosida hisoblangan`,
     predictionBasisEstimate: "Taxminiy — ko'proq kuzatuv qilsangiz aniqroq bo'ladi",
     articlesCardTitle: "Qiziqarli maqolalar",

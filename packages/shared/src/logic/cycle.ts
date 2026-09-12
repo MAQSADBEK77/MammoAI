@@ -143,6 +143,16 @@ export function deriveAdaptiveCycleSettings(
   };
 }
 
+// Kechikish shundan ko'p kun davom etsa, "N kun kechikmoqda" degan o'sib
+// boruvchi son endi foydali emas — bu holatda ko'proq ehtimol foydalanuvchi
+// uzoq vaqt (bir necha oy) hech narsa qayd etmagan (oxirgi hayz sanasi
+// eskirgan) yoki haqiqatan boshqa holat (homiladorlik, uzoq tartibsizlik) yuz
+// bergan. Real qurilmada ko'rilgan haqiqiy holat: "226 kun kechikmoqda" —
+// bu raqamning o'zi to'g'ri hisoblangan (predictCycle mantiqi buzilmagan),
+// lekin FOYDALANUVCHIGA bu holda ko'rsatilishi kerak bo'lgan narsa boshqa:
+// "ma'lumot eskirgan, yangilang" — cheksiz o'sib boruvchi kechikish soni emas.
+export const STALE_PREDICTION_DAYS = 90; // ~3 ta o'rtacha sikl
+
 export interface CyclePrediction {
   nextPeriodStart: string;
   nextPeriodEnd: string;
@@ -153,6 +163,10 @@ export interface CyclePrediction {
   /** Necha ta haqiqiy sikl asosida hisoblangani — 0 bo'lsa, taxminiy (sozlamaga
    * asoslangan) bashorat. UI'da "so'nggi N ta sikl asosida" kabi shaffoflik uchun. */
   cyclesAnalyzed: number;
+  /** `daysUntilNextPeriod` STALE_PREDICTION_DAYS'dan ko'proq manfiy bo'lsa —
+   * UI o'sib boruvchi kechikish soni o'rniga "ma'lumot eskirgan, oxirgi
+   * hayz sanasini yangilang" holatini ko'rsatishi kerak. */
+  isStale: boolean;
 }
 
 export function predictCycle(
@@ -182,14 +196,17 @@ export function predictCycle(
   const fertileWindowStart = addDays(ovulationDay, -5);
   const fertileWindowEnd = addDays(ovulationDay, 1);
 
+  const daysUntilNextPeriod = daysBetween(today, nextPeriodStart);
+
   return {
     nextPeriodStart,
     nextPeriodEnd,
     fertileWindowStart,
     fertileWindowEnd,
     ovulationDay,
-    daysUntilNextPeriod: daysBetween(today, nextPeriodStart),
+    daysUntilNextPeriod,
     cyclesAnalyzed: 0, // chaqiruvchi (buildCycleResponse) adaptiv qiymat bilan qayta belgilaydi
+    isStale: daysUntilNextPeriod < -STALE_PREDICTION_DAYS,
   };
 }
 

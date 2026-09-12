@@ -136,6 +136,15 @@ describe("predictCycle", () => {
   it("30 kun kechiksa ham (ekstremal holat) hali ham to'g'ri manfiy son qaytaradi", () => {
     const pred = predictCycle({ lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5 }, "2026-02-28");
     expect(pred?.daysUntilNextPeriod).toBe(-30);
+    expect(pred?.isStale).toBe(false); // hali 90 kunlik chegaradan o'tmagan
+  });
+
+  it("90 kundan ko'p kechiksa 'isStale' true bo'ladi (regression: real qurilmada '226 kun kechikmoqda' ko'rsatilgan edi)", () => {
+    // 2026-09-11'da qurilmada ko'rilgan haqiqiy holat: bir necha oy hech
+    // narsa qayd etilmagan, kechikish cheksiz o'sib borgan.
+    const pred = predictCycle({ lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5 }, "2026-10-01");
+    expect(pred!.daysUntilNextPeriod).toBeLessThan(-90);
+    expect(pred?.isStale).toBe(true);
   });
 
   it("unumdor oynani kutilgan sanadan 14 kun oldin (ovulyatsiya atrofida) hisoblaydi", () => {
