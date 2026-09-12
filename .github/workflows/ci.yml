@@ -12,6 +12,24 @@ on:
 jobs:
   typecheck-and-test:
     runs-on: ubuntu-latest
+    # QA-001: sikl API'sining bazaga YOZISH mantig'ini (CYCLE-001 aynan shu
+    # qatlamda yashiringan edi) tekshirish uchun vaqtinchalik Postgres —
+    # har CI ishga tushishida bo'sh boshlanadi, productionga hech qanday
+    # aloqasi yo'q, ish tugagach butunlay yo'q qilinadi.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mammoai
+          POSTGRES_PASSWORD: mammoai
+          POSTGRES_DB: mammoai_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,3 +41,7 @@ jobs:
       - run: npm test
       - run: npm run lint --workspace=apps/web
       - run: npm run lint --workspace=apps/mobile
+      - name: Integration tests (cycle API, real Postgres)
+        run: npm run test:integration --workspace=apps/web
+        env:
+          DATABASE_URL: postgresql://mammoai:mammoai@localhost:5432/mammoai_ci

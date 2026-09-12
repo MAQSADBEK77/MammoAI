@@ -18,11 +18,17 @@ declare global {
   var __mammoaiSchemaReady: Promise<void> | undefined;
 }
 
+// QA-001: CI'dagi vaqtinchalik Postgres xizmat konteyneri (localhost, SSL
+// sertifikatisiz) uchun — productionda DATABASE_URL doim Supabase'ning
+// tashqi hostiga ishora qiladi, shuning uchun bu tekshiruv u yerda hech
+// qachon ishga tushmaydi va "ssl: require" o'zgarishsiz qoladi.
+const isLocalDb = /^(localhost|127\.0\.0\.1)$/.test(new URL(DATABASE_URL).hostname);
+
 // Dev rejimida modul qayta yuklanganda ulanishni qayta-qayta ochmaslik uchun global'da saqlaymiz.
 export const sql =
   global.__mammoaiSql ??
   postgres(DATABASE_URL, {
-    ssl: "require",
+    ssl: isLocalDb ? false : "require",
     // "CREATE TABLE/INDEX IF NOT EXISTS" har cold-start'da NOTICE chiqaradi (zararsiz) — bosamiz.
     onnotice: () => {},
     // MUHIM: DATABASE_URL Supabase'ning Supavisor "Transaction pooler"iga (6543-port)

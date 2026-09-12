@@ -15,7 +15,10 @@ import {
   listRecentVitalsByType,
 } from "./repo";
 
-export async function buildCycleResponse(userId: string): Promise<CycleResponse> {
+/** `today` — ixtiyoriy, faqat QA-001 integratsiya testi uchun (deterministik
+ * sana bilan tekshirish); haqiqiy so'rovlarda hech qachon uzatilmaydi, shuning
+ * uchun `predictCycle`ning o'z standart qiymati (`new Date()`) ishlatiladi. */
+export async function buildCycleResponse(userId: string, today?: string): Promise<CycleResponse> {
   const settings = await getCycleSettings(userId);
   // Bashorat uchun ko'proq tarix kerak (ADAPTIVE_MAX_CYCLES ta sikl uchun
   // yetarli) — Cycle ekranida ko'rsatiladigan oxirgi loglar bilan aralashtirmaslik
@@ -25,8 +28,8 @@ export async function buildCycleResponse(userId: string): Promise<CycleResponse>
   // Bashorat endi statik `cycle_settings`ga emas — imkon qadar haqiqiy
   // `cycle_logs` tarixidan "o'rganilgan" (adaptiv) qiymatlarga tayanadi, yetarli
   // tarix bo'lmasa foydalanuvchining o'zi kiritgan sozlamasiga tushadi.
-  const adaptive = deriveAdaptiveCycleSettings(historyLogs, settings);
-  const prediction = adaptive && predictCycle(adaptive);
+  const adaptive = deriveAdaptiveCycleSettings(historyLogs, settings, today);
+  const prediction = adaptive && predictCycle(adaptive, today);
   if (prediction && adaptive) {
     prediction.cyclesAnalyzed = adaptive.cyclesAnalyzed;
     prediction.confidence = adaptive.confidence;
