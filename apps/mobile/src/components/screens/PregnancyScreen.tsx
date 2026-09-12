@@ -11,7 +11,7 @@ import { useModeAccent, useThemeColors } from "@/lib/theme";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader, TextField } from "@/components/ui";
-import { Pregnancy3DViewer } from "@/components/Pregnancy3DViewer";
+import { PregnancyWeekImage } from "@/components/PregnancyWeekImage";
 import { PregnancyAlbum } from "@/components/PregnancyAlbum";
 import { Emoji } from "@/components/Emoji";
 
@@ -131,11 +131,9 @@ export function PregnancyScreen() {
       <Animated.View entering={FadeInUp.duration(450)}>
         <LinearGradient colors={gradients.pregnancy} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 32, padding: 22, gap: 18 }}>
           <View className="items-center gap-1">
-            <Pregnancy3DViewer icon={milestone.icon} />
+            <PregnancyWeekImage week={status.currentWeek} icon={milestone.icon} />
             <Text className="text-2xl font-extrabold text-white">{dict.pregnancy.weekLabel(status.currentWeek)}</Text>
             <Text className="max-w-[240px] text-center text-white/85">{dict.pregnancy.sizeComparison(sizeLabel)}</Text>
-            {/* CC-BY 3.0 litsenziya talabi — 3D modellar poly.pizza (Poly by Google)'dan. */}
-            <Text className="text-[10px] text-white/40">3D: Poly by Google (CC-BY)</Text>
           </View>
 
           <View className="flex-row justify-center gap-3">

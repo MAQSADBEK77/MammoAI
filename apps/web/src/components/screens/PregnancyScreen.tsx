@@ -10,7 +10,7 @@ import { useIllustrations } from "@/lib/illustrations";
 import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
-import { Pregnancy3DViewer } from "@/components/Pregnancy3DViewer";
+import { PregnancyWeekImage } from "@/components/PregnancyWeekImage";
 import { PregnancyAlbum } from "@/components/PregnancyAlbum";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
@@ -122,11 +122,9 @@ export function PregnancyScreen() {
           o'lcham-illyustratsiya, ustida suzuvchi statistik yorliqlar. */}
       <div className="bg-aurora-pregnancy animate-fade-in-up space-y-5 rounded-[32px] p-6 text-center">
         <div className="flex flex-col items-center gap-1">
-          <Pregnancy3DViewer icon={milestone.icon} />
+          <PregnancyWeekImage week={status.currentWeek} icon={milestone.icon} />
           <h2 className="text-2xl font-extrabold text-white">{dict.pregnancy.weekLabel(status.currentWeek)}</h2>
           <p className="max-w-[280px] text-white/85">{dict.pregnancy.sizeComparison(sizeLabel)}</p>
-          {/* CC-BY 3.0 litsenziya talabi — 3D modellar poly.pizza (Poly by Google)'dan. */}
-          <p className="text-[10px] text-white/40">3D: Poly by Google (CC-BY)</p>
         </div>
 
         <div className="flex justify-center gap-3">

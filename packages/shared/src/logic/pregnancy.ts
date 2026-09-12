@@ -83,37 +83,22 @@ export function getMilestoneForWeek(week: number): WeeklyMilestone {
   );
 }
 
-// Haftalik o'lcham uchun AYLANTIRISH MUMKIN 3D model (foydalanuvchi so'rovi:
-// "3D rasmlarni qo'yish"). Haqiqiy tibbiy-realistik embrion/fetus 3D modellari
-// tekshirildi — deyarli hammasi pullik ekan (Sketchfab/CGTrader/TurboSquid
-// Store), bepul topilmadi. Foydalanuvchi bilan kelishilgan holda "yumshoq/
-// mehribon" uslubga o'tildi — mevalar bilan o'lcham taqqoslash (aksariyat
-// homiladorlik ilovalarida mashhur naqsh), poly.pizza'dan CC-BY 3.0 litsenziyali
-// (attribution: "Poly by Google") past-poligonli GLB modellar — ilova
-// `apps/web/public/models/fruit/<key>.glb`'da joylashgan, WEB'da to'g'ridan-
-// to'g'ri, MOBIL'da shu manzilga WebView orqali murojaat qilinadi (ikkalasi
-// ham bitta joyni ishlatadi, dublikat yo'q). Har bir icon uchun ANIQ mos meva
-// topilmagan joylarda (masalan "lime"/"corn"/"eggplant") o'lcham/shakl
-// jihatdan eng yaqin muqobil ishlatilgan (11 ta yuklangan modeldan).
-export const PREGNANCY_3D_MODEL_BY_ICON: Record<string, string> = {
-  seed: "blueberries",
-  raspberry: "grapes",
-  lime: "orange",
-  lemon: "lemon",
-  avocado: "avocado",
-  corn: "banana",
-  eggplant: "papaya",
-  coconut: "coconut",
-  pineapple: "pineapple",
-  watermelon: "watermelon",
-};
+// Haftalik rasm — foydalanuvchi o'zi AI orqali generatsiya qilgan, har hafta
+// uchun alohida embrion/fetus rasmi (huquqi o'zida — avval tekshirilgan
+// litsenziyali/pullik 3D model va noma'lum manbali internet-rasm variantlari
+// rad etilgandan keyin shu yechimga kelindi). `week2` fayli yo'q (to'plamda
+// yetishmaydi) — eng yaqin haftaga (1) tushadi. Fayllar
+// `apps/web/public/embryo/week<N>.jpg`'da, WEB'da to'g'ridan-to'g'ri,
+// MOBIL'da `https://mammo.uz/embryo/week<N>.jpg` orqali (statik fayllar
+// faqat web ilovada joylashgan, alohida CDN yo'q — 3D meva modellari bilan
+// bir xil naqsh).
+const EMBRYO_MISSING_WEEKS: Record<number, number> = { 2: 1 };
 
-/** GLB fayl nomi (kengaytmasiz) — platforma o'zi to'liq URL quradi: web
- * nisbiy `/models/fruit/<key>.glb` (o'z origin'idan, local dev'da ham
- * ishlaydi), mobil esa doim `https://mammo.uz/models/fruit/<key>.glb`
- * (statik fayllar faqat web ilovada joylashgan, alohida CDN yo'q). */
-export function get3dModelKeyForIcon(icon: string): string {
-  return PREGNANCY_3D_MODEL_BY_ICON[icon] ?? "lemon";
+/** 1-42 oralig'iga qisqartiradi va yo'q haftani eng yaqiniga almashtiradi —
+ * chaqiruvchi hech qachon mavjud bo'lmagan fayl nomini olmasligi kafolatlanadi. */
+export function getEmbryoImageWeek(week: number): number {
+  const clamped = Math.min(42, Math.max(1, Math.round(week)));
+  return EMBRYO_MISSING_WEEKS[clamped] ?? clamped;
 }
 
 // "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi kiritgan qiymatning keng tarqalgan

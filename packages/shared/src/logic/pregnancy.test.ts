@@ -4,7 +4,7 @@ import {
   lmpFromDueDate,
   getPregnancyStatus,
   getMilestoneForWeek,
-  get3dModelKeyForIcon,
+  getEmbryoImageWeek,
   getVitalTone,
 } from "./pregnancy";
 
@@ -58,16 +58,25 @@ describe("getMilestoneForWeek", () => {
   });
 });
 
-describe("get3dModelKeyForIcon", () => {
-  it("har bir milestone icon uchun 3D model kaliti bor", () => {
-    const icons = ["seed", "raspberry", "lime", "lemon", "avocado", "corn", "eggplant", "coconut", "pineapple", "watermelon"];
-    for (const icon of icons) {
-      expect(get3dModelKeyForIcon(icon)).toBeTruthy();
-    }
+describe("getEmbryoImageWeek", () => {
+  it("mavjud haftalar uchun aynan o'sha haftani qaytaradi", () => {
+    expect(getEmbryoImageWeek(1)).toBe(1);
+    expect(getEmbryoImageWeek(20)).toBe(20);
+    expect(getEmbryoImageWeek(42)).toBe(42);
   });
 
-  it("noma'lum icon uchun ham fallback (lemon) qaytaradi, undefined emas", () => {
-    expect(get3dModelKeyForIcon("unknown-icon")).toBe("lemon");
+  it("to'plamda yo'q 2-hafta uchun eng yaqiniga (1) tushadi", () => {
+    expect(getEmbryoImageWeek(2)).toBe(1);
+  });
+
+  it("1-42 chegarasidan tashqarini qisqartiradi", () => {
+    expect(getEmbryoImageWeek(0)).toBe(1);
+    expect(getEmbryoImageWeek(-5)).toBe(1);
+    expect(getEmbryoImageWeek(50)).toBe(42);
+  });
+
+  it("kasr sonni yaqin butun songa yaxlitlaydi", () => {
+    expect(getEmbryoImageWeek(19.6)).toBe(20);
   });
 });
 
