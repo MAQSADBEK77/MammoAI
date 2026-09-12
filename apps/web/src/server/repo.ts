@@ -53,6 +53,7 @@ import {
   DEFAULT_PERIOD_LENGTH,
   DEFAULT_SLOT_ASSIGNMENTS,
   SLOT_KEYS,
+  detectPeriodStarts,
   getPregnancyStatus,
 } from "@mammoai/shared";
 
@@ -669,12 +670,23 @@ export async function upsertCycleLog(
       flow = EXCLUDED.flow, mood = EXCLUDED.mood, symptoms = EXCLUDED.symptoms
   `;
 
-  // Agar bu "hayz boshlanishi" bo'lsa (oqim belgilangan) va sana joriy last_period_start'dan
-  // keyingi bo'lsa — sozlamalarni yangilaymiz, shunda bashorat to'g'ri hisoblanadi.
+  // MUHIM: avval bu yerda "log.date > joriy lastPeriodStart bo'lsa — yangilash"
+  // degan sodda mantiq bor edi — bu XATO edi: davom etayotgan hayzning 2-, 3-
+  // kunini qayd etish ham "yangi sikl boshlandi" deb hisoblanib, lastPeriodStart
+  // har kuni "bugun"ga siljib borardi (natijada sikl kuni doim "1" bo'lib
+  // qolardi, keyingi bashorat ham har kuni oldinga surilaverardi). Endi
+  // BUTUN tarix ustida XUDDI deriveAdaptiveCycleSettings'dagi bilan bir xil
+  // streak-aniqlash (detectPeriodStarts) ishlatiladi — shu orqali "davom
+  // etayotgan hayz kuni" bilan "haqiqatan yangi hayz boshlanishi" ANIQ
+  // farqlanadi (CYCLE_GAP_DAYS'dan katta bo'shliqdan keyingi flow kuni
+  // — haqiqiy yangi boshlanish).
   if (log.flow) {
+    const recentLogs = await listCycleLogs(userId, 365);
+    const starts = detectPeriodStarts(recentLogs);
+    const lastDetectedStart = starts[starts.length - 1] ?? null;
     const settings = await getCycleSettings(userId);
-    if (!settings.lastPeriodStart || log.date > settings.lastPeriodStart) {
-      await updateCycleSettings(userId, { lastPeriodStart: log.date });
+    if (lastDetectedStart && lastDetectedStart !== settings.lastPeriodStart) {
+      await updateCycleSettings(userId, { lastPeriodStart: lastDetectedStart });
     }
   }
 
