@@ -357,11 +357,32 @@ const uz = {
 
   // Tsikl fazasi kartasi (CycleRing ostida) — Figma "Make" manbasidagi haqiqiy
   // iboralarga asoslangan ("Tuxum hujayra chiqadi", "Progesteron oshadi").
+  // Tavsiflar ATAYLAB gormon nomi + kayfiyatga ta'siri + aniq harakat
+  // taklifini o'z ichiga oladi (foydalanuvchi so'rovi: "shu fazada shu
+  // gormon tufayli bo'lishi mumkin, shuning uchun shunaqa narsalar qilish
+  // kerak" — asabiylashish/stress/tushkunlik xarakter emas, gormonal
+  // ekanligini tushuntirish + konkret o'z-o'ziga g'amxo'rlik tavsiyasi).
   cyclePhase: {
-    menstrual: { name: "Hayz fazasi", description: "Bachadon shilliq qavati chiqmoqda. Dam olish va o'zingizga g'amxo'rlik qilish vaqti." },
-    follicular: { name: "Follikul fazasi", description: "Tuxumdonda follikulalar rivojlanmoqda, energiya darajasi asta oshib bormoqda." },
-    ovulation: { name: "Ovulyatsiya", description: "Tuxum hujayra chiqadi — bu davrda homilador bo'lish ehtimoli eng yuqori." },
-    luteal: { name: "Lyuteal faza", description: "Progesteron oshadi. PMS alomatlari shu davrda ko'proq seziladi." },
+    menstrual: {
+      name: "Hayz fazasi",
+      description:
+        "Estrogen va progesteron darajasi eng past nuqtada — shuning uchun charchoq, asabiylashish yoki birozgina tushkunlik hissi hozir gormonal va tabiiy holat. Issiq choy, erta uxlash va yengil mashqlar yordam beradi.",
+    },
+    follicular: {
+      name: "Follikul fazasi",
+      description:
+        "Estrogen darajasi asta ko'tarilmoqda — energiya va kayfiyat odatda kun sayin yaxshilanadi. Bu davr yangi ishlarni boshlash, faol mashqlar va uchrashuvlar uchun qulay.",
+    },
+    ovulation: {
+      name: "Ovulyatsiya",
+      description:
+        "Estrogen eng yuqori nuqtada, testosteron ham biroz oshadi — o'zingizni ishonchli va energik his qilishingiz mumkin. Lekin ovulyatsiyadan keyin gormon darajasi keskin tushishi mumkin — buni oldindan bilib, o'zingizga yumshoq munosabatda bo'ling.",
+    },
+    luteal: {
+      name: "Lyuteal faza",
+      description:
+        "Progesteron ko'tariladi, so'ng hayzdan oldin ikkala gormon ham keskin pasayadi — shu davrdagi asabiylashish, stress yoki tushkunlik ko'pincha aynan shu gormonal tebranish tufayli, xarakteringiz emas. Kofein/tuzni kamaytirish, magniyga boy ovqat va yetarli uyqu simptomlarni yengillashtiradi.",
+    },
     fertilityLabel: "Unumdorlik darajasi",
     fertilityLevels: {
       low: "Past",

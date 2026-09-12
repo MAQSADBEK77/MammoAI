@@ -353,10 +353,26 @@ const en: Dictionary = {
   },
 
   cyclePhase: {
-    menstrual: { name: "Menstrual phase", description: "The uterine lining is shedding. Time to rest and take care of yourself." },
-    follicular: { name: "Follicular phase", description: "Follicles are developing in the ovary, energy levels are gradually rising." },
-    ovulation: { name: "Ovulation", description: "An egg is released — this is when the chance of getting pregnant is highest." },
-    luteal: { name: "Luteal phase", description: "Progesterone rises. PMS symptoms are more noticeable during this phase." },
+    menstrual: {
+      name: "Menstrual phase",
+      description:
+        "Estrogen and progesterone are at their lowest right now — so fatigue, irritability, or a touch of low mood are hormonal and natural today. Warm tea, an early night, and light movement help.",
+    },
+    follicular: {
+      name: "Follicular phase",
+      description:
+        "Estrogen is gradually rising — energy and mood usually improve day by day. A good stretch for starting new things, active workouts, and social plans.",
+    },
+    ovulation: {
+      name: "Ovulation",
+      description:
+        "Estrogen peaks and testosterone rises slightly — you may feel more confident and energetic. But hormone levels can drop sharply right after ovulation — it helps to know that in advance and go easy on yourself.",
+    },
+    luteal: {
+      name: "Luteal phase",
+      description:
+        "Progesterone rises, then both hormones drop sharply before your period — irritability, stress, or low mood in this window are usually the hormonal swing talking, not your character. Less caffeine and salt, more magnesium-rich food, and good sleep ease the symptoms.",
+    },
     fertilityLabel: "Fertility level",
     fertilityLevels: {
       low: "Low",
