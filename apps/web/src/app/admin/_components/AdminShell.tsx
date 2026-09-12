@@ -21,6 +21,7 @@ const NAV_ITEMS: { href: string; label: string; icon: string; exact?: boolean }[
   { href: "/admin/clinics", label: "Klinikalar", icon: "🏥" },
   { href: "/admin/articles", label: "Maqolalar", icon: "📰" },
   { href: "/admin/illustrations", label: "Illyustratsiyalar", icon: "🖼️" },
+  { href: "/admin/admins", label: "Adminlar", icon: "🛡️" },
 ];
 
 /** Admin sessiyasini tekshiradi va sidebar+asosiy joylashuvni chizadi. Sessiya
@@ -30,13 +31,19 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [status, setStatus] = useState<"checking" | "ok">("checking");
+  // ADMIN-001: "kim sifatida kirgansiz" — sidebar pastida ko'rsatiladi,
+  // shunda har bir amal audit-jurnalga aynan shu nom bilan yozilishi ochiq.
+  const [adminLabel, setAdminLabel] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     adminApi
       .me()
-      .then(() => {
-        if (!cancelled) setStatus("ok");
+      .then((res) => {
+        if (!cancelled) {
+          setStatus("ok");
+          setAdminLabel(res.adminLabel);
+        }
       })
       .catch(() => {
         if (!cancelled) router.replace("/admin/login");
@@ -94,6 +101,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
+        {adminLabel && <p className="px-3.5 pb-2 text-[11px] text-white/40">Kirgan: {adminLabel}</p>}
         <button
           type="button"
           onClick={handleLogout}

@@ -26,6 +26,22 @@ export interface AdminUserSummary extends User {
   lastActiveAt: string | null;
 }
 
+// ADMIN-001 — alohida admin hisoblari va audit-jurnal.
+export interface AdminAccountSummary {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface AdminAuditEntry {
+  id: string;
+  adminLabel: string;
+  action: string;
+  detail: string | null;
+  createdAt: string;
+}
+
 export interface AdminCommunityPost extends CommunityPost {
   authorId: string;
   authorPhone: string | null;
@@ -105,10 +121,20 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 export { AdminApiError };
 
 export const adminApi = {
-  login: (password: string) => request<{ ok: true }>("/login", { method: "POST", body: JSON.stringify({ password }) }),
+  // ADMIN-001: email berilsa — shaxsiy hisob, bo'lmasa — eski umumiy "root" parol.
+  login: (password: string, email?: string) => request<{ ok: true }>("/login", { method: "POST", body: JSON.stringify({ password, email }) }),
   logout: () => request<{ ok: true }>("/logout", { method: "POST" }),
-  me: () => request<{ ok: true }>("/me"),
+  me: () => request<{ ok: true; adminLabel: string }>("/me"),
   stats: () => request<AdminStats>("/stats"),
+  admins: {
+    list: () => request<{ admins: AdminAccountSummary[] }>("/admins"),
+    create: (data: { email: string; password: string; name: string }) =>
+      request<{ admin: AdminAccountSummary }>("/admins", { method: "POST", body: JSON.stringify(data) }),
+    delete: (id: string) => request<{ ok: true }>(`/admins/${id}`, { method: "DELETE" }),
+  },
+  auditLog: {
+    list: () => request<{ entries: AdminAuditEntry[] }>("/audit-log"),
+  },
   users: {
     list: (params: { search?: string; limit?: number; offset?: number }) => {
       const q = new URLSearchParams();

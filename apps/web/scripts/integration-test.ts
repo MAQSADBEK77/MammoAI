@@ -20,7 +20,13 @@ import {
   listOpenCommunityReports,
   resolveCommunityReport,
   unblockUser,
+  createAdminUser,
+  findAdminUserByEmail,
+  deleteAdminUser,
+  logAdminAction,
+  listAdminAuditLog,
 } from "../src/server/repo";
+import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
 
 let failures = 0;
@@ -139,6 +145,25 @@ async function main() {
   } finally {
     await sql`DELETE FROM users WHERE id = ${userA}`;
     await sql`DELETE FROM users WHERE id = ${userB}`;
+  }
+
+  // --- ADMIN-001: alohida admin hisoblari va audit-jurnal ---
+  const adminEmail = `test-${randomUUID()}@mammoai.test`;
+  let createdAdminId: string | null = null;
+  try {
+    const created = await createAdminUser(adminEmail, hashAdminPassword("correct-horse-battery"), "Test Admin");
+    createdAdminId = created.id;
+
+    const found = await findAdminUserByEmail(adminEmail);
+    assert(!!found, "ADMIN-001: yangi admin email bo'yicha topiladi");
+    assert(found && verifyAdminPasswordHash("correct-horse-battery", found.passwordHash), "to'g'ri parol bilan tasdiqlanadi");
+    assert(found && !verifyAdminPasswordHash("wrong-password", found.passwordHash), "noto'g'ri parol rad etiladi");
+
+    await logAdminAction("Test Admin", "premium_granted", "user=abc123");
+    const log = await listAdminAuditLog(5);
+    assert(log.some((l) => l.adminLabel === "Test Admin" && l.action === "premium_granted"), "amal audit-jurnalga yoziladi");
+  } finally {
+    if (createdAdminId) await deleteAdminUser(createdAdminId);
   }
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);

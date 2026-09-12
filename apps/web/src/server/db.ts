@@ -544,6 +544,30 @@ async function initSchema() {
         PRIMARY KEY (blocker_id, blocked_id)
       )
     `,
+    // ADMIN-001: bitta umumiy `ADMIN_PASSWORD` o'rniga har bir admin uchun
+    // alohida hisob (email+parol) — bu ikkalasi ham `users`ga bog'liq emas,
+    // shuning uchun istalgan bosqichda yaratilishi mumkin.
+    sql`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `,
+    // Audit-jurnal — kim, qachon, nima qilgani. `admin_label`ning o'zi
+    // saqlanadi (FK emas) — shunda admin hisobi keyinchalik o'chirilsa ham
+    // tarixiy yozuv "kim qilgani"ni yo'qotmaydi.
+    sql`
+      CREATE TABLE IF NOT EXISTS admin_audit_log (
+        id TEXT PRIMARY KEY,
+        admin_label TEXT NOT NULL,
+        action TEXT NOT NULL,
+        detail TEXT,
+        created_at TEXT NOT NULL
+      )
+    `,
   ]);
 
   // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
@@ -569,6 +593,7 @@ async function initSchema() {
     sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_user_id ON users(telegram_user_id) WHERE telegram_user_id IS NOT NULL`,
     sql`CREATE INDEX IF NOT EXISTS idx_community_reports_status ON community_reports(status, created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_blocked_users_blocker ON blocked_users(blocker_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created ON admin_audit_log(created_at DESC)`,
   ]);
 }
 

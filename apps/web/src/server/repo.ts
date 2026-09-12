@@ -2549,6 +2549,77 @@ export async function countOpenCommunityReports(): Promise<number> {
   return count;
 }
 
+// --- ADMIN-001: alohida admin hisoblari va audit-jurnal ---------------------
+
+export interface AdminAccountSummary {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}
+
+export async function createAdminUser(email: string, passwordHash: string, name: string): Promise<AdminAccountSummary> {
+  await ensureSchema();
+  const id = randomUUID();
+  const createdAt = now();
+  await sql`INSERT INTO admin_users (id, email, password_hash, name, created_at) VALUES (${id}, ${email.toLowerCase()}, ${passwordHash}, ${name}, ${createdAt})`;
+  return { id, email: email.toLowerCase(), name, createdAt };
+}
+
+export async function listAdminUsers(): Promise<AdminAccountSummary[]> {
+  await ensureSchema();
+  const rows = (await sql`SELECT id, email, name, created_at FROM admin_users ORDER BY created_at ASC`) as unknown as {
+    id: string;
+    email: string;
+    name: string;
+    created_at: string;
+  }[];
+  return rows.map((r) => ({ id: r.id, email: r.email, name: r.name, createdAt: r.created_at }));
+}
+
+export async function deleteAdminUser(id: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM admin_users WHERE id = ${id}`;
+}
+
+/** Login uchun — email bo'yicha topadi, parol xeshini ham qaytaradi
+ * (solishtirishning o'zi admin-auth.ts'da, timing-safe). */
+export async function findAdminUserByEmail(email: string): Promise<{ id: string; name: string; passwordHash: string } | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT id, name, password_hash FROM admin_users WHERE email = ${email.toLowerCase()}`) as unknown as {
+    id: string;
+    name: string;
+    password_hash: string;
+  }[];
+  const row = rows[0];
+  return row ? { id: row.id, name: row.name, passwordHash: row.password_hash } : null;
+}
+
+export interface AdminAuditEntry {
+  id: string;
+  adminLabel: string;
+  action: string;
+  detail: string | null;
+  createdAt: string;
+}
+
+/** `adminLabel` snapshot sifatida saqlanadi (FK emas) — admin hisobi keyin
+ * o'chirilsa ham tarixiy yozuv "kim qilgani"ni yo'qotmaydi. Xato bo'lsa ham
+ * (masalan bog'lanish uzilib qolsa) asosiy amalni to'xtatmaslik uchun
+ * chaqiruvchi tomonda odatda `.catch(() => {})` bilan ishlatiladi. */
+export async function logAdminAction(adminLabel: string, action: string, detail?: string | null): Promise<void> {
+  await ensureSchema();
+  await sql`INSERT INTO admin_audit_log (id, admin_label, action, detail, created_at) VALUES (${randomUUID()}, ${adminLabel}, ${action}, ${detail ?? null}, ${now()})`;
+}
+
+export async function listAdminAuditLog(limit = 100): Promise<AdminAuditEntry[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT id, admin_label, action, detail, created_at FROM admin_audit_log ORDER BY created_at DESC LIMIT ${limit}
+  `) as unknown as { id: string; admin_label: string; action: string; detail: string | null; created_at: string }[];
+  return rows.map((r) => ({ id: r.id, adminLabel: r.admin_label, action: r.action, detail: r.detail, createdAt: r.created_at }));
+}
+
 // ---------------------------------------------------------------------------
 // Bildirishnomalar — hozircha faqat "postingizga izoh qoldirildi" (repo.ts
 // addCommunityComment shu yerda yozadi).

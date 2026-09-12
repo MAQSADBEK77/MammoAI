@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jsonError } from "@/server/api-utils";
 import { requireAdmin } from "@/server/admin-auth";
-import { deleteCommunityPostAdmin, updateCommunityPostAdmin } from "@/server/repo";
+import { deleteCommunityPostAdmin, updateCommunityPostAdmin, logAdminAction } from "@/server/repo";
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -20,9 +20,10 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    requireAdmin(request);
+    const identity = requireAdmin(request);
     const { id } = await context.params;
     await deleteCommunityPostAdmin(id);
+    await logAdminAction(identity.adminLabel, "post_deleted", id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return jsonError(error);
