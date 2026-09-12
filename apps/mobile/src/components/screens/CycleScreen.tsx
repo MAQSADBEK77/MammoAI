@@ -15,6 +15,7 @@ import { Badge, Button, Card, DateWheelPicker, IconChip, LoadingSpinner, ScreenH
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
+import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { Emoji } from "@/components/Emoji";
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
@@ -284,6 +285,8 @@ export function CycleScreen() {
           </View>
         )}
       </View>
+
+      <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
 
       <View>
         <Text className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.detailedLogButton}</Text>
