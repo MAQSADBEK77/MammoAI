@@ -227,6 +227,8 @@ export function createApiClient(config: ApiClientConfig) {
         request<CycleResponse>("/api/cycle/logs", { method: "POST", body: JSON.stringify(log) }),
       updateSettings: (settings: Partial<Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength">>) =>
         request<CycleResponse>("/api/cycle/settings", { method: "PATCH", body: JSON.stringify(settings) }),
+      /** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish. */
+      deleteLog: (date: string) => request<CycleResponse>(`/api/cycle/logs/${date}`, { method: "DELETE" }),
     },
     pregnancy: {
       get: () => request<PregnancyResponse>("/api/pregnancy"),

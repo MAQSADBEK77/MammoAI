@@ -12,7 +12,7 @@ import {
   ChevronRight,
   EditOutlined,
 } from "@mui/icons-material";
-import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
+import type { CycleResponse, CycleLog, FlowLevel, Mood, PredictionConfidence, Symptom } from "@mammoai/shared";
 import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -24,6 +24,16 @@ import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
+
+// CYCLE-002: ishonch darajasi rangi — "past"/"o'rtacha" ikkalasi ham
+// ogohlantiruvchi (warning) rang, chunki bu XATO holat emas, shunchaki
+// hali tarix kam degani — qizil (danger) bezovtalanish uyg'otmasligi kerak.
+const CONFIDENCE_TONE: Record<PredictionConfidence, "success" | "warning" | "muted"> = {
+  high: "success",
+  medium: "warning",
+  low: "warning",
+  insufficient: "muted",
+};
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -55,6 +65,7 @@ export function CycleScreen() {
   const [mood, setMood] = useState<Mood | null>(null);
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [saving, setSaving] = useState(false);
+  const [deletingLog, setDeletingLog] = useState(false);
   const [moodSaving, setMoodSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(() => localDateStr());
   const [showAllLogs, setShowAllLogs] = useState(false);
@@ -188,6 +199,23 @@ export function CycleScreen() {
     }
   }
 
+  /** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish (masalan bexosdan
+   * bosilgan sana) — faqat mavjud yozuv tahrirlanayotganda ko'rsatiladigan
+   * tugma orqali chaqiriladi. */
+  async function removeLog() {
+    setDeletingLog(true);
+    try {
+      const res = await api.cycle.deleteLog(logDate);
+      setData(res);
+      setLogging(false);
+      setFlow(null);
+      setMood(null);
+      setSymptoms([]);
+    } finally {
+      setDeletingLog(false);
+    }
+  }
+
   async function saveLog() {
     setSaving(true);
     try {
@@ -267,11 +295,19 @@ export function CycleScreen() {
             )}
 
             {data.prediction && (
-              <p className="mt-3 text-center text-xs text-text-muted">
-                {data.prediction.cyclesAnalyzed > 0
-                  ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
-                  : dict.cycle.predictionBasisEstimate}
-              </p>
+              <div className="mt-3 flex flex-col items-center gap-1.5">
+                <p className="text-center text-xs text-text-muted">
+                  {data.prediction.cyclesAnalyzed > 0
+                    ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
+                    : dict.cycle.predictionBasisEstimate}
+                </p>
+                {/* CYCLE-002: aniq sanani tibbiy haqiqat emas, turli aniqlikdagi
+                    taxmin sifatida ko'rsatish — foydalanuvchi ishonch darajasini
+                    ko'rib, mos ravishda kutishlarini moslashtira oladi. */}
+                <Badge tone={CONFIDENCE_TONE[data.prediction.confidence]}>
+                  {dict.cycle.confidenceLabel[data.prediction.confidence]}
+                </Badge>
+              </div>
             )}
           </Card>
         </>
@@ -425,13 +461,20 @@ export function CycleScreen() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => setLogging(false)} disabled={saving}>
+            <Button variant="ghost" onClick={() => setLogging(false)} disabled={saving || deletingLog}>
               {dict.common.cancel}
             </Button>
-            <Button className="flex-1" onClick={saveLog} disabled={saving}>
+            <Button className="flex-1" onClick={saveLog} disabled={saving || deletingLog}>
               {dict.common.save}
             </Button>
           </div>
+          {/* CYCLE-002: faqat MAVJUD yozuvni tahrirlashda ko'rinadi — yangi
+              (hali saqlanmagan) kun uchun o'chirish tugmasi ma'nosiz. */}
+          {data.logs.some((l) => l.date === logDate) && (
+            <Button variant="ghost" className="w-full text-danger!" onClick={removeLog} disabled={saving || deletingLog}>
+              {dict.cycle.deleteLogButton}
+            </Button>
+          )}
         </Card>
       )}
 

@@ -24,7 +24,7 @@ import {
   TouchableRipple,
 } from "react-native-paper";
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
-import { glass, gradients } from "@mammoai/shared";
+import { colors, glass, gradients } from "@mammoai/shared";
 import { useModeAccent, useResolvedTheme, useThemeColors } from "@/lib/theme";
 import { Emoji } from "@/components/Emoji";
 
@@ -43,7 +43,10 @@ export function Button({
   className,
   disabled,
   onPress,
-}: PressableProps & { variant?: Variant; children: React.ReactNode; className?: string }) {
+  /** CYCLE-002: "bu yozuvni o'chirish" kabi yakuniy/qaytarib bo'lmas
+   * harakatlar uchun — faqat "ghost" variant matn rangini o'zgartiradi. */
+  danger,
+}: PressableProps & { variant?: Variant; children: React.ReactNode; className?: string; danger?: boolean }) {
   const content = typeof children === "string" ? <Text className={clsx("text-base font-semibold", variant === "primary" || variant === "dark" ? "text-white" : "text-text-primary")}>{children}</Text> : children;
 
   // Asosiy tugma — gradient fon (rangi joriy rejimga qarab butunlay o'zgaradi:
@@ -84,7 +87,7 @@ export function Button({
       // o'qilmay qoladi (web bilan bir xil tuzatish, ui.tsx#buttonSx'ga q.).
       // "ghost"ning esa foni yo'q — u qaysi sirt ustida tursa o'sha bilan
       // birga qorong'ulashadi, shuning uchun matni ham temaga mos.
-      textColor={variant === "secondary" ? "#1F2937" : variant === "ghost" ? themeColors.textSecondary : undefined}
+      textColor={variant === "secondary" ? "#1F2937" : variant === "ghost" ? (danger ? colors.danger : themeColors.textSecondary) : undefined}
       contentStyle={{ minHeight: 48 }}
       style={{ borderRadius: 999, justifyContent: "center" }}
       labelStyle={{ fontWeight: "600", fontSize: 16 }}

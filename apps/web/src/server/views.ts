@@ -27,7 +27,10 @@ export async function buildCycleResponse(userId: string): Promise<CycleResponse>
   // tarix bo'lmasa foydalanuvchining o'zi kiritgan sozlamasiga tushadi.
   const adaptive = deriveAdaptiveCycleSettings(historyLogs, settings);
   const prediction = adaptive && predictCycle(adaptive);
-  if (prediction && adaptive) prediction.cyclesAnalyzed = adaptive.cyclesAnalyzed;
+  if (prediction && adaptive) {
+    prediction.cyclesAnalyzed = adaptive.cyclesAnalyzed;
+    prediction.confidence = adaptive.confidence;
+  }
 
   const isIrregular = isCycleIrregular(computeCycleLengths(historyLogs));
 

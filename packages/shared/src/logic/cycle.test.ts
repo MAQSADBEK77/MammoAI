@@ -10,6 +10,7 @@ import {
   computePeriodLength,
   deriveAdaptiveCycleSettings,
   detectPeriodStarts,
+  getPredictionConfidence,
   isCycleIrregular,
   predictCycle,
 } from "./cycle";
@@ -83,7 +84,13 @@ describe("deriveAdaptiveCycleSettings", () => {
   it("2 tadan kam aniqlangan sikl bo'lsa, fallback sozlamaga tushadi (cyclesAnalyzed: 0)", () => {
     const logs = [{ date: "2026-01-01", flow: "medium" as const }];
     const result = deriveAdaptiveCycleSettings(logs, { lastPeriodStart: "2026-01-01", averageCycleLength: 30, averagePeriodLength: 6 });
-    expect(result).toEqual({ lastPeriodStart: "2026-01-01", averageCycleLength: 30, averagePeriodLength: 6, cyclesAnalyzed: 0 });
+    expect(result).toEqual({
+      lastPeriodStart: "2026-01-01",
+      averageCycleLength: 30,
+      averagePeriodLength: 6,
+      cyclesAnalyzed: 0,
+      confidence: "insufficient",
+    });
   });
 
   it("lastPeriodStart umuman bo'lmasa null qaytaradi", () => {
@@ -166,5 +173,28 @@ describe("isCycleIrregular", () => {
 
   it("barqaror sikllarni tartibsiz deb hisoblamaydi", () => {
     expect(isCycleIrregular([28, 29, 27])).toBe(false); // farq 2
+  });
+});
+
+describe("getPredictionConfidence", () => {
+  it("0 ta aniqlangan sikl bo'lsa — 'insufficient' (CYCLE-002)", () => {
+    expect(getPredictionConfidence(0, [])).toBe("insufficient");
+  });
+
+  it("1-2 ta aniqlangan sikl bo'lsa — 'low' (hali tendensiya aniq emas)", () => {
+    expect(getPredictionConfidence(1, [28])).toBe("low");
+    expect(getPredictionConfidence(2, [28, 30])).toBe("low");
+  });
+
+  it("3+ sikl va barqaror uzunlik bo'lsa — 'high'", () => {
+    expect(getPredictionConfidence(4, [28, 29, 27, 28])).toBe("high"); // farq 2
+  });
+
+  it("3+ sikl va o'rtacha tarqoqlik bo'lsa — 'medium'", () => {
+    expect(getPredictionConfidence(3, [24, 28, 32])).toBe("medium"); // farq 8
+  });
+
+  it("3+ sikl bo'lsa-da katta tarqoqlik bo'lsa — 'low'", () => {
+    expect(getPredictionConfidence(3, [20, 28, 40])).toBe("low"); // farq 20
   });
 });

@@ -5,7 +5,7 @@ import clsx from "clsx";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Portal, Dialog } from "react-native-paper";
-import type { CycleLog, CycleResponse, FlowLevel, Mood, Symptom } from "@mammoai/shared";
+import type { CycleLog, CycleResponse, FlowLevel, Mood, PredictionConfidence, Symptom } from "@mammoai/shared";
 import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -18,6 +18,14 @@ import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
+
+// CYCLE-002 — web'dagi CycleScreen.tsx bilan bir xil, izoh o'sha yerda.
+const CONFIDENCE_TONE: Record<PredictionConfidence, "success" | "warning" | "muted"> = {
+  high: "success",
+  medium: "warning",
+  low: "warning",
+  insufficient: "muted",
+};
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -50,6 +58,7 @@ export function CycleScreen() {
   const [mood, setMood] = useState<Mood | null>(null);
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [saving, setSaving] = useState(false);
+  const [deletingLog, setDeletingLog] = useState(false);
   const [moodSaving, setMoodSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(() => localDateStr());
   const [showAllLogs, setShowAllLogs] = useState(false);
@@ -188,6 +197,21 @@ export function CycleScreen() {
     }
   }
 
+  /** CYCLE-002 — web'dagi CycleScreen.tsx bilan bir xil, izoh o'sha yerda. */
+  async function removeLog() {
+    setDeletingLog(true);
+    try {
+      const res = await api.cycle.deleteLog(logDate);
+      setData(res);
+      setLogging(false);
+      setFlow(null);
+      setMood(null);
+      setSymptoms([]);
+    } finally {
+      setDeletingLog(false);
+    }
+  }
+
   return (
     <View className="gap-5">
       <View className="flex-row items-start justify-between gap-3">
@@ -247,11 +271,17 @@ export function CycleScreen() {
               )}
 
               {data.prediction && (
-                <Text className="mt-3 text-center text-xs text-text-muted">
-                  {data.prediction.cyclesAnalyzed > 0
-                    ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
-                    : dict.cycle.predictionBasisEstimate}
-                </Text>
+                <View className="mt-3 items-center gap-1.5">
+                  <Text className="text-center text-xs text-text-muted">
+                    {data.prediction.cyclesAnalyzed > 0
+                      ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
+                      : dict.cycle.predictionBasisEstimate}
+                  </Text>
+                  {/* CYCLE-002 — web'dagi bilan bir xil, izoh o'sha yerda. */}
+                  <Badge tone={CONFIDENCE_TONE[data.prediction.confidence]}>
+                    <Text>{dict.cycle.confidenceLabel[data.prediction.confidence]}</Text>
+                  </Badge>
+                </View>
               )}
             </Card>
           </Animated.View>
@@ -398,15 +428,21 @@ export function CycleScreen() {
           </View>
 
           <View className="flex-row gap-2">
-            <Button variant="ghost" onPress={() => setLogging(false)} disabled={saving}>
+            <Button variant="ghost" onPress={() => setLogging(false)} disabled={saving || deletingLog}>
               {dict.common.cancel}
             </Button>
             <View className="flex-1">
-              <Button onPress={saveLog} disabled={saving}>
+              <Button onPress={saveLog} disabled={saving || deletingLog}>
                 {dict.common.save}
               </Button>
             </View>
           </View>
+          {/* CYCLE-002 — web'dagi bilan bir xil shart, izoh o'sha yerda. */}
+          {data.logs.some((l) => l.date === logDate) && (
+            <Button variant="ghost" danger onPress={removeLog} disabled={saving || deletingLog}>
+              {dict.cycle.deleteLogButton}
+            </Button>
+          )}
         </Card>
       )}
 

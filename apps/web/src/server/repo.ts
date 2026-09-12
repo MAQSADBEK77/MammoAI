@@ -655,6 +655,25 @@ export async function countCycleLogs(userId: string): Promise<number> {
   return count;
 }
 
+/** `upsertCycleLog` VA `deleteCycleLog` ikkalasi ham chaqiradi — CYCLE-001
+ * tuzatishi (bir joyda, ikki chaqiruvchi uchun): butun tarix ustida
+ * `deriveAdaptiveCycleSettings`dagi bilan BIR XIL streak-aniqlash
+ * (detectPeriodStarts) ishlatiladi, shunda "davom etayotgan hayz kuni"
+ * bilan "haqiqatan yangi hayz boshlanishi" ANIQ farqlanadi — va bitta
+ * kunni o'chirish ham (masalan xato qo'yilgan yozuvni bekor qilish)
+ * boshlanish sanasini to'g'ri qayta hisoblaydi. `null` — hech qanday
+ * hayz kuni aniqlanmasa (masalan oxirgi hayz kuni o'chirilgan bo'lsa).
+ */
+async function recomputeLastPeriodStart(userId: string): Promise<void> {
+  const recentLogs = await listCycleLogs(userId, 365);
+  const starts = detectPeriodStarts(recentLogs);
+  const lastDetectedStart = starts[starts.length - 1] ?? null;
+  const settings = await getCycleSettings(userId);
+  if (lastDetectedStart !== settings.lastPeriodStart) {
+    await updateCycleSettings(userId, { lastPeriodStart: lastDetectedStart });
+  }
+}
+
 export async function upsertCycleLog(
   userId: string,
   log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms">
@@ -669,31 +688,24 @@ export async function upsertCycleLog(
     ON CONFLICT (user_id, date) DO UPDATE SET
       flow = EXCLUDED.flow, mood = EXCLUDED.mood, symptoms = EXCLUDED.symptoms
   `;
-
-  // MUHIM: avval bu yerda "log.date > joriy lastPeriodStart bo'lsa — yangilash"
-  // degan sodda mantiq bor edi — bu XATO edi: davom etayotgan hayzning 2-, 3-
-  // kunini qayd etish ham "yangi sikl boshlandi" deb hisoblanib, lastPeriodStart
-  // har kuni "bugun"ga siljib borardi (natijada sikl kuni doim "1" bo'lib
-  // qolardi, keyingi bashorat ham har kuni oldinga surilaverardi). Endi
-  // BUTUN tarix ustida XUDDI deriveAdaptiveCycleSettings'dagi bilan bir xil
-  // streak-aniqlash (detectPeriodStarts) ishlatiladi — shu orqali "davom
-  // etayotgan hayz kuni" bilan "haqiqatan yangi hayz boshlanishi" ANIQ
-  // farqlanadi (CYCLE_GAP_DAYS'dan katta bo'shliqdan keyingi flow kuni
-  // — haqiqiy yangi boshlanish).
-  if (log.flow) {
-    const recentLogs = await listCycleLogs(userId, 365);
-    const starts = detectPeriodStarts(recentLogs);
-    const lastDetectedStart = starts[starts.length - 1] ?? null;
-    const settings = await getCycleSettings(userId);
-    if (lastDetectedStart && lastDetectedStart !== settings.lastPeriodStart) {
-      await updateCycleSettings(userId, { lastPeriodStart: lastDetectedStart });
-    }
-  }
+  // Har doim qayta hisoblanadi (faqat `log.flow` bor bo'lganda emas) — aks
+  // holda mavjud oqim kunini "bekor qilish" (flow'ni null'ga o'zgartirish)
+  // eski boshlanish sanasini eskirgan holda qoldirib ketardi.
+  await recomputeLastPeriodStart(userId);
 
   const rows = (await sql`
     SELECT * FROM cycle_logs WHERE user_id = ${userId} AND date = ${log.date}
   `) as unknown as CycleLogRow[];
   return cycleLogFromRow(rows[0]);
+}
+
+/** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish (masalan noto'g'ri
+ * sanaga bosilgan bo'lsa) — shundan keyin ham lastPeriodStart to'g'ri qayta
+ * hisoblanadi, xuddi upsert'dagidek. */
+export async function deleteCycleLog(userId: string, date: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM cycle_logs WHERE user_id = ${userId} AND date = ${date}`;
+  await recomputeLastPeriodStart(userId);
 }
 
 // ---------------------------------------------------------------------------

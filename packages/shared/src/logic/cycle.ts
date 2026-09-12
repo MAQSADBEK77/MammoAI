@@ -92,6 +92,25 @@ export function computePeriodLength(logs: Pick<CycleLog, "date" | "flow">[], per
   return length || null;
 }
 
+/** Bashorat qanchalik ishonchli ekanligini ko'rsatadi — foydalanuvchiga aniq
+ * sanani tibbiy haqiqat sifatida emas, turli aniqlikdagi taxmin sifatida
+ * ko'rsatish uchun (CYCLE-002). `insufficient` — hali haqiqiy sikl tarixi yo'q,
+ * faqat foydalanuvchi kiritgan/standart taxminga tayanilgan. */
+export type PredictionConfidence = "high" | "medium" | "low" | "insufficient";
+
+/** `isCycleIrregular`dagi bilan bir xil "eng katta va eng kichik farqi" mezoni —
+ * lekin tartibsizlik ogohlantirishidan farqli o'laroq, bu doim (kamida 1 ta
+ * aniqlangan sikl bo'lsagina) qandaydir ishonch darajasini qaytaradi. */
+export function getPredictionConfidence(cyclesAnalyzed: number, recentCycleLengths: number[]): PredictionConfidence {
+  if (cyclesAnalyzed === 0) return "insufficient";
+  if (cyclesAnalyzed < 3) return "low";
+  const relevant = recentCycleLengths.slice(-cyclesAnalyzed);
+  const spread = Math.max(...relevant) - Math.min(...relevant);
+  if (spread <= 4) return "high";
+  if (spread <= 9) return "medium";
+  return "low";
+}
+
 export interface AdaptiveCycleSettings {
   lastPeriodStart: string;
   averageCycleLength: number;
@@ -99,6 +118,9 @@ export interface AdaptiveCycleSettings {
   /** Necha ta haqiqiy (loglardan aniqlangan) sikl asosida hisoblangani —
    * 0 bo'lsa, foydalanuvchining bir martalik sozlamasiga tayanilgan. */
   cyclesAnalyzed: number;
+  /** getPredictionConfidence(cyclesAnalyzed, lengths) — shu yerda hisoblab
+   * qo'yiladi, chunki `lengths` faqat shu funksiya ichida mavjud. */
+  confidence: PredictionConfidence;
 }
 
 /**
@@ -124,6 +146,7 @@ export function deriveAdaptiveCycleSettings(
       averageCycleLength: fallback.averageCycleLength || DEFAULT_CYCLE_LENGTH,
       averagePeriodLength: fallback.averagePeriodLength || DEFAULT_PERIOD_LENGTH,
       cyclesAnalyzed: 0,
+      confidence: "insufficient",
     };
   }
 
@@ -140,6 +163,7 @@ export function deriveAdaptiveCycleSettings(
     averageCycleLength: avgCycleLength,
     averagePeriodLength: clamp(periodLength, MIN_SANE_PERIOD_LENGTH, MAX_SANE_PERIOD_LENGTH),
     cyclesAnalyzed: lengths.length,
+    confidence: getPredictionConfidence(lengths.length, lengths),
   };
 }
 
@@ -167,6 +191,10 @@ export interface CyclePrediction {
    * UI o'sib boruvchi kechikish soni o'rniga "ma'lumot eskirgan, oxirgi
    * hayz sanasini yangilang" holatini ko'rsatishi kerak. */
   isStale: boolean;
+  /** UI'da aniq sanani tibbiy haqiqat sifatida emas, shaffof taxmin sifatida
+   * ko'rsatish uchun (CYCLE-002). Chaqiruvchi (buildCycleResponse) adaptiv
+   * qiymat bilan qayta belgilaydi — xuddi cyclesAnalyzed kabi. */
+  confidence: PredictionConfidence;
 }
 
 export function predictCycle(
@@ -207,6 +235,7 @@ export function predictCycle(
     daysUntilNextPeriod,
     cyclesAnalyzed: 0, // chaqiruvchi (buildCycleResponse) adaptiv qiymat bilan qayta belgilaydi
     isStale: daysUntilNextPeriod < -STALE_PREDICTION_DAYS,
+    confidence: "insufficient", // chaqiruvchi adaptiv qiymat bilan qayta belgilaydi
   };
 }
 

@@ -282,6 +282,14 @@ const uz = {
     staleDataLabel: "Ma'lumot eskirgan — oxirgi hayz sanasini yangilang",
     predictionBasisHistory: (n: number) => `So'nggi ${n} ta sikl asosida hisoblangan`,
     predictionBasisEstimate: "Taxminiy — ko'proq kuzatuv qilsangiz aniqroq bo'ladi",
+    // CYCLE-002: aniq sana o'rniga ishonch darajasi — bashorat tibbiy haqiqat
+    // emas, turli aniqlikdagi taxmin ekanini ochiq ko'rsatish uchun.
+    confidenceLabel: {
+      high: "Yuqori ishonch",
+      medium: "O'rtacha ishonch",
+      low: "Past ishonch",
+      insufficient: "Yetarli ma'lumot yo'q",
+    },
     articlesCardTitle: "Qiziqarli maqolalar",
     riskQuizCardTitle: "O'z-o'zini tekshirish testi",
     riskQuizCardSubtitle: "2 daqiqada xavf darajangizni bilib oling",
@@ -311,6 +319,8 @@ const uz = {
       ai_assistant: { title: "Savolingiz bormi?", body: "AI Yordamchidan so'rang — tarixingizni eslab qoladi." },
     },
     detailedLogButton: "Batafsil kiritish",
+    /** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish tugmasi. */
+    deleteLogButton: "Bu yozuvni o'chirish",
     calendarLegendPeriod: "Hayz",
     calendarLegendFollicular: "Follikulyar",
     calendarLegendOvulation: "Ovulyatsiya",
