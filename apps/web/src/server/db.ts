@@ -411,12 +411,14 @@ async function initSchema() {
     // Admin panel — foydalanuvchini bloklash (App.pdf'dan tashqari, moderatsiya uchun).
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE`,
     sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
-    // Hamkor "Xabar" (tezkor eslatma) tugmasi shu ustunni ishlatadi —
-    // izoh-bildirishnomalaridan farqli o'laroq, erkin matn saqlaydi.
-    sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS message TEXT`,
-    // Kunlik eslatma (system) bildirishnomalari uchun — haqiqiy "actor"
-    // (boshqa foydalanuvchi) yo'q, shuning uchun bu ustun endi ixtiyoriy.
-    sql`ALTER TABLE notifications ALTER COLUMN actor_user_id DROP NOT NULL`,
+    // MUHIM: `notifications`ga tegishli ALTER'lar ATAYLAB bu yerda EMAS —
+    // pastda, jadvalning o'zi ("2.5-bosqich") yaratilgandan KEYIN (qarang:
+    // "2.6-bosqich"). Bu yerda turganda haqiqiy production'da hech qachon
+    // xato bermasdi (jadval oylar oldin allaqachon mavjud edi), lekin
+    // haqiqatan YANGI (bo'sh) bazada — masalan QA-001'ning CI integratsiya
+    // testi ishlatadigan vaqtinchalik Postgres'da — "relation notifications
+    // does not exist" xatosi bilan initSchema()ning O'ZI muvaffaqiyatsiz
+    // tugardi (aynan shu CI xizmat konteynerida ushlangan real bug).
     // Telegram Mini App orqali kirgan (yoki keyinroq bog'langan) foydalanuvchilar —
     // 1:1 shaxsiy chatda chat_id === user_id, shuning uchun bot xabar yuborishda
     // ham shu ustunning o'zi ishlatiladi (alohida chat_id ustuni shart emas).
@@ -495,6 +497,18 @@ async function initSchema() {
       created_at TEXT NOT NULL
     )
   `;
+
+  // 2.6-bosqich: `notifications`ga tegishli ALTER'lar — jadval yuqorida
+  // ("2.5-bosqich") ENDIGINA yaratilgani uchun, faqat SHUNDAN keyin
+  // xavfsiz (qarang: "1.5-bosqich"dagi izoh).
+  await Promise.all([
+    // Hamkor "Xabar" (tezkor eslatma) tugmasi shu ustunni ishlatadi —
+    // izoh-bildirishnomalaridan farqli o'laroq, erkin matn saqlaydi.
+    sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS message TEXT`,
+    // Kunlik eslatma (system) bildirishnomalari uchun — haqiqiy "actor"
+    // (boshqa foydalanuvchi) yo'q, shuning uchun bu ustun endi ixtiyoriy.
+    sql`ALTER TABLE notifications ALTER COLUMN actor_user_id DROP NOT NULL`,
+  ]);
 
   // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
   await Promise.all([
