@@ -88,6 +88,8 @@ interface SurveyState {
   cycleRegularity: CycleRegularity | null;
   averageCycleLength: string;
   averagePeriodLength: string;
+  /** "Bilmayman" bosilganda true — inputlar taxminiy standart (28/5) qiymatga qaytariladi va bloklanadi. */
+  cycleLengthsUnknown: boolean;
   lastPeriodDate: string;
   /** "Bilmayman" bosilganda true — sana kiritish shart emasligini bildiradi. */
   lastPeriodUnknown: boolean;
@@ -122,6 +124,7 @@ const INITIAL_SURVEY: SurveyState = {
   cycleRegularity: null,
   averageCycleLength: "28",
   averagePeriodLength: "5",
+  cycleLengthsUnknown: false,
   lastPeriodDate: "",
   lastPeriodUnknown: false,
   typicalSymptoms: [],
@@ -701,10 +704,36 @@ export default function OnboardingScreen() {
 
           {step === "cycle_lengths" && (
             <View className="gap-4">
-              <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</Text>
-              <TextField value={survey.averageCycleLength} onChangeText={(v) => setSurvey((s) => ({ ...s, averageCycleLength: v }))} keyboardType="numeric" />
-              <Text className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</Text>
-              <TextField value={survey.averagePeriodLength} onChangeText={(v) => setSurvey((s) => ({ ...s, averagePeriodLength: v }))} keyboardType="numeric" />
+              <View
+                className="gap-4"
+                style={{ opacity: survey.cycleLengthsUnknown ? 0.5 : 1 }}
+                pointerEvents={survey.cycleLengthsUnknown ? "none" : "auto"}
+              >
+                <Text className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</Text>
+                <TextField value={survey.averageCycleLength} onChangeText={(v) => setSurvey((s) => ({ ...s, averageCycleLength: v }))} keyboardType="numeric" />
+                <Text className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</Text>
+                <TextField value={survey.averagePeriodLength} onChangeText={(v) => setSurvey((s) => ({ ...s, averagePeriodLength: v }))} keyboardType="numeric" />
+              </View>
+              <Pressable
+                onPress={() =>
+                  setSurvey((s) => ({
+                    ...s,
+                    cycleLengthsUnknown: !s.cycleLengthsUnknown,
+                    // Bilmayman bosilganda standart (populyatsiya o'rtachasi) qiymatga qaytariladi —
+                    // Web onboarding/page.tsx bilan bir xil — izoh o'sha yerda.
+                    averageCycleLength: s.cycleLengthsUnknown ? s.averageCycleLength : "28",
+                    averagePeriodLength: s.cycleLengthsUnknown ? s.averagePeriodLength : "5",
+                  }))
+                }
+                className={clsx(
+                  "min-h-[48px] w-full justify-center rounded-2xl border-2 px-5 py-3 active:scale-[0.98]",
+                  survey.cycleLengthsUnknown ? "border-primary bg-primary-light" : "border-border bg-surface"
+                )}
+              >
+                <Text className={clsx("text-center text-base font-medium", survey.cycleLengthsUnknown ? "text-primary-dark" : "text-text-primary")}>
+                  {dict.common.dontKnow}
+                </Text>
+              </Pressable>
             </View>
           )}
 

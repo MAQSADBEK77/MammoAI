@@ -245,6 +245,18 @@ async function initSchema() {
         PRIMARY KEY (user_id, date)
       )
     `,
+    // "Sog'liqni nazorat qilish" (wellbeing) rejimi — kunlik suv/kaloriya
+    // jurnali. pregnancy_kicks bilan bir xil naqsh (bitta qator/kun, upsert
+    // orqali increment qilinadi).
+    sql`
+      CREATE TABLE IF NOT EXISTS wellness_logs (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        water_ml INTEGER NOT NULL DEFAULT 0,
+        calories INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (user_id, date)
+      )
+    `,
     // "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi qayd etadigan tezkor-jurnal.
     sql`
       CREATE TABLE IF NOT EXISTS pregnancy_vitals (

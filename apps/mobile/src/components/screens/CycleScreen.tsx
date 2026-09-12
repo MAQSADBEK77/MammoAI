@@ -16,6 +16,7 @@ import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
+import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
@@ -60,6 +61,7 @@ export function CycleScreen() {
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
   const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
+  const isWellbeing = onboardingProfile?.primaryGoal === "wellbeing";
 
   useEffect(() => {
     api.cycle.get().then(setData);
@@ -287,6 +289,8 @@ export function CycleScreen() {
       </View>
 
       <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
+
+      {isWellbeing && <WellnessCard />}
 
       <View>
         <Text className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.detailedLogButton}</Text>

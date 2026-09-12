@@ -167,6 +167,15 @@ export interface PregnancyVitalLog {
   createdAt: string;
 }
 
+// "Sog'liqni nazorat qilish" (wellbeing) rejimi uchun kunlik suv/kaloriya
+// jurnali — bir foydalanuvchi, bir kun uchun bitta qator (repo.ts'da
+// pregnancy_kicks bilan bir xil "upsert + increment" naqsh).
+export interface WellnessLog {
+  date: string; // YYYY-MM-DD
+  waterMl: number;
+  calories: number;
+}
+
 export type ChecklistItemType =
   | "gyn_annual_checkup"
   | "pap_test"

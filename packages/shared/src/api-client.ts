@@ -39,6 +39,7 @@ import type {
   Symptom,
   SymptomPattern,
   User,
+  WellnessLog,
 } from "./types";
 import type { CyclePrediction } from "./logic/cycle";
 import type { BadgeId } from "./logic/gamification";
@@ -91,6 +92,11 @@ export interface CycleResponse {
   logs: CycleLog[];
   prediction: CyclePrediction | null;
   isIrregular: boolean;
+}
+
+export interface WellnessResponse {
+  today: WellnessLog;
+  waterTargetMl: number;
 }
 
 export interface PregnancyResponse {
@@ -238,6 +244,11 @@ export function createApiClient(config: ApiClientConfig) {
         upload: (form: FormData) => request<{ photo: PregnancyAlbumPhoto }>("/api/pregnancy/album", { method: "POST", body: form }),
         remove: (id: string) => request<{ ok: true }>(`/api/pregnancy/album/${id}`, { method: "DELETE" }),
       },
+    },
+    wellness: {
+      get: () => request<WellnessResponse>("/api/wellness"),
+      addWater: (ml: number) => request<WellnessResponse>("/api/wellness/water", { method: "POST", body: JSON.stringify({ ml }) }),
+      addCalories: (kcal: number) => request<WellnessResponse>("/api/wellness/calories", { method: "POST", body: JSON.stringify({ kcal }) }),
     },
     checklist: {
       list: () => request<ChecklistResponse>("/api/checklist"),

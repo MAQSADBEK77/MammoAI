@@ -45,6 +45,7 @@ import type {
   Symptom,
   TractionSummary,
   User,
+  WellnessLog,
 } from "@mammoai/shared";
 import {
   CHECKLIST_ITEM_IS_FREE,
@@ -974,6 +975,36 @@ export async function incrementKicks(userId: string): Promise<number> {
     ON CONFLICT (user_id, date) DO UPDATE SET count = pregnancy_kicks.count + 1
   `;
   return getKicksToday(userId);
+}
+
+export async function getWellnessToday(userId: string): Promise<WellnessLog> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT water_ml, calories FROM wellness_logs WHERE user_id = ${userId} AND date = ${today()}
+  `) as unknown as { water_ml: number; calories: number }[];
+  const row = rows[0];
+  return { date: today(), waterMl: row?.water_ml ?? 0, calories: row?.calories ?? 0 };
+}
+
+/** `deltaMl` manfiy ham bo'lishi mumkin (foydalanuvchi "ortiqcha qo'shdim"
+ * bosgan bo'lsa bekor qilish) — GREATEST bilan manfiy umumiy qiymatga
+ * tushib ketishning oldi olinadi. */
+export async function addWater(userId: string, deltaMl: number): Promise<WellnessLog> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO wellness_logs (user_id, date, water_ml, calories) VALUES (${userId}, ${today()}, GREATEST(0, ${deltaMl}), 0)
+    ON CONFLICT (user_id, date) DO UPDATE SET water_ml = GREATEST(0, wellness_logs.water_ml + ${deltaMl})
+  `;
+  return getWellnessToday(userId);
+}
+
+export async function addCalories(userId: string, deltaKcal: number): Promise<WellnessLog> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO wellness_logs (user_id, date, water_ml, calories) VALUES (${userId}, ${today()}, 0, GREATEST(0, ${deltaKcal}))
+    ON CONFLICT (user_id, date) DO UPDATE SET calories = GREATEST(0, wellness_logs.calories + ${deltaKcal})
+  `;
+  return getWellnessToday(userId);
 }
 
 interface VitalRow {

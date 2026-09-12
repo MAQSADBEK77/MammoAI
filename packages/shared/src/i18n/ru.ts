@@ -363,6 +363,17 @@ const ru: Dictionary = {
     },
   },
 
+  wellness: {
+    cardTitle: "Сегодняшний контроль",
+    waterLabel: "Питьевая вода",
+    waterProgress: (ml: number, targetMl: number) => `${ml} / ${targetMl} мл`,
+    addGlassButton: "+ 1 стакан (250 мл)",
+    caloriesLabel: "Калории",
+    caloriesUnit: (kcal: number) => `${kcal} ккал`,
+    addCaloriesButton: "+ Добавить калории",
+    addCaloriesPlaceholder: "Например: 350",
+  },
+
   gamification: {
     cycleScreenStreakPill: (days: number) => `🔥 ${days} дн.`,
     achievementsTitle: "Достижения",

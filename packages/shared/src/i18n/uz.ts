@@ -370,6 +370,18 @@ const uz = {
     },
   },
 
+  // "Sog'liqni nazorat qilish" (wellbeing) rejimi — kunlik suv/kaloriya kartasi.
+  wellness: {
+    cardTitle: "Bugungi kuzatuv",
+    waterLabel: "Suv ichish",
+    waterProgress: (ml: number, targetMl: number) => `${ml} / ${targetMl} ml`,
+    addGlassButton: "+ 1 stakan (250 ml)",
+    caloriesLabel: "Kaloriya",
+    caloriesUnit: (kcal: number) => `${kcal} kkal`,
+    addCaloriesButton: "+ Kaloriya qo'shish",
+    addCaloriesPlaceholder: "Masalan: 350",
+  },
+
   gamification: {
     cycleScreenStreakPill: (days: number) => `🔥 ${days} kun`,
     achievementsTitle: "Yutuqlar",

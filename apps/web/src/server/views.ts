@@ -1,14 +1,15 @@
 // API javoblari uchun "composite" ko'rinishlar — bir nechta route (GET va mutatsiyalar)
 // bir xil natija shaklini qaytarishi kerak bo'lganda shu yerdan qayta ishlatiladi.
 
-import { computeCycleLengths, deriveAdaptiveCycleSettings, isCycleIrregular, predictCycle, getPregnancyStatus } from "@mammoai/shared";
-import type { CycleResponse, PregnancyResponse } from "@mammoai/shared";
+import { computeCycleLengths, deriveAdaptiveCycleSettings, isCycleIrregular, predictCycle, getPregnancyStatus, WATER_TARGET_ML } from "@mammoai/shared";
+import type { CycleResponse, PregnancyResponse, WellnessResponse } from "@mammoai/shared";
 import {
   getCycleSettings,
   getKicksToday,
   getLatestVitals,
   getOnboardingProfile,
   getPregnancyProfile,
+  getWellnessToday,
   listCycleLogs,
   listPregnancyVisits,
   listRecentVitalsByType,
@@ -53,4 +54,9 @@ export async function buildPregnancyResponse(userId: string): Promise<PregnancyR
     computeWeightDeltaKg(userId),
   ]);
   return { profile, status, visits, kicksToday, latestVitals, weightDeltaKg };
+}
+
+export async function buildWellnessResponse(userId: string): Promise<WellnessResponse> {
+  const today = await getWellnessToday(userId);
+  return { today, waterTargetMl: WATER_TARGET_ML };
 }

@@ -84,6 +84,8 @@ interface SurveyState {
   cycleRegularity: CycleRegularity | null;
   averageCycleLength: string;
   averagePeriodLength: string;
+  /** "Bilmayman" bosilganda true — inputlar taxminiy standart (28/5) qiymatga qaytariladi va bloklanadi. */
+  cycleLengthsUnknown: boolean;
   lastPeriodDate: string;
   /** "Bilmayman" bosilganda true — sana kiritish shart emasligini bildiradi. */
   lastPeriodUnknown: boolean;
@@ -144,6 +146,7 @@ const INITIAL_SURVEY: SurveyState = {
   cycleRegularity: null,
   averageCycleLength: "28",
   averagePeriodLength: "5",
+  cycleLengthsUnknown: false,
   lastPeriodDate: "",
   lastPeriodUnknown: false,
   typicalSymptoms: [],
@@ -825,20 +828,42 @@ function OnboardingPageInner() {
 
         {step === "cycle_lengths" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
-            <input
-              type="number"
-              value={survey.averageCycleLength}
-              onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
-              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
-            />
-            <h2 className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
-            <input
-              type="number"
-              value={survey.averagePeriodLength}
-              onChange={(e) => setSurvey((s) => ({ ...s, averagePeriodLength: e.target.value }))}
-              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
-            />
+            <div className={clsx(survey.cycleLengthsUnknown && "pointer-events-none opacity-50")}>
+              <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
+              <input
+                type="number"
+                value={survey.averageCycleLength}
+                onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
+                className="tap-target mt-4 w-full rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
+              />
+              <h2 className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
+              <input
+                type="number"
+                value={survey.averagePeriodLength}
+                onChange={(e) => setSurvey((s) => ({ ...s, averagePeriodLength: e.target.value }))}
+                className="tap-target mt-4 w-full rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setSurvey((s) => ({
+                  ...s,
+                  cycleLengthsUnknown: !s.cycleLengthsUnknown,
+                  // Bilmayman bosilganda standart (populyatsiya o'rtachasi) qiymatga qaytariladi —
+                  // CycleScreen'da bu "taxminiy" (cyclesAnalyzed: 0) sifatida ko'rsatiladi,
+                  // haqiqiy shaxsiy ma'lumot sifatida emas.
+                  averageCycleLength: s.cycleLengthsUnknown ? s.averageCycleLength : "28",
+                  averagePeriodLength: s.cycleLengthsUnknown ? s.averagePeriodLength : "5",
+                }))
+              }
+              className={clsx(
+                "tap-target w-full rounded-2xl border-2 px-5 py-3 text-center text-base font-medium transition",
+                survey.cycleLengthsUnknown ? "border-primary bg-primary-light text-primary-dark" : "border-border bg-surface text-text-primary"
+              )}
+            >
+              {dict.common.dontKnow}
+            </button>
           </div>
         )}
 

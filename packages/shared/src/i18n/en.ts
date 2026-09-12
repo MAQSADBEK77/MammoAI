@@ -365,6 +365,17 @@ const en: Dictionary = {
     },
   },
 
+  wellness: {
+    cardTitle: "Today's tracking",
+    waterLabel: "Water intake",
+    waterProgress: (ml: number, targetMl: number) => `${ml} / ${targetMl} ml`,
+    addGlassButton: "+ 1 glass (250 ml)",
+    caloriesLabel: "Calories",
+    caloriesUnit: (kcal: number) => `${kcal} kcal`,
+    addCaloriesButton: "+ Add calories",
+    addCaloriesPlaceholder: "e.g. 350",
+  },
+
   gamification: {
     cycleScreenStreakPill: (days: number) => `🔥 ${days}d`,
     achievementsTitle: "Achievements",

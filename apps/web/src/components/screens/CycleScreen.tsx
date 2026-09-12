@@ -22,6 +22,7 @@ import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { CycleRing } from "@/components/CycleRing";
 import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
+import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
@@ -68,6 +69,7 @@ export function CycleScreen() {
   // tabiiy ravishda tartibsizlashadi) — shu bo'limlar (halqa, "tartibsiz"
   // ogohlantirishi) yashiriladi, o'rniga simptom kuzatuviga urg'u beriladi.
   const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
+  const isWellbeing = onboardingProfile?.primaryGoal === "wellbeing";
 
   useEffect(() => {
     api.cycle.get().then(setData);
@@ -303,6 +305,8 @@ export function CycleScreen() {
       </div>
 
       <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
+
+      {isWellbeing && <WellnessCard />}
 
       <div>
         <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.detailedLogButton}</p>
