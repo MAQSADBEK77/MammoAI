@@ -91,7 +91,10 @@ export function AppDrawer() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 active:scale-95"
+              aria-label={dict.common.close}
+              // FIX2-07: ilgari 32x32px edi (loyihaning o'z 48px `.tap-target`
+              // konvensiyasidan kichik) va aria-label yo'q edi.
+              className="tap-target flex shrink-0 items-center justify-center rounded-full bg-white/15 active:scale-95"
             >
               <Close sx={{ fontSize: 18 }} />
             </button>
