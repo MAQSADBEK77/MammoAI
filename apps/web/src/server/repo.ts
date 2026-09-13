@@ -2455,6 +2455,14 @@ export async function createCommunityReport(
   // Postning mavjudligini tekshiramiz — bo'lmasa 404 (masalan link eskirgan).
   const postRows = (await sql`SELECT 1 FROM community_posts WHERE id = ${payload.postId}`) as unknown as unknown[];
   if (postRows.length === 0) throw new ApiError(404, "Post topilmadi");
+  // FIX-04: izoh haqidagi shikoyatda commentId ham tekshiriladi — aks holda
+  // foydalanuvchi shikoyat oynasini ochib turgan paytda izoh o'chirilib
+  // ketsa, INSERT FOREIGN KEY cheklovini buzib, handled bo'lmagan 500
+  // xatosi qaytardi (post topilmasa esa toza 404 qaytadi — nomutanosiblik).
+  if (payload.commentId) {
+    const commentRows = (await sql`SELECT 1 FROM community_comments WHERE id = ${payload.commentId}`) as unknown as unknown[];
+    if (commentRows.length === 0) throw new ApiError(404, "Izoh topilmadi");
+  }
   await sql`
     INSERT INTO community_reports (id, reporter_id, target_type, post_id, comment_id, reason, note, status, created_at)
     VALUES (${randomUUID()}, ${reporterId}, ${payload.targetType}, ${payload.postId}, ${payload.commentId ?? null}, ${payload.reason}, ${payload.note ?? null}, 'open', ${now()})

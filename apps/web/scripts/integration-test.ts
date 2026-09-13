@@ -11,6 +11,7 @@
 
 import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "../src/server/db";
+import { ApiError } from "../src/server/api-utils";
 import { getCycleSettings, upsertCycleLog, deleteCycleLog, listCycleLogs, updateCycleSettings } from "../src/server/repo";
 import { getPregnancyWeekContent, upsertPregnancyWeekContent } from "../src/server/repo";
 import {
@@ -147,6 +148,14 @@ async function main() {
     assert(reports.some((r) => r.postId === post.id && r.status === "open"), "COMM-001: shikoyat ochiq navbatga tushadi");
     const postReport = reports.find((r) => r.postId === post.id)!;
     assert(postReport.targetExists === true, "FIX-02: post haqidagi shikoyatda mavjud post 'o'chirilgan' deb ko'rsatilmaydi");
+
+    // FIX-04: mavjud bo'lmagan izohga shikoyat — toza 404, FK xatosi emas.
+    try {
+      await createCommunityReport(userB, { targetType: "comment", postId: post.id, commentId: randomUUID(), reason: "spam" });
+      assert(false, "FIX-04: mavjud bo'lmagan izohga shikoyat xato tashlashi kerak edi");
+    } catch (err) {
+      assert(err instanceof ApiError && err.status === 404, "FIX-04: mavjud bo'lmagan izohga shikoyat toza 404 qaytaradi (FK xatosi emas)");
+    }
 
     await blockCommunityPostAuthor(userB, post.id);
     const afterBlock = await listCommunityPosts(userB, {});
