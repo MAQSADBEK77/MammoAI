@@ -169,7 +169,21 @@ export function deriveAdaptiveCycleSettings(
     MAX_SANE_CYCLE_LENGTH
   );
   const lastStart = starts[starts.length - 1];
-  const periodLength = computePeriodLength(logs, lastStart, today) ?? fallback.averagePeriodLength ?? DEFAULT_PERIOD_LENGTH;
+  // FIX2-19: nomi va hujjati "oxirgi bir necha davrdan o'rtacha" deydi (xuddi
+  // averageCycleLength kabi), lekin ilgari faqat ENG SO'NGGI davr uzunligi
+  // olinardi — agar oxirgi hayz odatiydan qisqaroq/uzunroq (masalan spotting
+  // bilan tugagan) bo'lsa, bashorat noto'g'ri xato uzunlikka tayanardi. Endi
+  // averageCycleLength bilan bir xil oynadan (oxirgi ADAPTIVE_MAX_CYCLES ta
+  // aniqlangan davr) o'rtacha olinadi; hali tugamagan (null) davrlar
+  // e'tiborga olinmaydi.
+  const recentPeriodLengths = starts
+    .slice(-ADAPTIVE_MAX_CYCLES)
+    .map((start) => computePeriodLength(logs, start, today))
+    .filter((n): n is number => n !== null);
+  const periodLength =
+    recentPeriodLengths.length > 0
+      ? Math.round(recentPeriodLengths.reduce((sum, l) => sum + l, 0) / recentPeriodLengths.length)
+      : (fallback.averagePeriodLength ?? DEFAULT_PERIOD_LENGTH);
 
   return {
     lastPeriodStart: lastStart,

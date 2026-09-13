@@ -133,6 +133,27 @@ describe("deriveAdaptiveCycleSettings", () => {
     expect(result?.averageCycleLength).toBe(29); // (28+30)/2
   });
 
+  // FIX2-19: averagePeriodLength ilgari faqat ENG SO'NGGI davr uzunligini
+  // olardi (nomi/hujjati "o'rtacha" desa ham) — agar oxirgi hayz odatiydan
+  // qisqaroq (masalan spotting bilan tugagan) bo'lsa, bashorat noto'g'ri
+  // qisqa uzunlikka tayanardi.
+  it("averagePeriodLength bir nechta aniqlangan davrdan o'rtachani oladi, faqat oxirgisini emas", () => {
+    const logs = [
+      // Birinchi hayz — 5 kun (01.01-01.05)
+      { date: "2026-01-01", flow: "medium" as const },
+      { date: "2026-01-02", flow: "medium" as const },
+      { date: "2026-01-03", flow: "medium" as const },
+      { date: "2026-01-04", flow: "light" as const },
+      { date: "2026-01-05", flow: "light" as const },
+      // Ikkinchi hayz — atigi 1 kun (spotting bilan tugagan, odatiy emas)
+      { date: "2026-01-29", flow: "medium" as const },
+    ];
+    const result = deriveAdaptiveCycleSettings(logs, { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 }, "2026-02-10");
+    // Eski xato: faqat oxirgi (1 kunlik) davrga tayanib 1 qaytarardi.
+    // To'g'ri: (5 + 1) / 2 = 3 — ikkalasining o'rtachasi.
+    expect(result?.averagePeriodLength).toBe(3);
+  });
+
   it("aqldan tashqari (sane bo'lmagan) uzunliklarni chegaralaydi", () => {
     const logs = [
       { date: "2026-01-01", flow: "medium" as const },
