@@ -338,6 +338,17 @@ function OnboardingPageInner() {
   const age = CURRENT_YEAR - survey.birthYear;
   const isMinor = age > 0 && age < 18;
 
+  // FIX-07 — apps/mobile/src/app/onboarding.tsx bilan bir xil, izoh o'sha yerda.
+  // setState effekt ichida sinxron chaqirilmaydi (kaskadli render'larni
+  // oldini olish uchun — profil sahifasidagi bilan bir xil naqsh).
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const options = isMinor ? MINOR_GOALS : ADULT_GOALS;
+      setSurvey((s) => (s.primaryGoal && !options.includes(s.primaryGoal) ? { ...s, primaryGoal: null } : s));
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [isMinor]);
+
   // Telegram Mini App orqali kirgan (telefon Telegram'ning o'zi orqali
   // tasdiqlangan) foydalanuvchi — akkaunt/telefon-tasdiqlash qadamlari
   // ("welcome", "account_choice", "account_identifier", "phone_verify")
@@ -565,7 +576,9 @@ function OnboardingPageInner() {
       case "age":
         return age >= 13 && age <= 100;
       case "goal":
-        return survey.primaryGoal !== null;
+        // FIX-07: shunchaki null emasligini emas, joriy (yosh bo'yicha
+        // to'g'ri) ro'yxatda haqiqatan mavjudligini tekshiradi.
+        return survey.primaryGoal !== null && goalOptions.includes(survey.primaryGoal);
       case "cycle_regularity":
         return survey.cycleRegularity !== null;
       case "last_period":

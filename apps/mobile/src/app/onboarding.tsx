@@ -314,6 +314,22 @@ export default function OnboardingScreen() {
   const age = CURRENT_YEAR - survey.birthYear;
   const isMinor = age > 0 && age < 18;
 
+  // FIX-07: yosh o'zgarganda (masalan "Orqaga" bosib qaytadan kiritilganda)
+  // ilgari tanlangan `primaryGoal` hech qachon reset qilinmasdi — foydalanuvchi
+  // kattalar sifatida "pregnancy"ni tanlab, keyin yoshni voyaga yetmagan
+  // qilib o'zgartirsa, MINOR_GOALS'da yo'q bo'lgan "pregnancy" survey'da
+  // qolib ketardi va canProceed() buni sezmasdi (faqat null emasligini
+  // tekshirardi).
+  // setState effekt ichida sinxron chaqirilmaydi (kaskadli render'larni
+  // oldini olish uchun — web onboarding/page.tsx bilan bir xil naqsh).
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const options = isMinor ? MINOR_GOALS : ADULT_GOALS;
+      setSurvey((s) => (s.primaryGoal && !options.includes(s.primaryGoal) ? { ...s, primaryGoal: null } : s));
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [isMinor]);
+
   const steps = useMemo<Step[]>(() => {
     const base: Step[] = [
       "welcome",
@@ -488,7 +504,9 @@ export default function OnboardingScreen() {
       case "age":
         return age >= 13 && age <= 100;
       case "goal":
-        return survey.primaryGoal !== null;
+        // FIX-07: shunchaki null emasligini emas, joriy (yosh bo'yicha
+        // to'g'ri) ro'yxatda haqiqatan mavjudligini tekshiradi.
+        return survey.primaryGoal !== null && goalOptions.includes(survey.primaryGoal);
       case "cycle_regularity":
         return survey.cycleRegularity !== null;
       case "last_period":
