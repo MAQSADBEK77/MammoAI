@@ -116,9 +116,13 @@ export default function ProfileScreen() {
 
   async function save(patch: Parameters<typeof api.me.update>[0]) {
     setSaving(true);
+    // FIX2-13: catch yo'q edi (shu fayldagi logout()/deleteAccount() esa
+    // to'g'ri Alert ko'rsatadi) — xato bo'lsa hech qanday signal berilmasdi.
     try {
       await api.me.update(patch);
       await refresh();
+    } catch {
+      Alert.alert(dict.common.errorGeneric);
     } finally {
       setSaving(false);
     }
