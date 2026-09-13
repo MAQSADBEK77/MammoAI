@@ -29,6 +29,8 @@ import {
   logAdminAction,
   listAdminAuditLog,
   connectPartnerByCode,
+  createPhoneVerification,
+  verifyPhoneCode,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
@@ -234,6 +236,17 @@ async function main() {
     await sql`DELETE FROM partner_connect_attempts WHERE user_id = ${rateUser}`;
     await sql`DELETE FROM users WHERE id = ${rateUser}`;
   }
+
+  // --- FIX-04: OTP kodini qo'pol kuch bilan sinashga qarshi urinishlar chegarasi ---
+  const { token: otpToken } = await createPhoneVerification("+998900000099", "uz");
+  await sql`UPDATE phone_verifications SET code = '123456' WHERE token = ${otpToken}`;
+  for (let i = 0; i < 5; i++) {
+    const result = await verifyPhoneCode(otpToken, "000000");
+    assert(result === null, `noto'g'ri kod ${i + 1}-urinishda ham rad etiladi`);
+  }
+  const afterLimit = await verifyPhoneCode(otpToken, "123456"); // endi TO'G'RI kod ham
+  assert(afterLimit === null, "FIX-04: 5 ta noto'g'ri urinishdan keyin TO'G'RI kod ham qabul qilinmaydi (token bekor qilingan)");
+  await sql`DELETE FROM phone_verifications WHERE token = ${otpToken}`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {

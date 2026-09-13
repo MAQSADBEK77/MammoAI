@@ -455,6 +455,10 @@ async function initSchema() {
     // V1'da yo'q). NULL = hali ro'yxatga olinmagan (ruxsat berilmagan yoki
     // FCM/APNs hali sozlanmagan bo'lishi mumkin).
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS expo_push_token TEXT`,
+    // FIX-04: OTP kodini cheksiz sinab ko'rishning oldini olish uchun —
+    // repo.ts:verifyPhoneCode shu ustunni token bo'yicha oshirib boradi va
+    // chegaradan oshsa tokenni bekor qiladi.
+    sql`ALTER TABLE phone_verifications ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0`,
   ]);
 
   // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.

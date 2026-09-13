@@ -233,6 +233,10 @@ export async function setSetting(key: string, value: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 const PHONE_VERIFICATION_TTL_MINUTES = 10;
+// FIX-04: shu son urinishdan keyin token butunlay bekor qilinadi (to'g'ri kod
+// kiritilsa ham) — 6 xonali kodni TTL ichida cheksiz sinab ko'rishning oldini
+// oladi.
+const PHONE_VERIFICATION_MAX_ATTEMPTS = 5;
 
 interface PhoneVerificationRow {
   id: string;
@@ -243,6 +247,7 @@ interface PhoneVerificationRow {
   telegram_chat_id: string | null;
   verified_at: string | null;
   created_at: string;
+  attempts: number;
 }
 
 export async function createPhoneVerification(phone: string, language: Language): Promise<{ token: string }> {
@@ -313,6 +318,13 @@ export async function verifyPhoneCode(token: string, code: string): Promise<{ ph
   await ensureSchema();
   const row = await getPhoneVerificationByToken(token);
   if (!row || !row.code || row.verified_at) return null;
+  // FIX-04: ilgari bu yerda urinishlar soni HECH QANDAY cheklanmagan edi —
+  // 6 xonali kodni (1 000 000 variant) TTL (10 daqiqa) ichida tez skript
+  // bilan sinab ko'rish mumkin edi. Endi har chaqiruv (to'g'ri yoki noto'g'ri
+  // kod bilan) urinishni hisoblaydi, chegaradan oshsa token butunlay bekor
+  // qilinadi (to'g'ri kod kiritilgan taqdirda ham).
+  if (row.attempts >= PHONE_VERIFICATION_MAX_ATTEMPTS) return null;
+  await sql`UPDATE phone_verifications SET attempts = attempts + 1 WHERE token = ${token}`;
   if (row.code !== code) return null;
   const ageMinutes = (Date.now() - new Date(row.created_at).getTime()) / 60000;
   if (ageMinutes > PHONE_VERIFICATION_TTL_MINUTES) return null;
