@@ -345,8 +345,6 @@ export function CycleScreen() {
         )}
       </div>
 
-      <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
-
       {isWellbeing && <WellnessCard />}
 
       <div>
@@ -374,6 +372,13 @@ export function CycleScreen() {
           />
         </div>
       </div>
+
+      {/* FIX-UX-01: ilgari kayfiyat tanlagichidan DARHOL keyin edi — birinchi
+          ochilishda, hali skroll qilinmasdan, pastki suzuvchi menyu shu
+          bo'limning pastki qismini yopib qo'yardi (hech qanday skroll
+          ishorasisiz). "Batafsil kiritish" bo'limidan keyinga ko'chirildi —
+          bu yerda allaqachon sahifa uzunroq, "fold ostida" qolib ketmaydi. */}
+      <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
 
       {/* Kalendar tepasida, uning ichidagi oy-o'tish o'qlariga xalaqit
           bermaydigan alohida qatorda — "Batafsil kiritish" yorlig'i bilan
