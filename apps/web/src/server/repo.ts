@@ -2365,16 +2365,27 @@ export async function toggleCommunityLike(userId: string, postId: string): Promi
   await ensureSchema();
   const existing = (await sql`SELECT 1 FROM community_post_likes WHERE post_id = ${postId} AND user_id = ${userId}`) as unknown as unknown[];
   let liked: boolean;
+  // FIX2-28: ilgari likes_count HAR DOIM shartsiz oshirilardi/kamaytirilardi,
+  // hatto INSERT/DELETE haqiqatan hech narsani o'zgartirmagan holatda ham
+  // (masalan ikki marta tez bosilganda `ON CONFLICT DO NOTHING` hech narsa
+  // qo'shmaydi) — vaqt o'tishi bilan haqiqiy like'lar soni bilan likes_count
+  // orasida farq to'planardi. Endi INSERT/DELETE'ning HAQIQATAN nechta
+  // qatorni o'zgartirganini (`.count` — postgres.js'ning natija metama'lumoti)
+  // tekshirib, faqat shundagina hisoblagich yangilanadi.
   if (existing.length > 0) {
-    await sql`DELETE FROM community_post_likes WHERE post_id = ${postId} AND user_id = ${userId}`;
-    await sql`UPDATE community_posts SET likes_count = GREATEST(likes_count - 1, 0) WHERE id = ${postId}`;
+    const deleted = await sql`DELETE FROM community_post_likes WHERE post_id = ${postId} AND user_id = ${userId}`;
+    if (deleted.count > 0) {
+      await sql`UPDATE community_posts SET likes_count = GREATEST(likes_count - 1, 0) WHERE id = ${postId}`;
+    }
     liked = false;
   } else {
-    await sql`
+    const inserted = await sql`
       INSERT INTO community_post_likes (post_id, user_id, created_at) VALUES (${postId}, ${userId}, ${now()})
       ON CONFLICT (post_id, user_id) DO NOTHING
     `;
-    await sql`UPDATE community_posts SET likes_count = likes_count + 1 WHERE id = ${postId}`;
+    if (inserted.count > 0) {
+      await sql`UPDATE community_posts SET likes_count = likes_count + 1 WHERE id = ${postId}`;
+    }
     liked = true;
   }
   const rows = (await sql`SELECT likes_count FROM community_posts WHERE id = ${postId}`) as unknown as { likes_count: number }[];

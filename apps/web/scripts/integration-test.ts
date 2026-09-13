@@ -35,6 +35,7 @@ import {
   getUserById,
   ensureChecklistItem,
   createPartnerInviteCode,
+  toggleCommunityLike,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
@@ -302,6 +303,24 @@ async function main() {
   await sql`DELETE FROM partner_invites WHERE inviter_user_id IN (${inviterA}, ${inviterB})`;
   await sql`DELETE FROM partner_connect_attempts WHERE user_id = ${acceptor}`;
   await sql`DELETE FROM users WHERE id IN (${acceptor}, ${inviterA}, ${inviterB})`;
+
+  // --- FIX2-28: likes_count parallel bosishdan keyin ham haqiqiy like'lar soniga mos keladi ---
+  const likeUser = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${likeUser}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  const likePost = await createCommunityPost(likeUser, { tag: "general", body: "FIX2-28 test posti", isAnonymous: false });
+  // Bir xil foydalanuvchi bir postni "bir vaqtda" ikki marta yoqtiradi
+  // (masalan tez-tez bosish) — ON CONFLICT DO NOTHING ikkinchisida hech
+  // narsa qo'shmaydi, lekin eski kod baribir likes_count'ni 2ga oshirardi.
+  await Promise.all([toggleCommunityLike(likeUser, likePost.id), toggleCommunityLike(likeUser, likePost.id)]);
+  const likeCountRow = (await sql`SELECT likes_count FROM community_posts WHERE id = ${likePost.id}`) as unknown as { likes_count: number }[];
+  const realLikeRows = (await sql`SELECT COUNT(*)::int AS c FROM community_post_likes WHERE post_id = ${likePost.id}`) as unknown as { c: number }[];
+  assert(
+    likeCountRow[0].likes_count === realLikeRows[0].c,
+    `FIX2-28: likes_count (${likeCountRow[0].likes_count}) haqiqiy like qatorlari soniga (${realLikeRows[0].c}) mos keladi`
+  );
+  await sql`DELETE FROM community_post_likes WHERE post_id = ${likePost.id}`;
+  await sql`DELETE FROM community_posts WHERE id = ${likePost.id}`;
+  await sql`DELETE FROM users WHERE id = ${likeUser}`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {
