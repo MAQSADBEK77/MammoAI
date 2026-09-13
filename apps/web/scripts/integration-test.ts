@@ -28,6 +28,7 @@ import {
   adminUserExistsById,
   logAdminAction,
   listAdminAuditLog,
+  connectPartnerByCode,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
@@ -211,6 +212,28 @@ async function main() {
   const updated = await getPregnancyWeekContent(17);
   assert(updated?.sizeLabel === "olma", "qayta yozish (upsert) eskisini yangilaydi, ikkinchi qator yaratmaydi");
   await sql`DELETE FROM pregnancy_week_content WHERE week = 17`;
+
+  // --- FIX-03: hamkor kodini qo'pol kuch bilan sinashga qarshi rate-limit ---
+  const rateUser = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${rateUser}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  try {
+    let sawRateLimit = false;
+    for (let i = 0; i < 7; i++) {
+      try {
+        await connectPartnerByCode(rateUser, "MAMMO-NOTREAL1");
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 429) {
+          sawRateLimit = true;
+          break;
+        }
+        // 404 ("kod topilmadi") kutilgan holat — urinishlar davom etadi.
+      }
+    }
+    assert(sawRateLimit, "FIX-03: 5 tadan ortiq tez urinishdan keyin rate-limit (429) ishga tushadi");
+  } finally {
+    await sql`DELETE FROM partner_connect_attempts WHERE user_id = ${rateUser}`;
+    await sql`DELETE FROM users WHERE id = ${rateUser}`;
+  }
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {

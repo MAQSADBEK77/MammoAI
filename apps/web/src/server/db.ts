@@ -214,6 +214,17 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // FIX-03: hamkor kodini (4 xonali edi, endi ancha uzunroq) qo'pol kuch
+    // bilan sinashning oldini olish — repo.ts:connectPartnerByCode har
+    // urinishda shu jadvalni tekshiradi/yangilaydi.
+    sql`
+      CREATE TABLE IF NOT EXISTS partner_connect_attempts (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        window_start TEXT NOT NULL,
+        blocked_until TEXT
+      )
+    `,
     sql`
       CREATE TABLE IF NOT EXISTS pregnancy_profiles (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

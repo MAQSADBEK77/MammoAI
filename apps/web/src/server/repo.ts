@@ -2819,9 +2819,59 @@ export async function hasLoggedToday(userId: string): Promise<boolean> {
 const PARTNER_INVITE_TTL_HOURS = 24;
 const DEFAULT_PARTNER_SHARING: PartnerShareSettings = { pregnancy: true, checkups: true, mood: true, period: false };
 
+// FIX-03: ilgari faqat 4 xonali raqam edi (~9000 variant) — kod hech qanday
+// rate-limitsiz sinab ko'rilishi mumkin bo'lgani uchun bu amalda qo'pol kuch
+// bilan bir necha soatda topib bo'ladigan darajada zaif edi. 0/O va 1/I kabi
+// chalkash belgilar chiqarib tashlangan 32 belgili alifbodan 8 ta belgi —
+// 32^8 (~1.1 trln) variant, pastdagi rate-limit bilan birga amaliy jihatdan
+// qo'pol kuchga chidamli.
+const PARTNER_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const PARTNER_CODE_LENGTH = 8;
+
 function randomPartnerCode(): string {
-  const digits = Math.floor(1000 + Math.random() * 9000);
-  return `MAMMO-${digits}`;
+  let code = "";
+  for (let i = 0; i < PARTNER_CODE_LENGTH; i++) {
+    code += PARTNER_CODE_ALPHABET[Math.floor(Math.random() * PARTNER_CODE_ALPHABET.length)];
+  }
+  return `MAMMO-${code}`;
+}
+
+// FIX-03: connectPartnerByCode uchun oddiy, DB-asosidagi urinishlar
+// hisoblagichi — bir daqiqada belgilangan sondan ko'p urinish qilinsa,
+// vaqtincha bloklaydi. Umumiy maqsadli rate-limit infratuzilmasi (Redis va
+// h.k.) bu loyihada yo'q, shuning uchun eng minimal, DB'ga tayangan yechim.
+const PARTNER_CONNECT_MAX_ATTEMPTS = 5;
+const PARTNER_CONNECT_WINDOW_SECONDS = 60;
+const PARTNER_CONNECT_BLOCK_SECONDS = 15 * 60;
+
+async function checkPartnerConnectRateLimit(userId: string): Promise<void> {
+  const rows = (await sql`
+    SELECT attempt_count, window_start, blocked_until FROM partner_connect_attempts WHERE user_id = ${userId}
+  `) as unknown as { attempt_count: number; window_start: string; blocked_until: string | null }[];
+  const row = rows[0];
+  const nowMs = Date.now();
+
+  if (row?.blocked_until && new Date(row.blocked_until).getTime() > nowMs) {
+    throw new ApiError(429, "Juda ko'p urinish qildingiz — birozdan keyin qayta urinib ko'ring");
+  }
+
+  const windowExpired = !row || new Date(row.window_start).getTime() + PARTNER_CONNECT_WINDOW_SECONDS * 1000 < nowMs;
+  if (windowExpired) {
+    await sql`
+      INSERT INTO partner_connect_attempts (user_id, attempt_count, window_start, blocked_until)
+      VALUES (${userId}, 1, ${new Date(nowMs).toISOString()}, NULL)
+      ON CONFLICT (user_id) DO UPDATE SET attempt_count = 1, window_start = EXCLUDED.window_start, blocked_until = NULL
+    `;
+    return;
+  }
+
+  const newCount = (row?.attempt_count ?? 0) + 1;
+  if (newCount > PARTNER_CONNECT_MAX_ATTEMPTS) {
+    const blockedUntil = new Date(nowMs + PARTNER_CONNECT_BLOCK_SECONDS * 1000).toISOString();
+    await sql`UPDATE partner_connect_attempts SET attempt_count = ${newCount}, blocked_until = ${blockedUntil} WHERE user_id = ${userId}`;
+    throw new ApiError(429, "Juda ko'p urinish qildingiz — birozdan keyin qayta urinib ko'ring");
+  }
+  await sql`UPDATE partner_connect_attempts SET attempt_count = ${newCount} WHERE user_id = ${userId}`;
 }
 
 interface PartnerLinkRow {
@@ -2867,6 +2917,11 @@ export async function createPartnerInviteCode(userId: string): Promise<string> {
 
 export async function connectPartnerByCode(userId: string, rawCode: string): Promise<void> {
   await ensureSchema();
+  // FIX-03: kodni haqiqiy tekshirishdan OLDIN — muvaffaqiyatli va
+  // muvaffaqiyatsiz urinishlar bir xil hisoblanadi, aks holda hujumchi faqat
+  // "muvaffaqiyatsiz" urinishlarni sekinlashtirib, oxirgi (to'g'ri) urinishni
+  // baribir cheklovsiz amalga oshira olardi.
+  await checkPartnerConnectRateLimit(userId);
   const code = rawCode.trim().toUpperCase();
   const invites = (await sql`
     SELECT id, inviter_user_id FROM partner_invites WHERE code = ${code} AND (expires_at)::timestamptz > now()
