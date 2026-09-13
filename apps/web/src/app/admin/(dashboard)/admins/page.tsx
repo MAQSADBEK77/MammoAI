@@ -75,9 +75,14 @@ export default function AdminAccountsPage() {
   async function removeAdmin(id: string) {
     if (!window.confirm("Bu admin hisobini o'chirishni tasdiqlaysizmi?")) return;
     setDeletingId(id);
+    setError(null);
+    // FIX2-02: catch yo'q edi (createAdmin'dan farqli) — o'chirish
+    // muvaffaqiyatsiz bo'lsa hech narsa ko'rsatilmasdi.
     try {
       await adminApi.admins.delete(id);
       loadAdmins();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Xatolik");
     } finally {
       setDeletingId(null);
     }
