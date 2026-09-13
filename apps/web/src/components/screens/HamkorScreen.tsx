@@ -139,7 +139,12 @@ export function HamkorScreen() {
           </Card>
 
           <Button className="w-full" onClick={openConnectModal}>
-            <Emoji e="💑" size={16} /> {dict.partner.connectButton}
+            {/* FIX-UX-05: MUI Button ildizi flex (`display:inline-flex`) —
+                CSS Flexbox spec'iga ko'ra faqat bo'shliqdan iborat matn
+                tugunlari flex konteynerda umuman render qilinmaydi, shuning
+                uchun oddiy JSX bo'shlig'i emoji va matnni "yopishtirib"
+                qo'yardi. Aniq marja bilan almashtirildi. */}
+            <Emoji e="💑" size={16} className="mr-1.5" /> {dict.partner.connectButton}
           </Button>
           <Button variant="ghost" className="w-full border border-border" onClick={openConnectModal}>
             {dict.partner.enterCodeButton}
