@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { adminApi, type AdminUserSummary } from "@/lib/admin-api";
 import { Card, Badge, Button } from "@/components/ui";
@@ -33,18 +33,30 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [blockingId, setBlockingId] = useState<string | null>(null);
+  // FIX2-03: tez ketma-ket kiritilgan qidiruv so'rovlari orasida tartib
+  // kafolati yo'q edi — eskisi keyinroq qaytsa, yangi natijani bosib
+  // yuborardi. Har bir chaqiruvga o'sib boruvchi ID biriktiriladi, faqat ENG
+  // SO'NGGI so'rov natijasi qabul qilinadi.
+  const latestRequestId = useRef(0);
 
   const load = useCallback((currentSearch: string, currentOffset: number) => {
+    const requestId = ++latestRequestId.current;
     setLoading(true);
     setError(null);
     adminApi.users
       .list({ search: currentSearch || undefined, limit: PAGE_SIZE, offset: currentOffset })
       .then((res) => {
+        if (latestRequestId.current !== requestId) return;
         setUsers(res.users);
         setTotal(res.total);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (latestRequestId.current !== requestId) return;
+        setError(err instanceof Error ? err.message : "Yuklashda xatolik");
+      })
+      .finally(() => {
+        if (latestRequestId.current === requestId) setLoading(false);
+      });
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { adminApi } from "@/lib/admin-api";
 import type { AnalyticsSummary, AnalyticsUserSummary } from "@mammoai/shared";
 import { Card, Button } from "@/components/ui";
@@ -82,17 +82,30 @@ export default function AdminAnalyticsPage() {
       .catch((err) => setSummaryError(err instanceof Error ? err.message : "Yuklashda xatolik"));
   }, [days]);
 
+  // FIX2-03: tez ketma-ket kiritilgan qidiruv so'rovlari orasida tartib
+  // kafolati yo'q edi — eskisi keyinroq qaytsa, yangi natijani bosib
+  // yuborardi. Har bir chaqiruvga o'sib boruvchi ID biriktiriladi, faqat ENG
+  // SO'NGGI so'rov natijasi qabul qilinadi.
+  const latestRequestId = useRef(0);
+
   const loadUsers = useCallback((currentSearch: string, currentOffset: number) => {
+    const requestId = ++latestRequestId.current;
     setUsersLoading(true);
     setUsersError(null);
     adminApi.analytics
       .users({ search: currentSearch || undefined, limit: PAGE_SIZE, offset: currentOffset })
       .then((res) => {
+        if (latestRequestId.current !== requestId) return;
         setUsers(res.users);
         setTotal(res.total);
       })
-      .catch((err) => setUsersError(err instanceof Error ? err.message : "Yuklashda xatolik"))
-      .finally(() => setUsersLoading(false));
+      .catch((err) => {
+        if (latestRequestId.current !== requestId) return;
+        setUsersError(err instanceof Error ? err.message : "Yuklashda xatolik");
+      })
+      .finally(() => {
+        if (latestRequestId.current === requestId) setUsersLoading(false);
+      });
   }, []);
 
   useEffect(() => {
