@@ -174,6 +174,20 @@ export async function getUserById(id: string): Promise<(User & { tokenVersion: n
   return { ...userFromRow(row), tokenVersion: row.token_version };
 }
 
+const USER_PATCH_COLUMNS: Record<
+  keyof Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl" | "isBlocked">,
+  string
+> = {
+  name: "name",
+  phone: "phone",
+  language: "language",
+  fontScale: "font_scale",
+  theme: "theme",
+  notificationsEnabled: "notifications_enabled",
+  avatarUrl: "avatar_url",
+  isBlocked: "is_blocked",
+};
+
 export async function updateUser(
   id: string,
   patch: Partial<
@@ -181,18 +195,27 @@ export async function updateUser(
   >
 ): Promise<User> {
   await ensureSchema();
-  const current = await getUserById(id);
-  if (!current) throw new Error("Foydalanuvchi topilmadi");
-  const merged = { ...current, ...patch };
-  await sql`
-    UPDATE users SET
-      name = ${merged.name}, phone = ${merged.phone}, language = ${merged.language},
-      font_scale = ${merged.fontScale}, theme = ${merged.theme},
-      notifications_enabled = ${merged.notificationsEnabled}, avatar_url = ${merged.avatarUrl},
-      is_blocked = ${merged.isBlocked}
-    WHERE id = ${id}
-  `;
-  return merged;
+
+  // FIX-10: ilgari BUTUN qatorni o'qib, JS ichida merge qilib, keyin HAMMA
+  // ustunni qayta yozardi — ikkita parallel PATCH (masalan bir vaqtda
+  // ismni va tilni o'zgartirish) orasidan biri ikkinchisining o'zgarishini
+  // "eskirgan" holat bilan ustidan bosib yozib yuborishi mumkin edi ("lost
+  // update"). Endi faqat `patch`da HAQIQATAN kelgan ustunlar atomik SET
+  // qilinadi — teginilmagan ustunlarga hech qanday yozuv yubormaymiz.
+  const presentKeys = (Object.keys(patch) as (keyof typeof USER_PATCH_COLUMNS)[]).filter((key) => key in USER_PATCH_COLUMNS);
+  if (presentKeys.length > 0) {
+    const dbRow: Record<string, unknown> = {};
+    const dbColumns = presentKeys.map((key) => {
+      const column = USER_PATCH_COLUMNS[key];
+      dbRow[column] = patch[key];
+      return column;
+    });
+    await sql`UPDATE users SET ${sql(dbRow, ...dbColumns)} WHERE id = ${id}`;
+  }
+
+  const updated = await getUserById(id);
+  if (!updated) throw new Error("Foydalanuvchi topilmadi");
+  return updated;
 }
 
 /** Akkaunt va unga tegishli BARCHA ma'lumotlarni butunlay o'chiradi (Play Store

@@ -31,6 +31,8 @@ import {
   connectPartnerByCode,
   createPhoneVerification,
   verifyPhoneCode,
+  updateUser,
+  getUserById,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
@@ -247,6 +249,18 @@ async function main() {
   const afterLimit = await verifyPhoneCode(otpToken, "123456"); // endi TO'G'RI kod ham
   assert(afterLimit === null, "FIX-04: 5 ta noto'g'ri urinishdan keyin TO'G'RI kod ham qabul qilinmaydi (token bekor qilingan)");
   await sql`DELETE FROM phone_verifications WHERE token = ${otpToken}`;
+
+  // --- FIX-10: updateUser endi faqat patch qilingan ustunlarni yozadi (lost-update yo'q) ---
+  const raceUser = randomUUID();
+  await sql`INSERT INTO users (id, name, phone, language, created_at) VALUES (${raceUser}, 'Boshlang\'ich', ${"+9989" + Math.floor(Math.random() * 1e8)}, 'uz', now()::text)`;
+  // Ikkita "parallel" PATCH — biri faqat ismni, ikkinchisi faqat tilni o'zgartiradi.
+  // Eski (o'qi-birlashtir-yoz) kodda ikkinchisi birinchisining eskirgan nusxasi
+  // ustidan yozib, ismni "Boshlang'ich"ga qaytarib qo'yishi mumkin edi.
+  await Promise.all([updateUser(raceUser, { name: "Yangi ism" }), updateUser(raceUser, { language: "ru" })]);
+  const afterRace = await getUserById(raceUser);
+  assert(afterRace?.name === "Yangi ism", "FIX-10: parallel PATCH'dan keyin ism o'zgarishi yo'qolmaydi");
+  assert(afterRace?.language === "ru", "FIX-10: parallel PATCH'dan keyin til o'zgarishi yo'qolmaydi");
+  await sql`DELETE FROM users WHERE id = ${raceUser}`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {
