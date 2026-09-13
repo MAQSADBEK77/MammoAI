@@ -16,12 +16,16 @@ import { useSession } from "./session";
 import { api } from "./api";
 
 export function usePushTokenRegistration(): void {
-  const { status } = useSession();
-  const registeredRef = useRef(false);
+  const { status, user } = useSession();
+  // FIX-09: oddiy boolean edi — bir marta ro'yxatdan o'tgach, shu qurilmada
+  // BOSHQA foydalanuvchi (logout/login) kirsa ham qayta ishlamas, oldingi
+  // foydalanuvchining push tokeni yangi hisobga ro'yxatdan o'tkazilmas edi.
+  // Endi qaysi foydalanuvchi ID uchun ro'yxatdan o'tilganini saqlaymiz.
+  const registeredForUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (status !== "onboarded" || registeredRef.current) return;
-    registeredRef.current = true;
+    if (status !== "onboarded" || !user || registeredForUserIdRef.current === user.id) return;
+    registeredForUserIdRef.current = user.id;
 
     (async () => {
       try {
@@ -34,5 +38,5 @@ export function usePushTokenRegistration(): void {
         // FCM/APNs hali sozlanmagan bo'lishi mumkin — ilova ishlayveradi.
       }
     })();
-  }, [status]);
+  }, [status, user]);
 }
