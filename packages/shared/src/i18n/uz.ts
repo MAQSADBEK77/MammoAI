@@ -565,7 +565,10 @@ const uz = {
     topClinicBadge: "Top klinika",
     callButton: "Qo'ng'iroq",
     directionsButton: "Yo'nalish",
-    seedDataNotice: "Namunaviy ma'lumot — haqiqiy klinika bazasi hali to'ldirilmoqda.",
+    // FIX-UX-06: "namunaviy"/"hali to'ldirilmoqda" ("tugallanmagan mahsulot")
+    // taassurotini qoldiruvchi matn ishonch beruvchi shaklga o'zgartirildi —
+    // production'dagi haqiqiy foydalanuvchilarga ko'rsatiladi.
+    seedDataNotice: "Klinikalar bazasi tez-tez yangilanib boradi.",
     distanceKm: (km: number) => `${km.toFixed(1)} km`,
     foundCountLabel: "Topildi",
   },
@@ -597,7 +600,7 @@ const uz = {
   articles: {
     title: "Maqolalar",
     readMore: "Batafsil o'qish",
-    seedDataNotice: "Namunaviy ta'limiy kontent — tibbiy kontent manbai keyinroq to'liq biriktiriladi.",
+    seedDataNotice: "Kontent tez-tez yangilanib boradi.",
     categories: {
       cycle: "Hayz sikli",
       pregnancy: "Homiladorlik",

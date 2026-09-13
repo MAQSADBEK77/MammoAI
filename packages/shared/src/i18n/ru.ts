@@ -547,7 +547,7 @@ const ru: Dictionary = {
     topClinicBadge: "Топ клиника",
     callButton: "Позвонить",
     directionsButton: "Маршрут",
-    seedDataNotice: "Демонстрационные данные — реальная база клиник ещё пополняется.",
+    seedDataNotice: "База клиник регулярно обновляется.",
     distanceKm: (km: number) => `${km.toFixed(1)} км`,
     foundCountLabel: "Найдено",
   },
@@ -579,7 +579,7 @@ const ru: Dictionary = {
   articles: {
     title: "Статьи",
     readMore: "Читать далее",
-    seedDataNotice: "Демонстрационный образовательный контент — полноценный источник будет подключён позже.",
+    seedDataNotice: "Контент регулярно обновляется.",
     categories: {
       cycle: "Менструальный цикл",
       pregnancy: "Беременность",

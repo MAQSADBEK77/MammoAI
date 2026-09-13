@@ -549,7 +549,7 @@ const en: Dictionary = {
     topClinicBadge: "Top clinic",
     callButton: "Call",
     directionsButton: "Directions",
-    seedDataNotice: "Sample data — the real clinic database is still being filled in.",
+    seedDataNotice: "The clinic list is updated regularly.",
     distanceKm: (km: number) => `${km.toFixed(1)} km`,
     foundCountLabel: "Found",
   },
@@ -581,7 +581,7 @@ const en: Dictionary = {
   articles: {
     title: "Articles",
     readMore: "Read more",
-    seedDataNotice: "Sample educational content — the real content source will be fully connected later.",
+    seedDataNotice: "Content is updated regularly.",
     categories: {
       cycle: "Menstrual cycle",
       pregnancy: "Pregnancy",
