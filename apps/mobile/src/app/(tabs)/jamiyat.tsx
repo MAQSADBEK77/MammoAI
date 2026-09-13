@@ -85,6 +85,7 @@ export default function CommunityScreen() {
   const [reportNote, setReportNote] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportDone, setReportDone] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   const loadPosts = useCallback((currentTag: CommunityTag | "all") => {
     setPosts(null);
@@ -227,10 +228,12 @@ export default function CommunityScreen() {
     setReportReason(null);
     setReportNote("");
     setReportDone(false);
+    setReportError(null);
   }
 
   /** Muallifni bloklash — postId/commentId server tomonda haqiqiy muallifga
    * o'giriladi (anonim postda ham ishlaydi). */
+  // FIX-09 — web jamiyat/page.tsx bilan bir xil, izoh o'sha yerda.
   function blockAuthor(postId: string, commentId: string | null) {
     Alert.alert(dict.community.blockAuthorButton, dict.community.blockAuthorConfirm, [
       { text: dict.common.cancel, style: "cancel" },
@@ -238,11 +241,15 @@ export default function CommunityScreen() {
         text: dict.community.blockAuthorButton,
         style: "destructive",
         onPress: async () => {
-          if (commentId) await api.community.blockCommentAuthor(postId, commentId);
-          else await api.community.blockPostAuthor(postId);
-          setOpenComments({});
-          loadPosts(tag);
-          Alert.alert(dict.community.blockAuthorSuccess);
+          try {
+            if (commentId) await api.community.blockCommentAuthor(postId, commentId);
+            else await api.community.blockPostAuthor(postId);
+            setOpenComments({});
+            loadPosts(tag);
+            Alert.alert(dict.community.blockAuthorSuccess);
+          } catch (err) {
+            Alert.alert(err instanceof Error ? err.message : "Xatolik");
+          }
         },
       },
     ]);
@@ -256,9 +263,11 @@ export default function CommunityScreen() {
     ]);
   }
 
+  // FIX-09 — web jamiyat/page.tsx bilan bir xil, izoh o'sha yerda.
   async function submitReport() {
     if (!reportTarget || !reportReason) return;
     setReportSubmitting(true);
+    setReportError(null);
     try {
       if (reportTarget.commentId) {
         await api.community.reportComment(reportTarget.postId, reportTarget.commentId, { reason: reportReason, note: reportNote.trim() || undefined });
@@ -266,6 +275,8 @@ export default function CommunityScreen() {
         await api.community.reportPost(reportTarget.postId, { reason: reportReason, note: reportNote.trim() || undefined });
       }
       setReportDone(true);
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : "Xatolik");
     } finally {
       setReportSubmitting(false);
     }
@@ -595,6 +606,7 @@ export default function CommunityScreen() {
                   textAlignVertical="top"
                   className="min-h-[56px] rounded-2xl border border-border bg-surface px-4 py-2.5 text-base text-text-primary"
                 />
+                {reportError && <Text className="text-sm font-medium text-danger">{reportError}</Text>}
                 <Button onPress={submitReport} disabled={!reportReason || reportSubmitting}>
                   <Text className="text-sm font-semibold text-white">
                     {reportSubmitting ? dict.common.loading : dict.community.reportSubmitButton}

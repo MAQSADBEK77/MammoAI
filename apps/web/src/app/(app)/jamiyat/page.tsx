@@ -88,6 +88,7 @@ export default function CommunityPage() {
   const [reportNote, setReportNote] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportDone, setReportDone] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   const loadPosts = useCallback((currentTag: CommunityTag | "all") => {
     setPosts(null);
@@ -231,6 +232,7 @@ export default function CommunityPage() {
     setReportReason(null);
     setReportNote("");
     setReportDone(false);
+    setReportError(null);
     closeMenu();
   }
 
@@ -238,21 +240,29 @@ export default function CommunityPage() {
    * o'giriladi (bu yerda xom user_id bilan ishlamaymiz, anonim postda ham
    * ishlaydi). Bloklangandan keyin oqim qayta yuklanadi — shu muallifning
    * boshqa yozuvlari ham darhol yashiriladi. */
+  // FIX-09: ilgari try/catch yo'q edi — server xato qaytarsa (masalan post
+  // shu orada o'chirilgan bo'lsa, 404), xatolik "unhandled promise rejection"
+  // sifatida yutilib ketardi, foydalanuvchiga HECH QANDAY xabar ko'rsatilmasdi.
   async function blockAuthorFromMenu() {
     if (!menuTarget) return;
     const { postId, commentId } = menuTarget;
     closeMenu();
     if (!window.confirm(dict.community.blockAuthorConfirm)) return;
-    if (commentId) await api.community.blockCommentAuthor(postId, commentId);
-    else await api.community.blockPostAuthor(postId);
-    setOpenComments({});
-    loadPosts(tag);
-    window.alert(dict.community.blockAuthorSuccess);
+    try {
+      if (commentId) await api.community.blockCommentAuthor(postId, commentId);
+      else await api.community.blockPostAuthor(postId);
+      setOpenComments({});
+      loadPosts(tag);
+      window.alert(dict.community.blockAuthorSuccess);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Xatolik");
+    }
   }
 
   async function submitReport() {
     if (!reportTarget || !reportReason) return;
     setReportSubmitting(true);
+    setReportError(null);
     try {
       if (reportTarget.commentId) {
         await api.community.reportComment(reportTarget.postId, reportTarget.commentId, { reason: reportReason, note: reportNote.trim() || undefined });
@@ -260,6 +270,10 @@ export default function CommunityPage() {
         await api.community.reportPost(reportTarget.postId, { reason: reportReason, note: reportNote.trim() || undefined });
       }
       setReportDone(true);
+    } catch (err) {
+      // FIX-09: avval catch yo'q edi — xato jimgina yutilib, dialog hech narsa
+      // bo'lmagandek ochiq qolardi (masalan izoh shu orada o'chirilgan bo'lsa).
+      setReportError(err instanceof Error ? err.message : "Xatolik");
     } finally {
       setReportSubmitting(false);
     }
@@ -578,6 +592,7 @@ export default function CommunityPage() {
                 rows={2}
                 className="w-full resize-none rounded-2xl border border-border bg-surface px-4 py-2.5 text-sm text-text-primary outline-none focus:border-primary"
               />
+              {reportError && <p className="text-sm font-medium text-danger">{reportError}</p>}
               <Button className="w-full" onClick={submitReport} disabled={!reportReason || reportSubmitting}>
                 {reportSubmitting ? dict.common.loading : dict.community.reportSubmitButton}
               </Button>
