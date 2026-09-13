@@ -13,7 +13,7 @@
 
 import { callGemini } from "./ai-chat";
 import { getInsightsSummary } from "./insights";
-import { countCycleLogs, getActiveInsight, saveActiveInsight } from "./repo";
+import { countCycleLogs, getActiveInsight, getMaxCycleLogUpdatedAt, saveActiveInsight } from "./repo";
 import { dictionaries } from "@mammoai/shared";
 import type { InsightsSummary, Language, SymptomPattern } from "@mammoai/shared";
 
@@ -78,9 +78,21 @@ export async function getOrGenerateActiveInsight(
 ): Promise<string | null> {
   if (!summary.hasEnoughData) return null;
 
-  const [cached, logsCount] = await Promise.all([getActiveInsight(userId), countCycleLogs(userId)]);
+  const [cached, logsCount, logsUpdatedAt] = await Promise.all([
+    getActiveInsight(userId),
+    countCycleLogs(userId),
+    getMaxCycleLogUpdatedAt(userId),
+  ]);
   const cacheAgeDays = cached ? (Date.now() - new Date(cached.generatedAt).getTime()) / 86400000 : Infinity;
-  const needsRegen = !cached || cached.logsCountAtGeneration !== logsCount || cacheAgeDays > REGEN_MAX_AGE_DAYS;
+  // FIX2-26: faqat `logsCount` (son) o'zgarishini tekshirish yetarli emas —
+  // foydalanuvchi mavjud kunning kayfiyati/simptomini TAHRIRLASA (son
+  // o'zgarmaydi), AI matni eskirgan qolardi. Endi eng so'nggi tahrirlash
+  // vaqti (logsUpdatedAt) ham solishtiriladi.
+  const needsRegen =
+    !cached ||
+    cached.logsCountAtGeneration !== logsCount ||
+    cached.logsUpdatedAtAtGeneration !== logsUpdatedAt ||
+    cacheAgeDays > REGEN_MAX_AGE_DAYS;
 
   if (!needsRegen && cached) return cached.content;
 
@@ -88,7 +100,7 @@ export async function getOrGenerateActiveInsight(
     const systemPrompt = SYSTEM_PROMPT_BY_LANGUAGE[language];
     const dataText = formatSummaryForPrompt(summary, patterns, language);
     const content = await callGemini(systemPrompt, [{ role: "user", content: dataText }]);
-    await saveActiveInsight(userId, { content, logsCountAtGeneration: logsCount });
+    await saveActiveInsight(userId, { content, logsCountAtGeneration: logsCount, logsUpdatedAtAtGeneration: logsUpdatedAt });
     return content;
   } catch {
     // Gemini vaqtincha ishlamasa — eski kesh bo'lsa o'shani, bo'lmasa null

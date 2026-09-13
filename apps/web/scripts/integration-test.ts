@@ -13,6 +13,7 @@ import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "../src/server/db";
 import { ApiError } from "../src/server/api-utils";
 import { getCycleSettings, upsertCycleLog, deleteCycleLog, listCycleLogs, updateCycleSettings } from "../src/server/repo";
+import { countCycleLogs, getMaxCycleLogUpdatedAt } from "../src/server/repo";
 import { getPregnancyWeekContent, upsertPregnancyWeekContent } from "../src/server/repo";
 import {
   createCommunityPost,
@@ -350,6 +351,22 @@ async function main() {
   assert(await hasSentDailyReminderRecently(reminderUser), "FIX2-25: eslatma yuborilgandan keyin true (cron ikkinchi marta yubormaydi)");
   await sql`DELETE FROM notifications WHERE user_id = ${reminderUser}`;
   await sql`DELETE FROM users WHERE id = ${reminderUser}`;
+
+  // --- FIX2-26: mavjud kunni tahrirlash logsCount o'zgarmasa ham updated_at'ni yangilaydi ---
+  const insightUser = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${insightUser}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  await upsertCycleLog(insightUser, { date: "2026-04-01", flow: "medium", mood: "happy", symptoms: [] });
+  const countBefore = await countCycleLogs(insightUser);
+  const updatedAtBefore = await getMaxCycleLogUpdatedAt(insightUser);
+  await new Promise((resolve) => setTimeout(resolve, 10)); // updated_at millisekund farqi kafolatlansin
+  // Bir xil kun — faqat kayfiyat tahrirlanadi, yangi yozuv qo'shilmaydi.
+  await upsertCycleLog(insightUser, { date: "2026-04-01", flow: "medium", mood: "sad", symptoms: ["cramps"] });
+  const countAfter = await countCycleLogs(insightUser);
+  const updatedAtAfter = await getMaxCycleLogUpdatedAt(insightUser);
+  assert(countBefore === countAfter, "FIX2-26: mavjud kunni tahrirlash yozuvlar sonini o'zgartirmaydi");
+  assert(updatedAtBefore !== updatedAtAfter, "FIX2-26: mavjud kunni tahrirlash updated_at'ni yangilaydi (logsCount o'zgarmasa ham AI keshi eskirgan deb topiladi)");
+  await sql`DELETE FROM cycle_logs WHERE user_id = ${insightUser}`;
+  await sql`DELETE FROM users WHERE id = ${insightUser}`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {

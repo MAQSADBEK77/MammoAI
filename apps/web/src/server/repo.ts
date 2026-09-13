@@ -695,6 +695,17 @@ export async function countCycleLogs(userId: string): Promise<number> {
   return count;
 }
 
+/** FIX2-26: `logsCount` o'zgarmagan (yangi/o'chirilgan yozuv yo'q), lekin
+ * MAVJUD kunning kayfiyati/simptomi tahrirlangan holatni aniqlash uchun —
+ * shu qiymat active-insights.ts'ning kesh-eskirish tekshiruviga qo'shiladi. */
+export async function getMaxCycleLogUpdatedAt(userId: string): Promise<string | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT MAX(updated_at) as max_updated_at FROM cycle_logs WHERE user_id = ${userId}`) as unknown as {
+    max_updated_at: string | null;
+  }[];
+  return rows[0]?.max_updated_at ?? null;
+}
+
 /** `upsertCycleLog` VA `deleteCycleLog` ikkalasi ham chaqiradi — CYCLE-001
  * tuzatishi (bir joyda, ikki chaqiruvchi uchun): butun tarix ustida
  * `deriveAdaptiveCycleSettings`dagi bilan BIR XIL streak-aniqlash
@@ -741,11 +752,15 @@ export async function upsertCycleLog(
   const id = randomUUID();
   const createdAt = now();
   const symptoms = JSON.stringify(log.symptoms ?? []);
+  // FIX2-26: `updated_at` har bir yozish/tahrirlashda yangilanadi —
+  // active-insights.ts shundan foydalanib, faqat yozuvlar SONI o'zgarmagan
+  // (mavjud kun tahrirlangan) holatlarda ham AI tahlilini qayta generatsiya
+  // qilishi kerakligini aniqlaydi.
   await sql`
-    INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at)
-    VALUES (${id}, ${userId}, ${log.date}, ${log.flow}, ${log.mood}, ${symptoms}, ${createdAt})
+    INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at, updated_at)
+    VALUES (${id}, ${userId}, ${log.date}, ${log.flow}, ${log.mood}, ${symptoms}, ${createdAt}, ${createdAt})
     ON CONFLICT (user_id, date) DO UPDATE SET
-      flow = EXCLUDED.flow, mood = EXCLUDED.mood, symptoms = EXCLUDED.symptoms
+      flow = EXCLUDED.flow, mood = EXCLUDED.mood, symptoms = EXCLUDED.symptoms, updated_at = EXCLUDED.updated_at
   `;
   // Har doim qayta hisoblanadi (faqat `log.flow` bor bo'lganda emas) — aks
   // holda mavjud oqim kunini "bekor qilish" (flow'ni null'ga o'zgartirish)
@@ -1018,28 +1033,46 @@ export async function listSubscriptionsAdmin(params: { search?: string; limit?: 
 export interface ActiveInsight {
   content: string;
   logsCountAtGeneration: number;
+  // FIX2-26: yozuvlar SONI o'zgarmagan, lekin MAVJUD yozuv tahrirlangan
+  // holatni ham aniqlash uchun (getMaxCycleLogUpdatedAt() qiymati).
+  logsUpdatedAtAtGeneration: string | null;
   generatedAt: string;
 }
 
 export async function getActiveInsight(userId: string): Promise<ActiveInsight | null> {
   await ensureSchema();
-  const rows = (await sql`SELECT content, logs_count_at_generation, generated_at FROM ai_active_insights WHERE user_id = ${userId}`) as unknown as {
+  const rows = (await sql`
+    SELECT content, logs_count_at_generation, logs_updated_at_at_generation, generated_at
+    FROM ai_active_insights WHERE user_id = ${userId}
+  `) as unknown as {
     content: string;
     logs_count_at_generation: number;
+    logs_updated_at_at_generation: string | null;
     generated_at: string;
   }[];
   const r = rows[0];
-  return r ? { content: r.content, logsCountAtGeneration: r.logs_count_at_generation, generatedAt: r.generated_at } : null;
+  return r
+    ? {
+        content: r.content,
+        logsCountAtGeneration: r.logs_count_at_generation,
+        logsUpdatedAtAtGeneration: r.logs_updated_at_at_generation,
+        generatedAt: r.generated_at,
+      }
+    : null;
 }
 
-export async function saveActiveInsight(userId: string, input: { content: string; logsCountAtGeneration: number }): Promise<void> {
+export async function saveActiveInsight(
+  userId: string,
+  input: { content: string; logsCountAtGeneration: number; logsUpdatedAtAtGeneration: string | null }
+): Promise<void> {
   await ensureSchema();
   const generatedAt = now();
   await sql`
-    INSERT INTO ai_active_insights (user_id, content, logs_count_at_generation, generated_at)
-    VALUES (${userId}, ${input.content}, ${input.logsCountAtGeneration}, ${generatedAt})
+    INSERT INTO ai_active_insights (user_id, content, logs_count_at_generation, logs_updated_at_at_generation, generated_at)
+    VALUES (${userId}, ${input.content}, ${input.logsCountAtGeneration}, ${input.logsUpdatedAtAtGeneration}, ${generatedAt})
     ON CONFLICT (user_id) DO UPDATE SET
-      content = EXCLUDED.content, logs_count_at_generation = EXCLUDED.logs_count_at_generation, generated_at = EXCLUDED.generated_at
+      content = EXCLUDED.content, logs_count_at_generation = EXCLUDED.logs_count_at_generation,
+      logs_updated_at_at_generation = EXCLUDED.logs_updated_at_at_generation, generated_at = EXCLUDED.generated_at
   `;
 }
 

@@ -472,7 +472,20 @@ async function initSchema() {
     // repo.ts:verifyPhoneCode shu ustunni token bo'yicha oshirib boradi va
     // chegaradan oshsa tokenni bekor qiladi.
     sql`ALTER TABLE phone_verifications ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0`,
+    // FIX2-26: ilgari faqat `logs_count_at_generation` (yozuvlar SONI)
+    // o'zgarganda AI tahlili qayta generatsiya qilinardi — foydalanuvchi
+    // mavjud kunning kayfiyati/simptomini TAHRIRLASA (son o'zgarmaydi),
+    // AI matni eskirgan qolardi. `cycle_logs.updated_at` (har bir yozish/
+    // tahrirlashda yangilanadi) va `ai_active_insights`dagi keshlangan
+    // qiymat orasidagi solishtiruv shu bo'shliqni yopadi.
+    sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS updated_at TEXT`,
+    sql`ALTER TABLE ai_active_insights ADD COLUMN IF NOT EXISTS logs_updated_at_at_generation TEXT`,
   ]);
+
+  // Eski qatorlarda `updated_at` hali NULL — `created_at`dan bir martalik
+  // backfill (bo'lmasa ular har doim "o'zgargan" deb hisoblanib, keraksiz
+  // qayta generatsiyaga olib kelardi).
+  await sql`UPDATE cycle_logs SET updated_at = created_at WHERE updated_at IS NULL`;
 
   // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.
   await Promise.all([
