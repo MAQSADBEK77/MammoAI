@@ -78,6 +78,29 @@ describe("computePeriodLength", () => {
     ];
     expect(computePeriodLength(logs, "2026-01-08", "2026-01-09")).toBeNull();
   });
+
+  // FIX2-17: 1 kunlik unutilgan yozuv (01.01, 01.03-04 belgilangan, 01.02 yo'q)
+  // detectPeriodStarts ham xuddi shu davrni "bitta hayz" deb hisoblaydi
+  // (CYCLE_GAP_DAYS=2) — computePeriodLength endi mos ravishda 4 kun
+  // (bo'shliqni ham hisobga olgan holda) qaytarishi kerak, 1 emas.
+  it("bir kunlik bo'shliqqa detectPeriodStarts bilan bir xil tarzda toqat qiladi", () => {
+    const logs = [
+      { date: "2026-01-01", flow: "medium" as const },
+      // 2026-01-02 — unutilgan, yozuv yo'q
+      { date: "2026-01-03", flow: "medium" as const },
+      { date: "2026-01-04", flow: "light" as const },
+    ];
+    expect(computePeriodLength(logs, "2026-01-01", "2026-01-10")).toBe(4);
+  });
+
+  it("bo'shliq CYCLE_GAP_DAYS'dan katta bo'lsa, boshqa (keyingi) hayz sifatida hisoblanmaydi", () => {
+    const logs = [
+      { date: "2026-01-01", flow: "medium" as const },
+      // 3 kunlik bo'shliq — CYCLE_GAP_DAYS (2)dan katta, alohida sikl.
+      { date: "2026-01-05", flow: "medium" as const },
+    ];
+    expect(computePeriodLength(logs, "2026-01-01", "2026-01-10")).toBe(1);
+  });
 });
 
 describe("deriveAdaptiveCycleSettings", () => {

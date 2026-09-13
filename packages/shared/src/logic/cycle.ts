@@ -37,6 +37,24 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/** Saralangan sanalarni ketma-ket (CYCLE_GAP_DAYS ichida) "streak"larga
+ * guruhlaydi — bitta kunlik bo'shliq (unutilgan yozuv) butun hayzni ikkiga
+ * bo'lib yubormasligi uchun. `detectPeriodStarts` VA `computePeriodLength`
+ * bir xil bo'shliq-toqat mantig'iga tayanishi uchun BITTA joyda yozilgan
+ * (FIX2-17: ilgari ikkalasi mos kelmaydigan mantiqqa ega edi). */
+function groupIntoStreaks(sortedDates: string[]): string[][] {
+  const streaks: string[][] = [];
+  for (const date of sortedDates) {
+    const current = streaks[streaks.length - 1];
+    if (current && daysBetween(current[current.length - 1], date) <= CYCLE_GAP_DAYS) {
+      current.push(date);
+    } else {
+      streaks.push([date]);
+    }
+  }
+  return streaks;
+}
+
 /** Kunlik loglar ichida "sikl boshlanishi" kunlarini aniqlaydi: ketma-ket
  * (CYCLE_GAP_DAYS ichida) flow kunlari bitta "streak"ka guruhlanadi, streak
  * ichidan birinchi kun — potentsial boshlanish. Oddiy streak-detection —
@@ -54,16 +72,7 @@ export function detectPeriodStarts(logs: Pick<CycleLog, "date" | "flow">[]): str
   const flowByDate = new Map<string, FlowLevel>();
   for (const l of logs) if (l.flow) flowByDate.set(l.date, l.flow);
   const flowDates = [...flowByDate.keys()].sort();
-
-  const streaks: string[][] = [];
-  for (const date of flowDates) {
-    const current = streaks[streaks.length - 1];
-    if (current && daysBetween(current[current.length - 1], date) <= CYCLE_GAP_DAYS) {
-      current.push(date);
-    } else {
-      streaks.push([date]);
-    }
-  }
+  const streaks = groupIntoStreaks(flowDates);
 
   return streaks.filter((streak) => streak.some((d) => flowByDate.get(d) !== "spotting")).map((streak) => streak[0]);
 }
@@ -76,21 +85,24 @@ export function computeCycleLengths(logs: Pick<CycleLog, "date" | "flow">[], lim
   return lengths.slice(-limit);
 }
 
-/** Berilgan sana bilan boshlangan flow-streak necha kun davom etgani (bo'shliq
- * uchramaguncha ketma-ket flow'li kunlarni sanaydi) — davom etayotgan (hali
- * tugamagan) hayz uchun `null` qaytaradi, chunki uzunligi hali noma'lum. */
+/** Berilgan sana bilan boshlangan hayzning uzunligi — `detectPeriodStarts`
+ * bilan BIR XIL bo'shliq-toqat (CYCLE_GAP_DAYS) mantig'i orqali guruhlanadi,
+ * shuning uchun bitta kunlik unutilgan yozuv haqiqiy uzunlikni kamaytirib
+ * yubormaydi (FIX2-17: ilgari BIR KUNLIK bo'shliqqa ham toqat qilmasdi,
+ * garchi `detectPeriodStarts` xuddi shu davrni "bitta hayz" deb hisoblasa
+ * ham). Davom etayotgan (hali tugamagan) hayz uchun `null` qaytaradi. */
 export function computePeriodLength(logs: Pick<CycleLog, "date" | "flow">[], periodStart: string, today: string): number | null {
-  const flowDates = new Set(logs.filter((l) => l.flow).map((l) => l.date));
-  let length = 0;
-  let cursor = periodStart;
-  while (flowDates.has(cursor)) {
-    length++;
-    cursor = addDays(cursor, 1);
-  }
-  // Agar streak "bugun"gacha uzilmasdan davom etayotgan bo'lsa — hali tugamagan,
-  // uzunligini hisoblash uchun erta (keyingi kunlarda yana davom etishi mumkin).
-  if (length > 0 && addDays(periodStart, length - 1) >= today) return null;
-  return length || null;
+  const flowDates = [...new Set(logs.filter((l) => l.flow).map((l) => l.date))].sort().filter((d) => d >= periodStart);
+  const streak = groupIntoStreaks(flowDates).find((s) => s[0] === periodStart);
+  if (!streak) return null;
+
+  const lastDate = streak[streak.length - 1];
+  // Agar oxirgi qayd etilgan kundan "bugun"gacha bo'lgan farq hali
+  // CYCLE_GAP_DAYS ichida bo'lsa — keyingi kunlarda yana davom etishi
+  // mumkin (detectPeriodStarts ham xuddi shunday tolerantlik bilan
+  // guruhlagan bo'lardi), shuning uchun hali yakunlangan emas.
+  if (daysBetween(lastDate, today) <= CYCLE_GAP_DAYS) return null;
+  return daysBetween(periodStart, lastDate) + 1;
 }
 
 /** Bashorat qanchalik ishonchli ekanligini ko'rsatadi — foydalanuvchiga aniq
