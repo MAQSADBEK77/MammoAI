@@ -89,7 +89,13 @@ export default function AdminUsersPage() {
     setDeletingId(user.id);
     try {
       await adminApi.users.delete(user.id);
-      load(search, offset);
+      // FIX2-04: sahifaning oxirgi (yagona) qatorini o'chirish ilgari
+      // `offset`ni ortga qaytarmasdi — natijada "2-sahifa / 1" kabi
+      // mantiqsiz holat va soxta bo'sh natija paydo bo'lardi, garchi
+      // oldingi sahifada ma'lumot mavjud bo'lsa ham.
+      const nextOffset = users.length === 1 && offset > 0 ? Math.max(0, offset - PAGE_SIZE) : offset;
+      setOffset(nextOffset);
+      load(search, nextOffset);
     } catch (err) {
       setError(err instanceof Error ? err.message : "O'chirishda xatolik");
     } finally {
