@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { BloodType, BlockedUserEntry, CycleResponse, Goal, Language } from "@mammoai/shared";
-import { BLOOD_TYPES, getModeAccentColors, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
+import { BLOOD_TYPES, getModeAccentColors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -72,7 +72,6 @@ export default function ProfilePage() {
 
   const [editingHeader, setEditingHeader] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
-  const [phone, setPhone] = useState(user?.phone ?? "");
 
   const [editingInfo, setEditingInfo] = useState(false);
   const [age, setAge] = useState(String(onboardingProfile?.age ?? ""));
@@ -106,10 +105,9 @@ export default function ProfilePage() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setName(user?.name ?? "");
-      setPhone(user?.phone ?? "");
     }, 0);
     return () => clearTimeout(timeout);
-  }, [user?.name, user?.phone]);
+  }, [user?.name]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -135,8 +133,10 @@ export default function ProfilePage() {
     }
   }
 
+  // FIX-02: telefonni bu yerdan (qayta tasdiqlashsiz) o'zgartirish endi mumkin
+  // emas — server ham qabul qilmaydi (apps/web/src/app/api/me/route.ts).
   async function saveHeader() {
-    await save({ name: name.trim() || null, phone: extractUzPhoneDigits(phone) });
+    await save({ name: name.trim() || null });
     setEditingHeader(false);
   }
 
@@ -290,28 +290,18 @@ export default function ProfilePage() {
 
           <div className="min-w-0 flex-1 space-y-1">
             {editingHeader ? (
-              <>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={dict.profile.nameLabel}
-                  className="tap-target w-full rounded-xl border border-white/30 bg-white/15 px-3 text-base font-bold text-white placeholder:text-white/60 outline-none focus:border-white"
-                />
-                <input
-                  type="tel"
-                  inputMode="tel"
-                  value={phone ?? ""}
-                  onChange={(e) => setPhone(formatUzPhoneInput(e.target.value))}
-                  placeholder={dict.profile.phoneLabel}
-                  className="tap-target w-full rounded-xl border border-white/30 bg-white/15 px-3 text-sm text-white placeholder:text-white/60 outline-none focus:border-white"
-                />
-              </>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={dict.profile.nameLabel}
+                className="tap-target w-full rounded-xl border border-white/30 bg-white/15 px-3 text-base font-bold text-white placeholder:text-white/60 outline-none focus:border-white"
+              />
             ) : (
-              <>
-                <p className="truncate text-xl font-extrabold text-white">{user.name?.trim() || dict.profile.noNameFallback}</p>
-                <p className="truncate text-sm text-white/80">{user.phone || dict.profile.phonePlaceholder}</p>
-              </>
+              <p className="truncate text-xl font-extrabold text-white">{user.name?.trim() || dict.profile.noNameFallback}</p>
             )}
+            {/* FIX-02: telefon endi doim faqat ko'rsatish uchun — o'zgartirish
+                qayta tasdiqlashsiz xavfli (apps/web/src/app/api/me/route.ts). */}
+            <p className="truncate text-sm text-white/80">{user.phone || dict.profile.phonePlaceholder}</p>
           </div>
 
           <button
@@ -320,7 +310,6 @@ export default function ProfilePage() {
               if (editingHeader) {
                 saveHeader();
               } else {
-                setPhone(formatUzPhoneInput(user.phone ?? ""));
                 setEditingHeader(true);
               }
             }}

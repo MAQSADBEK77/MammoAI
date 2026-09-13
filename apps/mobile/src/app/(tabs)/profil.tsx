@@ -10,7 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Portal, Dialog } from "react-native-paper";
 import type { BlockedUserEntry, BloodType, CycleSettings, Goal, Language } from "@mammoai/shared";
-import { BLOOD_TYPES, getModeAccentColors, colors, gradients, formatUzPhoneInput, extractUzPhoneDigits } from "@mammoai/shared";
+import { BLOOD_TYPES, getModeAccentColors, colors, gradients } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useModeAccent, useThemeColors } from "@/lib/theme";
@@ -53,7 +53,6 @@ export default function ProfileScreen() {
 
   const [editingHeader, setEditingHeader] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
-  const [phone, setPhone] = useState(user?.phone ?? "");
 
   const [editingInfo, setEditingInfo] = useState(false);
   const [age, setAge] = useState(String(onboardingProfile?.age ?? ""));
@@ -99,10 +98,9 @@ export default function ProfileScreen() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setName(user?.name ?? "");
-      setPhone(user?.phone ?? "");
     }, 0);
     return () => clearTimeout(timeout);
-  }, [user?.name, user?.phone]);
+  }, [user?.name]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -126,8 +124,9 @@ export default function ProfileScreen() {
     }
   }
 
+  // FIX-02 — web profil sahifasi bilan bir xil, izoh o'sha yerda.
   async function saveHeader() {
-    await save({ name: name.trim() || null, phone: extractUzPhoneDigits(phone) });
+    await save({ name: name.trim() || null });
     setEditingHeader(false);
   }
 
@@ -265,25 +264,16 @@ export default function ProfileScreen() {
 
               <View className="flex-1 gap-1.5">
                 {editingHeader ? (
-                  <>
-                    <TextField value={name} onChangeText={setName} placeholder={dict.profile.nameLabel} />
-                    <TextField
-                      value={phone}
-                      onChangeText={(v) => setPhone(formatUzPhoneInput(v))}
-                      placeholder={dict.profile.phoneLabel}
-                      keyboardType="phone-pad"
-                    />
-                  </>
+                  <TextField value={name} onChangeText={setName} placeholder={dict.profile.nameLabel} />
                 ) : (
-                  <>
-                    <Text className="text-xl font-extrabold text-white" numberOfLines={1}>
-                      {user.name?.trim() || dict.profile.noNameFallback}
-                    </Text>
-                    <Text className="text-sm text-white/80" numberOfLines={1}>
-                      {user.phone || dict.profile.phonePlaceholder}
-                    </Text>
-                  </>
+                  <Text className="text-xl font-extrabold text-white" numberOfLines={1}>
+                    {user.name?.trim() || dict.profile.noNameFallback}
+                  </Text>
                 )}
+                {/* FIX-02 — web profil sahifasi bilan bir xil, izoh o'sha yerda. */}
+                <Text className="text-sm text-white/80" numberOfLines={1}>
+                  {user.phone || dict.profile.phonePlaceholder}
+                </Text>
               </View>
 
               <Pressable
@@ -291,7 +281,6 @@ export default function ProfileScreen() {
                   if (editingHeader) {
                     saveHeader();
                   } else {
-                    setPhone(formatUzPhoneInput(user.phone ?? ""));
                     setEditingHeader(true);
                   }
                 }}

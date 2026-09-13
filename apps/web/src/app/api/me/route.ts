@@ -17,9 +17,19 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const user = await requireUser(request);
-    const patch = (await request.json()) as Partial<
+    const body = (await request.json()) as Partial<
       Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl">
     >;
+    // FIX-02: `phone` bu yerda ATAYLAB tashlab yuboriladi (destructuring orqali —
+    // shunchaki TS tipidan olib tashlash yetarli emas, chunki updateUser xom
+    // obyektni ${merged.phone} bilan to'g'ridan-to'g'ri SQL'ga yozadi). Login
+    // paytida `findUserByIdentifier` telefon raqamini YAGONA identifikator
+    // sifatida ishlatadi — foydalanuvchi o'zini o'zi qayta tasdiqlashsiz
+    // istalgan raqamga o'zgartira olsa, keyin o'sha raqamning HAQIQIY egasi
+    // OTP orqali tasdiqlaganda hujumchining oldindan yaratilgan akkauntiga
+    // kiritib yuboriladi. Telefonni o'zgartirish faqat OTP-tasdiqlash oqimi
+    // (ro'yxatdan o'tishdagi kabi) orqali bo'lishi kerak, shu yerda emas.
+    const { phone: _ignoredPhone, ...patch } = body;
     const updated = await updateUser(user.id, patch);
     const [onboardingProfile, hasPremium] = await Promise.all([getOnboardingProfile(user.id), hasPremiumAccess(user.id)]);
     return NextResponse.json({ user: updated, onboardingProfile, hasPremium });
