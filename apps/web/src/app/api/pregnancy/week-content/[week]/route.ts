@@ -9,7 +9,15 @@ export async function GET(request: NextRequest, context: { params: Promise<{ wee
   try {
     await requireUser(request);
     const { week } = await context.params;
-    const content = await getPregnancyWeekContent(Number(week));
+    const weekNum = Number(week);
+    // FIX-06: noto'g'ri qiymat (masalan "/week-content/abc") to'g'ridan-to'g'ri
+    // getPregnancyWeekContent'ga uzatilsa, SQL `WHERE week = NaN` bilan
+    // Postgres xatosi (500) qaytarardi — admin PATCH variantidagi bilan bir
+    // xil validatsiya (1-42 oralig'i, butun son).
+    if (!Number.isInteger(weekNum) || weekNum < 1 || weekNum > 42) {
+      return NextResponse.json({ content: null });
+    }
+    const content = await getPregnancyWeekContent(weekNum);
     return NextResponse.json({ content });
   } catch (error) {
     return jsonError(error);
