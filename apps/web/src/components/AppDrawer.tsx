@@ -115,8 +115,13 @@ export function AppDrawer() {
             <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{dict.profile.accessibilityTitle}</p>
 
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-text-primary">{dict.profile.languageLabel}</span>
+              {/* FIX2-10: ilgari oddiy <span> bo'lib, boshqaruv elementiga
+                  htmlFor/aria-labelledby orqali ulanmagan edi. */}
+              <span id="drawer-language-label" className="text-sm font-medium text-text-primary">
+                {dict.profile.languageLabel}
+              </span>
               <Select
+                labelId="drawer-language-label"
                 value={language}
                 onChange={(e) => {
                   const lang = e.target.value as Language;
@@ -179,10 +184,15 @@ export function AppDrawer() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-text-primary">{dict.profile.notificationsLabel}</span>
+              {/* FIX2-10: ilgari oddiy <span> bo'lib, boshqaruv elementiga
+                  htmlFor/aria-labelledby orqali ulanmagan edi. */}
+              <span id="drawer-notifications-label" className="text-sm font-medium text-text-primary">
+                {dict.profile.notificationsLabel}
+              </span>
               <Switch
                 checked={user.notificationsEnabled}
                 onChange={() => save({ notificationsEnabled: !user.notificationsEnabled })}
+                slotProps={{ input: { "aria-labelledby": "drawer-notifications-label" } }}
                 sx={{
                   "& .MuiSwitch-switchBase.Mui-checked": { color: "#fff" },
                   "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "var(--color-primary)", opacity: 1 },
