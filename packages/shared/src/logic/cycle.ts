@@ -2,6 +2,7 @@
 // Oddiy arifmetika, ML kerak emas.
 
 import type { CycleLog, CycleSettings, FlowLevel } from "../types";
+import { tashkentDateStr } from "../date";
 
 export const DEFAULT_CYCLE_LENGTH = 28;
 export const DEFAULT_PERIOD_LENGTH = 5;
@@ -134,7 +135,7 @@ export interface AdaptiveCycleSettings {
 export function deriveAdaptiveCycleSettings(
   logs: Pick<CycleLog, "date" | "flow">[],
   fallback: Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength">,
-  today: string = new Date().toISOString().slice(0, 10)
+  today: string = tashkentDateStr()
 ): AdaptiveCycleSettings | null {
   const starts = detectPeriodStarts(logs);
   const lengths = computeCycleLengths(logs);
@@ -199,7 +200,7 @@ export interface CyclePrediction {
 
 export function predictCycle(
   settings: Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength">,
-  today: string = new Date().toISOString().slice(0, 10)
+  today: string = tashkentDateStr()
 ): CyclePrediction | null {
   if (!settings.lastPeriodStart) return null;
   const cycleLength = settings.averageCycleLength || DEFAULT_CYCLE_LENGTH;

@@ -2,6 +2,7 @@
 // Standart tibbiy qoida: homiladorlik oxirgi hayz sanasidan (LMP) 280 kun (40 hafta) davom etadi.
 
 import type { PregnancyProfile, VitalType } from "../types";
+import { tashkentDateStr } from "../date";
 
 const PREGNANCY_DAYS = 280;
 
@@ -37,7 +38,7 @@ export interface PregnancyStatus {
 
 export function getPregnancyStatus(
   profile: Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate">,
-  today: string = new Date().toISOString().slice(0, 10)
+  today: string = tashkentDateStr()
 ): PregnancyStatus | null {
   const lmp = profile.lastMenstrualPeriod ?? (profile.dueDate ? lmpFromDueDate(profile.dueDate) : null);
   const dueDate = profile.dueDate ?? (profile.lastMenstrualPeriod ? dueDateFromLmp(profile.lastMenstrualPeriod) : null);
