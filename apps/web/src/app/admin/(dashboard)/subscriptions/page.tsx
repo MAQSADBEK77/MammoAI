@@ -39,6 +39,7 @@ export default function AdminSubscriptionsPage() {
   const [duration, setDuration] = useState<number | null>(30);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   function loadSubs() {
     setLoading(true);
@@ -88,9 +89,21 @@ export default function AdminSubscriptionsPage() {
   }
 
   async function revoke(userId: string) {
-    if (!window.confirm("Premium'ni bekor qilmoqchimisiz?")) return;
-    await adminApi.subscriptions.revoke(userId);
-    loadSubs();
+    if (!window.confirm("Premium'ni bekor qilmoqchimisiz?") || revokingId) return;
+    // FIX2-01: try/catch yo'q edi va tugma so'rov davomida disable
+    // qilinmasdi — xato bo'lsa hech qanday xabar ko'rinmasdi (admin premium
+    // hali ham faol ekanini bilmay qolardi) va tugmani qayta bosib dublikat
+    // so'rov yuborishi mumkin edi.
+    setRevokingId(userId);
+    setError(null);
+    try {
+      await adminApi.subscriptions.revoke(userId);
+      loadSubs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Xatolik yuz berdi");
+    } finally {
+      setRevokingId(null);
+    }
   }
 
   return (
@@ -208,8 +221,13 @@ export default function AdminSubscriptionsPage() {
                     <td className="px-5 py-3 text-text-secondary">{formatDate(s.expiresAt)}</td>
                     <td className="px-5 py-3 text-text-secondary">{s.note ?? "—"}</td>
                     <td className="px-5 py-3 text-right">
-                      <Button variant="ghost" className="px-3! py-1.5! text-xs text-danger" onClick={() => revoke(s.userId)}>
-                        Bekor qilish
+                      <Button
+                        variant="ghost"
+                        className="px-3! py-1.5! text-xs text-danger"
+                        onClick={() => revoke(s.userId)}
+                        disabled={revokingId === s.userId}
+                      >
+                        {revokingId === s.userId ? "…" : "Bekor qilish"}
                       </Button>
                     </td>
                   </tr>
