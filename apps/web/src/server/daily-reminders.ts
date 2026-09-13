@@ -7,9 +7,9 @@
 // kelishilgan). Ustuvorlik: hayz/unumdor kun yaqinlashgani > bugun hali
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
-import { deriveAdaptiveCycleSettings, dictionaries, predictCycle } from "@mammoai/shared";
+import { deriveAdaptiveCycleSettings, dictionaries, getPregnancyStatus, predictCycle } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
-import { createSystemNotification, getCycleSettings, hasLoggedToday, listCycleLogs, listUsersForDailyReminders } from "./repo";
+import { createSystemNotification, getCycleSettings, getPregnancyProfile, hasLoggedToday, listCycleLogs, listUsersForDailyReminders } from "./repo";
 import { sendTelegramMessage } from "./telegram-bot";
 import { sendExpoPushNotification } from "./push-notifications";
 
@@ -23,6 +23,17 @@ const PERIOD_LATE_MAX_DAYS_TO_NOTIFY = 7;
 
 async function buildReminderMessage(userId: string, language: Language): Promise<string | null> {
   const dict = dictionaries[language];
+
+  // FIX-06: foydalanuvchi homilador bo'lib qolgani hech qaerda tekshirilmasdi
+  // — pregnancy_profiles yozuvi paydo bo'lgandan keyin ham, oldingi tsikl
+  // tarixiga tayangan "Hayzingiz kechikayapti"/"yaqinlashmoqda" xabarlari
+  // yuborilaverardi (mantiqsiz, hissiy jihatdan og'ir bo'lishi mumkin).
+  // Homiladorlik uchun alohida eslatma matni hali yo'q — shuning uchun
+  // bunday holatda shunchaki hech narsa yuborilmaydi (soxta/chalkash xabar
+  // yuborishdan ko'ra yaxshiroq).
+  const pregnancyProfile = await getPregnancyProfile(userId);
+  if (pregnancyProfile && getPregnancyStatus(pregnancyProfile)) return null;
+
   const [loggedToday, settings, logs] = await Promise.all([
     hasLoggedToday(userId),
     getCycleSettings(userId),
