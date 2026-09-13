@@ -633,6 +633,11 @@ const uz = {
     commentPlaceholder: "Izoh yozing...",
     sendCommentButton: "Yuborish",
     emptyFeed: "Hozircha post yo'q — birinchi bo'lib fikringizni yozing!",
+    // FIX-UX-04: "all" bo'lmagan filtr ostida bo'sh bo'lganda alohida matn —
+    // jamiyat umuman bo'sh degan noto'g'ri taassurot qoldirmaslik uchun
+    // (boshqa bo'limlarda post bor bo'lishi mumkin).
+    emptyFeedFiltered: "Bu bo'limda hali post yo'q — 'Barchasi'ni ko'ring yoki birinchi bo'lib yozing",
+    viewAllButton: "Barchasini ko'rish",
     emptyComments: "Hozircha izoh yo'q — birinchi bo'ling",
     deletePostConfirm: "Bu postni butunlay o'chirishni tasdiqlaysizmi?",
     deletePostButton: "O'chirish",

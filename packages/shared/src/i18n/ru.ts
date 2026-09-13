@@ -615,6 +615,8 @@ const ru: Dictionary = {
     commentPlaceholder: "Напишите комментарий...",
     sendCommentButton: "Отправить",
     emptyFeed: "Постов пока нет — напишите первой!",
+    emptyFeedFiltered: "В этом разделе пока нет постов — посмотрите «Все» или напишите первой",
+    viewAllButton: "Показать все",
     emptyComments: "Комментариев пока нет — будьте первой",
     deletePostConfirm: "Удалить этот пост навсегда?",
     deletePostButton: "Удалить",

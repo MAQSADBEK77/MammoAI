@@ -400,7 +400,14 @@ export default function CommunityPage() {
       {!posts ? (
         <LoadingSpinner label={dict.common.loading} />
       ) : posts.length === 0 ? (
-        <Card className="text-center text-sm text-text-secondary">{dict.community.emptyFeed}</Card>
+        <Card className="space-y-3 text-center text-sm text-text-secondary">
+          <p>{tag === "all" ? dict.community.emptyFeed : dict.community.emptyFeedFiltered}</p>
+          {tag !== "all" && (
+            <Button variant="ghost" onClick={() => setTag("all")}>
+              {dict.community.viewAllButton}
+            </Button>
+          )}
+        </Card>
       ) : (
         <div className="space-y-3">
           {posts.map((post) => {

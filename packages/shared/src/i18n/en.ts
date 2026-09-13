@@ -617,6 +617,8 @@ const en: Dictionary = {
     commentPlaceholder: "Write a comment...",
     sendCommentButton: "Send",
     emptyFeed: "No posts yet — be the first to share your thoughts!",
+    emptyFeedFiltered: "No posts in this section yet — check 'All' or be the first to write one",
+    viewAllButton: "View all",
     emptyComments: "No comments yet — be the first",
     deletePostConfirm: "Are you sure you want to permanently delete this post?",
     deletePostButton: "Delete",
