@@ -8,7 +8,7 @@ import { BLOOD_TYPES, getModeAccentColors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Card } from "@/components/ui";
+import { Button, Card } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { AchievementsCard } from "@/components/AchievementsCard";
 import { Switch, Select, MenuItem, Dialog, DialogTitle, DialogContent } from "@mui/material";
@@ -93,6 +93,7 @@ export default function ProfilePage() {
   // shu yerdan (maxfiylik bilan bir joyda) ko'rib, xohlasa blokdan chiqarish.
   const [blockedOpen, setBlockedOpen] = useState(false);
   const [blockedList, setBlockedList] = useState<BlockedUserEntry[] | null>(null);
+  const [blockedError, setBlockedError] = useState(false);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -231,7 +232,14 @@ export default function ProfilePage() {
 
   function openBlockedList() {
     setBlockedOpen(true);
-    api.community.blocked.list().then((res) => setBlockedList(res.blocked));
+    setBlockedError(false);
+    setBlockedList(null);
+    // FIX-UX-08: so'rov muvaffaqiyatsiz bo'lganda .catch() yo'q edi — holat
+    // hech qachon yangilanmay, dialog abadiy "yuklanmoqda" holatida qolardi.
+    api.community.blocked
+      .list()
+      .then((res) => setBlockedList(res.blocked))
+      .catch(() => setBlockedError(true));
   }
 
   async function unblock(userId: string) {
@@ -625,7 +633,12 @@ export default function ProfilePage() {
       <Dialog open={blockedOpen} onClose={() => setBlockedOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>{dict.community.blockedUsersTitle}</DialogTitle>
         <DialogContent className="flex flex-col gap-2 pb-5!">
-          {!blockedList ? (
+          {blockedError ? (
+            <div className="flex flex-col items-center gap-2 py-4 text-center text-sm text-text-muted">
+              <p>{dict.common.errorGeneric}</p>
+              <Button onClick={openBlockedList}>{dict.common.retryButton}</Button>
+            </div>
+          ) : !blockedList ? (
             <p className="py-4 text-center text-sm text-text-muted">{dict.common.loading}</p>
           ) : blockedList.length === 0 ? (
             <p className="py-4 text-center text-sm text-text-muted">{dict.community.blockedUsersEmpty}</p>

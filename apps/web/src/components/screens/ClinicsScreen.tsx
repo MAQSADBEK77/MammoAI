@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import {
@@ -15,7 +15,7 @@ import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { getClinicRating, getClinicHours, isTopClinic } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Card, LinkButton, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
+import { Badge, Button, Card, LinkButton, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import clsx from "clsx";
 
@@ -43,13 +43,28 @@ export function ClinicsScreen() {
   const checklistItemId = searchParams.get("checklistItemId");
 
   const [clinics, setClinics] = useState<Clinic[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [view, setView] = useState<"list" | "map">("list");
   const [filter, setFilter] = useState<ClinicSpecialty | "all">("all");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    api.clinics.list().then(setClinics);
+  // FIX-UX-08: so'rov muvaffaqiyatsiz bo'lganda (masalan vaqtinchalik tarmoq
+  // uzilishi) .catch() yo'q edi — holat hech qachon yangilanmay, foydalanuvchi
+  // abadiy "yuklanmoqda" spinnerini ko'rib qolardi.
+  const load = useCallback(() => {
+    setLoadError(false);
+    setClinics(null);
+    api.clinics.list().then(setClinics).catch(() => setLoadError(true));
   }, []);
+
+  useEffect(() => {
+    // setTimeout(0): `load()` sinxron `setState` chaqiradi (loadError/clinics
+    // reset) — effekt ichida to'g'ridan-to'g'ri chaqirilsa ESLint qoidasi
+    // ("Calling setState synchronously within an effect") xato beradi
+    // (loyihaning boshqa joylarida ham shu naqsh ishlatiladi, masalan profil sahifasi).
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -60,6 +75,14 @@ export function ClinicsScreen() {
     );
   }, [clinics, filter, search]);
 
+  if (loadError) {
+    return (
+      <Card className="flex flex-col items-center gap-3 py-8 text-center text-sm text-text-secondary">
+        <p>{dict.common.errorGeneric}</p>
+        <Button onClick={load}>{dict.common.retryButton}</Button>
+      </Card>
+    );
+  }
   if (!clinics) return <LoadingSpinner label={dict.common.loading} />;
 
   async function track(clinic: Clinic, action: "view" | "call" | "directions") {
