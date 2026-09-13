@@ -76,7 +76,19 @@ export function YordamchiScreen() {
       setMessages((prev) => [...(prev ?? []).filter((m) => !m.id.startsWith("pending-")), res.message]);
       setPatterns(res.patterns);
       // Aslida yuborilgan xabar ham serverda saqlangan — ro'yxatni serverdan qayta yuklab, "pending" o'rniga haqiqiy id qo'yamiz.
-      api.chat.list().then((r) => setMessages(r.messages)).catch(() => {});
+      // FIX2-30: ilgari to'g'ridan-to'g'ri `setMessages(r.messages)` bilan
+      // BUTUN ro'yxat almashtirilardi — agar foydalanuvchi shu orada
+      // (bu so'rov hali javob bermasdan) yana bir xabar yozgan bo'lsa,
+      // uning "pending-" pufakchasi hali serverga yetib bormagan (demak
+      // `r.messages`da yo'q) holda butunlay ekrandan yo'qolib qolardi.
+      // Endi joriy holatda hali qolgan (boshqa, keyingi so'rovga tegishli)
+      // pending xabarlar aniqlanib, natija oxiriga qo'shib qo'yiladi.
+      api.chat.list().then((r) => {
+        setMessages((prev) => {
+          const stillPending = (prev ?? []).filter((m) => m.id.startsWith("pending-"));
+          return [...r.messages, ...stillPending];
+        });
+      }).catch(() => {});
       setInsights(null); // yangi xabardan keyin statistika eskirgan bo'lishi mumkin — keyingi ochilishda qayta yuklanadi
     } catch (err) {
       // FIX2-20: server xato KALITI qaytarsa (masalan "daily_chat_limit_reached")
