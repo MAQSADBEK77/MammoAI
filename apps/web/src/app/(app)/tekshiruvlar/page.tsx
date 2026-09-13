@@ -24,7 +24,18 @@ export default function ChecklistPage() {
   }, []);
 
   if (!data) return <LoadingSpinner label={dict.common.loading} />;
-  const { items, readOnly, emptyReason, partnerName } = data;
+  const { readOnly, emptyReason, partnerName } = data;
+  // FIX-UX-03: yangi UNIQUE indeks (db.ts) va ON CONFLICT (repo.ts) endi
+  // YANGI dublikatlarning oldini oladi, lekin migratsiyadan oldin
+  // yaratilgan eski dublikat qatorlar hali ba'zi hisoblarda qolgan bo'lishi
+  // mumkin — himoya sifatida, bir xil `type`dan faqat ENG SO'NGGISINI
+  // (createdAt bo'yicha) ko'rsatamiz, aks holda "buni qildimmi yoki
+  // yo'qmi?" degan chalkashlik yuzaga kelardi.
+  const items = Object.values(
+    Object.fromEntries(
+      [...data.items].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map((item) => [item.type, item])
+    )
+  );
 
   async function complete(id: string) {
     setData(await api.checklist.complete(id));

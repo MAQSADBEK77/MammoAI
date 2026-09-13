@@ -1189,13 +1189,19 @@ export async function listChecklistItems(userId: string): Promise<ChecklistItem[
 
 export async function ensureChecklistItem(userId: string, type: ChecklistItemType, dueDate: string | null): Promise<void> {
   await ensureSchema();
-  const existing = await sql`
-    SELECT id FROM checklist_items WHERE user_id = ${userId} AND type = ${type} AND status != 'done'
-  `;
-  if (existing.length > 0) return;
+  // FIX-UX-03: ilgari SELECT (faqat 'done' bo'lmagan qatorlarni qidirib) +
+  // keyin shartli INSERT edi — bu ikkita muammoga olib kelardi: (1) tekshirish
+  // va yozish orasida tranzaksiya yo'q edi (race condition — parallel
+  // chaqiruvlar dublikat qator yaratardi), (2) status 'done' bo'lgach, keyingi
+  // chaqiruv "existing" deb hech narsa topmay, ESKI 'done' qator yonida
+  // YANGI 'pending' qator qo'shardi — foydalanuvchiga bir xil band ikki marta
+  // (biri bajarilgan, biri kutilayotgan) ko'rinardi. Endi `checklist_items(user_id,
+  // type)`dagi UNIQUE indeksga (db.ts) tayanib, bitta atomik
+  // INSERT ... ON CONFLICT DO NOTHING — takroriy chaqiruv hech narsa qilmaydi.
   await sql`
     INSERT INTO checklist_items (id, user_id, type, status, due_date, created_at)
     VALUES (${randomUUID()}, ${userId}, ${type}, 'pending', ${dueDate}, ${now()})
+    ON CONFLICT (user_id, type) DO NOTHING
   `;
 }
 

@@ -603,11 +603,25 @@ async function initSchema() {
     `,
   ]);
 
+  // FIX-UX-03: `checklist_items(user_id, type)`ga UNIQUE indeks qo'yishdan oldin,
+  // ensureChecklistItem'dagi eski race condition tufayli produksiyada
+  // allaqachon paydo bo'lgan dublikat qatorlarni tozalash SHART (bo'lmasa,
+  // pastdagi CREATE UNIQUE INDEX haqiqiy dublikat mavjud bo'lganda xato
+  // beradi). Har bir (user_id, type) juftligidan faqat ENG SO'NGGI (eng katta
+  // created_at) qatorni qoldiradi — bu xuddi checklist sahifasidagi UI
+  // dedup mantig'i bilan bir xil qoida.
+  await sql`
+    DELETE FROM checklist_items a USING checklist_items b
+    WHERE a.user_id = b.user_id AND a.type = b.type
+      AND (a.created_at < b.created_at OR (a.created_at = b.created_at AND a.id < b.id))
+  `;
+
   // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
   await Promise.all([
     sql`CREATE INDEX IF NOT EXISTS idx_phone_verifications_created ON phone_verifications(created_at)`,
     sql`CREATE INDEX IF NOT EXISTS idx_cycle_logs_user ON cycle_logs(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id)`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_checklist_user_type ON checklist_items(user_id, type)`,
     sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_album_user ON pregnancy_album_photos(user_id, created_at DESC)`,

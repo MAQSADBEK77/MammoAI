@@ -33,6 +33,7 @@ import {
   verifyPhoneCode,
   updateUser,
   getUserById,
+  ensureChecklistItem,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
@@ -261,6 +262,25 @@ async function main() {
   assert(afterRace?.name === "Yangi ism", "FIX-10: parallel PATCH'dan keyin ism o'zgarishi yo'qolmaydi");
   assert(afterRace?.language === "ru", "FIX-10: parallel PATCH'dan keyin til o'zgarishi yo'qolmaydi");
   await sql`DELETE FROM users WHERE id = ${raceUser}`;
+
+  // --- FIX-UX-03: checklist_items(user_id, type) endi UNIQUE — dublikat bo'lmaydi ---
+  const checklistUser = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${checklistUser}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  await Promise.all([
+    ensureChecklistItem(checklistUser, "gyn_annual_checkup", "2027-01-01"),
+    ensureChecklistItem(checklistUser, "gyn_annual_checkup", "2027-01-01"),
+    ensureChecklistItem(checklistUser, "gyn_annual_checkup", "2027-01-01"),
+  ]);
+  const checklistRows = (await sql`SELECT id FROM checklist_items WHERE user_id = ${checklistUser} AND type = 'gyn_annual_checkup'`) as unknown as { id: string }[];
+  assert(checklistRows.length === 1, "FIX-UX-03: bir xil turdagi checklist bandi ikki marta yaratilmaydi (parallel chaqiruv)");
+  // Bajarilgandan keyin ham qayta chaqirilsa — YANGI dublikat qator (eski
+  // 'done' + yangi 'pending') paydo bo'lmasligi kerak, ON CONFLICT jim o'tkazadi.
+  await sql`UPDATE checklist_items SET status = 'done' WHERE user_id = ${checklistUser} AND type = 'gyn_annual_checkup'`;
+  await ensureChecklistItem(checklistUser, "gyn_annual_checkup", "2027-01-01");
+  const afterDoneRows = (await sql`SELECT id, status FROM checklist_items WHERE user_id = ${checklistUser} AND type = 'gyn_annual_checkup'`) as unknown as { id: string; status: string }[];
+  assert(afterDoneRows.length === 1 && afterDoneRows[0].status === "done", "FIX-UX-03: 'done' bandi yonida yangi 'pending' dublikat yaratilmaydi");
+  await sql`DELETE FROM checklist_items WHERE user_id = ${checklistUser}`;
+  await sql`DELETE FROM users WHERE id = ${checklistUser}`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {
