@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { extractUzPhoneDigits } from "@mammoai/shared";
 import { jsonError, ApiError } from "@/server/api-utils";
 import { createUserWithIdentifier, findUserByIdentifier, getOnboardingProfile, hasPremiumAccess, verifyPhoneCode } from "@/server/repo";
 import { signSession, SESSION_COOKIE, sessionCookieOptions } from "@/server/session";
@@ -22,10 +23,14 @@ export async function POST(request: NextRequest) {
     const result = await verifyPhoneCode(body.token, body.code.trim());
     if (!result) throw new ApiError(400, "Kod noto'g'ri yoki muddati o'tgan — qaytadan urinib ko'ring");
 
-    const existing = await findUserByIdentifier(result.phone);
+    // FIX-05: /start endi kanonik formatda saqlaydi, lekin shu yerda ham
+    // qayta o'tkazish — Mini App oqimi bilan bir xil formatga kafolatlangan
+    // moslikni ta'minlaydi (izoh: apps/web/src/app/api/auth/phone-code/start/route.ts).
+    const identifier = extractUzPhoneDigits(result.phone) ?? result.phone;
+    const existing = await findUserByIdentifier(identifier);
     const { user, tokenVersion } = existing
       ? { user: existing, tokenVersion: existing.tokenVersion }
-      : await createUserWithIdentifier(result.phone, result.language);
+      : await createUserWithIdentifier(identifier, result.language);
 
     const token = signSession({ sub: user.id, tokenVersion });
     const [onboardingProfile, hasPremium] = await Promise.all([getOnboardingProfile(user.id), hasPremiumAccess(user.id)]);

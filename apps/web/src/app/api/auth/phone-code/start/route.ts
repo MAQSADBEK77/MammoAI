@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { Language } from "@mammoai/shared";
+import { extractUzPhoneDigits, type Language } from "@mammoai/shared";
 import { jsonError } from "@/server/api-utils";
 import { createPhoneVerification } from "@/server/repo";
 import { getTelegramBotUsername } from "@/server/telegram-bot";
@@ -8,8 +8,6 @@ interface StartBody {
   identifier: string;
   language: Language;
 }
-
-const PHONE_RE = /^\+?[0-9][0-9\s-]{6,14}$/;
 
 /**
  * Telefon raqamni Telegram bot orqali tasdiqlash — 1-qadam. Foydalanuvchi
@@ -20,8 +18,14 @@ const PHONE_RE = /^\+?[0-9][0-9\s-]{6,14}$/;
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as StartBody;
-    const identifier = body.identifier?.trim();
-    if (!identifier || !PHONE_RE.test(identifier)) {
+    // FIX-05: ilgari faqat trim + bo'sh regex tekshiruvi bo'lardi, hech qanday
+    // normalizatsiya yo'q edi — "+998 90 123 45 67" va "998901234567" ikkita
+    // BOSHQA-BOSHQA qator sifatida saqlanardi, keyinroq findUserByIdentifier
+    // ularni bir xil deb topa olmay, YANGI (bo'sh) akkaunt yaratardi. Endi
+    // Telegram Mini App oqimidagi bilan bir xil funksiya — yagona kanonik
+    // formatga ("+998XXXXXXXXX") keltiradi (yoki noto'g'ri bo'lsa null).
+    const identifier = extractUzPhoneDigits(body.identifier ?? "");
+    if (!identifier) {
       return NextResponse.json({ error: "To'g'ri telefon raqam kiriting" }, { status: 400 });
     }
 
