@@ -7,7 +7,7 @@ import { createAdminUser, listAdminUsers, logAdminAction } from "@/server/repo";
  * (root yoki boshqa nomdagi) yangi hisob qo'sha oladi. */
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     return NextResponse.json({ admins: await listAdminUsers() });
   } catch (error) {
     return jsonError(error);
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const identity = requireAdmin(request);
+    const identity = await requireAdmin(request);
     const body = (await request.json()) as { email?: string; password?: string; name?: string };
     const email = body.email?.trim().toLowerCase();
     const name = body.name?.trim();

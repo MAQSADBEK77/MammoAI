@@ -2675,6 +2675,15 @@ export async function findAdminUserByEmail(email: string): Promise<{ id: string;
   return row ? { id: row.id, name: row.name, passwordHash: row.password_hash } : null;
 }
 
+/** FIX-03: requireAdmin har so'rovda hisob hali mavjudligini shu orqali
+ * tekshiradi — admin o'chirilgandan keyin uning eski sessiya cookie'si
+ * (7 kungacha amal qiladi) endi kirish huquqi bermasligi uchun. */
+export async function adminUserExistsById(id: string): Promise<boolean> {
+  await ensureSchema();
+  const rows = (await sql`SELECT 1 FROM admin_users WHERE id = ${id}`) as unknown as unknown[];
+  return rows.length > 0;
+}
+
 export interface AdminAuditEntry {
   id: string;
   adminLabel: string;

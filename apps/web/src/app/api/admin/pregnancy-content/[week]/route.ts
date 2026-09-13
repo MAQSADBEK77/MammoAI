@@ -5,7 +5,7 @@ import { upsertPregnancyWeekContent, logAdminAction } from "@/server/repo";
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ week: string }> }) {
   try {
-    const identity = requireAdmin(request);
+    const identity = await requireAdmin(request);
     const { week } = await context.params;
     const weekNum = Number(week);
     if (!Number.isInteger(weekNum) || weekNum < 1 || weekNum > 42) throw new ApiError(400, "Hafta 1-42 oralig'ida bo'lishi kerak");

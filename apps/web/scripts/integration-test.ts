@@ -24,6 +24,7 @@ import {
   createAdminUser,
   findAdminUserByEmail,
   deleteAdminUser,
+  adminUserExistsById,
   logAdminAction,
   listAdminAuditLog,
 } from "../src/server/repo";
@@ -179,6 +180,12 @@ async function main() {
     await logAdminAction("Test Admin", "premium_granted", "user=abc123");
     const log = await listAdminAuditLog(5);
     assert(log.some((l) => l.adminLabel === "Test Admin" && l.action === "premium_granted"), "amal audit-jurnalga yoziladi");
+
+    // FIX-03: requireAdmin() shu funksiyaga tayanadi — admin o'chirilgach false qaytarishi kerak.
+    assert(await adminUserExistsById(createdAdminId), "FIX-03: hisob mavjud ekanida true qaytaradi");
+    await deleteAdminUser(createdAdminId);
+    assert(!(await adminUserExistsById(createdAdminId)), "FIX-03: o'chirilgan hisob uchun false qaytaradi (eski sessiya endi rad etiladi)");
+    createdAdminId = null; // finally blokida ikkinchi marta o'chirishga urinmaslik uchun
   } finally {
     if (createdAdminId) await deleteAdminUser(createdAdminId);
   }

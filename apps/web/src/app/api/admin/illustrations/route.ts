@@ -9,7 +9,7 @@ const VALID_SLOTS = new Set<string>(SLOT_KEYS);
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     return NextResponse.json({ slots: await getIllustrationSlots(), library: ILLUSTRATION_LIBRARY });
   } catch (error) {
     return jsonError(error);
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const body = (await request.json()) as { slotKey?: string; slug?: string };
     if (!body.slotKey || !VALID_SLOTS.has(body.slotKey)) {
       return NextResponse.json({ error: "Noto'g'ri slot" }, { status: 400 });

@@ -6,7 +6,7 @@ import type { User } from "@mammoai/shared";
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const identity = requireAdmin(request);
+    const identity = await requireAdmin(request);
     const { id } = await context.params;
     const patch = (await request.json()) as Partial<
       Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "isBlocked">
@@ -26,7 +26,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const identity = requireAdmin(request);
+    const identity = await requireAdmin(request);
     const { id } = await context.params;
     await deleteUserAdmin(id);
     await logAdminAction(identity.adminLabel, "user_deleted", `user=${id}`);

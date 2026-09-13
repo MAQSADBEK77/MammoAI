@@ -5,7 +5,7 @@ import { listCommunityPostsAdmin } from "@/server/repo";
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") ?? undefined;
     const limit = Number(searchParams.get("limit") ?? 30);

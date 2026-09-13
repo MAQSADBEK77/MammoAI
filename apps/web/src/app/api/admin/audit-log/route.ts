@@ -5,7 +5,7 @@ import { listAdminAuditLog } from "@/server/repo";
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     return NextResponse.json({ entries: await listAdminAuditLog() });
   } catch (error) {
     return jsonError(error);

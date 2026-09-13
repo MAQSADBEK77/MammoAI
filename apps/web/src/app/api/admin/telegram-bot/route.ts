@@ -15,7 +15,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const token = await getTelegramBotToken();
     const username = await getTelegramBotUsername();
     let name: string | null = null;
@@ -58,7 +58,7 @@ interface PatchBody {
 
 export async function PATCH(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const body = (await request.json()) as PatchBody;
     const origin = new URL(request.url).origin;
 

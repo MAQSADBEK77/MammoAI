@@ -12,7 +12,7 @@ export const maxDuration = 60;
  * yuboriladi" deb ko'rsatish uchun. */
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const chatIds = await listTelegramBroadcastChatIds();
     return NextResponse.json({ recipients: chatIds.length });
   } catch (error) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
  * frontend tasdiqlash so'rovi (window.confirm) ko'rsatgandan keyingina chaqiradi. */
 export async function POST(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const { text } = (await request.json()) as { text?: string };
     if (!text?.trim()) throw new ApiError(400, "Xabar matni bo'sh bo'lishi mumkin emas");
 

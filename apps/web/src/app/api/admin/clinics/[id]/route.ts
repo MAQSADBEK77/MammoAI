@@ -6,7 +6,7 @@ import type { Clinic } from "@mammoai/shared";
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const { id } = await context.params;
     const patch = (await request.json()) as Partial<Omit<Clinic, "id" | "isSeedData">>;
     await updateClinic(id, patch);
@@ -18,7 +18,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const { id } = await context.params;
     await deleteClinic(id);
     return NextResponse.json({ ok: true });

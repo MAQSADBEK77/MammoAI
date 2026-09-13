@@ -14,7 +14,7 @@ interface GrantBody {
  * ADMIN-001: pul bilan bog'liq amal — audit-jurnalga yoziladi. */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
-    const identity = requireAdmin(request);
+    const identity = await requireAdmin(request);
     const { userId } = await params;
     const body = (await request.json()) as GrantBody;
     const subscription = await grantPremium(userId, { durationDays: body.durationDays, note: body.note?.trim() || null });
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
-    const identity = requireAdmin(request);
+    const identity = await requireAdmin(request);
     const { userId } = await params;
     await revokePremium(userId);
     await logAdminAction(identity.adminLabel, "premium_revoked", `user=${userId}`);

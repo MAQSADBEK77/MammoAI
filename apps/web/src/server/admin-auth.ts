@@ -2,6 +2,7 @@ import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import jwt from "jsonwebtoken";
 import type { NextRequest } from "next/server";
 import { ApiError } from "./api-utils";
+import { adminUserExistsById } from "./repo";
 
 // Admin panel — oddiy foydalanuvchi sessiyasidan butunlay ALOHIDA autentifikatsiya.
 // ADMIN-001: ilgari bitta umumiy parol (ADMIN_PASSWORD) — kim nima qilgani
@@ -92,14 +93,23 @@ export const adminSessionCookieOptions = {
 
 /** Admin API route'lari uchun himoya — sessiya bo'lmasa yoki noto'g'ri bo'lsa 401.
  * Kim ekanini qaytaradi — audit-jurnalga yozish kerak bo'lgan route'lar shundan
- * foydalanadi (qolganlari qaytgan qiymatni shunchaki e'tiborsiz qoldiradi,
- * shuning uchun bu allaqachon `requireAdmin(request);` deb chaqirilgan 20+
- * joyni o'zgartirish shart emas). */
-export function requireAdmin(request: NextRequest): AdminIdentity {
+ * foydalanadi.
+ *
+ * FIX-03: ilgari faqat JWT imzosi tekshirilardi, admin_users jadvalida hisob
+ * hali mavjudligi TEKSHIRILMASDI — o'chirilgan adminning eski sessiya
+ * cookie'si (7 kungacha amal qiladi) hali ham to'liq huquq berardi.
+ * Endi async — barcha chaqiruvchi joylar `await requireAdmin(request)`ga
+ * o'tkazildi (requireUser'dagi bilan bir xil pattern). "Root" (adminId: null)
+ * sessiyalar admin_users'da yozuvga ega emas — ular uchun bu tekshiruv
+ * o'tkazib yuboriladi (ADMIN_PASSWORD hali ham to'g'ridan-to'g'ri kirish). */
+export async function requireAdmin(request: NextRequest): Promise<AdminIdentity> {
   const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   const identity = token ? verifyAdminSession(token) : null;
   if (!identity) {
     throw new ApiError(401, "Admin sessiyasi topilmadi — qayta kiring");
+  }
+  if (identity.adminId && !(await adminUserExistsById(identity.adminId))) {
+    throw new ApiError(401, "Admin hisobingiz o'chirilgan — qayta kiring");
   }
   return identity;
 }

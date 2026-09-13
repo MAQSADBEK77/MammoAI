@@ -5,7 +5,7 @@ import { getGeminiApiKey, setGeminiApiKey } from "@/server/ai-chat";
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const key = await getGeminiApiKey();
     return NextResponse.json({
       hasKey: !!key,
@@ -22,7 +22,7 @@ interface PatchBody {
 
 export async function PATCH(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const body = (await request.json()) as PatchBody;
     if (body.apiKey) await setGeminiApiKey(body.apiKey.trim());
     return NextResponse.json({ ok: true });

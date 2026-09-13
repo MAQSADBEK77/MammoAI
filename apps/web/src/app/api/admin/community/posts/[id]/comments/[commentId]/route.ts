@@ -5,7 +5,7 @@ import { deleteCommunityCommentAdmin, logAdminAction } from "@/server/repo";
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string; commentId: string }> }) {
   try {
-    const identity = requireAdmin(request);
+    const identity = await requireAdmin(request);
     const { id, commentId } = await context.params;
     await deleteCommunityCommentAdmin(id, commentId);
     await logAdminAction(identity.adminLabel, "comment_deleted", commentId);

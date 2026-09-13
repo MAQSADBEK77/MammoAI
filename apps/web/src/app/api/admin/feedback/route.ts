@@ -5,7 +5,7 @@ import { listFeedbackAdmin } from "@/server/repo";
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const { searchParams } = new URL(request.url);
     const limit = Number(searchParams.get("limit") ?? 30);
     const offset = Number(searchParams.get("offset") ?? 0);

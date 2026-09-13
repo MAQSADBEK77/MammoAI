@@ -8,7 +8,7 @@ import { resolveCommunityReport, listOpenCommunityReports, logAdminAction } from
  * `/api/admin/community/posts/[id]` (DELETE) orqali amalga oshiriladi. */
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const identity = requireAdmin(request);
+    const identity = await requireAdmin(request);
     const { id } = await context.params;
     const body = (await request.json()) as { status?: "resolved" | "dismissed" };
     if (body.status !== "resolved" && body.status !== "dismissed") {

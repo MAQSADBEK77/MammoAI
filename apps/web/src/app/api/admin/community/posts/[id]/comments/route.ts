@@ -5,7 +5,7 @@ import { listCommunityCommentsAdmin } from "@/server/repo";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const { id } = await context.params;
     return NextResponse.json(await listCommunityCommentsAdmin(id));
   } catch (error) {
