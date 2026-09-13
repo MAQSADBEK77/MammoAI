@@ -40,10 +40,17 @@ export const sql =
     // aniqlandi — agar bir vaqtda ishlayotgan so'rovlar soni pool hajmidan oshib,
     // navbatga turishga (queue) to'g'ri kelsa, Supavisor bilan birga bu MUALLIQ
     // ABADIY osilib qoladi (xato chiqmaydi, shunchaki javob kelmaydi). Yechim — pool
-    // hajmini bizning eng katta parallel so'rov portlashimizdan (getAdminStats'da 15 ta)
-    // sezilarli darajada katta qilib qo'yish, shunda navbatga turishga hech qachon
-    // to'g'ri kelmaydi.
-    max: 20,
+    // hajmini eng katta parallel so'rov portlashimizdan sezilarli darajada katta
+    // qilib qo'yish, shunda navbatga turishga hech qachon to'g'ri kelmaydi.
+    //
+    // 2026-09-13: `max: 20` yetarli emasligi aniqlandi — initSchema()'ning
+    // "1-bosqich" Promise.all bloki (COMM-001/ADMIN-001/CONTENT-001 yangi
+    // jadvallari qo'shilgach) 22 ta parallel statement'ga yetdi, ya'ni eski
+    // chegaradan OSHIB ketdi — production'da haqiqiy FUNCTION_INVOCATION_TIMEOUT
+    // (/api/admin/login) sifatida ko'rindi. `max` shu portlashdan sezilarli
+    // katta bo'lishi uchun 40'ga oshirildi (yangi jadval qo'shilganda bu
+    // sonni qayta tekshirish kerak).
+    max: 40,
   });
 if (process.env.NODE_ENV !== "production") global.__mammoaiSql = sql;
 
