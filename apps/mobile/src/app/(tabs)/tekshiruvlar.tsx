@@ -1,5 +1,5 @@
 import { createElement, useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -25,6 +25,7 @@ export default function ChecklistScreen() {
   const { resolve: resolveIllustration } = useIllustrations();
   const [data, setData] = useState<ChecklistResponse | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [completingId, setCompletingId] = useState<string | null>(null);
 
   // FIX2-11: .catch() yo'q edi — so'rov muvaffaqiyatsiz bo'lsa, `data` hech
   // qachon o'rnatilmay, ekran ABADIY yuklanish spinnerida qotib qolardi.
@@ -61,7 +62,19 @@ export default function ChecklistScreen() {
   const { items, readOnly, emptyReason, partnerName } = data;
 
   async function complete(id: string) {
-    setData(await api.checklist.complete(id));
+    // FIX2-14: catch yo'q edi va tugma so'rov davomida disable qilinmasdi —
+    // xato bo'lsa hech narsa o'zgarmasdi, hech qanday signal yo'q edi;
+    // foydalanuvchi qayta-qayta bosib bir nechta parallel so'rov yuborishi
+    // mumkin edi.
+    if (completingId) return;
+    setCompletingId(id);
+    try {
+      setData(await api.checklist.complete(id));
+    } catch {
+      Alert.alert(dict.common.errorGeneric);
+    } finally {
+      setCompletingId(null);
+    }
   }
 
   const statusTone = { pending: "muted", done: "success", overdue: "danger" } as const;
@@ -150,7 +163,7 @@ export default function ChecklistScreen() {
               <Text className="text-sm text-text-secondary">{info.why}</Text>
               {!readOnly && item.status !== "done" && (
                 <View className="flex-row gap-2 pt-1">
-                  <Button variant="secondary" onPress={() => complete(item.id)}>
+                  <Button variant="secondary" onPress={() => complete(item.id)} disabled={completingId === item.id}>
                     {dict.checklist.markDoneButton}
                   </Button>
                   <Button
