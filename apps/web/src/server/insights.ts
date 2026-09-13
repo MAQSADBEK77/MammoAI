@@ -9,7 +9,7 @@
 // KUNLAR SONI orqali proksi sifatida hisoblanadi, haqiqiy shkala emas.
 
 import { listCycleLogs } from "./repo";
-import { computeCycleLengths, computePeriodLength, detectPeriodStarts } from "@mammoai/shared";
+import { computeCycleLengths, computePeriodLength, detectPeriodStarts, tashkentDateStr } from "@mammoai/shared";
 import type {
   CycleLengthPoint,
   CycleLog,
@@ -70,7 +70,11 @@ function computeCycleLengthPoints(logs: CycleLog[], limit: number): CycleLengthP
  * tugamagan (davom etayotgan) hayz shu ro'yxatga kirmaydi. */
 function computePeriodLengthPoints(logs: CycleLog[], limit: number): PeriodLengthPoint[] {
   const starts = detectPeriodStarts(logs);
-  const today = new Date().toISOString().slice(0, 10);
+  // FIX2-23: `new Date().toISOString()` UTC kalendar sanasini beradi — bu
+  // Toshkent mahalliy 00:00-04:59 oralig'ida "kecha"gi sana bo'lib chiqadi,
+  // shuning uchun oxirgi tugagan hayz "hali davom etyapti" deb noto'g'ri
+  // hisoblanib, grafikdan chiqarib tashlanardi.
+  const today = tashkentDateStr();
   const points: PeriodLengthPoint[] = [];
   for (const start of starts) {
     const length = computePeriodLength(logs, start, today);

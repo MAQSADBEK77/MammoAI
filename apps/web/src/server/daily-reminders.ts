@@ -7,7 +7,7 @@
 // kelishilgan). Ustuvorlik: hayz/unumdor kun yaqinlashgani > bugun hali
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
-import { deriveAdaptiveCycleSettings, dictionaries, getPregnancyStatus, predictCycle } from "@mammoai/shared";
+import { deriveAdaptiveCycleSettings, dictionaries, getPregnancyStatus, predictCycle, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
 import { createSystemNotification, getCycleSettings, getPregnancyProfile, hasLoggedToday, listCycleLogs, listUsersForDailyReminders } from "./repo";
 import { sendTelegramMessage } from "./telegram-bot";
@@ -44,7 +44,8 @@ async function buildReminderMessage(userId: string, language: Language): Promise
   const prediction = adaptive ? predictCycle(adaptive) : null;
 
   if (prediction) {
-    const today = new Date().toISOString().slice(0, 10);
+    // FIX2-23: xuddi shu UTC/Toshkent bug'i (localDateStr()dagi izohga qarang).
+    const today = tashkentDateStr();
     if (prediction.daysUntilNextPeriod === 0) return dict.reminders.periodToday;
     if (prediction.daysUntilNextPeriod === 1) return dict.reminders.periodTomorrow;
     if (prediction.daysUntilNextPeriod > 1 && prediction.daysUntilNextPeriod <= PERIOD_SOON_DAYS_AHEAD) {

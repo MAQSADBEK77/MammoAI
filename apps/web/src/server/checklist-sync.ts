@@ -1,5 +1,5 @@
 import type { OnboardingProfile } from "@mammoai/shared";
-import { computeCycleLengths, generateChecklist, isCycleIrregular } from "@mammoai/shared";
+import { computeCycleLengths, generateChecklist, isCycleIrregular, tashkentDateStr } from "@mammoai/shared";
 import { ensureChecklistItem, getOnboardingProfile, getPregnancyProfile, listCycleLogs } from "./repo";
 
 const addDays = (dateStr: string, days: number) => {
@@ -44,7 +44,9 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
     cycleIrregular,
   });
 
-  const today = new Date().toISOString().slice(0, 10);
+  // FIX2-23: xuddi shu UTC/Toshkent bug'i (localDateStr()dagi izohga qarang)
+  // — due_date hisob-kitobi ertalabki soatlarda bir kun orqada chiqishi mumkin edi.
+  const today = tashkentDateStr();
   await Promise.all(
     generated.map((item) => ensureChecklistItem(userId, item.type, item.dueInDays != null ? addDays(today, item.dueInDays) : null))
   );
