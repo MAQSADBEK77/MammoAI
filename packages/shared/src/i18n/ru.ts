@@ -313,6 +313,7 @@ const ru: Dictionary = {
     },
     detailedLogButton: "Подробный ввод",
     deleteLogButton: "Удалить эту запись",
+    deleteLogConfirm: "Вы уверены, что хотите полностью удалить эту запись?",
     calendarLegendPeriod: "Цикл",
     calendarLegendFollicular: "Фолликулярная",
     calendarLegendOvulation: "Овуляция",

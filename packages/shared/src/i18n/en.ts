@@ -315,6 +315,7 @@ const en: Dictionary = {
     },
     detailedLogButton: "Detailed entry",
     deleteLogButton: "Delete this entry",
+    deleteLogConfirm: "Are you sure you want to permanently delete this entry?",
     calendarLegendPeriod: "Period",
     calendarLegendFollicular: "Follicular",
     calendarLegendOvulation: "Ovulation",

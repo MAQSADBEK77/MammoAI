@@ -321,6 +321,8 @@ const uz = {
     detailedLogButton: "Batafsil kiritish",
     /** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish tugmasi. */
     deleteLogButton: "Bu yozuvni o'chirish",
+    /** FIX-08: o'chirishdan oldin tasdiqlash so'raladi (post/comment o'chirishdagi bilan bir xil). */
+    deleteLogConfirm: "Bu yozuvni butunlay o'chirishni tasdiqlaysizmi?",
     calendarLegendPeriod: "Hayz",
     calendarLegendFollicular: "Follikulyar",
     calendarLegendOvulation: "Ovulyatsiya",

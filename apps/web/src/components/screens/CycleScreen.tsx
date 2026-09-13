@@ -202,7 +202,12 @@ export function CycleScreen() {
   /** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish (masalan bexosdan
    * bosilgan sana) — faqat mavjud yozuv tahrirlanayotganda ko'rsatiladigan
    * tugma orqali chaqiriladi. */
+  /** FIX-08: boshqa barcha yo'q qiluvchi amallar (post/comment o'chirish,
+   * muallifni bloklash — jamiyat/page.tsx) window.confirm bilan himoyalangan,
+   * bu esa yo'q edi — tasodifiy bosish yozuvni qaytarib bo'lmas holda o'chirib
+   * yuborardi. */
   async function removeLog() {
+    if (!window.confirm(dict.cycle.deleteLogConfirm)) return;
     setDeletingLog(true);
     try {
       const res = await api.cycle.deleteLog(logDate);

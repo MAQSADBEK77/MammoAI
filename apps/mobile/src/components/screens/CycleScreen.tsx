@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, View, Text } from "react-native";
+import { Alert, Pressable, View, Text } from "react-native";
 import { router } from "expo-router";
 import clsx from "clsx";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -198,18 +198,29 @@ export function CycleScreen() {
   }
 
   /** CYCLE-002 — web'dagi CycleScreen.tsx bilan bir xil, izoh o'sha yerda. */
-  async function removeLog() {
-    setDeletingLog(true);
-    try {
-      const res = await api.cycle.deleteLog(logDate);
-      setData(res);
-      setLogging(false);
-      setFlow(null);
-      setMood(null);
-      setSymptoms([]);
-    } finally {
-      setDeletingLog(false);
-    }
+  /** FIX-08 — web CycleScreen.tsx bilan bir xil, izoh o'sha yerda (mobil
+   * uslub: jamiyat.tsx'dagi removeComment kabi Alert.alert bilan). */
+  function removeLog() {
+    Alert.alert(dict.cycle.deleteLogButton, dict.cycle.deleteLogConfirm, [
+      { text: dict.common.cancel, style: "cancel" },
+      {
+        text: dict.cycle.deleteLogButton,
+        style: "destructive",
+        onPress: async () => {
+          setDeletingLog(true);
+          try {
+            const res = await api.cycle.deleteLog(logDate);
+            setData(res);
+            setLogging(false);
+            setFlow(null);
+            setMood(null);
+            setSymptoms([]);
+          } finally {
+            setDeletingLog(false);
+          }
+        },
+      },
+    ]);
   }
 
   return (
