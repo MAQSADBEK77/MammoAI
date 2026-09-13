@@ -757,6 +757,8 @@ const ru: Dictionary = {
     title: "Ваш отзыв",
     subtitle: "Расскажите, насколько приложение вам помогает",
     ratingLabel: "Общая оценка",
+    ratingWorst: "Плохо",
+    ratingBest: "Отлично",
     messagePlaceholder: "Что понравилось? Чего не хватает?",
     submitButton: "Отправить",
     thankYou: "Спасибо! Ваш отзыв принят.",

@@ -55,6 +55,12 @@ export function FeedbackScreen() {
                 </button>
               ))}
             </div>
+            {/* FIX-UX-07: raqamlarning o'zi qaysi tomoni "yaxshi" ekanini
+                ko'rsatmaydi — chap/o'ng uchlarda aniq semantik yorliq. */}
+            <div className="flex justify-between text-xs text-text-muted">
+              <span>{dict.feedback.ratingWorst}</span>
+              <span>{dict.feedback.ratingBest}</span>
+            </div>
           </div>
 
           <textarea

@@ -57,6 +57,12 @@ export default function FikrScreen() {
                   </Pressable>
                 ))}
               </View>
+              {/* FIX-UX-07: raqamlarning o'zi qaysi tomoni "yaxshi" ekanini
+                  ko'rsatmaydi — chap/o'ng uchlarda aniq semantik yorliq. */}
+              <View className="flex-row justify-between">
+                <Text className="text-xs text-text-muted">{dict.feedback.ratingWorst}</Text>
+                <Text className="text-xs text-text-muted">{dict.feedback.ratingBest}</Text>
+              </View>
             </View>
 
             <TextInput

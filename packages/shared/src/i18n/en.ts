@@ -759,6 +759,8 @@ const en: Dictionary = {
     title: "Your feedback",
     subtitle: "Tell us how the app is helping you",
     ratingLabel: "Overall rating",
+    ratingWorst: "Poor",
+    ratingBest: "Great",
     messagePlaceholder: "What did you like? What's missing?",
     submitButton: "Submit",
     thankYou: "Thanks! Your feedback has been received.",
