@@ -16,7 +16,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     // yoziladi — profil ma'lumotini o'zgartirish (til, shrift) kundalik
     // texnik-yordam ishi, jurnalni chalg'itmaslik uchun yozilmaydi.
     if (typeof patch.isBlocked === "boolean") {
-      await logAdminAction(identity.adminLabel, patch.isBlocked ? "user_blocked" : "user_unblocked", `user=${id}`);
+      logAdminAction(identity.adminLabel, patch.isBlocked ? "user_blocked" : "user_unblocked", `user=${id}`).catch(() => {});
     }
     return NextResponse.json(updated);
   } catch (error) {
@@ -29,7 +29,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     const identity = await requireAdmin(request);
     const { id } = await context.params;
     await deleteUserAdmin(id);
-    await logAdminAction(identity.adminLabel, "user_deleted", `user=${id}`);
+    logAdminAction(identity.adminLabel, "user_deleted", `user=${id}`).catch(() => {});
     return NextResponse.json({ ok: true });
   } catch (error) {
     return jsonError(error);

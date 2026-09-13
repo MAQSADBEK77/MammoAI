@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ w
     if (!sizeLabel || !babyDevelopment || !motherChanges) throw new ApiError(400, "Barcha maydonlar to'ldirilishi kerak");
 
     const content = await upsertPregnancyWeekContent(weekNum, { sizeLabel, babyDevelopment, motherChanges });
-    await logAdminAction(identity.adminLabel, "pregnancy_content_updated", `hafta=${weekNum}`);
+    logAdminAction(identity.adminLabel, "pregnancy_content_updated", `hafta=${weekNum}`).catch(() => {});
     return NextResponse.json({ content });
   } catch (error) {
     return jsonError(error);

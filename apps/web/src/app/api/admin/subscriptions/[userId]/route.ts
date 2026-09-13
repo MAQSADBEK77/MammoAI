@@ -18,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { userId } = await params;
     const body = (await request.json()) as GrantBody;
     const subscription = await grantPremium(userId, { durationDays: body.durationDays, note: body.note?.trim() || null });
-    await logAdminAction(identity.adminLabel, "premium_granted", `user=${userId} days=${body.durationDays ?? "muddatsiz"}`);
+    logAdminAction(identity.adminLabel, "premium_granted", `user=${userId} days=${body.durationDays ?? "muddatsiz"}`).catch(() => {});
     return NextResponse.json({ subscription });
   } catch (error) {
     return jsonError(error);
@@ -30,7 +30,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const identity = await requireAdmin(request);
     const { userId } = await params;
     await revokePremium(userId);
-    await logAdminAction(identity.adminLabel, "premium_revoked", `user=${userId}`);
+    logAdminAction(identity.adminLabel, "premium_revoked", `user=${userId}`).catch(() => {});
     return NextResponse.json({ ok: true });
   } catch (error) {
     return jsonError(error);

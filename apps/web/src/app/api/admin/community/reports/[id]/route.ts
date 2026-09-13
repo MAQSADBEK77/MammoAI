@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       throw new ApiError(400, "Status noto'g'ri");
     }
     await resolveCommunityReport(id, body.status);
-    await logAdminAction(identity.adminLabel, "report_" + body.status, id);
+    logAdminAction(identity.adminLabel, "report_" + body.status, id).catch(() => {});
     return NextResponse.json({ reports: await listOpenCommunityReports() });
   } catch (error) {
     return jsonError(error);

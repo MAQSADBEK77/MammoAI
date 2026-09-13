@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!body.password || body.password.length < 8) throw new ApiError(400, "Parol kamida 8 belgidan iborat bo'lishi kerak");
 
     const admin = await createAdminUser(email, hashAdminPassword(body.password), name);
-    await logAdminAction(identity.adminLabel, "admin_created", `${name} (${email})`);
+    logAdminAction(identity.adminLabel, "admin_created", `${name} (${email})`).catch(() => {});
     return NextResponse.json({ admin });
   } catch (error) {
     return jsonError(error);

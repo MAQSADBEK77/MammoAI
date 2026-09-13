@@ -23,7 +23,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     const identity = await requireAdmin(request);
     const { id } = await context.params;
     await deleteCommunityPostAdmin(id);
-    await logAdminAction(identity.adminLabel, "post_deleted", id);
+    logAdminAction(identity.adminLabel, "post_deleted", id).catch(() => {});
     return NextResponse.json({ ok: true });
   } catch (error) {
     return jsonError(error);
