@@ -71,13 +71,24 @@ export function signRootAdminSession(): string {
   return signAdminSession({ adminId: null, adminLabel: ROOT_ADMIN_LABEL });
 }
 
+/** FIX-10: ADMIN-001'dan OLDIN chiqarilgan sessiyalarda `adminLabel` maydoni
+ * umuman yo'q edi ({role:"admin"} formatida, 7 kungacha amal qiladi). Bunday
+ * eski formatdagi (lekin imzosi haqiqiy) token ilgari HAM to'liq admin
+ * huquqi berardi — shuning uchun uni endi ROOT_ADMIN_LABEL'ga fallback qilib
+ * qabul qilish xavfsizlikni PASAYTIRMAYDI (eski ishonch darajasi bilan bir
+ * xil), faqat foydalanuvchini ogohlantirishsiz 401'ga chiqarib
+ * yubormaslikni ta'minlaydi — keyingi qayta kirishda yangi (adminLabel'li)
+ * sessiya normal chiqariladi. */
 export function verifyAdminSession(token: string): AdminIdentity | null {
   try {
     const decoded = jwt.verify(token, getAdminSecret());
     if (typeof decoded !== "object" || decoded === null) return null;
     const payload = decoded as { role?: string; adminId?: string | null; adminLabel?: string };
-    if (payload.role !== "admin" || typeof payload.adminLabel !== "string") return null;
-    return { adminId: payload.adminId ?? null, adminLabel: payload.adminLabel };
+    if (payload.role !== "admin") return null;
+    if (typeof payload.adminLabel === "string") {
+      return { adminId: payload.adminId ?? null, adminLabel: payload.adminLabel };
+    }
+    return { adminId: null, adminLabel: ROOT_ADMIN_LABEL };
   } catch {
     return null;
   }
