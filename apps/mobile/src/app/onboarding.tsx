@@ -90,6 +90,9 @@ interface SurveyState {
   averagePeriodLength: string;
   /** "Bilmayman" bosilganda true — inputlar taxminiy standart (28/5) qiymatga qaytariladi va bloklanadi. */
   cycleLengthsUnknown: boolean;
+  /** FIX-07 — web onboarding/page.tsx bilan bir xil, izoh o'sha yerda. */
+  savedCycleLength: string;
+  savedPeriodLength: string;
   lastPeriodDate: string;
   /** "Bilmayman" bosilganda true — sana kiritish shart emasligini bildiradi. */
   lastPeriodUnknown: boolean;
@@ -125,6 +128,8 @@ const INITIAL_SURVEY: SurveyState = {
   averageCycleLength: "28",
   averagePeriodLength: "5",
   cycleLengthsUnknown: false,
+  savedCycleLength: "28",
+  savedPeriodLength: "5",
   lastPeriodDate: "",
   lastPeriodUnknown: false,
   typicalSymptoms: [],
@@ -715,15 +720,20 @@ export default function OnboardingScreen() {
                 <TextField value={survey.averagePeriodLength} onChangeText={(v) => setSurvey((s) => ({ ...s, averagePeriodLength: v }))} keyboardType="numeric" />
               </View>
               <Pressable
+                // FIX-07 — web onboarding/page.tsx bilan bir xil, izoh o'sha yerda.
                 onPress={() =>
-                  setSurvey((s) => ({
-                    ...s,
-                    cycleLengthsUnknown: !s.cycleLengthsUnknown,
-                    // Bilmayman bosilganda standart (populyatsiya o'rtachasi) qiymatga qaytariladi —
-                    // Web onboarding/page.tsx bilan bir xil — izoh o'sha yerda.
-                    averageCycleLength: s.cycleLengthsUnknown ? s.averageCycleLength : "28",
-                    averagePeriodLength: s.cycleLengthsUnknown ? s.averagePeriodLength : "5",
-                  }))
+                  setSurvey((s) =>
+                    s.cycleLengthsUnknown
+                      ? { ...s, cycleLengthsUnknown: false, averageCycleLength: s.savedCycleLength, averagePeriodLength: s.savedPeriodLength }
+                      : {
+                          ...s,
+                          cycleLengthsUnknown: true,
+                          savedCycleLength: s.averageCycleLength,
+                          savedPeriodLength: s.averagePeriodLength,
+                          averageCycleLength: "28",
+                          averagePeriodLength: "5",
+                        }
+                  )
                 }
                 className={clsx(
                   "min-h-[48px] w-full justify-center rounded-2xl border-2 px-5 py-3 active:scale-[0.98]",

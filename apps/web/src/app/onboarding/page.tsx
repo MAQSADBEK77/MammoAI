@@ -86,6 +86,11 @@ interface SurveyState {
   averagePeriodLength: string;
   /** "Bilmayman" bosilganda true — inputlar taxminiy standart (28/5) qiymatga qaytariladi va bloklanadi. */
   cycleLengthsUnknown: boolean;
+  /** FIX-07: "Bilmayman" yoqilishidan OLDIN foydalanuvchi kiritgan qiymat —
+   * o'chirilganda shu qaytariladi (aks holda "35" kabi kiritilgan qiymat
+   * standart "28"ga almashtirilib, hech qachon qaytarilmasdi). */
+  savedCycleLength: string;
+  savedPeriodLength: string;
   lastPeriodDate: string;
   /** "Bilmayman" bosilganda true — sana kiritish shart emasligini bildiradi. */
   lastPeriodUnknown: boolean;
@@ -147,6 +152,8 @@ const INITIAL_SURVEY: SurveyState = {
   averageCycleLength: "28",
   averagePeriodLength: "5",
   cycleLengthsUnknown: false,
+  savedCycleLength: "28",
+  savedPeriodLength: "5",
   lastPeriodDate: "",
   lastPeriodUnknown: false,
   typicalSymptoms: [],
@@ -847,15 +854,23 @@ function OnboardingPageInner() {
             <button
               type="button"
               onClick={() =>
-                setSurvey((s) => ({
-                  ...s,
-                  cycleLengthsUnknown: !s.cycleLengthsUnknown,
-                  // Bilmayman bosilganda standart (populyatsiya o'rtachasi) qiymatga qaytariladi —
-                  // CycleScreen'da bu "taxminiy" (cyclesAnalyzed: 0) sifatida ko'rsatiladi,
-                  // haqiqiy shaxsiy ma'lumot sifatida emas.
-                  averageCycleLength: s.cycleLengthsUnknown ? s.averageCycleLength : "28",
-                  averagePeriodLength: s.cycleLengthsUnknown ? s.averagePeriodLength : "5",
-                }))
+                setSurvey((s) =>
+                  s.cycleLengthsUnknown
+                    ? // FIX-07: o'chirilmoqda — foydalanuvchi avval kiritgan qiymatni qaytaramiz
+                      // (ilgari bu yerda standart "28"/"5" qolib ketardi, asl qiymat yo'qolardi).
+                      { ...s, cycleLengthsUnknown: false, averageCycleLength: s.savedCycleLength, averagePeriodLength: s.savedPeriodLength }
+                    : // Yoqilmoqda — joriy qiymatni saqlab, standart (populyatsiya o'rtachasi)
+                      // qiymatga tushiramiz. CycleScreen'da bu "taxminiy" (cyclesAnalyzed: 0)
+                      // sifatida ko'rsatiladi, haqiqiy shaxsiy ma'lumot sifatida emas.
+                      {
+                        ...s,
+                        cycleLengthsUnknown: true,
+                        savedCycleLength: s.averageCycleLength,
+                        savedPeriodLength: s.averagePeriodLength,
+                        averageCycleLength: "28",
+                        averagePeriodLength: "5",
+                      }
+                )
               }
               className={clsx(
                 "tap-target w-full rounded-2xl border-2 px-5 py-3 text-center text-base font-medium transition",
