@@ -26,10 +26,6 @@ interface SessionContextValue {
 
 const THEME_STORAGE_KEY = "mammoai_theme";
 
-function systemPrefersDark(): boolean {
-  return typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-}
-
 const SessionContext = createContext<SessionContextValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -37,7 +33,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
   const [hasPremium, setHasPremium] = useState(false);
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => (systemPrefersDark() ? "dark" : "light"));
+  // FIX-UX-02: boshlang'ich qiymat serverdagi bilan BIR XIL ("light") bo'lishi
+  // shart — `systemPrefersDark()`ni to'g'ridan-to'g'ri shu yerda chaqirish
+  // hydration mismatch'ga olib kelardi (server har doim "light" chiqaradi,
+  // chunki `window` yo'q, lekin mijoz birinchi render'dayoq haqiqiy OS
+  // qiymatini o'qirdi). Haqiqiy qiymat pastdagi useEffect (88-qator atrofi)
+  // orqali, mount bo'lgandan KEYIN qo'llaniladi.
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
   const { setLanguage } = useI18n();
 
   const applyMeResponse = useCallback(
