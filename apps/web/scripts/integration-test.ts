@@ -252,7 +252,7 @@ async function main() {
 
   // --- FIX-10: updateUser endi faqat patch qilingan ustunlarni yozadi (lost-update yo'q) ---
   const raceUser = randomUUID();
-  await sql`INSERT INTO users (id, name, phone, language, created_at) VALUES (${raceUser}, 'Boshlang\'ich', ${"+9989" + Math.floor(Math.random() * 1e8)}, 'uz', now()::text)`;
+  await sql`INSERT INTO users (id, name, phone, language, created_at) VALUES (${raceUser}, ${"Boshlang'ich"}, ${"+9989" + Math.floor(Math.random() * 1e8)}, 'uz', now()::text)`;
   // Ikkita "parallel" PATCH — biri faqat ismni, ikkinchisi faqat tilni o'zgartiradi.
   // Eski (o'qi-birlashtir-yoz) kodda ikkinchisi birinchisining eskirgan nusxasi
   // ustidan yozib, ismni "Boshlang'ich"ga qaytarib qo'yishi mumkin edi.
