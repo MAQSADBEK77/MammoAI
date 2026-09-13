@@ -37,6 +37,8 @@ import {
   createPartnerInviteCode,
   toggleCommunityLike,
   checkAnalyticsIngestRateLimit,
+  createSystemNotification,
+  hasSentDailyReminderRecently,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
@@ -339,6 +341,15 @@ async function main() {
   }
   assert(sawAnalyticsRateLimit, "FIX2-24: bitta IP'dan 20 tadan ortiq tez so'rovdan keyin rate-limit (429) ishga tushadi");
   await sql`DELETE FROM analytics_ingest_attempts WHERE ip_key = ${testIp}`;
+
+  // --- FIX2-25: kunlik eslatma idempotentligi (cron ikki marta chaqirilsa ham bir marta) ---
+  const reminderUser = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${reminderUser}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  assert(!(await hasSentDailyReminderRecently(reminderUser)), "FIX2-25: hali eslatma yuborilmagan foydalanuvchi uchun false");
+  await createSystemNotification(reminderUser, "daily_reminder", "Test eslatma xabari");
+  assert(await hasSentDailyReminderRecently(reminderUser), "FIX2-25: eslatma yuborilgandan keyin true (cron ikkinchi marta yubormaydi)");
+  await sql`DELETE FROM notifications WHERE user_id = ${reminderUser}`;
+  await sql`DELETE FROM users WHERE id = ${reminderUser}`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {

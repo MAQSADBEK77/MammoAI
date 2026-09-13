@@ -9,7 +9,15 @@
 
 import { deriveAdaptiveCycleSettings, dictionaries, getPregnancyStatus, predictCycle, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
-import { createSystemNotification, getCycleSettings, getPregnancyProfile, hasLoggedToday, listCycleLogs, listUsersForDailyReminders } from "./repo";
+import {
+  createSystemNotification,
+  getCycleSettings,
+  getPregnancyProfile,
+  hasLoggedToday,
+  hasSentDailyReminderRecently,
+  listCycleLogs,
+  listUsersForDailyReminders,
+} from "./repo";
 import { sendTelegramMessage } from "./telegram-bot";
 import { sendExpoPushNotification } from "./push-notifications";
 
@@ -81,6 +89,14 @@ export async function runDailyReminders(): Promise<DailyReminderResult[]> {
   const results: DailyReminderResult[] = [];
 
   for (const user of users) {
+    // FIX2-25: cron ikki marta chaqirilsa (retry, qo'lda qayta ishga
+    // tushirish), idempotentlik tekshiruvi yo'qligi sabab HAR BIR
+    // foydalanuvchiga xabar IKKI MARTA yuborilardi.
+    if (await hasSentDailyReminderRecently(user.id)) {
+      results.push({ userId: user.id, sent: false, message: null });
+      continue;
+    }
+
     let message: string | null = null;
     try {
       message = await buildReminderMessage(user.id, user.language);

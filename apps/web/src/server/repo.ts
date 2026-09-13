@@ -2878,6 +2878,23 @@ export async function createSystemNotification(userId: string, type: "daily_remi
   `;
 }
 
+// FIX2-25: runDailyReminders() uchun idempotentlik tekshiruvi — cron
+// (bir kunda bir marta ishlashi kerak) retry/qo'lda qayta ishga
+// tushirilsa, bir xil foydalanuvchiga IKKI MARTA yubormaslik uchun.
+// Aniq kalendar-kun chegarasi (Toshkent vaqti) o'rniga oxirgi ~20 soat
+// ichida allaqachon yuborilganmi deb tekshiradi — cron kuniga bir marta
+// ishlagani uchun bu farq qilmaydi, lekin vaqt-zonasi murakkabligidan qochadi.
+const DAILY_REMINDER_DEDUPE_HOURS = 20;
+
+export async function hasSentDailyReminderRecently(userId: string): Promise<boolean> {
+  await ensureSchema();
+  const cutoff = new Date(Date.now() - DAILY_REMINDER_DEDUPE_HOURS * 60 * 60 * 1000).toISOString();
+  const rows = (await sql`
+    SELECT 1 FROM notifications WHERE user_id = ${userId} AND type = 'daily_reminder' AND created_at > ${cutoff} LIMIT 1
+  `) as unknown as unknown[];
+  return rows.length > 0;
+}
+
 /** Kunlik eslatma (server/daily-reminders.ts) uchun — faqat Telegram bog'langan,
  * bildirishnoma yoqilgan va test/bloklangan bo'lmagan foydalanuvchilar. */
 /** Kunlik eslatma uchun — kamida BITTA yetkazish kanali bor foydalanuvchilar
