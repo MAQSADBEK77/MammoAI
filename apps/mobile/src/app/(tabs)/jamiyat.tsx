@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, View, Text, Pressable, TextInput, Share, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -87,9 +87,18 @@ export default function CommunityScreen() {
   const [reportDone, setReportDone] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
 
+  // FIX2-15: teg-filtr tez almashtirilsa, ikkita so'rov parallel ketardi —
+  // eski (sekinroq) filtrning javobi keyinroq kelsa, yangi tanlangan
+  // filtr natijasini bosib yuborardi. So'nggi so'ralgan `tag` ref'da
+  // saqlanadi, javob kelganda joriy tag bilan solishtirilib, mos kelmasa
+  // e'tiborsiz qoldiriladi.
+  const latestTagRef = useRef<CommunityTag | "all">(tag);
+
   const loadPosts = useCallback((currentTag: CommunityTag | "all") => {
+    latestTagRef.current = currentTag;
     setPosts(null);
     api.community.listPosts({ tag: currentTag === "all" ? undefined : currentTag, limit: PAGE_SIZE, offset: 0 }).then((res) => {
+      if (latestTagRef.current !== currentTag) return;
       setPosts(res.posts);
       setTotal(res.total);
     });
