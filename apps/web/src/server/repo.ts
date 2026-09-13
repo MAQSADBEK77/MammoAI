@@ -2517,7 +2517,12 @@ export async function listOpenCommunityReports(limit = 50): Promise<CommunityRep
       r.id, r.target_type, r.post_id, r.comment_id, r.reason, r.note, r.status, r.created_at,
       reporter.name as reporter_name,
       COALESCE(c.body, p.body) as target_body,
-      COALESCE(c.body IS NOT NULL, p.body IS NOT NULL) as target_exists,
+      -- FIX-02: post haqidagi shikoyatda comment_id NULL bo'lgani uchun
+      -- 'c.body IS NOT NULL' doim 'false' (SQL NULL emas!) qaytarardi,
+      -- COALESCE esa buni "bo'sh bo'lmagan qiymat" deb hisoblab, p.body'ni
+      -- tekshirmay to'xtardi — har bir post haqidagi shikoyat "o'chirilgan"
+      -- deb ko'rsatilardi.
+      CASE WHEN r.comment_id IS NOT NULL THEN c.body IS NOT NULL ELSE p.body IS NOT NULL END as target_exists,
       COALESCE(cu.name, pu.name) as target_author_name
     FROM community_reports r
     JOIN users reporter ON reporter.id = r.reporter_id

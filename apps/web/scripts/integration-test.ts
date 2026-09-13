@@ -144,6 +144,8 @@ async function main() {
     await createCommunityReport(userB, { targetType: "post", postId: post.id, reason: "spam" });
     const reports = await listOpenCommunityReports();
     assert(reports.some((r) => r.postId === post.id && r.status === "open"), "COMM-001: shikoyat ochiq navbatga tushadi");
+    const postReport = reports.find((r) => r.postId === post.id)!;
+    assert(postReport.targetExists === true, "FIX-02: post haqidagi shikoyatda mavjud post 'o'chirilgan' deb ko'rsatilmaydi");
 
     await blockCommunityPostAuthor(userB, post.id);
     const afterBlock = await listCommunityPosts(userB, {});
