@@ -33,6 +33,7 @@ export function HamkorScreen() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     api.partner.status().then(setStatus);
@@ -81,8 +82,19 @@ export function HamkorScreen() {
   }
 
   async function disconnect() {
-    if (!window.confirm(dict.partner.disconnectConfirm)) return;
-    setStatus(await api.partner.disconnect());
+    if (!window.confirm(dict.partner.disconnectConfirm) || disconnecting) return;
+    setDisconnecting(true);
+    // FIX-UX-10: ilgari try/catch yo'q edi va tugma so'rov davomida
+    // o'chirilmasdi — xato bo'lganda foydalanuvchi hamkor hali ham ulangan
+    // deb ko'rardi va tugmani qayta-qayta bosib dublikat so'rov yuborishi
+    // mumkin edi.
+    try {
+      setStatus(await api.partner.disconnect());
+    } catch {
+      flashMessage(dict.common.errorGeneric);
+    } finally {
+      setDisconnecting(false);
+    }
   }
 
   async function copyCode() {
@@ -214,7 +226,12 @@ export function HamkorScreen() {
             </Card>
           )}
 
-          <button type="button" onClick={disconnect} className="w-full text-center text-sm font-semibold text-danger">
+          <button
+            type="button"
+            onClick={disconnect}
+            disabled={disconnecting}
+            className="w-full text-center text-sm font-semibold text-danger disabled:opacity-50"
+          >
             {dict.partner.disconnectButton}
           </button>
         </>

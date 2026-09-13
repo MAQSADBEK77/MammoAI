@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable, Alert, TextInput } from "react-native";
+import clsx from "clsx";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
@@ -33,6 +34,7 @@ export default function HamkorScreen() {
   const [chatOpen, setChatOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     api.partner.status().then(setStatus);
@@ -72,9 +74,14 @@ export default function HamkorScreen() {
   async function toggleShare(key: keyof PartnerShareSettings) {
     if (!status!.mySharing || saving) return;
     setSaving(true);
+    // FIX-UX-10: ilgari catch yo'q edi — xato bo'lsa svitcher hech qanday
+    // tushuntirishsiz eski holatga qaytardi (chunki `status` yangilanmagan
+    // holicha qoladi), foydalanuvchi nima bo'lganini bilmasdi.
     try {
       const next = { ...status!.mySharing, [key]: !status!.mySharing[key] };
       setStatus(await api.partner.updateSettings(next));
+    } catch {
+      Alert.alert(dict.common.errorGeneric);
     } finally {
       setSaving(false);
     }
@@ -83,7 +90,23 @@ export default function HamkorScreen() {
   function disconnect() {
     Alert.alert(dict.partner.disconnectButton, dict.partner.disconnectConfirm, [
       { text: dict.common.cancel, style: "cancel" },
-      { text: dict.partner.disconnectButton, style: "destructive", onPress: async () => setStatus(await api.partner.disconnect()) },
+      {
+        text: dict.partner.disconnectButton,
+        style: "destructive",
+        onPress: async () => {
+          // FIX-UX-10: ilgari try/catch yo'q edi — xato bo'lsa foydalanuvchi
+          // hamkor hali ham ulangan deb ko'rardi, hech qanday signal yo'q edi.
+          if (disconnecting) return;
+          setDisconnecting(true);
+          try {
+            setStatus(await api.partner.disconnect());
+          } catch {
+            Alert.alert(dict.common.errorGeneric);
+          } finally {
+            setDisconnecting(false);
+          }
+        },
+      },
     ]);
   }
 
@@ -210,24 +233,28 @@ export default function HamkorScreen() {
                   label={dict.partner.shareTogglePregnancy}
                   checked={!!status.mySharing?.pregnancy}
                   onChange={() => toggleShare("pregnancy")}
+                  disabled={saving}
                 />
                 <SharingRow
                   icon="🗓️"
                   label={dict.partner.shareToggleCheckups}
                   checked={!!status.mySharing?.checkups}
                   onChange={() => toggleShare("checkups")}
+                  disabled={saving}
                 />
                 <SharingRow
                   icon="😊"
                   label={dict.partner.shareToggleMood}
                   checked={!!status.mySharing?.mood}
                   onChange={() => toggleShare("mood")}
+                  disabled={saving}
                 />
                 <SharingRow
                   icon="🩸"
                   label={dict.partner.shareTogglePeriod}
                   checked={!!status.mySharing?.period}
                   onChange={() => toggleShare("period")}
+                  disabled={saving}
                   last
                 />
               </Card>
@@ -241,8 +268,10 @@ export default function HamkorScreen() {
               </Card>
             )}
 
-            <Pressable onPress={disconnect}>
-              <Text className="text-center text-sm font-semibold text-danger">{dict.partner.disconnectButton}</Text>
+            <Pressable onPress={disconnect} disabled={disconnecting}>
+              <Text className={clsx("text-center text-sm font-semibold text-danger", disconnecting && "opacity-50")}>
+                {dict.partner.disconnectButton}
+              </Text>
             </Pressable>
           </>
         )}
@@ -328,12 +357,14 @@ function SharingRow({
   label,
   checked,
   onChange,
+  disabled,
   last,
 }: {
   icon: string;
   label: string;
   checked: boolean;
   onChange: () => void;
+  disabled?: boolean;
   last?: boolean;
 }) {
   const accent = useModeAccent();
@@ -343,7 +374,7 @@ function SharingRow({
         <Emoji e={icon} />
         <Text className="text-sm font-medium text-text-primary">{label}</Text>
       </View>
-      <Switch value={checked} onValueChange={onChange} color={accent.primary} />
+      <Switch value={checked} onValueChange={onChange} disabled={disabled} color={accent.primary} />
     </View>
   );
 }
