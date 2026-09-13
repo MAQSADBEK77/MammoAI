@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { MeResponse, OnboardingProfile, User } from "@mammoai/shared";
+import { ApiError, type MeResponse, type OnboardingProfile, type User } from "@mammoai/shared";
 import { api } from "./api";
 import { getToken } from "./storage";
 import { useI18n } from "./i18n";
@@ -46,11 +46,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     try {
       const res = await api.me.get();
       applyMeResponse(res);
-    } catch {
-      setStatus("anonymous");
-      setUser(null);
-      setOnboardingProfile(null);
-      setHasPremium(false);
+    } catch (error) {
+      // FIX-08: faqat aniq 401/403 (autentifikatsiya xatosi) sessiyani
+      // tozalashi kerak — tarmoq xatosi/timeout kabi vaqtinchalik xatolarda
+      // joriy sessiya holati saqlab qolinadi (aks holda vaqtinchalik tarmoq
+      // uzilishi foydalanuvchini "chiqib ketgan" holatga tashlab yuborardi).
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        setStatus("anonymous");
+        setUser(null);
+        setOnboardingProfile(null);
+        setHasPremium(false);
+      }
+      // Boshqa xatolarda (tarmoq, timeout, 5xx) — joriy holat (masalan ilk
+      // yuklanishda hali "loading", keyinroq bo'lsa oldingi "onboarded"/
+      // "anonymous") o'zgarmasdan qoladi; chaqiruvchi (masalan qo'lda pull-
+      // to-refresh) xohlasa `refresh()`ni qayta chaqirib qayta urinishi mumkin.
     }
   }, [applyMeResponse]);
 
