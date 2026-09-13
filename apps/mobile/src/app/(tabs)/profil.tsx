@@ -501,7 +501,16 @@ export default function ProfileScreen() {
           </SettingsRow>
 
           <SettingsRow icon="🔔" label={dict.profile.notificationsLabel} last>
-            <Toggle checked={user.notificationsEnabled} onPress={() => save({ notificationsEnabled: !user.notificationsEnabled })} />
+            {/* FIX2-12: save() async bo'lgani uchun `user` state faqat
+                muvaffaqiyatli saqlangandan keyin yangilanadi — ikki marta
+                tez-tez bosilsa, ikkalasi ham bir xil (eskirgan) qiymatdan
+                hisoblab, bir xil natijani yuborishi mumkin edi. Endi
+                so'rov davomida svitcher disable qilinadi. */}
+            <Toggle
+              checked={user.notificationsEnabled}
+              onPress={() => save({ notificationsEnabled: !user.notificationsEnabled })}
+              disabled={saving}
+            />
           </SettingsRow>
         </Card>
 
@@ -671,9 +680,13 @@ function SettingsRow({
   );
 }
 
-function Toggle({ checked, onPress }: { checked: boolean; onPress: () => void }) {
+function Toggle({ checked, onPress, disabled }: { checked: boolean; onPress: () => void; disabled?: boolean }) {
   return (
-    <Pressable onPress={onPress} className={clsx("h-8 w-14 rounded-full p-1", checked ? "bg-primary" : "bg-surface-muted")}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      className={clsx("h-8 w-14 rounded-full p-1", checked ? "bg-primary" : "bg-surface-muted", disabled && "opacity-50")}
+    >
       <View className={clsx("h-6 w-6 rounded-full bg-white", checked && "ml-6")} />
     </Pressable>
   );
