@@ -13,11 +13,16 @@ export type FertilityLevel = "low" | "medium" | "high";
  * @param periodLength o'rtacha hayz davomiyligi (kun).
  */
 export function getCyclePhase(dayInCycle: number, cycleLength: number, periodLength: number): CyclePhase {
-  if (dayInCycle <= periodLength) return "menstrual";
-
+  // FIX2-18: ilgari "hayz" sharti ("dayInCycle <= periodLength") HAR DOIM
+  // birinchi tekshirilardi — agar periodLength katta bo'lsa (masalan
+  // cycleLength=21, periodLength=8 — ikkalasi ham to'liq normal qiymatlar),
+  // ovulyatsiya oynasi (kun 6-8) TO'LIQ hayz oralig'iga tushib qolib,
+  // "follikulyar"/"ovulyatsiya" hech qachon qaytmasdi. Endi ovulyatsiya
+  // oynasi periodLength'dan MUSTAQIL, birinchi navbatda tekshiriladi.
   const ovulationDay = cycleLength - 14;
   if (dayInCycle >= ovulationDay - 1 && dayInCycle <= ovulationDay + 1) return "ovulation";
 
+  if (dayInCycle <= periodLength) return "menstrual";
   if (dayInCycle < ovulationDay) return "follicular";
   return "luteal";
 }

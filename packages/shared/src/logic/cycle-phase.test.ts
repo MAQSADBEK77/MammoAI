@@ -33,6 +33,18 @@ describe("getCyclePhase", () => {
     expect(getCyclePhase(7, 21, 4)).toBe("ovulation");
     expect(getCyclePhase(10, 21, 4)).toBe("luteal");
   });
+
+  // FIX2-18: periodLength ovulyatsiya oynasini "yutib yuborgan" chegaraviy
+  // holat — ilgari bunday sikl UMUMAN "ovulyatsiya"/"follikulyar" qaytarmas,
+  // to'g'ridan-to'g'ri "hayz"dan "lyuteal"ga sakrardi.
+  it("periodLength ovulyatsiya oynasiga yetib borsa ham, ovulyatsiyani to'g'ri belgilaydi", () => {
+    // ovulationDay = 21 - 14 = 7, oyna 6-8 — periodLength (8) shu oynani qamrab oladi.
+    expect(getCyclePhase(5, 21, 8)).toBe("menstrual");
+    expect(getCyclePhase(6, 21, 8)).toBe("ovulation");
+    expect(getCyclePhase(7, 21, 8)).toBe("ovulation");
+    expect(getCyclePhase(8, 21, 8)).toBe("ovulation");
+    expect(getCyclePhase(9, 21, 8)).toBe("luteal");
+  });
 });
 
 describe("getFertilityLevel", () => {
