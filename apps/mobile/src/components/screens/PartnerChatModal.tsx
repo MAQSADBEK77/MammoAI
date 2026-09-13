@@ -35,6 +35,7 @@ export function PartnerChatModal({
   const [messages, setMessages] = useState<PartnerChatMessage[] | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(false);
   const listRef = useRef<FlatList<PartnerChatMessage>>(null);
 
   useEffect(() => {
@@ -60,10 +61,17 @@ export function PartnerChatModal({
     const text = draft.trim();
     if (!text || sending) return;
     setSending(true);
-    setDraft("");
+    setSendError(false);
+    // FIX-UX-09: ilgari `setDraft("")` so'rov yuborishdan OLDIN chaqirilib,
+    // hech qanday catch yo'q edi — tarmoq xatosida foydalanuvchi yozgan
+    // xabar BUTUNLAY yo'qolardi. Endi draft faqat MUVAFFAQIYATLI bo'lgandan
+    // keyin tozalanadi; xato bo'lsa matn saqlanib qoladi va xabar ko'rsatiladi.
     try {
       const res = await api.partner.sendChatMessage(text);
       setMessages((prev) => [...(prev ?? []), res.message]);
+      setDraft("");
+    } catch {
+      setSendError(true);
     } finally {
       setSending(false);
     }
@@ -119,6 +127,7 @@ export function PartnerChatModal({
             />
           )}
 
+          {sendError && <Text className="px-3 pt-1 text-xs font-medium text-danger">{dict.partner.chatSendError}</Text>}
           <View className="flex-row items-center gap-2 border-t border-border bg-surface px-3 py-3">
             <TextInput
               value={draft}

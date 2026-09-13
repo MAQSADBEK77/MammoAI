@@ -692,6 +692,7 @@ const ru: Dictionary = {
     disconnectConfirm: "Отключить партнёра? История обмена будет удалена.",
     messagePlaceholder: "Напишите сообщение...",
     chatEmpty: "Пока нет сообщений — напишите первым!",
+    chatSendError: "Не отправлено, попробуйте ещё раз",
     statsModalTitle: "Данные, которыми поделился партнёр",
     statPregnancyWeek: (n: number) => `Беременность: ${n}-я неделя`,
     statNextCheckupLabel: "Следующий осмотр",

@@ -694,6 +694,7 @@ const en: Dictionary = {
     disconnectConfirm: "Disconnect from your partner? Sharing history will be deleted.",
     messagePlaceholder: "Write a message...",
     chatEmpty: "No messages yet — say hi!",
+    chatSendError: "Not sent — please try again",
     statsModalTitle: "Data your partner has shared",
     statPregnancyWeek: (n: number) => `Pregnancy: week ${n}`,
     statNextCheckupLabel: "Next checkup",

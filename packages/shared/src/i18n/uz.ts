@@ -718,6 +718,9 @@ const uz = {
     disconnectConfirm: "Hamkordan uzilishni tasdiqlaysizmi? Ulashish tarixi o'chiriladi.",
     messagePlaceholder: "Xabar yozing...",
     chatEmpty: "Hali xabar yo'q — birinchi bo'lib yozing!",
+    // FIX-UX-09: xabar tarmoq xatosi bilan yuborilmasa ko'rsatiladi (draft
+    // matn qayta tiklanadi, foydalanuvchiga aniq signal beriladi).
+    chatSendError: "Yuborilmadi, qayta urinib ko'ring",
     statsModalTitle: "Hamkoringiz ulashgan ma'lumotlar",
     statPregnancyWeek: (n: number) => `Homiladorlik: ${n}-hafta`,
     statNextCheckupLabel: "Keyingi ko'rik",
