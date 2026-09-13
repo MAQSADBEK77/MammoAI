@@ -616,6 +616,28 @@ async function initSchema() {
       AND (a.created_at < b.created_at OR (a.created_at = b.created_at AND a.id < b.id))
   `;
 
+  // FIX2-27: connectPartnerByCode'da tekshirish (findPartnerLink) va INSERT
+  // orasida tranzaksiya/unique constraint yo'q edi — ikkita parallel so'rov
+  // bir xil foydalanuvchini ikki xil hamkorga ulashi mumkin edi. UNIQUE
+  // indeks qo'yishdan oldin, xuddi yuqoridagi kabi, eski race condition
+  // tufayli paydo bo'lgan bo'lishi mumkin bo'lgan dublikatlarni tozalaymiz —
+  // har bir ustun bo'yicha ENG ERTA (created_at) yozuvni qoldiramiz (haqiqiy
+  // ishlatilayotgan ulanish ko'proq ehtimol eskisi).
+  await sql`
+    DELETE FROM partner_links a USING partner_links b
+    WHERE a.user_a_id = b.user_a_id AND a.id != b.id
+      AND (a.created_at > b.created_at OR (a.created_at = b.created_at AND a.id > b.id))
+  `;
+  await sql`
+    DELETE FROM partner_links a USING partner_links b
+    WHERE a.user_b_id = b.user_b_id AND a.id != b.id
+      AND (a.created_at > b.created_at OR (a.created_at = b.created_at AND a.id > b.id))
+  `;
+  // Eski (UNIQUE bo'lmagan) indekslar endi ortiqcha — pastdagi UNIQUE
+  // indekslar xuddi shu ustunlar uchun qidiruvni ham qamrab oladi.
+  await sql`DROP INDEX IF EXISTS idx_partner_links_a`;
+  await sql`DROP INDEX IF EXISTS idx_partner_links_b`;
+
   // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
   await Promise.all([
     sql`CREATE INDEX IF NOT EXISTS idx_phone_verifications_created ON phone_verifications(created_at)`,
@@ -629,8 +651,8 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_partner_invites_code ON partner_invites(code)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_partner_links_a ON partner_links(user_a_id)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_partner_links_b ON partner_links(user_b_id)`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_links_a_unique ON partner_links(user_a_id)`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_links_b_unique ON partner_links(user_b_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_partner_messages_link ON partner_messages(partner_link_id, created_at ASC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_created ON analytics_events(created_at)`,
     sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_user ON analytics_events(user_id)`,

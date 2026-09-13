@@ -2974,13 +2974,27 @@ export async function connectPartnerByCode(userId: string, rawCode: string): Pro
   if (await findPartnerLink(userId)) throw new ApiError(400, "Siz allaqachon hamkorga ulangansiz");
   if (await findPartnerLink(invite.inviter_user_id)) throw new ApiError(400, "Bu foydalanuvchi allaqachon boshqa hamkorga ulangan");
 
-  await sql`
-    INSERT INTO partner_links (id, user_a_id, user_b_id, user_a_shares, user_b_shares, created_at)
-    VALUES (
-      ${randomUUID()}, ${invite.inviter_user_id}, ${userId},
-      ${JSON.stringify(DEFAULT_PARTNER_SHARING)}, ${JSON.stringify(DEFAULT_PARTNER_SHARING)}, ${now()}
-    )
-  `;
+  // FIX2-27: yuqoridagi ikkita tekshiruv va pastdagi INSERT orasida hali ham
+  // race condition bor edi (tranzaksiya yo'q) — ikki parallel so'rov
+  // (masalan ikki qurilma/tab) bir xil foydalanuvchini ikki xil hamkorga bir
+  // vaqtda ulashi mumkin edi. `partner_links(user_a_id)`/`(user_b_id)`dagi
+  // UNIQUE indeks (db.ts) endi buni bazada haqiqatan bloklaydi — bu yerda
+  // faqat Postgres'ning xom "unique_violation" (23505) xatosini toza,
+  // tushunarli xabarga aylantiramiz.
+  try {
+    await sql`
+      INSERT INTO partner_links (id, user_a_id, user_b_id, user_a_shares, user_b_shares, created_at)
+      VALUES (
+        ${randomUUID()}, ${invite.inviter_user_id}, ${userId},
+        ${JSON.stringify(DEFAULT_PARTNER_SHARING)}, ${JSON.stringify(DEFAULT_PARTNER_SHARING)}, ${now()}
+      )
+    `;
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+      throw new ApiError(400, "Siz yoki hamkoringiz shu payt ichida allaqachon boshqa hamkorga ulanib bo'lindi");
+    }
+    throw error;
+  }
   await sql`DELETE FROM partner_invites WHERE inviter_user_id = ${invite.inviter_user_id}`;
 }
 

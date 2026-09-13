@@ -34,6 +34,7 @@ import {
   updateUser,
   getUserById,
   ensureChecklistItem,
+  createPartnerInviteCode,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
@@ -281,6 +282,26 @@ async function main() {
   assert(afterDoneRows.length === 1 && afterDoneRows[0].status === "done", "FIX-UX-03: 'done' bandi yonida yangi 'pending' dublikat yaratilmaydi");
   await sql`DELETE FROM checklist_items WHERE user_id = ${checklistUser}`;
   await sql`DELETE FROM users WHERE id = ${checklistUser}`;
+
+  // --- FIX2-27: partner_links'da bir foydalanuvchi ikki hamkorga bir vaqtda ulanolmaydi ---
+  const acceptor = randomUUID();
+  const inviterA = randomUUID();
+  const inviterB = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES
+    (${acceptor}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text),
+    (${inviterA}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text),
+    (${inviterB}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  const [codeA, codeB] = await Promise.all([createPartnerInviteCode(inviterA), createPartnerInviteCode(inviterB)]);
+  // Bitta acceptor IKKITA hamkorga "bir vaqtda" ulanishga urinadi.
+  const raceResults = await Promise.allSettled([connectPartnerByCode(acceptor, codeA), connectPartnerByCode(acceptor, codeB)]);
+  const succeededCount = raceResults.filter((r) => r.status === "fulfilled").length;
+  assert(succeededCount === 1, "FIX2-27: parallel connectPartnerByCode'dan faqat BITTASI muvaffaqiyatli bo'ladi");
+  const linkRows = (await sql`SELECT id FROM partner_links WHERE user_b_id = ${acceptor}`) as unknown as { id: string }[];
+  assert(linkRows.length === 1, "FIX2-27: acceptor faqat BITTA hamkorga ulangan bo'lib qoladi (bazada ham)");
+  await sql`DELETE FROM partner_links WHERE user_a_id IN (${inviterA}, ${inviterB}) OR user_b_id = ${acceptor}`;
+  await sql`DELETE FROM partner_invites WHERE inviter_user_id IN (${inviterA}, ${inviterB})`;
+  await sql`DELETE FROM partner_connect_attempts WHERE user_id = ${acceptor}`;
+  await sql`DELETE FROM users WHERE id IN (${acceptor}, ${inviterA}, ${inviterB})`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {
