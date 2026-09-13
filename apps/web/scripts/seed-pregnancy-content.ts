@@ -16,7 +16,7 @@ interface WeekSeed {
   motherChanges: string;
 }
 
-const WEEKS: WeekSeed[] = [
+export const WEEKS: WeekSeed[] = [
   { week: 1, sizeLabel: "hali otalanmagan", babyDevelopment: "Homiladorlik sanasi an'anaviy ravishda oxirgi hayzning birinchi kunidan hisoblanadi — bu haftada urug'lantirish hali sodir bo'lmagan.", motherChanges: "Tana odatdagidek — hali homiladorlikka xos hech qanday belgi kutilmaydi." },
   { week: 2, sizeLabel: "moshdona urug'i", babyDevelopment: "Ovulyatsiya shu hafta atrofida sodir bo'ladi — tuxum hujayra urug'lantirishga tayyorlanmoqda.", motherChanges: "Ba'zilar shu davrda unumdorlik belgilarini (masalan shilliq qavat o'zgarishi) sezishi mumkin." },
   { week: 3, sizeLabel: "qum zarrachasi", babyDevelopment: "Urug'lantirish sodir bo'ladi va zigota bachadon nayidan bachadon tomon harakatlana boshlaydi, hujayralar bo'linishda davom etadi.", motherChanges: "Bu bosqichda homiladorlikning tashqi belgilari deyarli sezilmaydi." },
@@ -71,7 +71,12 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((error) => {
-  console.error("Xatolik:", error);
-  process.exit(1);
-});
+// To'g'ridan-to'g'ri `tsx` bilan ishga tushirilgandagina avtomatik ishlaydi —
+// boshqa skript (masalan bir martalik tarmoq-muammosi uchun ishlatiladigan
+// muqobil yo'l) `WEEKS`ni import qilsa, qayta ishga tushib ketmasligi uchun.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    console.error("Xatolik:", error);
+    process.exit(1);
+  });
+}
