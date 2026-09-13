@@ -286,7 +286,7 @@ export default function CommunityPage() {
         subtitle={dict.community.subtitle}
         right={
           <div className="relative">
-            <IconButton icon={<Bell sx={{ fontSize: 18 }} />} onClick={toggleNotifications} />
+            <IconButton icon={<Bell sx={{ fontSize: 18 }} />} onClick={toggleNotifications} ariaLabel={dict.community.notificationsTitle} />
             {unreadCount > 0 && (
               <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white">
                 {unreadCount > 9 ? "9+" : unreadCount}

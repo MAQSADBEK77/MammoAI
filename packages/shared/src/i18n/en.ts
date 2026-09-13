@@ -22,6 +22,8 @@ const en: Dictionary = {
     other: "Other",
     errorGeneric: "Something went wrong. Please try again in a moment.",
     retryButton: "Try again",
+    openMenu: "Open menu",
+    close: "Close",
     free: "Free",
     paid: "Paid",
     continueButton: "Continue",

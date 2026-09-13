@@ -20,6 +20,8 @@ const ru: Dictionary = {
     other: "Другое",
     errorGeneric: "Что-то пошло не так. Попробуйте ещё раз чуть позже.",
     retryButton: "Повторить",
+    openMenu: "Открыть меню",
+    close: "Закрыть",
     free: "Бесплатно",
     paid: "Платно",
     continueButton: "Продолжить",

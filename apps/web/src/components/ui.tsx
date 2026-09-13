@@ -122,12 +122,16 @@ export function IconButton({
   tone = "surface",
   size = 44,
   className,
+  ariaLabel,
 }: {
   icon: ReactNode;
   onClick?: () => void;
   tone?: "surface" | "glass" | "dark" | "primary";
   size?: number;
   className?: string;
+  // FIX2-06: ilgari umuman yo'q edi — chaqiruvchilar hech qachon
+  // qo'sha olmasdi, skrin-rider uchun tugma vazifasi noma'lum bo'lib qolardi.
+  ariaLabel: string;
 }) {
   const toneSx =
     tone === "surface"
@@ -146,7 +150,7 @@ export function IconButton({
               "&:hover": { filter: "brightness(1.08)" },
             };
   return (
-    <MuiIconButton onClick={onClick} className={className} sx={{ width: size, height: size, ...toneSx }}>
+    <MuiIconButton onClick={onClick} className={className} aria-label={ariaLabel} sx={{ width: size, height: size, ...toneSx }}>
       {icon}
     </MuiIconButton>
   );

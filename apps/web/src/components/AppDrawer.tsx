@@ -74,7 +74,7 @@ export function AppDrawer() {
 
   return (
     <>
-      <IconButton icon={<MenuIcon sx={{ fontSize: 22 }} />} onClick={() => setOpen(true)} />
+      <IconButton icon={<MenuIcon sx={{ fontSize: 22 }} />} onClick={() => setOpen(true)} ariaLabel={dict.common.openMenu} />
 
       <Drawer anchor="left" open={open} onClose={() => setOpen(false)} slotProps={{ paper: { sx: { width: 300 } } }}>
         <div className="flex h-full flex-col bg-surface">

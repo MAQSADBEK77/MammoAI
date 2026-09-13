@@ -21,6 +21,10 @@ const uz = {
     other: "Boshqa",
     errorGeneric: "Nimadir xato ketdi. Birozdan keyin qayta urinib ko'ring.",
     retryButton: "Qayta urinish",
+    // FIX2-06/FIX2-07: skrin-rider foydalanuvchilari uchun — ikonka-tugmalar
+    // (burger menyu, uni yopish) uchun matnli yorliq.
+    openMenu: "Menyuni ochish",
+    close: "Yopish",
     free: "Bepul",
     paid: "Pullik",
     continueButton: "Davom etish",
