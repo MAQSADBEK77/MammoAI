@@ -38,7 +38,28 @@ export default function ChecklistPage() {
   );
 
   async function complete(id: string) {
-    setData(await api.checklist.complete(id));
+    // FIX2-29: ilgari serverdan qaytgan BUTUN ro'yxat bilan almashtirilardi
+    // — ikkita turli itemni tez ketma-ket "Bajardim" qilsangiz, javoblar
+    // so'rov tartibida emas, TARMOQ tartibida qaytishi mumkin edi; sekinroq
+    // javob keyinroq kelib, ikkinchi itemni vizual ravishda "bajarilmagan"ga
+    // qaytarib qo'yardi. Endi faqat SHU itemning holati optimistik va
+    // to'g'ridan-to'g'ri yangilanadi — serverning to'liq snapshot javobiga
+    // umuman tayanilmaydi, shuning uchun boshqa itemning holati bilan
+    // hech qachon to'qnashmaydi.
+    const previousStatus = data?.items.find((item) => item.id === id)?.status;
+    setData((prev) =>
+      prev ? { ...prev, items: prev.items.map((item) => (item.id === id ? { ...item, status: "done", completedAt: new Date().toISOString() } : item)) } : prev
+    );
+    try {
+      await api.checklist.complete(id);
+    } catch {
+      // So'rov muvaffaqiyatsiz bo'lsa — optimistik yangilanishni ortga qaytaramiz.
+      setData((prev) =>
+        prev && previousStatus
+          ? { ...prev, items: prev.items.map((item) => (item.id === id ? { ...item, status: previousStatus, completedAt: null } : item)) }
+          : prev
+      );
+    }
   }
 
   const statusTone = { pending: "muted", done: "success", overdue: "danger" } as const;
