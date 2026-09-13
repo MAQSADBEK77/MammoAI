@@ -1717,6 +1717,47 @@ export async function getAdminStats(): Promise<AdminStats> {
 const ANALYTICS_TYPES = new Set(["pageview", "click"]);
 const ANALYTICS_PLATFORMS = new Set(["web", "mobile"]);
 
+// FIX2-24: /api/analytics/events autentifikatsiyasiz ham ishlaydi (ataylab —
+// onboarding tugamasdan oldingi hodisalar uchun), shuning uchun userId
+// bo'yicha emas, IP manzil bo'yicha cheklanadi. Chegaralar partner-connect
+// (FIX-03)dan yumshoqroq — haqiqiy foydalanuvchi normal foydalanishda ham
+// bir necha o'nlab pageview/click hodisasini bir necha daqiqada yig'ib
+// yuborishi mumkin, buni bloklab qo'ymaslik kerak.
+const ANALYTICS_RATE_LIMIT_MAX_ATTEMPTS = 20;
+const ANALYTICS_RATE_LIMIT_WINDOW_SECONDS = 60;
+const ANALYTICS_RATE_LIMIT_BLOCK_SECONDS = 5 * 60;
+
+export async function checkAnalyticsIngestRateLimit(ipKey: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT attempt_count, window_start, blocked_until FROM analytics_ingest_attempts WHERE ip_key = ${ipKey}
+  `) as unknown as { attempt_count: number; window_start: string; blocked_until: string | null }[];
+  const row = rows[0];
+  const nowMs = Date.now();
+
+  if (row?.blocked_until && new Date(row.blocked_until).getTime() > nowMs) {
+    throw new ApiError(429, "Juda ko'p so'rov — birozdan keyin qayta urinib ko'ring");
+  }
+
+  const windowExpired = !row || new Date(row.window_start).getTime() + ANALYTICS_RATE_LIMIT_WINDOW_SECONDS * 1000 < nowMs;
+  if (windowExpired) {
+    await sql`
+      INSERT INTO analytics_ingest_attempts (ip_key, attempt_count, window_start, blocked_until)
+      VALUES (${ipKey}, 1, ${new Date(nowMs).toISOString()}, NULL)
+      ON CONFLICT (ip_key) DO UPDATE SET attempt_count = 1, window_start = EXCLUDED.window_start, blocked_until = NULL
+    `;
+    return;
+  }
+
+  const newCount = (row?.attempt_count ?? 0) + 1;
+  if (newCount > ANALYTICS_RATE_LIMIT_MAX_ATTEMPTS) {
+    const blockedUntil = new Date(nowMs + ANALYTICS_RATE_LIMIT_BLOCK_SECONDS * 1000).toISOString();
+    await sql`UPDATE analytics_ingest_attempts SET attempt_count = ${newCount}, blocked_until = ${blockedUntil} WHERE ip_key = ${ipKey}`;
+    throw new ApiError(429, "Juda ko'p so'rov — birozdan keyin qayta urinib ko'ring");
+  }
+  await sql`UPDATE analytics_ingest_attempts SET attempt_count = ${newCount} WHERE ip_key = ${ipKey}`;
+}
+
 /** Bitta to'plamdagi hodisalarni bitta INSERT bilan yozadi — har bir klik/sahifa
  * ko'rish uchun alohida so'rov yubormaslik uchun (mijoz tomon to'playdi, davriy
  * yuboradi). Noto'g'ri (schema'ga mos kelmaydigan) yozuvlar jimgina tashlanadi —

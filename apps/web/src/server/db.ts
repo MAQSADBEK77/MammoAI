@@ -138,6 +138,19 @@ async function initSchema() {
         updated_at TEXT NOT NULL
       )
     `,
+    // FIX2-24: POST /api/analytics/events autentifikatsiyasiz ham ishlaydi
+    // (onboarding tugamasdan oldingi hodisalar uchun ataylab) va hech qanday
+    // rate-limit yo'q edi — bitta so'rovda 100 tagacha soxta hodisa cheksiz
+    // marta yuborilishi mumkin edi. IP manzil bo'yicha (foydalanuvchi bo'lmasa
+    // ham ishlaydi) — `users`ga bog'liq emas, shuning uchun 0-bosqichda.
+    sql`
+      CREATE TABLE IF NOT EXISTS analytics_ingest_attempts (
+        ip_key TEXT PRIMARY KEY,
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        window_start TEXT NOT NULL,
+        blocked_until TEXT
+      )
+    `,
   ]);
 
   // 1-bosqich: faqat users'ga bog'liq jadvallar (parallel, chunki bir-biriga bog'liq emas).

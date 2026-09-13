@@ -36,6 +36,7 @@ import {
   ensureChecklistItem,
   createPartnerInviteCode,
   toggleCommunityLike,
+  checkAnalyticsIngestRateLimit,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
@@ -321,6 +322,23 @@ async function main() {
   await sql`DELETE FROM community_post_likes WHERE post_id = ${likePost.id}`;
   await sql`DELETE FROM community_posts WHERE id = ${likePost.id}`;
   await sql`DELETE FROM users WHERE id = ${likeUser}`;
+
+  // --- FIX2-24: /api/analytics/events IP bo'yicha rate-limit ---
+  const testIp = `203.0.113.${Math.floor(Math.random() * 255)}`; // TEST-NET-3 (RFC 5737)
+  let sawAnalyticsRateLimit = false;
+  for (let i = 0; i < 25; i++) {
+    try {
+      await checkAnalyticsIngestRateLimit(testIp);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 429) {
+        sawAnalyticsRateLimit = true;
+        break;
+      }
+      throw err;
+    }
+  }
+  assert(sawAnalyticsRateLimit, "FIX2-24: bitta IP'dan 20 tadan ortiq tez so'rovdan keyin rate-limit (429) ishga tushadi");
+  await sql`DELETE FROM analytics_ingest_attempts WHERE ip_key = ${testIp}`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {
