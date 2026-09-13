@@ -25,7 +25,11 @@ export const colors = {
   textMuted: "#6B7280",
   border: "#E5E7EB",
 
-  success: "#57B894",
+  // FIX2-08: #57B894 oq fonda 2.42:1 kontrast berardi (WCAG AA: 4.5:1 kerak)
+  // — endi 5.26:1. Qorong'u rejimda ESKI qiymat pastda `darkColors.success`
+  // sifatida ATAYLAB saqlanadi (bu to'qroq soya to'q fonda kontrastni
+  // yomonlashtirardi — quyidagi izohga qarang).
+  success: "#1F7A5C",
   warning: "#E7A83F",
   danger: "#E0506F",
 
@@ -44,6 +48,10 @@ export const darkColors = {
   textSecondary: "#B9C0CC",
   textMuted: "#6B7280",
   border: "#2A3140",
+  // FIX2-08: `colors.success` yuqorida light-mode kontrasti uchun to'qroq
+  // qilindi — bu o'zgarish to'q fonda kontrastni yomonlashtirardi, shuning
+  // uchun qorong'u rejim ESKI (yorug'roq) qiymatni saqlaydi.
+  success: "#57B894",
 } as const;
 
 // `colors`/`darkColors` `as const` bilan e'lon qilingani uchun har bir

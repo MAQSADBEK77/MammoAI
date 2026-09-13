@@ -24,7 +24,11 @@
   --color-text-muted: #6b7280;
   --color-border: #e5e7eb;
 
-  --color-success: #57b894;
+  /* FIX2-08: #57b894 oq fonda 2.42:1 kontrast berardi (WCAG AA: 4.5:1 kerak)
+     — endi 5.26:1. Qorong'u rejimda ESKI (och) qiymat pastdagi
+     [data-theme="dark"] blokida ATAYLAB saqlanadi, chunki bu to'qroq soya
+     to'q fonda (masalan #0b0f17) aksincha kontrastni YOMONLASHTIRARDI. */
+  --color-success: #1f7a5c;
   --color-warning: #e7a83f;
   --color-danger: #e0506f;
 
@@ -91,6 +95,10 @@
   --color-text-secondary: #b9c0cc;
   --color-text-muted: #6b7280;
   --color-border: #2a3140;
+  /* FIX2-08: :root'dagi --color-success endi to'qroq (light-mode kontrasti
+     uchun) — bu to'q fonda kontrastni yomonlashtirardi, shuning uchun
+     qorong'u rejim ESKI (yorug'roq) qiymatni saqlaydi. */
+  --color-success: #57b894;
 
   /* "Shisha" effekti (.glass-card/.floating-tag) yorug' rejimda oq
      (rgba 255,255,255) ustiga qurilgan — qorong'u fonda xuddi shu oq rang
