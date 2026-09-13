@@ -87,6 +87,12 @@ export default function AdminTelegramBotPage() {
   }
 
   async function saveProfile() {
+    // FIX2-05: ilgari faqat `savingProfile || !settings.hasToken` tekshirilib,
+    // `name` bo'sh bo'lsa ham saqlashga ruxsat berardi.
+    if (!name.trim()) {
+      setError("Bot nomi bo'sh bo'lishi mumkin emas");
+      return;
+    }
     setSavingProfile(true);
     setError(null);
     setSuccess(null);
@@ -193,7 +199,7 @@ export default function AdminTelegramBotPage() {
         </div>
 
         <div className="flex justify-end">
-          <Button onClick={saveProfile} disabled={savingProfile || !settings.hasToken}>
+          <Button onClick={saveProfile} disabled={savingProfile || !settings.hasToken || !name.trim()}>
             {savingProfile ? "Saqlanmoqda…" : "Profilni saqlash"}
           </Button>
         </div>
