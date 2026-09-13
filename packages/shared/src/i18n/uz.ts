@@ -656,6 +656,10 @@ const uz = {
     shareAppNameLabel: "MammoAI hamjamiyati",
     shareLinkCopied: "Nusxalandi",
     postTooShort: "Kamida bir necha so'z yozing",
+    // FIX2-22: ilgari boshqa ekranlar dict.*.errorKey ishlatgani holda, bu
+    // yerda qattiq yozilgan o'zbekcha "Xatolik" so'zi fallback sifatida
+    // ishlatilardi.
+    genericError: "Xatolik yuz berdi",
     loadMoreButton: "Ko'proq yuklash",
     notificationsTitle: "Bildirishnomalar",
     notificationCommentText: (name: string) => `${name} postingizga izoh qoldirdi`,

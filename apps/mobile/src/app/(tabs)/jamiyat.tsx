@@ -158,7 +158,7 @@ export default function CommunityScreen() {
       setComposerAnonymous(false);
       setComposerOpen(false);
     } catch (err) {
-      setComposerError(err instanceof Error ? err.message : "Xatolik");
+      setComposerError(err instanceof Error ? err.message : dict.community.genericError);
     } finally {
       setPublishing(false);
     }
@@ -257,7 +257,7 @@ export default function CommunityScreen() {
             loadPosts(tag);
             Alert.alert(dict.community.blockAuthorSuccess);
           } catch (err) {
-            Alert.alert(err instanceof Error ? err.message : "Xatolik");
+            Alert.alert(err instanceof Error ? err.message : dict.community.genericError);
           }
         },
       },
@@ -285,7 +285,7 @@ export default function CommunityScreen() {
       }
       setReportDone(true);
     } catch (err) {
-      setReportError(err instanceof Error ? err.message : "Xatolik");
+      setReportError(err instanceof Error ? err.message : dict.community.genericError);
     } finally {
       setReportSubmitting(false);
     }

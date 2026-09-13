@@ -266,7 +266,8 @@ export default function CommunityPage() {
       loadPosts(tag);
       window.alert(dict.community.blockAuthorSuccess);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Xatolik");
+      // FIX2-22: qattiq yozilgan o'zbekcha "Xatolik" o'rniga dict'dan.
+      window.alert(err instanceof Error ? err.message : dict.community.genericError);
     }
   }
 
@@ -284,7 +285,7 @@ export default function CommunityPage() {
     } catch (err) {
       // FIX-09: avval catch yo'q edi — xato jimgina yutilib, dialog hech narsa
       // bo'lmagandek ochiq qolardi (masalan izoh shu orada o'chirilgan bo'lsa).
-      setReportError(err instanceof Error ? err.message : "Xatolik");
+      setReportError(err instanceof Error ? err.message : dict.community.genericError);
     } finally {
       setReportSubmitting(false);
     }

@@ -630,6 +630,7 @@ const ru: Dictionary = {
     shareAppNameLabel: "Сообщество MammoAI",
     shareLinkCopied: "Скопировано",
     postTooShort: "Напишите хотя бы несколько слов",
+    genericError: "Произошла ошибка",
     loadMoreButton: "Загрузить ещё",
     notificationsTitle: "Уведомления",
     notificationCommentText: (name: string) => `${name} прокомментировал(а) ваш пост`,

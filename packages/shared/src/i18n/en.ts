@@ -632,6 +632,7 @@ const en: Dictionary = {
     shareAppNameLabel: "MammoAI community",
     shareLinkCopied: "Copied",
     postTooShort: "Please write at least a few words",
+    genericError: "Something went wrong",
     loadMoreButton: "Load more",
     notificationsTitle: "Notifications",
     notificationCommentText: (name: string) => `${name} commented on your post`,
