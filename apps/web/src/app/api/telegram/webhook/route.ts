@@ -1,7 +1,16 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Language } from "@mammoai/shared";
 import { confirmMiniAppContact, confirmPhoneViaContact, recordTelegramBotStart, registerTelegramStart } from "@/server/repo";
-import { miniAppInlineKeyboard, removeKeyboard, requestContactKeyboard, sendTelegramMessage } from "@/server/telegram-bot";
+import { getTelegramWebhookSecret, miniAppInlineKeyboard, removeKeyboard, requestContactKeyboard, sendTelegramMessage } from "@/server/telegram-bot";
+
+/** Vaqt-hujumiga chidamli solishtirish — admin-auth.ts'dagi bilan bir xil naqsh. */
+function timingSafeEqualStrings(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
 
 interface TelegramUpdate {
   message?: {
@@ -89,6 +98,17 @@ function messagesFor(language: Language) {
  * qolib, baribir 200 qaytaramiz.
  */
 export async function POST(request: NextRequest) {
+  // FIX-01: ilgari bu yerda HECH QANDAY autentifikatsiya yo'q edi — endpoint
+  // kelgan har qanday JSON body'ni "haqiqiy Telegram xabari" deb ishonardi.
+  // Telegram `setWebhook`ga `secret_token` uzatilganda, HAR bir so'rovda shu
+  // qiymatni shu header orqali qaytaradi — mos kelmasa (yoki webhook hali
+  // secret_token bilan ro'yxatdan o'tkazilmagan bo'lsa) so'rov rad etiladi.
+  const expectedSecret = await getTelegramWebhookSecret();
+  const providedSecret = request.headers.get("x-telegram-bot-api-secret-token");
+  if (!expectedSecret || !providedSecret || !timingSafeEqualStrings(providedSecret, expectedSecret)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+
   try {
     const update = (await request.json()) as TelegramUpdate;
     const message = update.message;

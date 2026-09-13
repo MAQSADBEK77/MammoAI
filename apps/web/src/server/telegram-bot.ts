@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { getSetting, setSetting } from "./repo";
 import { ApiError } from "./api-utils";
 
@@ -9,6 +10,9 @@ import { ApiError } from "./api-utils";
 
 const SETTING_TOKEN = "telegram_bot_token";
 const SETTING_USERNAME = "telegram_bot_username";
+// FIX-01: webhook so'rovlarini tekshirish uchun maxfiy token — bot token'ning
+// o'zi kabi app_settings'da saqlanadi (yangi Vercel env var qo'shish shart emas).
+const SETTING_WEBHOOK_SECRET = "telegram_webhook_secret";
 
 export async function getTelegramBotToken(): Promise<string | null> {
   return getSetting(SETTING_TOKEN);
@@ -16,6 +20,21 @@ export async function getTelegramBotToken(): Promise<string | null> {
 
 export async function getTelegramBotUsername(): Promise<string | null> {
   return getSetting(SETTING_USERNAME);
+}
+
+/** FIX-01: `apps/web/src/app/api/telegram/webhook/route.ts` shu qiymatni
+ * `X-Telegram-Bot-Api-Secret-Token` header bilan solishtiradi — webhook
+ * hali ro'yxatdan o'tkazilmagan bo'lsa `null`. */
+export async function getTelegramWebhookSecret(): Promise<string | null> {
+  return getSetting(SETTING_WEBHOOK_SECRET);
+}
+
+async function getOrCreateTelegramWebhookSecret(): Promise<string> {
+  const existing = await getSetting(SETTING_WEBHOOK_SECRET);
+  if (existing) return existing;
+  const secret = randomBytes(32).toString("hex");
+  await setSetting(SETTING_WEBHOOK_SECRET, secret);
+  return secret;
 }
 
 /** Har qanday Telegram Bot API metodini chaqiradi (joriy saqlangan token bilan). */
@@ -113,7 +132,12 @@ export async function setTelegramBotToken(token: string, publicBaseUrl: string):
   const info = await callTelegramApi<TelegramBotInfo>("getMe", undefined, token);
   await setSetting(SETTING_TOKEN, token);
   await setSetting(SETTING_USERNAME, info.username);
-  await callTelegramApi("setWebhook", { url: `${publicBaseUrl}/api/telegram/webhook` }, token);
+  // FIX-01: secret_token — Telegram bundan keyin HAR bir webhook so'rovida
+  // shuni `X-Telegram-Bot-Api-Secret-Token` header'ida yuboradi, shunda
+  // webhook route soxta (to'g'ridan-to'g'ri yasab yuborilgan) so'rovlarni rad
+  // eta oladi.
+  const secretToken = await getOrCreateTelegramWebhookSecret();
+  await callTelegramApi("setWebhook", { url: `${publicBaseUrl}/api/telegram/webhook`, secret_token: secretToken }, token);
   await setTelegramMenuButton("📲 Ilovani ochish", `${publicBaseUrl}/tg`, token);
   return info;
 }
