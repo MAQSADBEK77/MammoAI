@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, View, Text } from "react-native";
 import { router } from "expo-router";
 import clsx from "clsx";
@@ -72,13 +72,39 @@ export function CycleScreen() {
   const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
   const isWellbeing = onboardingProfile?.primaryGoal === "wellbeing";
 
-  useEffect(() => {
-    api.cycle.get().then(setData);
+  const [loadError, setLoadError] = useState(false);
+
+  // FIX2-11: .catch() yo'q edi — so'rov muvaffaqiyatsiz bo'lsa, `data` hech
+  // qachon o'rnatilmay, ekran ABADIY yuklanish spinnerida qotib qolardi
+  // (bu foydalanuvchining bosh ekrani bo'lgani uchun ayniqsa jiddiy).
+  const load = useCallback(() => {
+    setLoadError(false);
+    setData(null);
+    api.cycle
+      .get()
+      .then(setData)
+      .catch(() => setLoadError(true));
     api.gamification
       .get()
       .then((g) => setStreakDays(g.currentStreakDays))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    // setTimeout(0): `load()` sinxron setState chaqiradi — effekt ichida
+    // to'g'ridan-to'g'ri chaqirilsa ESLint "set-state-in-effect" xato beradi.
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
+
+  if (loadError) {
+    return (
+      <View className="flex-1 items-center justify-center gap-3 p-6">
+        <Text className="text-center text-sm text-text-secondary">{dict.common.errorGeneric}</Text>
+        <Button onPress={load}>{dict.common.retryButton}</Button>
+      </View>
+    );
+  }
 
   if (!data) {
     return <LoadingSpinner label={dict.common.loading} />;

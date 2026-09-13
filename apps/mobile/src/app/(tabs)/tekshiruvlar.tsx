@@ -1,4 +1,4 @@
-import { createElement, useEffect, useState } from "react";
+import { createElement, useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -24,10 +24,32 @@ export default function ChecklistScreen() {
   const { openDrawer } = useDrawer();
   const { resolve: resolveIllustration } = useIllustrations();
   const [data, setData] = useState<ChecklistResponse | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  // FIX2-11: .catch() yo'q edi — so'rov muvaffaqiyatsiz bo'lsa, `data` hech
+  // qachon o'rnatilmay, ekran ABADIY yuklanish spinnerida qotib qolardi.
+  const load = useCallback(() => {
+    setLoadError(false);
+    setData(null);
+    api.checklist
+      .list()
+      .then(setData)
+      .catch(() => setLoadError(true));
+  }, []);
 
   useEffect(() => {
-    api.checklist.list().then(setData);
-  }, []);
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
+
+  if (loadError) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center gap-3 bg-background p-6">
+        <Text className="text-center text-sm text-text-secondary">{dict.common.errorGeneric}</Text>
+        <Button onPress={load}>{dict.common.retryButton}</Button>
+      </SafeAreaView>
+    );
+  }
 
   if (!data) {
     return (

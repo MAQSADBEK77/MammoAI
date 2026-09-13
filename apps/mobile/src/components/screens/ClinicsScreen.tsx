@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, View, Text, Pressable, Linking } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -37,9 +37,23 @@ export function ClinicsScreen() {
   const [filter, setFilter] = useState<ClinicSpecialty | "all">("all");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    api.clinics.list().then(setClinics);
+  const [loadError, setLoadError] = useState(false);
+
+  // FIX2-11: .catch() yo'q edi — so'rov muvaffaqiyatsiz bo'lsa, `clinics`
+  // hech qachon o'rnatilmay, ekran ABADIY yuklanish spinnerida qotib qolardi.
+  const load = useCallback(() => {
+    setLoadError(false);
+    setClinics(null);
+    api.clinics
+      .list()
+      .then(setClinics)
+      .catch(() => setLoadError(true));
   }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -49,6 +63,15 @@ export function ClinicsScreen() {
         (!q || c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q))
     );
   }, [clinics, filter, search]);
+
+  if (loadError) {
+    return (
+      <View className="flex-1 items-center justify-center gap-3 p-6">
+        <Text className="text-center text-sm text-text-secondary">{dict.common.errorGeneric}</Text>
+        <Button onPress={load}>{dict.common.retryButton}</Button>
+      </View>
+    );
+  }
 
   if (!clinics) {
     return <LoadingSpinner label={dict.common.loading} />;

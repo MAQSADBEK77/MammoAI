@@ -1,4 +1,4 @@
-import { createElement, useEffect, useState } from "react";
+import { createElement, useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -64,9 +64,23 @@ export function PregnancyScreen() {
     }
   }
 
-  useEffect(() => {
-    api.pregnancy.get().then(setData);
+  const [loadError, setLoadError] = useState(false);
+
+  // FIX2-11: .catch() yo'q edi — so'rov muvaffaqiyatsiz bo'lsa, `data` hech
+  // qachon o'rnatilmay, ekran ABADIY yuklanish spinnerida qotib qolardi.
+  const load = useCallback(() => {
+    setLoadError(false);
+    setData(null);
+    api.pregnancy
+      .get()
+      .then(setData)
+      .catch(() => setLoadError(true));
   }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   const currentWeek = data?.status?.currentWeek;
   useEffect(() => {
@@ -76,6 +90,15 @@ export function PregnancyScreen() {
       .then((res) => setWeekContent(res.content))
       .catch(() => setWeekContent(null));
   }, [currentWeek]);
+
+  if (loadError) {
+    return (
+      <View className="flex-1 items-center justify-center gap-3 p-6">
+        <Text className="text-center text-sm text-text-secondary">{dict.common.errorGeneric}</Text>
+        <Button onPress={load}>{dict.common.retryButton}</Button>
+      </View>
+    );
+  }
 
   if (!data) {
     return <LoadingSpinner label={dict.common.loading} />;
