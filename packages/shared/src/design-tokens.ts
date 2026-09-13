@@ -20,7 +20,9 @@ export const colors = {
 
   textPrimary: "#1F2937",
   textSecondary: "#4B5563",
-  textMuted: "#9CA3AF",
+  // FIX2-09: #9CA3AF oq fonda 2.54:1 kontrast berardi (WCAG AA: 4.5:1 kerak)
+  // — endi 4.83:1 (dark-mode'da allaqachon ishlatilayotgan xuddi shu soya).
+  textMuted: "#6B7280",
   border: "#E5E7EB",
 
   success: "#57B894",

@@ -19,7 +19,9 @@
 
   --color-text-primary: #1f2937;
   --color-text-secondary: #4b5563;
-  --color-text-muted: #9ca3af;
+  /* FIX2-09: #9ca3af oq fonda 2.54:1 kontrast berardi (WCAG AA: 4.5:1 kerak)
+     — endi 4.83:1 (dark-mode'da allaqachon ishlatilayotgan xuddi shu soya). */
+  --color-text-muted: #6b7280;
   --color-border: #e5e7eb;
 
   --color-success: #57b894;
