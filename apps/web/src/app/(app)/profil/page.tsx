@@ -213,7 +213,10 @@ export default function ProfilePage() {
 
   async function deleteAccount() {
     if (!window.confirm(dict.profile.deleteAccountConfirmMessage)) return;
-    if (!window.confirm(dict.profile.deleteAccountConfirmButton)) return;
+    // FIX2-21: ikkinchi tasdiqda SAVOL o'rniga tugma matni ko'rsatilardi
+    // (mantiqsiz native dialog) — dict.profile.deleteAccountConfirmTitle
+    // e'lon qilingan edi, lekin hech qaerda ishlatilmagan edi.
+    if (!window.confirm(dict.profile.deleteAccountConfirmTitle)) return;
     setDeleting(true);
     try {
       await api.me.deleteAccount();
