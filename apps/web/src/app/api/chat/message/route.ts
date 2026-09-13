@@ -17,18 +17,18 @@ export async function POST(request: NextRequest) {
     // Required, mijoz shu statusni ko'rib alohida paywall ko'rsatadi
     // (oddiy xato emas).
     if (!(await hasPremiumAccess(user.id))) {
-      throw new ApiError(402, "AI Yordamchi Premium funksiya");
+      throw new ApiError(402, "AI Yordamchi Premium funksiya", "premium_required");
     }
     const body = (await request.json()) as { content?: string };
     const content = body.content?.trim();
     if (!content) return NextResponse.json({ error: "Xabar matni bo'sh" }, { status: 400 });
     if (content.length > MAX_MESSAGE_LENGTH) {
-      throw new ApiError(400, "Xabar juda uzun");
+      throw new ApiError(400, "Xabar juda uzun", "message_too_long");
     }
 
     const todayCount = await countChatMessagesToday(user.id);
     if (todayCount >= DAILY_MESSAGE_LIMIT) {
-      throw new ApiError(429, "Bugungi xabarlar limiti tugadi — ertaga davom eting");
+      throw new ApiError(429, "Bugungi xabarlar limiti tugadi — ertaga davom eting", "daily_chat_limit_reached");
     }
 
     await saveChatMessage(user.id, "user", content);

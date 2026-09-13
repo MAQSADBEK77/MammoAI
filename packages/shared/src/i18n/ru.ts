@@ -915,6 +915,14 @@ const ru: Dictionary = {
     footerPrivacy: "Политика конфиденциальности",
     footerRights: (year: number) => `© ${year} MammoAI. Все права защищены.`,
   },
+
+  apiErrors: {
+    invalid_tag: "Неверная тема",
+    post_too_short: "Напишите хотя бы несколько слов",
+    premium_required: "Эта функция требует Premium-подписку",
+    message_too_long: "Сообщение слишком длинное",
+    daily_chat_limit_reached: "Дневной лимит сообщений исчерпан — продолжите завтра",
+  },
 };
 
 export default ru;

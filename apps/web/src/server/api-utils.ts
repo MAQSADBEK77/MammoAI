@@ -4,14 +4,23 @@ import { getUserById } from "./repo";
 import type { User } from "@mammoai/shared";
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  // FIX2-20: `key` — barqaror, tarjima qilinadigan xato kodi (masalan
+  // "post_too_short"). `message` xom o'zbekcha matn — server log/debug
+  // uchun va `key` berilmagan (hali ko'chirilmagan) joylarda mijoz uchun
+  // ORQAGA MOSLIK sifatida qoladi. Mijoz `key` mavjud bo'lsa shundan
+  // `dict.apiErrors`ni o'qib tarjima qiladi, aks holda xom matnni ko'rsatadi.
+  constructor(
+    public status: number,
+    message: string,
+    public key?: string
+  ) {
     super(message);
   }
 }
 
 export function jsonError(error: unknown): NextResponse {
   if (error instanceof ApiError) {
-    return NextResponse.json({ error: error.message }, { status: error.status });
+    return NextResponse.json({ error: error.message, errorKey: error.key ?? null }, { status: error.status });
   }
   console.error(error);
   return NextResponse.json({ error: "Serverda kutilmagan xatolik" }, { status: 500 });

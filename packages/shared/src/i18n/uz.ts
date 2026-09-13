@@ -955,6 +955,20 @@ const uz = {
     footerPrivacy: "Maxfiylik siyosati",
     footerRights: (year: number) => `© ${year} MammoAI. Barcha huquqlar himoyalangan.`,
   },
+
+  // FIX2-20: server validatsiya/limit xatolari uchun tarjima qilingan matn —
+  // `ApiError.key` orqali server yuborgan barqaror kod (masalan
+  // "post_too_short") shu ro'yxatdan qidiriladi (translateApiError()).
+  // Hozircha faqat community/posts va chat/message route'lari `key`
+  // yuboradi — qolgan API route'lari hali xom o'zbekcha matn qaytaradi
+  // (kelajakdagi bosqichma-bosqich ko'chirish uchun).
+  apiErrors: {
+    invalid_tag: "Mavzu (tag) noto'g'ri",
+    post_too_short: "Kamida bir necha so'z yozing",
+    premium_required: "Bu funksiya Premium obuna talab qiladi",
+    message_too_long: "Xabar juda uzun",
+    daily_chat_limit_reached: "Bugungi xabarlar limiti tugadi — ertaga davom eting",
+  },
 };
 
 export default uz;

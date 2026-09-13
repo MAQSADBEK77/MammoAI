@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppNotification, CommunityComment, CommunityPost, CommunityReportReason, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
-import { detectsMedicalConcern, goalToDefaultCommunityTag } from "@mammoai/shared";
+import { detectsMedicalConcern, goalToDefaultCommunityTag, translateApiError } from "@mammoai/shared";
 import { Dialog, DialogTitle, DialogContent, Menu, MenuItem } from "@mui/material";
 import {
   NotificationsNoneOutlined as Bell,
@@ -161,7 +161,9 @@ export default function CommunityPage() {
       setComposerAnonymous(false);
       setComposerOpen(false);
     } catch (err) {
-      setComposerError(err instanceof Error ? err.message : "Xatolik");
+      // FIX2-20: server xato KALITI qaytaradi (masalan "invalid_tag") —
+      // xom o'zbekcha matn o'rniga joriy tilga tarjima qilib ko'rsatamiz.
+      setComposerError(translateApiError(err, dict));
     } finally {
       setPublishing(false);
     }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined, WorkspacePremiumRounded } from "@mui/icons-material";
 import type { ChatMessage, InsightsSummary, SymptomPattern } from "@mammoai/shared";
+import { ApiError, translateApiError } from "@mammoai/shared";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -78,7 +79,10 @@ export function YordamchiScreen() {
       api.chat.list().then((r) => setMessages(r.messages)).catch(() => {});
       setInsights(null); // yangi xabardan keyin statistika eskirgan bo'lishi mumkin — keyingi ochilishda qayta yuklanadi
     } catch (err) {
-      setError(err instanceof Error ? err.message : dict.chat.sendError);
+      // FIX2-20: server xato KALITI qaytarsa (masalan "daily_chat_limit_reached")
+      // shuni tarjima qilib ko'rsatamiz; boshqa (tarmoq) xatolarda ilgaridagi
+      // umumiy dict.chat.sendError xabari saqlanadi.
+      setError(err instanceof ApiError ? translateApiError(err, dict) : dict.chat.sendError);
       setMessages((prev) => (prev ?? []).filter((m) => !m.id.startsWith("pending-")));
     } finally {
       setSending(false);

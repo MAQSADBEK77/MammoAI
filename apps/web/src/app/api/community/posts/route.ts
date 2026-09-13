@@ -24,11 +24,11 @@ export async function POST(request: NextRequest) {
     const user = await requireUser(request);
     const body = (await request.json()) as { tag?: CommunityTag; body?: string; isAnonymous?: boolean };
     if (!body.tag || !(VALID_TAGS as string[]).includes(body.tag)) {
-      throw new ApiError(400, "Mavzu (tag) noto'g'ri");
+      throw new ApiError(400, "Mavzu (tag) noto'g'ri", "invalid_tag");
     }
     const text = body.body?.trim() ?? "";
     if (text.length < 2) {
-      throw new ApiError(400, "Post matni juda qisqa");
+      throw new ApiError(400, "Post matni juda qisqa", "post_too_short");
     }
     const post = await createCommunityPost(user.id, { tag: body.tag, body: text, isAnonymous: Boolean(body.isAnonymous) });
     return NextResponse.json(post);

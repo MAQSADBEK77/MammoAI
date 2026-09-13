@@ -50,7 +50,16 @@ import type { PregnancyStatus } from "./logic/pregnancy";
 import type { IllustrationSlotKey } from "./illustration-library";
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  // FIX2-20: `key` — server yuborgan barqaror xato kodi (masalan
+  // "post_too_short") — mavjud bo'lsa, chaqiruvchi `dict.apiErrors[key]`dan
+  // tarjima qilingan matnni ko'rsatishi kerak, xom (o'zbekcha) `message`ni
+  // emas. Hali `key` yubormaydigan eski endpointlar uchun `message` fallback
+  // sifatida ishlatiladi.
+  constructor(
+    public status: number,
+    message: string,
+    public key?: string | null
+  ) {
     super(message);
   }
 }
@@ -157,8 +166,8 @@ function createRequest(config: ApiClientConfig) {
     });
 
     if (!res.ok) {
-      const body = (await res.json().catch(() => ({ error: res.statusText }))) as { error?: string };
-      throw new ApiError(res.status, body.error ?? "So'rov xato bilan yakunlandi");
+      const body = (await res.json().catch(() => ({ error: res.statusText }))) as { error?: string; errorKey?: string | null };
+      throw new ApiError(res.status, body.error ?? "So'rov xato bilan yakunlandi", body.errorKey);
     }
 
     const data = (await res.json().catch(() => null)) as (T & { token?: string }) | null;

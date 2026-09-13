@@ -917,6 +917,14 @@ const en: Dictionary = {
     footerPrivacy: "Privacy policy",
     footerRights: (year: number) => `© ${year} MammoAI. All rights reserved.`,
   },
+
+  apiErrors: {
+    invalid_tag: "Invalid topic",
+    post_too_short: "Write at least a few words",
+    premium_required: "This feature requires a Premium subscription",
+    message_too_long: "Message is too long",
+    daily_chat_limit_reached: "Daily message limit reached — continue tomorrow",
+  },
 };
 
 export default en;
