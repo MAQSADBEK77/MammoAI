@@ -116,6 +116,20 @@ async function main() {
     await sql`DELETE FROM users WHERE id = ${userId}`;
   }
 
+  // --- FIX-01: onboarding'da qo'lda kiritilgan sana flow'siz log bilan o'chib ketmasligi kerak ---
+  const userFix01 = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${userFix01}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  try {
+    // Onboarding — cycle_logs'da hech qanday yozuv yo'q, faqat sozlama to'g'ridan-to'g'ri yoziladi.
+    await updateCycleSettings(userFix01, { lastPeriodStart: "2026-03-01", averageCycleLength: 28, averagePeriodLength: 5 });
+    // Foydalanuvchi flow'siz (faqat kayfiyat) log qo'shadi.
+    await upsertCycleLog(userFix01, { date: "2026-03-10", flow: null, mood: "happy", symptoms: [] });
+    const settingsFix01 = await getCycleSettings(userFix01);
+    assert(settingsFix01.lastPeriodStart === "2026-03-01", "FIX-01: qo'lda kiritilgan sana flow'siz log bilan o'chib ketmaydi");
+  } finally {
+    await sql`DELETE FROM users WHERE id = ${userFix01}`;
+  }
+
   // --- COMM-001: shikoyat va bloklash ---
   const userA = randomUUID();
   const userB = randomUUID();

@@ -674,8 +674,27 @@ async function recomputeLastPeriodStart(userId: string): Promise<void> {
   const starts = detectPeriodStarts(recentLogs);
   const lastDetectedStart = starts[starts.length - 1] ?? null;
   const settings = await getCycleSettings(userId);
-  if (lastDetectedStart !== settings.lastPeriodStart) {
-    await updateCycleSettings(userId, { lastPeriodStart: lastDetectedStart });
+
+  if (lastDetectedStart) {
+    // Haqiqiy signal bor (kamida bitta hayz boshlanishi aniqlangan) — yangilash xavfsiz.
+    if (lastDetectedStart !== settings.lastPeriodStart) {
+      await updateCycleSettings(userId, { lastPeriodStart: lastDetectedStart });
+    }
+    return;
+  }
+
+  // FIX-01: hech qanday hayz boshlanishi aniqlanmadi. Joriy qiymatni FAQAT
+  // u aynan cycle_logs'dagi (endi olib tashlangan/bekor qilingan) bir
+  // yozuvdan kelib chiqqan bo'lsagina tozalaymiz. Aks holda (masalan
+  // onboarding'da qo'lda kiritilgan sana, cycle_logs'da hech qachon mos
+  // yozuv bo'lmagan) — uni saqlab qolamiz. Avval bu yerda shartsiz
+  // `null`ga yozib yuborilardi: foydalanuvchi qo'lda oxirgi hayz sanasini
+  // kiritib, keyin faqat kayfiyat/simptom (flow'siz) belgilasa, bashorat
+  // butunlay yo'qolib qolardi.
+  if (settings.lastPeriodStart === null) return;
+  const hadMatchingLog = recentLogs.some((l) => l.date === settings.lastPeriodStart && l.flow);
+  if (hadMatchingLog) {
+    await updateCycleSettings(userId, { lastPeriodStart: null });
   }
 }
 
