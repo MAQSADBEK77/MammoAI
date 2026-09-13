@@ -442,6 +442,9 @@ async function initSchema() {
     // Admin panel — foydalanuvchini bloklash (App.pdf'dan tashqari, moderatsiya uchun).
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE`,
     sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
+    // FIX-CHECKUPS: bachadon bo'yni skrininggi/JYYI/kontratseptsiya kabi
+    // bir nechta yangi tekshiruv turi shunga bog'liq (checklist-rules.ts).
+    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS sexually_active BOOLEAN NOT NULL DEFAULT FALSE`,
     // MUHIM: `notifications`ga tegishli ALTER'lar ATAYLAB bu yerda EMAS —
     // pastda, jadvalning o'zi ("2.5-bosqich") yaratilgandan KEYIN (qarang:
     // "2.6-bosqich"). Bu yerda turganda haqiqiy production'da hech qachon

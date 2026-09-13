@@ -204,6 +204,9 @@ const uz = {
     cycleRegular: "Ha, muntazam",
     cycleIrregular: "Yo'q, tartibsiz",
     familyHistoryQuestion: "Oilangizda saraton yoki ginekologik kasallik tarixi bormi?",
+    // FIX-CHECKUPS: 15 yoshdan katta foydalanuvchilarga so'raladi — bachadon
+    // bo'yni skrininggi/JYYI/kontratseptsiya kabi tekshiruvlar shunga bog'liq.
+    sexuallyActiveQuestion: "Jinsiy hayotingiz bormi?",
     lastCheckupQuestion: "Oxirgi ginekologik tekshiruvingiz qachon bo'lgan?",
     checkupRecent: "So'nggi 1 yil ichida",
     checkupOverYear: "1 yildan ko'proq oldin",
@@ -518,6 +521,24 @@ const uz = {
     partnerTitle: (name: string) => `${name}ning tekshiruvlari`,
     partnerNotLinked: "Hali hamkoringiz ulanmagan — \"Juft\" bo'limidan ulaning.",
     partnerNotShared: "Hamkoringiz tekshiruv ma'lumotini hali ulashmagan.",
+    // FIX-CHECKUPS: davlat dasturi (majburiy minimum) va tavsiya etilgan
+    // muddat farq qiladigan bandlar uchun ikkinchi (ma'lumot xarakteridagi)
+    // belgi — checklist-rules.ts#CHECKUP_OFFICIAL_TRACK.
+    officialTrackLabel: (minAge: number, maxAge: number, frequency: string) => `Davlat dasturi: ${minAge}-${maxAge} yosh, ${frequency}`,
+    frequencyLabels: {
+      every_2_years: "2 yilda 1 marta",
+      every_3_years: "3 yilda 1 marta",
+    },
+    categoryLabels: {
+      screening: "Skrining",
+      vaccination: "Vaksinatsiya",
+      lab: "Laboratoriya",
+      imaging: "Tasvirga olish",
+      consultation: "Konsultatsiya",
+      self_exam: "O'z-o'zini tekshirish",
+      pregnancy: "Homiladorlik",
+      postpartum: "Tug'ruqdan keyin",
+    },
     items: {
       gyn_annual_checkup: {
         title: "Yillik ginekologik ko'rik",
@@ -546,6 +567,99 @@ const uz = {
       pregnancy_trimester_checkup: {
         title: "Trimestrga oid ko'rik",
         why: "Har trimestrda homila rivojlanishini nazorat qilish tavsiya etiladi.",
+      },
+      // --- FIX-CHECKUPS: yangi, real manbaga asoslangan bandlar ---
+      annual_preventive_exam: {
+        title: "Yillik profilaktik ko'rik (oilaviy shifokor)",
+        why: "Kamqonlik, qalqonsimon bez muammolari yoki homiladorlikka to'siq bo'ladigan holatlar yillar davomida bilinmasdan qolishi mumkin.",
+      },
+      first_gyn_visit: {
+        title: "Birinchi ginekolog tashrifi",
+        why: "Erta tashrif kelajakda ginekologik parvarishga o'rganishga yordam beradi; hayz buzilishlari yoki tug'ma muammolar o'z vaqtida aniqlanadi.",
+      },
+      hpv_vaccination: {
+        title: "OPV (HPV) vaksinatsiyasi",
+        why: "9-14 yoshda eng samarali — kech qolinsa vaksina samaradorligi pasayadi; davolanmagan HPV bachadon bo'yni saratonining asosiy sababi.",
+      },
+      pelvic_exam_speculum: {
+        title: "Kreslodagi ginekologik ko'rik",
+        why: "Ko'zga tashlanadigan o'zgarishlar (polip, eroziya, erta shikastlanishlar) belgi bermaguncha sezilmay qolishi mumkin.",
+      },
+      flora_smear: {
+        title: "Flora uchun surtma",
+        why: "Davolanmagan bakterial nomutanosiblik yoki infeksiya bachadon/naychalarga (PID) tarqalishi yoki muddatidan oldin tug'ilishga sabab bo'lishi mumkin.",
+      },
+      cervical_cancer_screening: {
+        title: "Bachadon bo'yni saratoni skrininggi (Pap-test / onkotsitologiya)",
+        why: "Bachadon bo'yni saratoni sekin rivojlanadi va oldi-saraton bosqichida aniqlansa deyarli to'liq oldini olish mumkin — bu ro'yxatdagi eng katta oldini olsa bo'ladigan xavf.",
+      },
+      pelvic_ultrasound: {
+        title: "Kichik chanoq a'zolari UTT",
+        why: "Mioma, kista yoki endometriy o'zgarishlari og'riq, qon ketish yoki bepushtlikka olib kelmaguncha yillar davomida sezilmasdan o'sishi mumkin.",
+      },
+      breast_self_exam: {
+        title: "Ko'krak bezini o'z-o'zidan tekshirish",
+        why: "O'z-o'zidan topilgan tugunchalar odatda muntazam tekshirishga qaraganda kechroq aniqlanadi — bu davolashning eng sodda bosqichidagi imkoniyatni orqaga suradi.",
+      },
+      clinical_breast_exam: {
+        title: "Shifokor tomonidan ko'krak bezi ko'rigi",
+        why: "Tajribali shifokor o'z-o'zini tekshirishda sezilmaydigan o'zgarishlarni aniqlaydi.",
+      },
+      breast_cancer_screening_mammography: {
+        title: "Ko'krak bezi saratoni skrininggi (mammografiya)",
+        why: "Mammografiya o'sma qo'l bilan sezilgunga qadar uni aniqlaydi — tavsiya etilgan yoshdan kechiktirish kech bosqichda aniqlanish xavfini oshiradi.",
+      },
+      sti_panel: {
+        title: "JYYI (STI) tekshiruvlari",
+        why: "Ko'pgina JYYI (xlamidioz, gonoreya) belgisiz kechadi; davolanmasa bachadon yallig'lanishi, naychalar shikastlanishi, bepushtlik va naycha homiladorligi xavfini oshiradi.",
+      },
+      contraception_counseling: {
+        title: "Kontratseptsiya bo'yicha maslahat",
+        why: "Shifokor maslahatisiz tanlangan usul samarasizlik va nojo'ya ta'sir xavfini oshiradi.",
+      },
+      preconception_checkup: {
+        title: "Homiladorlikni rejalashtirish tekshiruvi",
+        why: "Aniqlanmagan kamqonlik, qalqonsimon bez buzilishi yoki qizamiqchaga immunitet yo'qligi — bularning barchasi faqat folik kislota qabul qilish bilan bartaraf etilmaydigan homiladorlik xavflarini oshiradi.",
+      },
+      prenatal_screening_stage1: {
+        title: "Homiladorlik skrininggi — 1-bosqich (UTT)",
+        why: "Bu oynani o'tkazib yuborish tug'ma nuqsonlar xavfini keyinroq aniqlashga olib keladi, bu esa keyingi tekshiruv va parvarish rejalashtirish imkoniyatlarini toraytiradi.",
+      },
+      prenatal_screening_stage1b: {
+        title: "Homiladorlik skrininggi — 1-bosqich, 2-ko'rik (UTT)",
+        why: "1-bosqichdagi kabi — tuzilma nuqsonlarini kech aniqlash asosli qaror qabul qilish va mutaxassisga yo'llash imkoniyatini toraytiradi.",
+      },
+      prenatal_screening_stage1c: {
+        title: "Homiladorlik skrininggi — 1-bosqich, 3-ko'rik (UTT)",
+        why: "Kech namoyon bo'ladigan o'sish orqada qolishi yoki funktsional muammolar payqalmasdan qolishi, aralashuv kechikishi mumkin.",
+      },
+      prenatal_screening_stage2: {
+        title: "Homiladorlik skrininggi — 2-bosqich (xavf guruhi uchun)",
+        why: "Xavf guruhiga kiritilgan homiladorlik uchun buni o'tkazib yuborish genetik tashxisni barcha imkoniyatlar mavjud bo'lgan vaqtdan keyinga suradi.",
+      },
+      pregnancy_patronage_visit: {
+        title: "Homiladorlik patronaji (doya tashrifi)",
+        why: "Qon bosimi ko'tarilishi (preeklampsiya), o'sish muammolari yoki ona salomatligi muammolari klinika tashriflari orasida nazoratsiz qolishi mumkin.",
+      },
+      postpartum_home_visit: {
+        title: "Tug'ruqdan keyingi uy tashrifi (doya, 3/15/30-kun)",
+        why: "Tug'ruqdan keyingi infeksiya, qon ketish, yara bitmasligi yoki ruhiy holat yomonlashishi rejalashtirilgan tekshiruvsiz sezilmay qolishi mumkin.",
+      },
+      menopause_checkup: {
+        title: "Klimakteriya / menopauza tekshiruvi (Kabinet 45+)",
+        why: "Bu yoshda aniqlanmagan osteoporoz, yurak-qon tomir xavfining o'zgarishi va endometriy/tuxumdon saratoni xavfi ortishi nazoratsiz qolishi mumkin.",
+      },
+      torch_panel: {
+        title: "TORCH infeksiyalari tekshiruvi",
+        why: "Faol toksoplazmoz, qizamiqchaga immunitet yo'qligi yoki birlamchi CMV infeksiyasi homiladorlik davrida abort va tug'ma nuqson xavfini oshiradi; qizamiqcha vaksinasi faqat homiladorlikdan OLDIN berilishi mumkin.",
+      },
+      group_b_strep_screening: {
+        title: "B guruh streptokokk (GBS) tekshiruvi",
+        why: "GBS onaga zararsiz, lekin tug'ish paytida antibiotiksiz chaqaloqda jiddiy infeksiyaga sabab bo'lishi mumkin.",
+      },
+      bv_targeted_screening: {
+        title: "Bakterial vaginoz uchun maqsadli tekshiruv",
+        why: "Davolanmagan bakterial vaginoz muddatidan oldin tug'ilish va homiladorlik yo'qotilishi bilan bog'liq; ko'pincha belgisiz kechadi, shuning uchun faqat belgilarga tayanish ko'p holatlarni o'tkazib yuboradi.",
       },
     },
   },

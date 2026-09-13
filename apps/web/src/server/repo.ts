@@ -524,6 +524,7 @@ interface OnboardingRow {
   is_pregnant: boolean;
   cycle_regularity: OnboardingProfile["cycleRegularity"];
   family_history: boolean;
+  sexually_active: boolean;
   last_checkup: OnboardingProfile["lastCheckup"];
   primary_goal: OnboardingProfile["primaryGoal"];
   heard_about_us: HeardAboutUs | null;
@@ -544,6 +545,7 @@ function onboardingFromRow(row: OnboardingRow): OnboardingProfile {
     isPregnant: !!row.is_pregnant,
     cycleRegularity: row.cycle_regularity,
     familyHistory: !!row.family_history,
+    sexuallyActive: !!row.sexually_active,
     lastCheckup: row.last_checkup,
     primaryGoal: row.primary_goal,
     heardAboutUs: row.heard_about_us,
@@ -563,18 +565,19 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
   const healthConditions = JSON.stringify(profile.healthConditions ?? []);
   await sql`
     INSERT INTO onboarding_profiles (
-      user_id, name, age, is_pregnant, cycle_regularity, family_history, last_checkup, primary_goal,
+      user_id, name, age, is_pregnant, cycle_regularity, family_history, sexually_active, last_checkup, primary_goal,
       heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg, blood_type
     )
     VALUES (
       ${profile.userId}, ${profile.name}, ${profile.age}, ${profile.isPregnant}, ${profile.cycleRegularity},
-      ${profile.familyHistory}, ${profile.lastCheckup}, ${profile.primaryGoal}, ${profile.heardAboutUs},
+      ${profile.familyHistory}, ${profile.sexuallyActive}, ${profile.lastCheckup}, ${profile.primaryGoal}, ${profile.heardAboutUs},
       ${typicalSymptoms}, ${profile.periodAttitude}, ${healthConditions}, ${profile.healthConditionsOther},
       ${profile.heightCm}, ${profile.weightKg}, ${profile.bloodType}
     )
     ON CONFLICT (user_id) DO UPDATE SET
       name = EXCLUDED.name, age = EXCLUDED.age, is_pregnant = EXCLUDED.is_pregnant,
       cycle_regularity = EXCLUDED.cycle_regularity, family_history = EXCLUDED.family_history,
+      sexually_active = EXCLUDED.sexually_active,
       last_checkup = EXCLUDED.last_checkup, primary_goal = EXCLUDED.primary_goal,
       heard_about_us = EXCLUDED.heard_about_us, typical_symptoms = EXCLUDED.typical_symptoms,
       period_attitude = EXCLUDED.period_attitude,
@@ -1220,7 +1223,12 @@ export async function listChecklistItems(userId: string): Promise<ChecklistItem[
   return items;
 }
 
-export async function ensureChecklistItem(userId: string, type: ChecklistItemType, dueDate: string | null): Promise<void> {
+export async function ensureChecklistItem(
+  userId: string,
+  type: ChecklistItemType,
+  dueDate: string | null,
+  recurrenceDays?: number
+): Promise<void> {
   await ensureSchema();
   // FIX-UX-03: ilgari SELECT (faqat 'done' bo'lmagan qatorlarni qidirib) +
   // keyin shartli INSERT edi — bu ikkita muammoga olib kelardi: (1) tekshirish
@@ -1236,6 +1244,23 @@ export async function ensureChecklistItem(userId: string, type: ChecklistItemTyp
     VALUES (${randomUUID()}, ${userId}, ${type}, 'pending', ${dueDate}, ${now()})
     ON CONFLICT (user_id, type) DO NOTHING
   `;
+  // FIX-CHECKUPS: davriy (masalan yillik) tekshiruvlar uchun — yuqoridagi
+  // UNIQUE cheklov bir turdan faqat bitta qator saqlab turadi, shuning uchun
+  // 'done' bo'lgan qator abadiy shu holatda qolib ketardi (keyingi yilgi
+  // tekshiruv hech qachon "kutilayotgan"ga aylanmasdi). `recurrenceDays`
+  // berilgan bo'lsa va oxirgi bajarilgandan beri shuncha kun o'tgan bo'lsa —
+  // qatorni yangi due_date bilan qayta 'pending'ga qaytaradi. Bir martalik
+  // bandlar (recurrenceDays berilmagan) hech qachon qayta ochilmaydi —
+  // homiladorlik bandlari uchun ilgaridan mavjud xatti-harakat bilan bir xil.
+  if (recurrenceDays != null) {
+    await sql`
+      UPDATE checklist_items
+      SET status = 'pending', due_date = ${dueDate}, completed_at = NULL
+      WHERE user_id = ${userId} AND type = ${type} AND status = 'done'
+        AND completed_at IS NOT NULL
+        AND (completed_at)::timestamptz < (now() - make_interval(days => ${recurrenceDays}))
+    `;
+  }
 }
 
 export async function completeChecklistItem(userId: string, id: string): Promise<void> {

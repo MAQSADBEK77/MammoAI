@@ -44,6 +44,7 @@ import {
   FamilyRestroomOutlined,
   MonitorWeightOutlined,
   SendOutlined,
+  FavoriteBorderOutlined,
 } from "@mui/icons-material";
 import clsx from "clsx";
 
@@ -66,6 +67,7 @@ type Step =
   | "period_attitude"
   | "health_conditions"
   | "family_history"
+  | "sexually_active"
   | "last_checkup"
   | "height_weight"
   | "notifications"
@@ -101,6 +103,10 @@ interface SurveyState {
   healthConditions: HealthCondition[];
   healthConditionsOther: string;
   familyHistory: boolean | "unknown" | null;
+  // FIX-CHECKUPS: 15 yoshdan kichiklarga so'ralmaydi (steps useMemo'da
+  // filtrlangan) — shu holatda `null` qoladi va submit paytida `false`ga
+  // yig'iladi, xuddi familyHistory'ning "unknown" holati kabi.
+  sexuallyActive: boolean | "unknown" | null;
   lastCheckup: OnboardingProfile["lastCheckup"] | null;
   heightCm: string;
   weightKg: string;
@@ -162,6 +168,7 @@ const INITIAL_SURVEY: SurveyState = {
   healthConditions: [],
   healthConditionsOther: "",
   familyHistory: null,
+  sexuallyActive: null,
   lastCheckup: null,
   heightCm: "165",
   weightKg: "60",
@@ -187,6 +194,7 @@ const STEP_ICON: Partial<Record<Step, StepIconComponent>> = {
   cycle_regularity: AutorenewOutlined,
   typical_symptoms: SickOutlined,
   family_history: FamilyRestroomOutlined,
+  sexually_active: FavoriteBorderOutlined,
   height_weight: MonitorWeightOutlined,
 };
 
@@ -221,6 +229,7 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   period_attitude: colors.primary,
   health_conditions: colors.accent,
   family_history: colors.accent,
+  sexually_active: colors.accent,
   last_checkup: colors.accent,
   height_weight: colors.accent,
   notifications: colors.primary,
@@ -392,7 +401,12 @@ function OnboardingPageInner() {
           "health_conditions"
         );
       }
-      if (needsPersonalHealthQuestions(survey.primaryGoal)) tail.push("family_history", "last_checkup");
+      if (needsPersonalHealthQuestions(survey.primaryGoal)) {
+        tail.push("family_history");
+        // FIX-CHECKUPS: 15 yoshdan kichiklarga so'ralmaydi.
+        if (age >= 15) tail.push("sexually_active");
+        tail.push("last_checkup");
+      }
       if (needsHeightWeight(survey.primaryGoal)) tail.push("height_weight");
       tail.push("notifications", "analyzing");
       return [...list, ...tail];
@@ -401,7 +415,7 @@ function OnboardingPageInner() {
       ? base.filter((s) => !["welcome", "account_choice", "account_identifier", "phone_verify"].includes(s))
       : base;
     return withTail(filtered);
-  }, [survey.primaryGoal, isFromTelegram]);
+  }, [survey.primaryGoal, isFromTelegram, age]);
 
   const step = steps[stepIndex];
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
@@ -510,6 +524,7 @@ function OnboardingPageInner() {
         isPregnant: survey.primaryGoal === "pregnancy",
         cycleRegularity: survey.cycleRegularity ?? "unknown",
         familyHistory: survey.familyHistory === true,
+        sexuallyActive: survey.sexuallyActive === true,
         lastCheckup: survey.lastCheckup ?? "unknown",
         primaryGoal: survey.primaryGoal!,
         heardAboutUs: survey.heardAboutUs ?? "other",
@@ -587,6 +602,8 @@ function OnboardingPageInner() {
         return survey.periodAttitude !== null;
       case "family_history":
         return survey.familyHistory !== null;
+      case "sexually_active":
+        return survey.sexuallyActive !== null;
       case "last_checkup":
         return survey.lastCheckup !== null;
       case "height_weight":
@@ -994,6 +1011,18 @@ function OnboardingPageInner() {
               { label: dict.common.dontKnow, value: "unknown", onClick: () => setSurvey((s) => ({ ...s, familyHistory: "unknown" })) },
             ]}
             selected={survey.familyHistory === null ? null : survey.familyHistory === "unknown" ? "unknown" : survey.familyHistory ? "yes" : "no"}
+          />
+        )}
+
+        {step === "sexually_active" && (
+          <ChoiceStep
+            title={dict.onboarding.sexuallyActiveQuestion}
+            options={[
+              { label: dict.common.yes, value: "yes", onClick: () => setSurvey((s) => ({ ...s, sexuallyActive: true })) },
+              { label: dict.common.no, value: "no", onClick: () => setSurvey((s) => ({ ...s, sexuallyActive: false })) },
+              { label: dict.common.dontKnow, value: "unknown", onClick: () => setSurvey((s) => ({ ...s, sexuallyActive: "unknown" })) },
+            ]}
+            selected={survey.sexuallyActive === null ? null : survey.sexuallyActive === "unknown" ? "unknown" : survey.sexuallyActive ? "yes" : "no"}
           />
         )}
 

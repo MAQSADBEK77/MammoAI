@@ -70,6 +70,7 @@ type Step =
   | "period_attitude"
   | "health_conditions"
   | "family_history"
+  | "sexually_active"
   | "last_checkup"
   | "height_weight"
   | "notifications"
@@ -103,6 +104,7 @@ interface SurveyState {
   healthConditions: HealthCondition[];
   healthConditionsOther: string;
   familyHistory: boolean | "unknown" | null;
+  sexuallyActive: boolean | "unknown" | null;
   lastCheckup: OnboardingProfile["lastCheckup"] | null;
   heightCm: string;
   weightKg: string;
@@ -138,6 +140,7 @@ const INITIAL_SURVEY: SurveyState = {
   healthConditions: [],
   healthConditionsOther: "",
   familyHistory: null,
+  sexuallyActive: null,
   lastCheckup: null,
   heightCm: "165",
   weightKg: "60",
@@ -246,6 +249,7 @@ const STEP_ICON: Partial<Record<Step, string>> = {
   cycle_regularity: "autorenew",
   typical_symptoms: "thermometer",
   family_history: "account-group-outline",
+  sexually_active: "heart-outline",
   height_weight: "scale-bathroom",
 };
 
@@ -278,6 +282,7 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   period_attitude: colors.primary,
   health_conditions: colors.accent,
   family_history: colors.accent,
+  sexually_active: colors.accent,
   last_checkup: colors.accent,
   height_weight: colors.accent,
   notifications: colors.primary,
@@ -350,11 +355,16 @@ export default function OnboardingScreen() {
     } else if (needsCycleInfo(survey.primaryGoal)) {
       tail.push("cycle_regularity", "cycle_lengths", "last_period", "typical_symptoms", "period_attitude", "health_conditions");
     }
-    if (needsPersonalHealthQuestions(survey.primaryGoal)) tail.push("family_history", "last_checkup");
+    if (needsPersonalHealthQuestions(survey.primaryGoal)) {
+      tail.push("family_history");
+      // FIX-CHECKUPS: web bilan bir xil — 15 yoshdan kichiklarga so'ralmaydi.
+      if (age >= 15) tail.push("sexually_active");
+      tail.push("last_checkup");
+    }
     if (needsHeightWeight(survey.primaryGoal)) tail.push("height_weight");
     tail.push("notifications", "analyzing");
     return [...base, ...tail];
-  }, [survey.primaryGoal]);
+  }, [survey.primaryGoal, age]);
 
   const step = steps[stepIndex];
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
@@ -445,6 +455,7 @@ export default function OnboardingScreen() {
         isPregnant: survey.primaryGoal === "pregnancy",
         cycleRegularity: survey.cycleRegularity ?? "unknown",
         familyHistory: survey.familyHistory === true,
+        sexuallyActive: survey.sexuallyActive === true,
         lastCheckup: survey.lastCheckup ?? "unknown",
         primaryGoal: survey.primaryGoal!,
         heardAboutUs: survey.heardAboutUs ?? "other",
@@ -515,6 +526,8 @@ export default function OnboardingScreen() {
         return survey.periodAttitude !== null;
       case "family_history":
         return survey.familyHistory !== null;
+      case "sexually_active":
+        return survey.sexuallyActive !== null;
       case "last_checkup":
         return survey.lastCheckup !== null;
       case "height_weight":
@@ -868,6 +881,18 @@ export default function OnboardingScreen() {
                 { label: dict.common.dontKnow, value: "unknown", onPress: () => setSurvey((s) => ({ ...s, familyHistory: "unknown" })) },
               ]}
               selected={survey.familyHistory === null ? null : survey.familyHistory === "unknown" ? "unknown" : survey.familyHistory ? "yes" : "no"}
+            />
+          )}
+
+          {step === "sexually_active" && (
+            <ChoiceStep
+              title={dict.onboarding.sexuallyActiveQuestion}
+              options={[
+                { label: dict.common.yes, value: "yes", onPress: () => setSurvey((s) => ({ ...s, sexuallyActive: true })) },
+                { label: dict.common.no, value: "no", onPress: () => setSurvey((s) => ({ ...s, sexuallyActive: false })) },
+                { label: dict.common.dontKnow, value: "unknown", onPress: () => setSurvey((s) => ({ ...s, sexuallyActive: "unknown" })) },
+              ]}
+              selected={survey.sexuallyActive === null ? null : survey.sexuallyActive === "unknown" ? "unknown" : survey.sexuallyActive ? "yes" : "no"}
             />
           )}
 

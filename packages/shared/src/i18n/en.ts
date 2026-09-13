@@ -199,6 +199,7 @@ const en: Dictionary = {
     cycleRegular: "Yes, regular",
     cycleIrregular: "No, irregular",
     familyHistoryQuestion: "Is there a history of cancer or gynecological illness in your family?",
+    sexuallyActiveQuestion: "Are you sexually active?",
     lastCheckupQuestion: "When was your last gynecological checkup?",
     checkupRecent: "Within the last year",
     checkupOverYear: "More than a year ago",
@@ -500,6 +501,21 @@ const en: Dictionary = {
     partnerTitle: (name: string) => `${name}'s checkups`,
     partnerNotLinked: "Your partner isn't linked yet — connect them in the \"Partner\" section.",
     partnerNotShared: "Your partner hasn't shared checkup info yet.",
+    officialTrackLabel: (minAge: number, maxAge: number, frequency: string) => `Official program: ages ${minAge}-${maxAge}, ${frequency}`,
+    frequencyLabels: {
+      every_2_years: "every 2 years",
+      every_3_years: "every 3 years",
+    },
+    categoryLabels: {
+      screening: "Screening",
+      vaccination: "Vaccination",
+      lab: "Lab",
+      imaging: "Imaging",
+      consultation: "Consultation",
+      self_exam: "Self-exam",
+      pregnancy: "Pregnancy",
+      postpartum: "Postpartum",
+    },
     items: {
       gyn_annual_checkup: {
         title: "Annual gynecological checkup",
@@ -528,6 +544,98 @@ const en: Dictionary = {
       pregnancy_trimester_checkup: {
         title: "Trimester checkup",
         why: "Recommended each trimester to monitor fetal development.",
+      },
+      annual_preventive_exam: {
+        title: "Annual preventive exam (family doctor)",
+        why: "Anemia, thyroid issues, or a pregnancy-blocking condition can go undetected for years.",
+      },
+      first_gyn_visit: {
+        title: "First gynecologist visit",
+        why: "An early visit builds comfort with gynecological care; menstrual disorders or congenital issues get addressed sooner.",
+      },
+      hpv_vaccination: {
+        title: "HPV vaccination",
+        why: "Most effective at ages 9-14 — effectiveness drops if delayed; untreated HPV is the leading cause of cervical cancer.",
+      },
+      pelvic_exam_speculum: {
+        title: "Pelvic exam (speculum)",
+        why: "Visible abnormalities (polyps, erosions, early lesions) can go unnoticed until symptomatic.",
+      },
+      flora_smear: {
+        title: "Vaginal flora smear",
+        why: "An untreated imbalance or infection can ascend to the uterus/tubes (PID) or contribute to preterm birth.",
+      },
+      cervical_cancer_screening: {
+        title: "Cervical cancer screening (Pap test / oncocytology)",
+        why: "Cervical cancer is slow-growing and highly preventable when caught at the pre-cancerous stage — the single biggest preventable risk on this list.",
+      },
+      pelvic_ultrasound: {
+        title: "Pelvic ultrasound",
+        why: "Fibroids, cysts, or endometrial changes can grow silently for years before causing pain, bleeding, or fertility problems.",
+      },
+      breast_self_exam: {
+        title: "Breast self-exam",
+        why: "Self-detected lumps are often found later than with routine checking, delaying diagnosis at the simplest treatment stage.",
+      },
+      clinical_breast_exam: {
+        title: "Clinical breast exam",
+        why: "A trained exam catches changes a self-exam misses.",
+      },
+      breast_cancer_screening_mammography: {
+        title: "Breast cancer screening (mammography)",
+        why: "Mammography detects tumors before they're palpable; delaying past the recommended age raises the odds of late-stage diagnosis.",
+      },
+      sti_panel: {
+        title: "STI panel",
+        why: "Many STIs (chlamydia, gonorrhea) are asymptomatic; untreated infection risks pelvic inflammatory disease, tubal scarring, infertility, and ectopic pregnancy.",
+      },
+      contraception_counseling: {
+        title: "Contraception counseling",
+        why: "Using a method without a medical fit-check raises failure rates and side-effect risk.",
+      },
+      preconception_checkup: {
+        title: "Preconception checkup",
+        why: "Undiagnosed anemia, thyroid dysfunction, or non-immune rubella status raise risks that folic acid alone doesn't cover.",
+      },
+      prenatal_screening_stage1: {
+        title: "Prenatal screening — stage 1 (ultrasound)",
+        why: "Missing this window means chromosomal/structural risk flags are found later, narrowing options for further testing and care planning.",
+      },
+      prenatal_screening_stage1b: {
+        title: "Prenatal screening — stage 1, 2nd scan (ultrasound)",
+        why: "Same as stage 1 — later detection of structural anomalies narrows the window for informed decisions and specialist referral.",
+      },
+      prenatal_screening_stage1c: {
+        title: "Prenatal screening — stage 1, 3rd scan (ultrasound)",
+        why: "Late-onset growth restriction or functional problems can be missed, delaying intervention.",
+      },
+      prenatal_screening_stage2: {
+        title: "Prenatal screening — stage 2 (for high-risk pregnancies)",
+        why: "For flagged pregnancies, skipping this delays genetic diagnosis past the point where all options remain available.",
+      },
+      pregnancy_patronage_visit: {
+        title: "Pregnancy patronage visit (midwife)",
+        why: "Blood pressure spikes (preeclampsia), growth issues, or maternal health problems can go unmonitored between clinic visits.",
+      },
+      postpartum_home_visit: {
+        title: "Postpartum home visit (midwife, days 3/15/30)",
+        why: "Postpartum infection, hemorrhage, poor wound healing, or postpartum mental health decline can go unnoticed without a scheduled check.",
+      },
+      menopause_checkup: {
+        title: "Menopause / perimenopause checkup (Cabinet 45+)",
+        why: "Undiagnosed osteoporosis, cardiovascular risk changes, and elevated endometrial/ovarian cancer risk in this age group can go unmonitored.",
+      },
+      torch_panel: {
+        title: "TORCH infection panel",
+        why: "Active toxoplasmosis, non-immune rubella status, or primary CMV infection during pregnancy raise miscarriage and birth defect risk; the rubella vaccine can only be given before pregnancy.",
+      },
+      group_b_strep_screening: {
+        title: "Group B strep (GBS) screening",
+        why: "GBS is harmless to the mother but can cause serious newborn infection at delivery if untreated with antibiotics during labor.",
+      },
+      bv_targeted_screening: {
+        title: "Targeted bacterial vaginosis screening",
+        why: "Untreated BV is linked to preterm birth and pregnancy loss; it's often asymptomatic, so relying on symptoms alone misses many cases.",
       },
     },
   },

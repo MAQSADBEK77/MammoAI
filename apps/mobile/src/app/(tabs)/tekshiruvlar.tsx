@@ -3,7 +3,8 @@ import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import type { ChecklistResponse } from "@mammoai/shared";
+import type { ChecklistCategory, ChecklistItem, ChecklistResponse } from "@mammoai/shared";
+import { CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -13,6 +14,30 @@ import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/c
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const STATUS_ICON: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = { pending: "clock-outline", done: "check-circle-outline", overdue: "alert-circle-outline" };
+
+// FIX-CHECKUPS: web bilan bir xil — turlar soni 30'ga chiqqach bo'limlarga
+// guruhlash uchun ko'rsatish tartibi.
+const CATEGORY_ORDER: ChecklistCategory[] = [
+  "screening",
+  "lab",
+  "imaging",
+  "vaccination",
+  "consultation",
+  "self_exam",
+  "pregnancy",
+  "postpartum",
+];
+
+function groupByCategory(items: ChecklistItem[]): { category: ChecklistCategory; items: ChecklistItem[] }[] {
+  const groups = new Map<ChecklistCategory, ChecklistItem[]>();
+  for (const item of items) {
+    const category = CHECKUP_CATEGORY[item.type];
+    const list = groups.get(category);
+    if (list) list.push(item);
+    else groups.set(category, [item]);
+  }
+  return CATEGORY_ORDER.filter((c) => groups.has(c)).map((category) => ({ category, items: groups.get(category)! }));
+}
 
 export default function ChecklistScreen() {
   const { dict } = useI18n();
@@ -140,43 +165,58 @@ export default function ChecklistScreen() {
           </Pressable>
         )}
 
-        {items.map((item) => {
-          const info = dict.checklist.items[item.type];
-          const StatusIcon = STATUS_ICON[item.status];
-          return (
-            <Card key={item.id} className="gap-2">
-              <View className="flex-row items-start justify-between gap-3">
-                <View className="flex-1 flex-row items-start gap-2.5">
-                  <View
-                    className="h-8 w-8 items-center justify-center rounded-full"
-                    style={{ backgroundColor: `${STATUS_ICON_COLOR[item.status]}1A` }}
-                  >
-                    <MaterialCommunityIcons name={StatusIcon} size={16} color={STATUS_ICON_COLOR[item.status]} />
-                  </View>
-                  <Text className="flex-1 pt-1 font-semibold text-text-primary">{info.title}</Text>
-                </View>
-                <View className="items-end gap-2">
-                  <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
-                  <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>
-                </View>
-              </View>
-              <Text className="text-sm text-text-secondary">{info.why}</Text>
-              {!readOnly && item.status !== "done" && (
-                <View className="flex-row gap-2 pt-1">
-                  <Button variant="secondary" onPress={() => complete(item.id)} disabled={completingId === item.id}>
-                    {dict.checklist.markDoneButton}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onPress={() => router.push({ pathname: "/(tabs)/asosiy", params: { checklistItemId: item.id } })}
-                  >
-                    {dict.checklist.findClinicButton}
-                  </Button>
-                </View>
-              )}
-            </Card>
-          );
-        })}
+        {groupByCategory(items).map(({ category, items: groupItems }) => (
+          <View key={category} className="gap-2">
+            <Text className="text-xs font-bold uppercase tracking-wide text-text-muted">{dict.checklist.categoryLabels[category]}</Text>
+            <View className="gap-3">
+              {groupItems.map((item) => {
+                const info = dict.checklist.items[item.type];
+                const StatusIcon = STATUS_ICON[item.status];
+                const officialTrack = CHECKUP_OFFICIAL_TRACK[item.type];
+                return (
+                  <Card key={item.id} className="gap-2">
+                    <View className="flex-row items-start justify-between gap-3">
+                      <View className="flex-1 flex-row items-start gap-2.5">
+                        <View
+                          className="h-8 w-8 items-center justify-center rounded-full"
+                          style={{ backgroundColor: `${STATUS_ICON_COLOR[item.status]}1A` }}
+                        >
+                          <MaterialCommunityIcons name={StatusIcon} size={16} color={STATUS_ICON_COLOR[item.status]} />
+                        </View>
+                        <Text className="flex-1 pt-1 font-semibold text-text-primary">{info.title}</Text>
+                      </View>
+                      <View className="items-end gap-2">
+                        <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
+                        <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>
+                      </View>
+                    </View>
+                    <Text className="text-sm text-text-secondary">{info.why}</Text>
+                    {/* FIX-CHECKUPS: davlat dasturi bo'yicha majburiy oyna
+                        tavsiya etilgandan farq qiladigan bandlar uchun. */}
+                    {officialTrack && (
+                      <Text className="text-xs text-text-muted">
+                        {dict.checklist.officialTrackLabel(officialTrack.minAge, officialTrack.maxAge, dict.checklist.frequencyLabels[officialTrack.frequency])}
+                      </Text>
+                    )}
+                    {!readOnly && item.status !== "done" && (
+                      <View className="flex-row gap-2 pt-1">
+                        <Button variant="secondary" onPress={() => complete(item.id)} disabled={completingId === item.id}>
+                          {dict.checklist.markDoneButton}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onPress={() => router.push({ pathname: "/(tabs)/asosiy", params: { checklistItemId: item.id } })}
+                        >
+                          {dict.checklist.findClinicButton}
+                        </Button>
+                      </View>
+                    )}
+                  </Card>
+                );
+              })}
+            </View>
+          </View>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );

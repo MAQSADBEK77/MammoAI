@@ -1,5 +1,13 @@
 import type { OnboardingProfile } from "@mammoai/shared";
-import { computeCycleLengths, generateChecklist, isCycleIrregular, tashkentDateStr } from "@mammoai/shared";
+import {
+  computeCycleLengths,
+  generateChecklist,
+  getPregnancyStatus,
+  isCycleIrregular,
+  isPerimenopauseGoal,
+  isTryingToConceiveGoal,
+  tashkentDateStr,
+} from "@mammoai/shared";
 import { ensureChecklistItem, getOnboardingProfile, getPregnancyProfile, listCycleLogs } from "./repo";
 
 const addDays = (dateStr: string, days: number) => {
@@ -7,6 +15,14 @@ const addDays = (dateStr: string, days: number) => {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 };
+
+const daysBetween = (a: string, b: string) => {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.round((new Date(b + "T00:00:00Z").getTime() - new Date(a + "T00:00:00Z").getTime()) / msPerDay);
+};
+
+// FIX-CHECKUPS: tug'ruqdan keyingi standart kuzatuv oynasi.
+const POSTPARTUM_WINDOW_DAYS = 42;
 
 /**
  * Onboarding profiliga va joriy holatga qarab checklist bandlarini yaratadi/yangilaydi.
@@ -35,19 +51,35 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
   // tartibsiz deb chiqmasdi).
   const [recentLogs, pregnancy] = await Promise.all([listCycleLogs(userId, 365), getPregnancyProfile(userId)]);
   const cycleIrregular = profile.cycleRegularity === "irregular" || isCycleIrregular(computeCycleLengths(recentLogs));
-  const isPregnant = profile.isPregnant || !!pregnancy?.dueDate;
+
+  // FIX2-23: xuddi shu UTC/Toshkent bug'i (localDateStr()dagi izohga qarang)
+  // — due_date hisob-kitobi ertalabki soatlarda bir kun orqada chiqishi mumkin edi.
+  const today = tashkentDateStr();
+
+  // FIX-CHECKUPS: tug'ruqdan keyingi ~42 kunlik oyna — bu davrda foydalanuvchi
+  // endi "homilador" emas, "postpartum" hisoblanadi. Haqiqiy tug'ilgan sana
+  // kuzatilmagani uchun (faqat taxminiy dueDate bor) — bu taxminiy chegara,
+  // aniqrog'i mavjud emas (keng tarqalgan qoida sifatida qabul qilingan).
+  const daysSinceDue = pregnancy?.dueDate ? daysBetween(pregnancy.dueDate, today) : null;
+  const isPostpartum = daysSinceDue !== null && daysSinceDue > 0 && daysSinceDue <= POSTPARTUM_WINDOW_DAYS;
+  const isPregnant = (profile.isPregnant || !!pregnancy?.dueDate) && !isPostpartum;
+  const pregnancyWeek = isPregnant && pregnancy ? (getPregnancyStatus(pregnancy, today)?.currentWeek ?? null) : null;
 
   const generated = generateChecklist({
     age: profile.age,
     familyHistory: profile.familyHistory,
     isPregnant,
     cycleIrregular,
+    sexuallyActive: profile.sexuallyActive,
+    pregnancyWeek,
+    isPostpartum,
+    isPerimenopause: isPerimenopauseGoal(profile.primaryGoal),
+    isTryingToConceive: isTryingToConceiveGoal(profile.primaryGoal),
   });
 
-  // FIX2-23: xuddi shu UTC/Toshkent bug'i (localDateStr()dagi izohga qarang)
-  // — due_date hisob-kitobi ertalabki soatlarda bir kun orqada chiqishi mumkin edi.
-  const today = tashkentDateStr();
   await Promise.all(
-    generated.map((item) => ensureChecklistItem(userId, item.type, item.dueInDays != null ? addDays(today, item.dueInDays) : null))
+    generated.map((item) =>
+      ensureChecklistItem(userId, item.type, item.dueInDays != null ? addDays(today, item.dueInDays) : null, item.recurrenceDays)
+    )
   );
 }

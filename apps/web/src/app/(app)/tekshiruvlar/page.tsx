@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ChecklistResponse } from "@mammoai/shared";
-import { formatDateDisplay } from "@mammoai/shared";
+import type { ChecklistCategory, ChecklistItem, ChecklistResponse } from "@mammoai/shared";
+import { formatDateDisplay, CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
@@ -12,6 +12,31 @@ import { CheckCircleOutlined, AccessTimeOutlined, ErrorOutlineOutlined } from "@
 
 const STATUS_ICON = { pending: AccessTimeOutlined, done: CheckCircleOutlined, overdue: ErrorOutlineOutlined } as const;
 const STATUS_ICON_COLOR = { pending: "text-text-muted", done: "text-success", overdue: "text-danger" } as const;
+
+// FIX-CHECKUPS: turlar soni 7'dan 30'ga chiqqach bitta tekis, sana bo'yicha
+// saralangan ro'yxat endi ko'z bilan kuzatib bo'lmaydigan darajada uzun —
+// bo'limlarga guruhlash uchun ko'rsatish tartibi.
+const CATEGORY_ORDER: ChecklistCategory[] = [
+  "screening",
+  "lab",
+  "imaging",
+  "vaccination",
+  "consultation",
+  "self_exam",
+  "pregnancy",
+  "postpartum",
+];
+
+function groupByCategory(items: ChecklistItem[]): { category: ChecklistCategory; items: ChecklistItem[] }[] {
+  const groups = new Map<ChecklistCategory, ChecklistItem[]>();
+  for (const item of items) {
+    const category = CHECKUP_CATEGORY[item.type];
+    const list = groups.get(category);
+    if (list) list.push(item);
+    else groups.set(category, [item]);
+  }
+  return CATEGORY_ORDER.filter((c) => groups.has(c)).map((category) => ({ category, items: groups.get(category)! }));
+}
 
 export default function ChecklistPage() {
   const { dict } = useI18n();
@@ -106,43 +131,59 @@ export default function ChecklistPage() {
 
       {!readOnly && items.length === 0 && <p className="text-text-secondary">—</p>}
 
-      {items.map((item) => {
-        const info = dict.checklist.items[item.type];
-        const StatusIcon = STATUS_ICON[item.status];
-        return (
-          <Card key={item.id} className="space-y-2">
-            <div className="flex items-start justify-between gap-3">
-              <p className="flex items-start gap-2.5 font-semibold text-text-primary">
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-current/10 ${STATUS_ICON_COLOR[item.status]}`}>
-                  <StatusIcon sx={{ fontSize: 16 }} />
-                </span>
-                <span className="pt-1">{info.title}</span>
-              </p>
-              <div className="flex shrink-0 flex-col items-end gap-2">
-                <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
-                <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>
-              </div>
-            </div>
-            <p className="text-sm text-text-secondary">{info.why}</p>
-            {item.dueDate && item.status !== "done" && (
-              <p className="text-xs text-text-muted">{formatDateDisplay(item.dueDate)}</p>
-            )}
-            {!readOnly && item.status !== "done" && (
-              <div className="flex gap-2 pt-1">
-                <Button variant="secondary" onClick={() => complete(item.id)}>
-                  {dict.checklist.markDoneButton}
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push(`/asosiy?checklistItemId=${item.id}`)}
-                >
-                  {dict.checklist.findClinicButton}
-                </Button>
-              </div>
-            )}
-          </Card>
-        );
-      })}
+      {groupByCategory(items).map(({ category, items: groupItems }) => (
+        <div key={category} className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{dict.checklist.categoryLabels[category]}</p>
+          <div className="space-y-3">
+            {groupItems.map((item) => {
+              const info = dict.checklist.items[item.type];
+              const StatusIcon = STATUS_ICON[item.status];
+              const officialTrack = CHECKUP_OFFICIAL_TRACK[item.type];
+              return (
+                <Card key={item.id} className="space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="flex items-start gap-2.5 font-semibold text-text-primary">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-current/10 ${STATUS_ICON_COLOR[item.status]}`}>
+                        <StatusIcon sx={{ fontSize: 16 }} />
+                      </span>
+                      <span className="pt-1">{info.title}</span>
+                    </p>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
+                      <Badge tone={item.isFree ? "success" : "warning"}>{item.isFree ? dict.common.free : dict.common.paid}</Badge>
+                    </div>
+                  </div>
+                  <p className="text-sm text-text-secondary">{info.why}</p>
+                  {/* FIX-CHECKUPS: davlat dasturi bo'yicha majburiy oyna
+                      tavsiya etilgandan farq qiladigan bandlar uchun —
+                      ma'lumot xarakterida, muddat hisobiga ta'sir qilmaydi. */}
+                  {officialTrack && (
+                    <p className="text-xs text-text-muted">
+                      {dict.checklist.officialTrackLabel(officialTrack.minAge, officialTrack.maxAge, dict.checklist.frequencyLabels[officialTrack.frequency])}
+                    </p>
+                  )}
+                  {item.dueDate && item.status !== "done" && (
+                    <p className="text-xs text-text-muted">{formatDateDisplay(item.dueDate)}</p>
+                  )}
+                  {!readOnly && item.status !== "done" && (
+                    <div className="flex gap-2 pt-1">
+                      <Button variant="secondary" onClick={() => complete(item.id)}>
+                        {dict.checklist.markDoneButton}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => router.push(`/asosiy?checklistItemId=${item.id}`)}
+                      >
+                        {dict.checklist.findClinicButton}
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

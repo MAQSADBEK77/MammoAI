@@ -70,6 +70,12 @@ export interface OnboardingProfile {
   isPregnant: boolean;
   cycleRegularity: CycleRegularity;
   familyHistory: boolean;
+  /** FIX-CHECKUPS: JYYI/kontratseptsiya/bachadon bo'yni skrininggi kabi bir
+   * nechta yangi tekshiruv turi shunga bog'liq. 15 yoshgacha so'ralmaydi
+   * (avtomatik `false`). `familyHistory` bilan bir xil naqsh — onboarding
+   * so'rovnomasida "bilmayman" varianti ham bor, lekin saqlashda `false`ga
+   * yig'iladi (xuddi familyHistory kabi). */
+  sexuallyActive: boolean;
   lastCheckup: "recent" | "over_year" | "never" | "unknown";
   primaryGoal: Goal;
   heardAboutUs: HeardAboutUs | null;
@@ -189,6 +195,11 @@ export interface WellnessLog {
   calories: number;
 }
 
+// FIX-CHECKUPS: eski 7 ta tur — endi generateChecklist() ULARNI ISHLAB
+// CHIQARMAYDI (o'rniga pastdagi boyroq turlar keladi), lekin haqiqiy
+// foydalanuvchilarning eski `done` tarixini saqlab qolish uchun tur
+// sifatida O'CHIRILMAYDI (loyihaning "hech qachon o'chirma, faqat
+// yozishni to'xtat" konvensiyasi — masalan `high_contrast` ustuni kabi).
 export type ChecklistItemType =
   | "gyn_annual_checkup"
   | "pap_test"
@@ -196,7 +207,36 @@ export type ChecklistItemType =
   | "free_mammography_45"
   | "cycle_irregularity_followup"
   | "pregnancy_first_visit"
-  | "pregnancy_trimester_checkup";
+  | "pregnancy_trimester_checkup"
+  // --- Quyidagilar yangi, real manba (SSV/uzaig.uz milliy protokollari +
+  // xususiy klinika amaliyoti + JSSST) asosida qo'shildi ---
+  | "annual_preventive_exam"
+  | "first_gyn_visit"
+  | "hpv_vaccination"
+  | "pelvic_exam_speculum"
+  | "flora_smear"
+  | "cervical_cancer_screening"
+  | "pelvic_ultrasound"
+  | "breast_self_exam"
+  | "clinical_breast_exam"
+  | "breast_cancer_screening_mammography"
+  | "sti_panel"
+  | "contraception_counseling"
+  | "preconception_checkup"
+  | "prenatal_screening_stage1"
+  | "prenatal_screening_stage1b"
+  | "prenatal_screening_stage1c"
+  | "prenatal_screening_stage2"
+  | "pregnancy_patronage_visit"
+  | "postpartum_home_visit"
+  | "menopause_checkup"
+  | "torch_panel"
+  | "group_b_strep_screening"
+  | "bv_targeted_screening";
+
+/** Tekshiruv ekranida bo'limlarga guruhlash uchun — statik, har bir
+ * ChecklistItemType uchun CHECKUP_CATEGORY (checklist-rules.ts)da beriladi. */
+export type ChecklistCategory = "screening" | "vaccination" | "lab" | "imaging" | "consultation" | "self_exam" | "pregnancy" | "postpartum";
 
 export type ChecklistStatus = "pending" | "done" | "overdue";
 

@@ -130,6 +130,7 @@ export interface OnboardingPayload {
   isPregnant: boolean;
   cycleRegularity: OnboardingProfile["cycleRegularity"];
   familyHistory: boolean;
+  sexuallyActive: boolean;
   lastCheckup: OnboardingProfile["lastCheckup"];
   primaryGoal: Goal;
   heardAboutUs: HeardAboutUs;
