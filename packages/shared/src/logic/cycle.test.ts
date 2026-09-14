@@ -234,6 +234,31 @@ describe("deriveAdaptiveCycleSettings", () => {
     // ma'lumotli (resultMany) 32'ga YAQINROQ bo'lishi kerak.
     expect(resultMany!.averageCycleLength).toBeGreaterThan(resultFew!.averageCycleLength);
   });
+
+  // CYCLE-ALGO-10: shrinkage formulasi FILTRLANGAN (outlier'siz) nuqtalar
+  // sonini "n" sifatida ishlatishi kerak, XOM sonni emas. Bu stsenariyda 6 ta
+  // sikldan 1 tasi (50 kun) aniq outlier — qolgan 5 tasi 19-21 kun atrofida,
+  // prior esa 28. Eski (buggy) formula n=6 bilan shaxsiy o'rtachaga ORTIQCHA
+  // ishonch berib 22 kun berardi; to'g'irlangan formula n=5 bilan priorga
+  // biroz yaqinroq (ko'proq ehtiyotkor) 23 kun beradi — qo'lda tasdiqlangan.
+  it("outlier chiqarib tashlangan sikllarda shrinkage FILTRLANGAN nuqtalar soniga (XOM songa emas) asoslanadi", () => {
+    const logs = [
+      { date: "2024-01-01", flow: "medium" as const },
+      { date: "2024-02-20", flow: "medium" as const }, // +50 — outlier
+      { date: "2024-03-11", flow: "medium" as const }, // +20
+      { date: "2024-03-30", flow: "medium" as const }, // +19
+      { date: "2024-04-20", flow: "medium" as const }, // +21
+      { date: "2024-05-10", flow: "medium" as const }, // +20
+      { date: "2024-05-29", flow: "medium" as const }, // +19
+    ];
+    const fallback = { lastPeriodStart: "2020-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+    const result = deriveAdaptiveCycleSettings(logs, fallback, "2024-06-01");
+    expect(result?.cycleLengthOutliers).toEqual([50]);
+    // To'g'irlashdan OLDIN (n=6, XOM) bu 22 bo'lardi — endi (n=5, FILTRLANGAN)
+    // 23, ya'ni priorga (28) biroz yaqinroq, chunki haqiqatan faqat 5 ta
+    // nuqta shaxsiy o'rtachani qo'llab-quvvatlaydi, 6 emas.
+    expect(result?.averageCycleLength).toBe(23);
+  });
 });
 
 describe("predictCycle", () => {

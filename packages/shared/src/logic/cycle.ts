@@ -412,7 +412,15 @@ export function deriveAdaptiveCycleSettings(
   // — bu real, foydalanuvchiga xos boshlang'ich taxmin, umumiy populyatsiya
   // o'rtachasidan ko'ra yaxshiroq boshlanish nuqtasi.
   const populationPrior = fallback.averageCycleLength || DEFAULT_CYCLE_LENGTH;
-  const shrunkCycleLength = (lengths.length * personalCycleAvg + SHRINKAGE_K * populationPrior) / (lengths.length + SHRINKAGE_K);
+  // CYCLE-ALGO-10: shrinkage'ning "n"i — XOM `lengths.length` EMAS,
+  // `cycleLengthsForAvg.length` (FILTRLANGAN, ya'ni `personalCycleAvg`
+  // haqiqatan shundan hisoblangan nuqtalar soni). Ilgari `lengths.length`
+  // ishlatilardi — masalan 6 tadan 2 tasi outlier deb chiqarib tashlangan
+  // bo'lsa, formula "6 ta ishonchli ma'lumot bor" deb hisoblab,
+  // personalCycleAvg'ga (aslida faqat 4 ta nuqta qo'llab-quvvatlaydigan
+  // darajadan) ORTIQ ishonch berardi.
+  const shrinkageN = cycleLengthsForAvg.length;
+  const shrunkCycleLength = (shrinkageN * personalCycleAvg + SHRINKAGE_K * populationPrior) / (shrinkageN + SHRINKAGE_K);
   const avgCycleLength = clamp(Math.round(shrunkCycleLength), MIN_SANE_CYCLE_LENGTH, MAX_SANE_CYCLE_LENGTH);
   const lastStart = starts[starts.length - 1];
   // FIX2-19: nomi va hujjati "oxirgi bir necha davrdan o'rtacha" deydi (xuddi
