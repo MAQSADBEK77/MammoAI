@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ChecklistCategory, ChecklistItem, ChecklistResponse } from "@mammoai/shared";
 import { formatDateDisplay, CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
@@ -40,6 +41,7 @@ function groupByCategory(items: ChecklistItem[]): { category: ChecklistCategory;
 
 export default function ChecklistPage() {
   const { dict } = useI18n();
+  const { onboardingProfile } = useSession();
   const { resolve } = useIllustrations();
   const router = useRouter();
   const [data, setData] = useState<ChecklistResponse | null>(null);
@@ -138,7 +140,21 @@ export default function ChecklistPage() {
             {groupItems.map((item) => {
               const info = dict.checklist.items[item.type];
               const StatusIcon = STATUS_ICON[item.status];
+              // FIX3-05: ilgari yosh tekshiruvisiz ko'rsatilardi — masalan
+              // 20 yoshli foydalanuvchi "Rasmiy dastur: 35-55 yosh" degan
+              // (o'ziga aloqasi yo'q) belgini ko'rib, "35 yoshgacha kerak
+              // emas" deb noto'g'ri tushunishi mumkin edi. Endi faqat
+              // foydalanuvchi HAQIQATAN shu yosh oralig'ida bo'lsagina
+              // ko'rsatiladi (hamkorning ro'yxatini ko'rayotganda — o'z
+              // yoshi bilan hamkorning yoshini aralashtirmaslik uchun —
+              // umuman ko'rsatilmaydi).
               const officialTrack = CHECKUP_OFFICIAL_TRACK[item.type];
+              const showOfficialTrack =
+                officialTrack &&
+                !readOnly &&
+                onboardingProfile != null &&
+                onboardingProfile.age >= officialTrack.minAge &&
+                onboardingProfile.age <= officialTrack.maxAge;
               return (
                 <Card key={item.id} className="space-y-2">
                   <div className="flex items-start justify-between gap-3">
@@ -157,7 +173,7 @@ export default function ChecklistPage() {
                   {/* FIX-CHECKUPS: davlat dasturi bo'yicha majburiy oyna
                       tavsiya etilgandan farq qiladigan bandlar uchun —
                       ma'lumot xarakterida, muddat hisobiga ta'sir qilmaydi. */}
-                  {officialTrack && (
+                  {showOfficialTrack && (
                     <p className="text-xs text-text-muted">
                       {dict.checklist.officialTrackLabel(officialTrack.minAge, officialTrack.maxAge, dict.checklist.frequencyLabels[officialTrack.frequency])}
                     </p>

@@ -6,6 +6,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import type { ChecklistCategory, ChecklistItem, ChecklistResponse } from "@mammoai/shared";
 import { CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import { useThemeColors } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useDrawer } from "@/lib/drawer";
@@ -41,6 +42,7 @@ function groupByCategory(items: ChecklistItem[]): { category: ChecklistCategory;
 
 export default function ChecklistScreen() {
   const { dict } = useI18n();
+  const { onboardingProfile } = useSession();
   const themeColors = useThemeColors();
   // web: "pending" holati `text-text-muted` (CSS o'zgaruvchi) ishlatadi —
   // qorong'u rejimda o'zgaradi; bu yerda avval qattiq yozilgan yorug' rejim
@@ -172,7 +174,15 @@ export default function ChecklistScreen() {
               {groupItems.map((item) => {
                 const info = dict.checklist.items[item.type];
                 const StatusIcon = STATUS_ICON[item.status];
+                // FIX3-05: web bilan bir xil — faqat foydalanuvchi HAQIQATAN
+                // shu yosh oralig'ida bo'lsagina ko'rsatiladi.
                 const officialTrack = CHECKUP_OFFICIAL_TRACK[item.type];
+                const showOfficialTrack =
+                  officialTrack &&
+                  !readOnly &&
+                  onboardingProfile != null &&
+                  onboardingProfile.age >= officialTrack.minAge &&
+                  onboardingProfile.age <= officialTrack.maxAge;
                 return (
                   <Card key={item.id} className="gap-2">
                     <View className="flex-row items-start justify-between gap-3">
@@ -193,7 +203,7 @@ export default function ChecklistScreen() {
                     <Text className="text-sm text-text-secondary">{info.why}</Text>
                     {/* FIX-CHECKUPS: davlat dasturi bo'yicha majburiy oyna
                         tavsiya etilgandan farq qiladigan bandlar uchun. */}
-                    {officialTrack && (
+                    {showOfficialTrack && (
                       <Text className="text-xs text-text-muted">
                         {dict.checklist.officialTrackLabel(officialTrack.minAge, officialTrack.maxAge, dict.checklist.frequencyLabels[officialTrack.frequency])}
                       </Text>
