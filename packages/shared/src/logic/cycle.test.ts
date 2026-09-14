@@ -14,6 +14,15 @@ import {
   isCycleIrregular,
   predictCycle,
 } from "./cycle";
+import {
+  backtestPredictor,
+  legacyPredictor,
+  scenarioHighlyIrregularPCOS,
+  scenarioLowData,
+  scenarioModeratelyIrregular,
+  scenarioPostpartum,
+  scenarioVeryRegular,
+} from "./cycle-backtest";
 
 describe("detectPeriodStarts", () => {
   it("yakka (isolated) spotting kunini hayz boshlanishi deb hisoblamaydi", () => {
@@ -217,6 +226,41 @@ describe("isCycleIrregular", () => {
 
   it("barqaror sikllarni tartibsiz deb hisoblamaydi", () => {
     expect(isCycleIrregular([28, 29, 27])).toBe(false); // farq 2
+  });
+});
+
+// CYCLE-ALGO-01: backtest infratuzilmasi — bu blok "harness to'g'ri
+// ishlayaptimi"ni tasdiqlaydi VA `legacyPredictor` (CYCLE-ALGO-01'dan
+// OLDINGI, muzlatilgan algoritm)ning bazaviy ("baseline") aniqlik
+// raqamlarini regressiya sifatida qotirib qo'yadi — bu raqamlar `./cycle.ts`
+// qanchalik o'zgarmasin ABADIY shu holicha qoladi (legacyPredictor hech
+// qachon o'zgarmaydi), shuning uchun `currentPredictor` emas, aynan
+// `legacyPredictor` ishlatiladi. Har bir keyingi CYCLE-ALGO-0X bosqichi
+// o'zining `currentPredictor`ga asoslangan "yangi natija eskisidan yaxshi
+// yoki teng" testini shu bazaviy raqamlarga solishtirib qo'shadi.
+describe("cycle-backtest harness (CYCLE-ALGO-01)", () => {
+  it("kam ma'lumot stsenariysida (2-3 sikl) backtest null qaytaradi (baholash uchun yetarli emas)", () => {
+    expect(backtestPredictor(scenarioLowData(), legacyPredictor)).toBeNull();
+  });
+
+  it("BASELINE (legacyPredictor, CYCLE-ALGO-01'dan oldingi muzlatilgan algoritm) — juda muntazam stsenariy", () => {
+    const result = backtestPredictor(scenarioVeryRegular(), legacyPredictor);
+    expect(result).toEqual({ avgErrorDays: 0.8, within2DaysPct: 100, cyclesEvaluated: 10 });
+  });
+
+  it("BASELINE — o'rtacha tartibsiz stsenariy", () => {
+    const result = backtestPredictor(scenarioModeratelyIrregular(), legacyPredictor);
+    expect(result).toEqual({ avgErrorDays: 2.9, within2DaysPct: 50, cyclesEvaluated: 10 });
+  });
+
+  it("BASELINE — yuqori tartibsiz/PCOS-o'xshash stsenariy", () => {
+    const result = backtestPredictor(scenarioHighlyIrregularPCOS(), legacyPredictor);
+    expect(result).toEqual({ avgErrorDays: 10.5, within2DaysPct: 10, cyclesEvaluated: 10 });
+  });
+
+  it("BASELINE — tug'ruqdan keyingi stsenariy", () => {
+    const result = backtestPredictor(scenarioPostpartum(), legacyPredictor);
+    expect(result).toEqual({ avgErrorDays: 9.1, within2DaysPct: 14, cyclesEvaluated: 7 });
   });
 });
 
