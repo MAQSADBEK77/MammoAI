@@ -316,7 +316,7 @@ export async function registerTelegramStart(token: string, chatId: string): Prom
 export async function confirmPhoneViaContact(
   chatId: string,
   sharedPhone: string
-): Promise<{ matched: true; phone: string; language: Language; code: string } | { matched: false } | null> {
+): Promise<{ matched: true; token: string; phone: string; language: Language; code: string } | { matched: false } | null> {
   await ensureSchema();
   const rows = (await sql`
     SELECT token, phone, language FROM phone_verifications
@@ -347,7 +347,18 @@ export async function confirmPhoneViaContact(
     RETURNING token
   `) as unknown as { token: string }[];
   if (updated.length === 0) return null;
-  return { matched: true, phone: row.phone, language: row.language, code };
+  return { matched: true, token: row.token, phone: row.phone, language: row.language, code };
+}
+
+/** FIX3-08: kod DB'ga yozilgandan keyin Telegram xabari yuborilishi
+ * MUVAFFAQIYATSIZ bo'lsa (bot bloklangan, tarmoq xatosi) chaqiriladi —
+ * saqlangan kodni tozalab, foydalanuvchi qayta kontakt yuborib qayta
+ * urinishi mumkin bo'lishini ta'minlaydi (aks holda keyingi urinish ham
+ * "kod allaqachon bor" jim mantig'iga tushib, foydalanuvchi hech qachon
+ * kelmaydigan xabarni abadiy kutib qolardi). */
+export async function clearPhoneVerificationCode(token: string): Promise<void> {
+  await ensureSchema();
+  await sql`UPDATE phone_verifications SET code = NULL WHERE token = ${token}`;
 }
 
 /** Kodni tekshiradi — to'g'ri bo'lsa, yozuvni "ishlatilgan" deb belgilaydi

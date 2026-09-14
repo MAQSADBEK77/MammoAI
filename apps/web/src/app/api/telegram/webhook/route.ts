@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Language } from "@mammoai/shared";
-import { confirmMiniAppContact, confirmPhoneViaContact, recordTelegramBotStart, registerTelegramStart } from "@/server/repo";
+import { clearPhoneVerificationCode, confirmMiniAppContact, confirmPhoneViaContact, recordTelegramBotStart, registerTelegramStart } from "@/server/repo";
 import { getTelegramWebhookSecret, miniAppInlineKeyboard, removeKeyboard, requestContactKeyboard, sendTelegramMessage } from "@/server/telegram-bot";
 
 /** Vaqt-hujumiga chidamli solishtirish — admin-auth.ts'dagi bilan bir xil naqsh. */
@@ -156,7 +156,20 @@ export async function POST(request: NextRequest) {
       const result = await confirmPhoneViaContact(String(chatId), message.contact.phone_number);
       if (result?.matched) {
         const m = messagesFor(result.language);
-        await sendTelegramMessage(String(chatId), m.codeSent(result.code), removeKeyboard());
+        // FIX3-08: kod DB'ga YOZILGANDAN keyin xabar yuboriladi — agar
+        // yuborish muvaffaqiyatsiz bo'lsa (bot bloklangan, tarmoq xatosi),
+        // bu xato ilgari JIM YUTILARDI (webhook har doim 200 qaytaradi) —
+        // foydalanuvchi hech qachon kelmaydigan xabarni kutib, qayta ham
+        // urinolmasdi (DB'da kod allaqachon bor, keyingi urinish "jim
+        // qolamiz" mantig'iga tushardi). Endi yuborish muvaffaqiyatsiz
+        // bo'lsa, saqlangan kod tozalanadi — foydalanuvchi qayta kontakt
+        // yuborib qayta urinishi mumkin bo'ladi.
+        try {
+          await sendTelegramMessage(String(chatId), m.codeSent(result.code), removeKeyboard());
+        } catch (error) {
+          console.error("Telegram tasdiqlash kodini yuborishda xato:", error);
+          await clearPhoneVerificationCode(result.token);
+        }
       } else if (result && !result.matched) {
         await sendTelegramMessage(String(chatId), messagesFor("uz").mismatch, removeKeyboard());
       }
