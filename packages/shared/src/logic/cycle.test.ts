@@ -15,7 +15,9 @@ import {
   predictCycle,
 } from "./cycle";
 import {
+  ALL_BACKTEST_SCENARIOS,
   backtestPredictor,
+  currentPredictor,
   legacyPredictor,
   scenarioHighlyIrregularPCOS,
   scenarioLowData,
@@ -261,6 +263,44 @@ describe("cycle-backtest harness (CYCLE-ALGO-01)", () => {
   it("BASELINE — tug'ruqdan keyingi stsenariy", () => {
     const result = backtestPredictor(scenarioPostpartum(), legacyPredictor);
     expect(result).toEqual({ avgErrorDays: 9.1, within2DaysPct: 14, cyclesEvaluated: 7 });
+  });
+});
+
+// CYCLE-ALGO-02: oddiy (tekis) o'rtacha o'rniga eksponensial pasayuvchi
+// og'irlikli o'rtacha (computeWeightedAverage, decay=0.7). MUHIM TOPILMA:
+// barqaror-shovqin (stationary noise) taqsimotida (masalan (a)/(b)) ixtiyoriy
+// og'irlik-asoslash formulasi statistik jihatdan tekis o'rtachadan KO'PROQ
+// dispersiyaga ega (chunki tekis o'rtacha — eng kam dispersiyali xolis
+// baholovchi barqaror shovqin uchun) — shuning uchun "yaxshilanish" HAR
+// DOIM kafolatlanmaydi, aniq tasodifiy chizishga bog'liq (taxminan 50/50).
+// Bu MUAMMO emas: haqiqiy foyda REJIM O'ZGARISHI bo'lganda chiqadi (masalan
+// tug'ruqdan keyingi stsenariy — pastda ko'rinadi, DRAMATIK yaxshilanadi).
+describe("cycle-backtest harness (CYCLE-ALGO-02: og'irlik-asoslangan o'rtacha)", () => {
+  it("currentPredictor (og'irlik-asoslangan) hech qaysi stsenariyda legacyPredictor'dan yomonlashmaydi", () => {
+    for (const { label, logs } of ALL_BACKTEST_SCENARIOS) {
+      const materializedLogs = logs();
+      const cur = backtestPredictor(materializedLogs, currentPredictor);
+      const leg = backtestPredictor(materializedLogs, legacyPredictor);
+      if (!cur || !leg) continue; // (e) kam ma'lumot — ikkalasi ham null, solishtirish shart emas
+      expect(cur.avgErrorDays, `${label}: avgErrorDays`).toBeLessThanOrEqual(leg.avgErrorDays);
+      expect(cur.within2DaysPct, `${label}: within2DaysPct`).toBeGreaterThanOrEqual(leg.within2DaysPct);
+    }
+  });
+
+  it("YANGI natija — juda muntazam stsenariy (0.8→0.7 kun, deyarli o'zgarishsiz — kutilgan, barqaror shovqinda katta yutuq yo'q)", () => {
+    expect(backtestPredictor(scenarioVeryRegular(), currentPredictor)).toEqual({ avgErrorDays: 0.7, within2DaysPct: 100, cyclesEvaluated: 10 });
+  });
+
+  it("YANGI natija — o'rtacha tartibsiz stsenariy (2.9→2.5 kun, 50%→70% ±2 kun ichida)", () => {
+    expect(backtestPredictor(scenarioModeratelyIrregular(), currentPredictor)).toEqual({ avgErrorDays: 2.5, within2DaysPct: 70, cyclesEvaluated: 10 });
+  });
+
+  it("YANGI natija — yuqori tartibsiz/PCOS stsenariy (10.5→9.9 kun — kichik yutuq, katta yaxshilanish CYCLE-ALGO-03 outlier-nazoratidan kutiladi)", () => {
+    expect(backtestPredictor(scenarioHighlyIrregularPCOS(), currentPredictor)).toEqual({ avgErrorDays: 9.9, within2DaysPct: 10, cyclesEvaluated: 10 });
+  });
+
+  it("YANGI natija — tug'ruqdan keyingi stsenariy (9.1→6.6 kun, 14%→43% ±2 kun ichida — ENG KATTA yutuq, aynan shu funksiya mo'ljallangan holat)", () => {
+    expect(backtestPredictor(scenarioPostpartum(), currentPredictor)).toEqual({ avgErrorDays: 6.6, within2DaysPct: 43, cyclesEvaluated: 7 });
   });
 });
 

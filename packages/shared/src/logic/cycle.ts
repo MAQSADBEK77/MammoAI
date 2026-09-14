@@ -39,6 +39,39 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+// CYCLE-ALGO-02: RECENCY_DECAY — eksponensial pasayuvchi og'irlik bazasi.
+// 0.7 tanlangan sabab: N=6 (ADAPTIVE_MAX_CYCLES) oynada eng eski sikl
+// (weight=0.7^5≈0.168) eng yangisiga (weight=1) nisbatan ~1/6 ta'sirga ega
+// bo'ladi — foydali "yaqinroq tarix ko'proq ahamiyatli" xatti-harakatni
+// beradi, lekin haddan tashqari tor emas (masalan 0.5 bo'lganda eng eski
+// sikl deyarli hech qanday og'irlikka ega bo'lmas edi).
+const RECENCY_DECAY = 0.7;
+
+/**
+ * CYCLE-ALGO-02: eksponensial pasayuvchi og'irlikli o'rtacha — oddiy (tekis)
+ * o'rtacha o'rniga, eng so'nggi qiymat eng ko'p ta'sir qiladi (tana holati,
+ * yosh, stress darajasi vaqt bilan o'zgaradi — 6 oy oldingi sikl bugungi
+ * bashoratga bugungiga teng darajada ta'sir qilmasligi kerak).
+ * `values[0]` ENG ESKI, `values[N-1]` ENG YANGI deb qabul qilinadi (chaqiruvchi
+ * shu tartibda uzatishi SHART — cycle.ts'dagi barcha massivlar allaqachon
+ * shu tartibda: `starts`/`lengths` doim xronologik o'sish tartibida).
+ * `weight_i = decay^(N-1-i)`, `weightedAvg = Σ(value_i·weight_i) / Σ(weight_i)`.
+ * Bitta yordamchi funksiya — averageCycleLength VA averagePeriodLength
+ * ikkalasida ham ishlatiladi.
+ */
+export function computeWeightedAverage(values: number[], decay = RECENCY_DECAY): number {
+  if (values.length === 0) return 0;
+  const n = values.length;
+  let weightedSum = 0;
+  let weightTotal = 0;
+  for (let i = 0; i < n; i++) {
+    const weight = decay ** (n - 1 - i);
+    weightedSum += values[i] * weight;
+    weightTotal += weight;
+  }
+  return weightedSum / weightTotal;
+}
+
 /** Saralangan sanalarni ketma-ket (CYCLE_GAP_DAYS ichida) "streak"larga
  * guruhlaydi — bitta kunlik bo'shliq (unutilgan yozuv) butun hayzni ikkiga
  * bo'lib yubormasligi uchun. `detectPeriodStarts` VA `computePeriodLength`
@@ -165,11 +198,11 @@ export function deriveAdaptiveCycleSettings(
     };
   }
 
-  const avgCycleLength = clamp(
-    Math.round(lengths.reduce((sum, l) => sum + l, 0) / lengths.length),
-    MIN_SANE_CYCLE_LENGTH,
-    MAX_SANE_CYCLE_LENGTH
-  );
+  // CYCLE-ALGO-02: oddiy (tekis) o'rtacha o'rniga og'irlik-asoslangan —
+  // barcha 6 ta sikl bir xil og'irlikda bo'lgan ilgarigi mantiq eng so'nggi
+  // (haqiqatan foydali) o'zgarishlarni eski ma'lumot bilan "suyultirib"
+  // yuborardi.
+  const avgCycleLength = clamp(Math.round(computeWeightedAverage(lengths)), MIN_SANE_CYCLE_LENGTH, MAX_SANE_CYCLE_LENGTH);
   const lastStart = starts[starts.length - 1];
   // FIX2-19: nomi va hujjati "oxirgi bir necha davrdan o'rtacha" deydi (xuddi
   // averageCycleLength kabi), lekin ilgari faqat ENG SO'NGGI davr uzunligi
@@ -182,9 +215,10 @@ export function deriveAdaptiveCycleSettings(
     .slice(-ADAPTIVE_MAX_CYCLES)
     .map((start) => computePeriodLength(logs, start, today))
     .filter((n): n is number => n !== null);
+  // CYCLE-ALGO-02: xuddi avgCycleLength kabi — og'irlik-asoslangan o'rtacha.
   const periodLength =
     recentPeriodLengths.length > 0
-      ? Math.round(recentPeriodLengths.reduce((sum, l) => sum + l, 0) / recentPeriodLengths.length)
+      ? Math.round(computeWeightedAverage(recentPeriodLengths))
       : (fallback.averagePeriodLength ?? DEFAULT_PERIOD_LENGTH);
 
   return {
