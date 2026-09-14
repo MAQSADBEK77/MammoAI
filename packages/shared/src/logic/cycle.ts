@@ -94,15 +94,24 @@ export function computeMedian(values: number[]): number {
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
 
-/** CYCLE-ALGO-07: standart og'ish (populyatsiya, n'ga bo'lingan — namuna
- * emas, chunki `values` o'zi ANIQLANGAN sikllarning TO'LIQ to'plami, tasodifiy
- * namuna emas). n<2'da 0 qaytaradi — chaqiruvchi bu holatda alohida
- * DEFAULT_STD_DEV_DAYS bilan almashtiradi (bitta nuqtaning "og'ishi" 0 emas,
- * NOMA'LUM). */
+/** CYCLE-ALGO-09: NAMUNA standart og'ishi (Bessel tuzatishi, `n-1`ga
+ * bo'linadi) — ILGARI populyatsiya formulasi (`n`ga bo'linadi) ishlatilgan
+ * edi, lekin bu yerdagi maqsad — KELAJAKDAGI (hali kuzatilmagan) sikl
+ * uzunligini bashorat qilishdagi noaniqlikni baholash, ya'ni klassik
+ * "namuna"dan populyatsiyani baholash muammosi (`values` — foydalanuvchining
+ * BARCHA siklari emas, balki uning HAQIQIY, cheksiz "haqiqiy" tarqalishidan
+ * olingan cheklangan namuna). Populyatsiya formulasi noaniqlikni tizimli
+ * ravishda KAMROQ ko'rsatadi (n=2'da ~41%, n=6'da ~9.5% kam baholaydi) —
+ * bu esa CYCLE-ALGO-07ning o'z maqsadiga ("soxta aniqlik taassurotini
+ * bermaslik") ZID edi: diapazon kerakligidan TORROQ chiqardi, ayniqsa kam
+ * ma'lumotli foydalanuvchilarda (aynan ular uchun bu eng muhim). n<2'da hali
+ * ham 0 qaytaradi — chaqiruvchi bu holatda alohida DEFAULT_STD_DEV_DAYS
+ * bilan almashtiradi (bitta nuqtaning "og'ishi" 0 emas, NOMA'LUM;
+ * Bessel tuzatishi n=1'da 0ga bo'lishga olib kelardi). */
 export function computeStdDev(values: number[]): number {
   if (values.length < 2) return 0;
   const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-  const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+  const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / (values.length - 1);
   return Math.sqrt(variance);
 }
 

@@ -341,7 +341,21 @@ describe("computeStdDev", () => {
   });
 
   it("tarqoq qiymatlar uchun musbat son qaytaradi", () => {
-    expect(computeStdDev([20, 28, 36])).toBeCloseTo(6.53, 1);
+    // CYCLE-ALGO-09: namuna og'ishi (n-1=2ga bo'lingan) — sum((x-mean)^2)=128,
+    // 128/2=64, sqrt(64)=8. (Eski populyatsiya formulasi 128/3=42.67,
+    // sqrt≈6.53 berardi — endi bilan tekshirib, real farqni ko'rsatish uchun.)
+    expect(computeStdDev([20, 28, 36])).toBeCloseTo(8, 5);
+  });
+
+  // CYCLE-ALGO-09: namuna og'ishi populyatsiya og'ishidan HAR DOIM kattaroq
+  // (yoki teng, n juda katta bo'lganda) — sqrt(n/(n-1)) koeffitsienti bilan.
+  it("namuna og'ishi populyatsiya og'ishidan kattaroq (Bessel tuzatishi)", () => {
+    const values = [22, 25, 28, 31, 35, 40];
+    const n = values.length;
+    const mean = values.reduce((s, v) => s + v, 0) / n;
+    const populationVariance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
+    const populationStdDev = Math.sqrt(populationVariance);
+    expect(computeStdDev(values)).toBeGreaterThan(populationStdDev);
   });
 });
 
