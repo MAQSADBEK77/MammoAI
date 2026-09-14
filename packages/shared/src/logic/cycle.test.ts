@@ -144,7 +144,13 @@ describe("deriveAdaptiveCycleSettings", () => {
     const result = deriveAdaptiveCycleSettings(logs, { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 }, "2026-03-01");
     expect(result?.cyclesAnalyzed).toBe(2);
     expect(result?.lastPeriodStart).toBe("2026-02-28");
-    expect(result?.averageCycleLength).toBe(29); // (28+30)/2
+    // CYCLE-ALGO-04: og'irlik-asoslangan shaxsiy o'rtacha (~29.18) endi
+    // Bayesian shrinkage bilan fallback.averageCycleLength (28)ga qarab
+    // "tortiladi" — (2*29.18 + 3*28)/(2+3) ≈ 28.47 → 28ga yaxlitlanadi.
+    // Ilgari (shrinkage'siz) 29 edi — bu REGRESSIYA emas, ATAYLAB: n=2'da
+    // hali qattiq "to'liq shaxsiy" ishonch berish shoshqaloqlik (CYCLE-
+    // ALGO-04ning butun maqsadi).
+    expect(result?.averageCycleLength).toBe(28);
   });
 
   // FIX2-19: averagePeriodLength ilgari faqat ENG SO'NGGI davr uzunligini
@@ -176,6 +182,47 @@ describe("deriveAdaptiveCycleSettings", () => {
     ];
     const result = deriveAdaptiveCycleSettings(logs, { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 });
     expect(result?.averageCycleLength).toBeGreaterThanOrEqual(15); // MIN_SANE_CYCLE_LENGTH
+  });
+
+  // CYCLE-ALGO-04: Bayesian shrinkage — qattiq "2 tadan kam = to'liq
+  // fallback, 2+ = to'liq shaxsiy" sakrashi endi yo'q, n o'sgan sari
+  // fallback'dan (populationPrior) shaxsiy o'rtachaga YUMSHOQ o'tadi.
+  it("kam ma'lumotda (n=2) natija fallback (prior) TOMON tortiladi, unga TENG bo'lib qolmaydi", () => {
+    const logs = [
+      { date: "2026-01-01", flow: "medium" as const },
+      { date: "2026-02-02", flow: "medium" as const }, // +32 (shaxsiy o'rtachadan uzoq)
+    ];
+    const fallback = { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+    const result = deriveAdaptiveCycleSettings(logs, fallback);
+    // Shaxsiy (32) bilan prior (28) orasida, ikkalasiga ham TENG EMAS —
+    // shrinkage haqiqatan aralashtirayotganini tasdiqlaydi.
+    expect(result?.averageCycleLength).toBeGreaterThan(28);
+    expect(result?.averageCycleLength).toBeLessThan(32);
+  });
+
+  it("ko'proq sikl (n katta) bo'lgani sari shaxsiy o'rtacha priordan KO'PROQ ustunlik qiladi", () => {
+    const fallback = { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+    // 2 ta sikl, ikkalasi ham 32 kun.
+    const logsFew = [
+      { date: "2026-01-01", flow: "medium" as const },
+      { date: "2026-02-02", flow: "medium" as const }, // +32
+      { date: "2026-03-06", flow: "medium" as const }, // +32
+    ];
+    // 6 ta sikl, hammasi 32 kun (ADAPTIVE_MAX_CYCLES chegarasi).
+    const logsMany = [
+      { date: "2025-09-01", flow: "medium" as const },
+      { date: "2025-10-03", flow: "medium" as const }, // +32
+      { date: "2025-11-04", flow: "medium" as const }, // +32
+      { date: "2025-12-06", flow: "medium" as const }, // +32
+      { date: "2026-01-07", flow: "medium" as const }, // +32
+      { date: "2026-02-08", flow: "medium" as const }, // +32
+      { date: "2026-03-12", flow: "medium" as const }, // +32
+    ];
+    const resultFew = deriveAdaptiveCycleSettings(logsFew, fallback);
+    const resultMany = deriveAdaptiveCycleSettings(logsMany, fallback);
+    // Ikkalasi ham 28 (prior) va 32 (shaxsiy) orasida, lekin ko'proq
+    // ma'lumotli (resultMany) 32'ga YAQINROQ bo'lishi kerak.
+    expect(resultMany!.averageCycleLength).toBeGreaterThan(resultFew!.averageCycleLength);
   });
 });
 
@@ -367,21 +414,21 @@ describe("cycle-backtest harness (joriy algoritm holati — har bosqichda yangil
     }
   });
 
-  // CYCLE-ALGO-03 holati (og'irlik-asoslangan o'rtacha + median/outlier-nazorat):
+  // CYCLE-ALGO-04 holati (+ Bayesian shrinkage, ADAPTIVE_MIN_CYCLES o'chirildi):
   it("JORIY natija — juda muntazam stsenariy", () => {
-    expect(backtestPredictor(scenarioVeryRegular(), currentPredictor)).toEqual({ avgErrorDays: 0.7, within2DaysPct: 100, cyclesEvaluated: 10 });
+    expect(backtestPredictor(scenarioVeryRegular(), currentPredictor)).toEqual({ avgErrorDays: 0.6, within2DaysPct: 100, cyclesEvaluated: 10 });
   });
 
   it("JORIY natija — o'rtacha tartibsiz stsenariy", () => {
-    expect(backtestPredictor(scenarioModeratelyIrregular(), currentPredictor)).toEqual({ avgErrorDays: 2.7, within2DaysPct: 60, cyclesEvaluated: 10 });
+    expect(backtestPredictor(scenarioModeratelyIrregular(), currentPredictor)).toEqual({ avgErrorDays: 2.8, within2DaysPct: 50, cyclesEvaluated: 10 });
   });
 
   it("JORIY natija — yuqori tartibsiz/PCOS stsenariy", () => {
-    expect(backtestPredictor(scenarioHighlyIrregularPCOS(), currentPredictor)).toEqual({ avgErrorDays: 9.9, within2DaysPct: 10, cyclesEvaluated: 10 });
+    expect(backtestPredictor(scenarioHighlyIrregularPCOS(), currentPredictor)).toEqual({ avgErrorDays: 9.7, within2DaysPct: 10, cyclesEvaluated: 10 });
   });
 
-  it("JORIY natija — tug'ruqdan keyingi stsenariy", () => {
-    expect(backtestPredictor(scenarioPostpartum(), currentPredictor)).toEqual({ avgErrorDays: 6.4, within2DaysPct: 43, cyclesEvaluated: 7 });
+  it("JORIY natija — tug'ruqdan keyingi stsenariy (shrinkage'ning ENG KATTA yutug'i)", () => {
+    expect(backtestPredictor(scenarioPostpartum(), currentPredictor)).toEqual({ avgErrorDays: 2.6, within2DaysPct: 57, cyclesEvaluated: 7 });
   });
 });
 

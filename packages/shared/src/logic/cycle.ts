@@ -13,8 +13,13 @@ export const IRREGULARITY_MONTHS_THRESHOLD = 3;
 // uzunligini "o'rganish" uchun (bir marta onboarding'da kiritilgan statik
 // qiymatga abadiy tayanish o'rniga — Flo/Clue kabi ilovalar shunday ishlaydi).
 const CYCLE_GAP_DAYS = 2; // shuncha kun flow'siz o'tsa, keyingi flow kuni yangi sikl boshlanishi hisoblanadi
-const ADAPTIVE_MIN_CYCLES = 2; // shundan kam aniqlangan sikl bo'lsa, hali ishonchli emas — sozlamalarga tayaniladi
 const ADAPTIVE_MAX_CYCLES = 6; // o'rtacha shu oxirgi N ta sikldan hisoblanadi (juda eski ma'lumot og'irlik qilmasin)
+// CYCLE-ALGO-04: eski ADAPTIVE_MIN_CYCLES=2 QATTIQ chegarasi o'rniga —
+// "2 ta bo'lsa to'liq shaxsiy o'rtacha" degan keskin sakrashni Bayesian
+// shrinkage bilan almashtiradi (pastda, deriveAdaptiveCycleSettings ichida).
+// "3 ta siklga teng ishonch og'irligi" — n=SHRINKAGE_K'da shaxsiy va umumiy
+// (prior) taxminan teng og'irlikda bo'ladi (n/(n+k) = 3/6 = 50%).
+const SHRINKAGE_K = 3;
 const MIN_SANE_CYCLE_LENGTH = 15;
 const MAX_SANE_CYCLE_LENGTH = 60;
 const MIN_SANE_PERIOD_LENGTH = 1;
@@ -246,7 +251,14 @@ export function deriveAdaptiveCycleSettings(
   const starts = detectPeriodStarts(logs);
   const lengths = computeCycleLengths(logs);
 
-  if (starts.length < ADAPTIVE_MIN_CYCLES || lengths.length === 0) {
+  // CYCLE-ALGO-04: `lengths.length === 0` (0 yoki 1 ta aniqlangan sikl
+  // boshlanishi — gap hisoblab bo'lmaydi) hali ham TO'LIQ fallback'ga
+  // tushadi, chunki hech qanday shaxsiy SIKL UZUNLIGI ma'lumoti yo'q (eski
+  // "starts.length < ADAPTIVE_MIN_CYCLES" sharti bilan MANTIQAN AYNAN BIR
+  // XIL edi — ikkalasi ham starts.length<=1'da ishga tushardi — shuning
+  // uchun ADAPTIVE_MIN_CYCLES konstantasi shunchaki olib tashlandi, xatti-
+  // harakat bu yerda o'zgarmagan).
+  if (lengths.length === 0) {
     if (!fallback.lastPeriodStart) return null;
     return {
       lastPeriodStart: fallback.lastPeriodStart,
@@ -270,7 +282,18 @@ export function deriveAdaptiveCycleSettings(
   // barcha 6 ta sikl bir xil og'irlikda bo'lgan ilgarigi mantiq eng so'nggi
   // (haqiqatan foydali) o'zgarishlarni eski ma'lumot bilan "suyultirib"
   // yuborardi.
-  const avgCycleLength = clamp(Math.round(computeWeightedAverage(cycleLengthsForAvg)), MIN_SANE_CYCLE_LENGTH, MAX_SANE_CYCLE_LENGTH);
+  const personalCycleAvg = computeWeightedAverage(cycleLengthsForAvg);
+  // CYCLE-ALGO-04: Bayesian shrinkage — "2 tadan kam aniqlangan sikl = to'liq
+  // fallback, 2+ = to'liq shaxsiy o'rtacha" qattiq sakrashi o'rniga YUMSHOQ
+  // o'tish: `finalCycleLength = (n·personalAvg + k·populationPrior) / (n+k)`.
+  // n o'sgan sari shaxsiy ma'lumot asta-sekin ustunlik qila boshlaydi, hech
+  // qanday keskin chegara yo'q. `populationPrior` — foydalanuvchining o'zi
+  // onboarding'da kiritgan/tanlagan boshlang'ich qiymat (`fallback`), 28 emas
+  // — bu real, foydalanuvchiga xos boshlang'ich taxmin, umumiy populyatsiya
+  // o'rtachasidan ko'ra yaxshiroq boshlanish nuqtasi.
+  const populationPrior = fallback.averageCycleLength || DEFAULT_CYCLE_LENGTH;
+  const shrunkCycleLength = (lengths.length * personalCycleAvg + SHRINKAGE_K * populationPrior) / (lengths.length + SHRINKAGE_K);
+  const avgCycleLength = clamp(Math.round(shrunkCycleLength), MIN_SANE_CYCLE_LENGTH, MAX_SANE_CYCLE_LENGTH);
   const lastStart = starts[starts.length - 1];
   // FIX2-19: nomi va hujjati "oxirgi bir necha davrdan o'rtacha" deydi (xuddi
   // averageCycleLength kabi), lekin ilgari faqat ENG SO'NGGI davr uzunligi
