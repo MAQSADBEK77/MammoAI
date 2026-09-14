@@ -565,7 +565,10 @@ async function initSchema() {
       CREATE TABLE IF NOT EXISTS referral_events (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        clinic_id TEXT NOT NULL REFERENCES clinics(id),
+        -- FIX3-20: SET NULL (standart RESTRICT emas) — haqiqatan ishlatilgan
+        -- (deyarli barcha) klinikalarni o'chirib bo'lmay qolishining oldini
+        -- oladi, referral tarixini saqlab qolgan holda.
+        clinic_id TEXT REFERENCES clinics(id) ON DELETE SET NULL,
         checklist_item_id TEXT REFERENCES checklist_items(id),
         action TEXT NOT NULL,
         created_at TEXT NOT NULL
@@ -716,6 +719,15 @@ async function initSchema() {
   await sql`ALTER TABLE community_reports ADD CONSTRAINT community_reports_post_id_fkey FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE SET NULL`;
   await sql`ALTER TABLE community_reports DROP CONSTRAINT IF EXISTS community_reports_comment_id_fkey`;
   await sql`ALTER TABLE community_reports ADD CONSTRAINT community_reports_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES community_comments(id) ON DELETE SET NULL`;
+
+  // FIX3-20: referral_events.clinic_id standart RESTRICT xatti-harakati
+  // bilan edi (na CASCADE, na SET NULL) — deleteClinic() bu FK xatosini
+  // tutmasdi, natijada haqiqatan ishlatilgan (deyarli barcha) klinikalarni
+  // o'chirib bo'lmasdi (admin panelida tushunarsiz 500 xatosi). Endi SET
+  // NULL — referral tarixi klinika o'chirilgandan keyin ham saqlanadi.
+  await sql`ALTER TABLE referral_events ALTER COLUMN clinic_id DROP NOT NULL`;
+  await sql`ALTER TABLE referral_events DROP CONSTRAINT IF EXISTS referral_events_clinic_id_fkey`;
+  await sql`ALTER TABLE referral_events ADD CONSTRAINT referral_events_clinic_id_fkey FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE SET NULL`;
 
   // FIX-UX-03: `checklist_items(user_id, type)`ga UNIQUE indeks qo'yishdan oldin,
   // ensureChecklistItem'dagi eski race condition tufayli produksiyada

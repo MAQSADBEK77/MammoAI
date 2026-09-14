@@ -1531,7 +1531,17 @@ export async function updateClinic(id: string, patch: Partial<Omit<Clinic, "id" 
 
 export async function deleteClinic(id: string): Promise<void> {
   await ensureSchema();
-  await sql`DELETE FROM clinics WHERE id = ${id}`;
+  // FIX3-20: referral_events.clinic_id endi ON DELETE SET NULL bo'lsa-da,
+  // boshqa (kelajakdagi) FK xom "foreign_key_violation" (23503) xatosini
+  // partner-links'dagi kabi tushunarli xabarga aylantiramiz — 500 o'rniga.
+  try {
+    await sql`DELETE FROM clinics WHERE id = ${id}`;
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "23503") {
+      throw new ApiError(409, "Bu klinika hali ishlatilmoqda, o'chirib bo'lmadi");
+    }
+    throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------
