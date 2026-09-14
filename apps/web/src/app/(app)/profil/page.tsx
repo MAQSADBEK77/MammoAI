@@ -78,6 +78,11 @@ export default function ProfilePage() {
   const [heightCm, setHeightCm] = useState(String(onboardingProfile?.heightCm ?? ""));
   const [weightKg, setWeightKg] = useState(String(onboardingProfile?.weightKg ?? ""));
   const [bloodType, setBloodType] = useState<BloodType | "">(onboardingProfile?.bloodType ?? "");
+  // FIX3-02: onboarding'da bergan javobini profildan tahrirlash imkoni yo'q
+  // edi — haqiqatan jinsiy faol bo'lib qolgan eski foydalanuvchi muhim
+  // tekshiruv bandlaridan (bachadon bo'yni skrininggi, JYI va h.k.)
+  // hech qanday signalsiz doimiy mahrum qolardi.
+  const [sexuallyActive, setSexuallyActive] = useState(onboardingProfile?.sexuallyActive ?? false);
 
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -116,9 +121,10 @@ export default function ProfilePage() {
       setHeightCm(String(onboardingProfile?.heightCm ?? ""));
       setWeightKg(String(onboardingProfile?.weightKg ?? ""));
       setBloodType(onboardingProfile?.bloodType ?? "");
+      setSexuallyActive(onboardingProfile?.sexuallyActive ?? false);
     }, 0);
     return () => clearTimeout(timeout);
-  }, [onboardingProfile?.age, onboardingProfile?.heightCm, onboardingProfile?.weightKg, onboardingProfile?.bloodType]);
+  }, [onboardingProfile?.age, onboardingProfile?.heightCm, onboardingProfile?.weightKg, onboardingProfile?.bloodType, onboardingProfile?.sexuallyActive]);
 
   if (!user) return null;
 
@@ -174,6 +180,7 @@ export default function ProfilePage() {
         heightCm: heightCm ? Number(heightCm) : null,
         weightKg: weightKg ? Number(weightKg) : null,
         bloodType: bloodType || null,
+        sexuallyActive,
       });
       await refresh();
       setEditingInfo(false);
@@ -438,7 +445,7 @@ export default function ProfilePage() {
           )}
         </SettingsRow>
 
-        <SettingsRow icon="🩸" label={dict.profile.bloodTypeLabel} last={!isCycleMode}>
+        <SettingsRow icon="🩸" label={dict.profile.bloodTypeLabel}>
           {editingInfo ? (
             <Select
               value={bloodType}
@@ -455,6 +462,23 @@ export default function ProfilePage() {
             </Select>
           ) : (
             <span className="text-sm text-text-secondary">{onboardingProfile?.bloodType || dict.profile.bloodTypeUnknown}</span>
+          )}
+        </SettingsRow>
+
+        {/* FIX3-02: sexuallyActive endi profildan ham tahrirlanadi. */}
+        <SettingsRow icon="❤️" label={dict.profile.sexuallyActiveLabel} last={!isCycleMode}>
+          {editingInfo ? (
+            <Select
+              value={sexuallyActive ? "yes" : "no"}
+              onChange={(e) => setSexuallyActive(e.target.value === "yes")}
+              size="small"
+              sx={{ minWidth: 110, borderRadius: "12px", fontSize: "0.875rem" }}
+            >
+              <MenuItem value="no">{dict.common.no}</MenuItem>
+              <MenuItem value="yes">{dict.common.yes}</MenuItem>
+            </Select>
+          ) : (
+            <span className="text-sm text-text-secondary">{onboardingProfile?.sexuallyActive ? dict.common.yes : dict.common.no}</span>
           )}
         </SettingsRow>
 

@@ -942,6 +942,7 @@ const ru: Dictionary = {
     heightUnit: (n: number) => `${n} см`,
     weightUnit: (n: number) => `${n} кг`,
     bloodTypeLabel: "Группа крови",
+    sexuallyActiveLabel: "Половая жизнь",
     bloodTypeUnknown: "Не указано",
     bloodTypeUnknownOption: "Не знаю",
     notSet: "Не указано",

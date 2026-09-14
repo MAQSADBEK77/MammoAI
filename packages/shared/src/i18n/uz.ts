@@ -987,6 +987,8 @@ const uz = {
     heightUnit: (n: number) => `${n} sm`,
     weightUnit: (n: number) => `${n} kg`,
     bloodTypeLabel: "Qon guruhi",
+    // FIX3-02: profilda tahrirlash imkoni (ilgari faqat onboarding'da so'ralardi).
+    sexuallyActiveLabel: "Jinsiy hayot",
     bloodTypeUnknown: "Kiritilmagan",
     bloodTypeUnknownOption: "Bilmayman",
     notSet: "Kiritilmagan",

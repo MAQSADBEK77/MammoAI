@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const user = await requireUser(request);
     const patch = (await request.json()) as Partial<
-      Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType">
+      Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType" | "sexuallyActive">
     >;
     const onboardingProfile = await updateOnboardingProfile(user.id, patch);
     return NextResponse.json({ onboardingProfile });

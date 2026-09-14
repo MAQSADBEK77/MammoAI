@@ -60,6 +60,8 @@ export default function ProfileScreen() {
   const [weightKg, setWeightKg] = useState(String(onboardingProfile?.weightKg ?? ""));
   const [bloodType, setBloodType] = useState<BloodType | "">(onboardingProfile?.bloodType ?? "");
   const [bloodTypePickerOpen, setBloodTypePickerOpen] = useState(false);
+  // FIX3-02: web bilan bir xil — onboarding'dagi javobini profildan tahrirlash.
+  const [sexuallyActive, setSexuallyActive] = useState(onboardingProfile?.sexuallyActive ?? false);
   const [languagePickerOpen, setLanguagePickerOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -108,9 +110,10 @@ export default function ProfileScreen() {
       setHeightCm(String(onboardingProfile?.heightCm ?? ""));
       setWeightKg(String(onboardingProfile?.weightKg ?? ""));
       setBloodType(onboardingProfile?.bloodType ?? "");
+      setSexuallyActive(onboardingProfile?.sexuallyActive ?? false);
     }, 0);
     return () => clearTimeout(timeout);
-  }, [onboardingProfile?.age, onboardingProfile?.heightCm, onboardingProfile?.weightKg, onboardingProfile?.bloodType]);
+  }, [onboardingProfile?.age, onboardingProfile?.heightCm, onboardingProfile?.weightKg, onboardingProfile?.bloodType, onboardingProfile?.sexuallyActive]);
 
   if (!user) return null;
 
@@ -177,6 +180,7 @@ export default function ProfileScreen() {
         heightCm: heightCm ? Number(heightCm) : null,
         weightKg: weightKg ? Number(weightKg) : null,
         bloodType: bloodType || null,
+        sexuallyActive,
       });
       await refresh();
       setEditingInfo(false);
@@ -398,7 +402,7 @@ export default function ProfileScreen() {
             )}
           </SettingsRow>
 
-          <SettingsRow icon="🩸" label={dict.profile.bloodTypeLabel} last={!isCycleMode && !editingInfo}>
+          <SettingsRow icon="🩸" label={dict.profile.bloodTypeLabel}>
             {editingInfo ? (
               <Pressable onPress={() => setBloodTypePickerOpen((v) => !v)} className="rounded-xl border border-border bg-surface px-3 py-2">
                 <Text className="text-sm text-text-primary">{bloodType || dict.profile.bloodTypeUnknownOption}</Text>
@@ -424,6 +428,28 @@ export default function ProfileScreen() {
               ))}
             </View>
           )}
+
+          {/* FIX3-02: onboarding'dagi javobini profildan tahrirlash. */}
+          <SettingsRow icon="❤️" label={dict.profile.sexuallyActiveLabel} last={!isCycleMode && !editingInfo}>
+            {editingInfo ? (
+              <View className="flex-row gap-2">
+                <Pressable
+                  onPress={() => setSexuallyActive(false)}
+                  className={clsx("rounded-full border px-3 py-1.5", !sexuallyActive ? "border-primary bg-primary" : "border-border bg-surface")}
+                >
+                  <Text className={clsx("text-xs font-medium", !sexuallyActive ? "text-white" : "text-text-secondary")}>{dict.common.no}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setSexuallyActive(true)}
+                  className={clsx("rounded-full border px-3 py-1.5", sexuallyActive ? "border-primary bg-primary" : "border-border bg-surface")}
+                >
+                  <Text className={clsx("text-xs font-medium", sexuallyActive ? "text-white" : "text-text-secondary")}>{dict.common.yes}</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Text className="text-sm text-text-secondary">{onboardingProfile?.sexuallyActive ? dict.common.yes : dict.common.no}</Text>
+            )}
+          </SettingsRow>
 
           {isCycleMode && cycleSettings && (
             <>

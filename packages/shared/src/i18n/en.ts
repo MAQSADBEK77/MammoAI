@@ -944,6 +944,7 @@ const en: Dictionary = {
     heightUnit: (n: number) => `${n} cm`,
     weightUnit: (n: number) => `${n} kg`,
     bloodTypeLabel: "Blood type",
+    sexuallyActiveLabel: "Sexually active",
     bloodTypeUnknown: "Not entered",
     bloodTypeUnknownOption: "I don't know",
     notSet: "Not entered",

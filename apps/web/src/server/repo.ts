@@ -600,7 +600,12 @@ export async function getOnboardingProfile(userId: string): Promise<OnboardingPr
  */
 export async function updateOnboardingProfile(
   userId: string,
-  patch: Partial<Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType">>
+  // FIX3-02: `sexuallyActive` shu yerga qo'shildi — profilda tahrirlash
+  // imkoni bo'lmasa, haqiqatan jinsiy faol bo'lib qolgan eski
+  // foydalanuvchilar (onboarding'da "yo'q"/"bilmayman" deb belgilagan)
+  // muhim tekshiruv bandlaridan (bachadon bo'yni skrininggi, JYI va h.k.)
+  // hech qanday signalsiz doimiy mahrum qolaverardi.
+  patch: Partial<Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType" | "sexuallyActive">>
 ): Promise<OnboardingProfile> {
   await ensureSchema();
   const current = await getOnboardingProfile(userId);
