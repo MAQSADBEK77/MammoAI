@@ -774,6 +774,10 @@ async function initSchema() {
     sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_album_user ON pregnancy_album_photos(user_id, created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_community_posts_tag ON community_posts(tag, created_at DESC)`,
+    // FIX3-22: "Barchasi" (teg tanlanmagan) standart ko'rinish teg bo'yicha
+    // filtrlamaydi — bu holatda yuqoridagi kompozit indeks ishlamaydi va
+    // Postgres butun jadvalni skanerlab saralashga majbur bo'ladi.
+    sql`CREATE INDEX IF NOT EXISTS idx_community_posts_created ON community_posts(created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_partner_invites_code ON partner_invites(code)`,
