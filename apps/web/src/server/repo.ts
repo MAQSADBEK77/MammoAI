@@ -3384,14 +3384,19 @@ export async function saveChatMessage(userId: string, role: "user" | "assistant"
   return { id, role, content, createdAt };
 }
 
-/** Bugungi (UTC kun) xabarlar soni — sodda kunlik limit uchun. */
-export async function countChatMessagesToday(userId: string): Promise<number> {
+/** FIX3-15: bugungi AI-chat xabarlar sonini atomik oshiradi va yangi
+ * qiymatni qaytaradi — parallel so'rovlar (bir necha tab) bir xil
+ * "hali to'lmagan" holatni ko'rib, limitdan oshib ketishining oldini oladi
+ * (`ON CONFLICT DO UPDATE` bitta qator ustida serializatsiya qiladi). */
+export async function incrementDailyChatUsage(userId: string): Promise<number> {
   await ensureSchema();
   const rows = (await sql`
-    SELECT COUNT(*)::int AS count FROM chat_messages
-    WHERE user_id = ${userId} AND role = 'user' AND created_at >= ${today()}
-  `) as unknown as { count: number }[];
-  return rows[0]?.count ?? 0;
+    INSERT INTO chat_daily_usage (user_id, usage_date, message_count)
+    VALUES (${userId}, ${today()}, 1)
+    ON CONFLICT (user_id, usage_date) DO UPDATE SET message_count = chat_daily_usage.message_count + 1
+    RETURNING message_count
+  `) as unknown as { message_count: number }[];
+  return rows[0]?.message_count ?? 1;
 }
 
 // ---------------------------------------------------------------------------

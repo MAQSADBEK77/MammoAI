@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, jsonError, requireUser } from "@/server/api-utils";
 import { generateAssistantReply } from "@/server/ai-chat";
-import { countChatMessagesToday, hasPremiumAccess, listChatMessages, saveChatMessage } from "@/server/repo";
+import { incrementDailyChatUsage, hasPremiumAccess, listChatMessages, saveChatMessage } from "@/server/repo";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const DAILY_MESSAGE_LIMIT = 100;
@@ -26,8 +26,11 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "Xabar juda uzun", "message_too_long");
     }
 
-    const todayCount = await countChatMessagesToday(user.id);
-    if (todayCount >= DAILY_MESSAGE_LIMIT) {
+    // FIX3-15: limit tekshiruvi endi bitta atomik DB operatsiyasi — parallel
+    // so'rovlar (bir necha tab) limitdan oshib Claude API'ga murojaat
+    // qilolmaydi.
+    const usageCount = await incrementDailyChatUsage(user.id);
+    if (usageCount > DAILY_MESSAGE_LIMIT) {
       throw new ApiError(429, "Bugungi xabarlar limiti tugadi — ertaga davom eting", "daily_chat_limit_reached");
     }
 

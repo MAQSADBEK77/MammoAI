@@ -408,6 +408,18 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // FIX3-15: kunlik AI-chat xabar limitini (100/kun) atomik tekshirish
+    // uchun — bitta (user_id, usage_date) qatorini `ON CONFLICT DO UPDATE`
+    // orqali oshirish, parallel so'rovlar orasida poyga holatining oldini
+    // oladi (mavjud rate-limiter jadvallari bilan bir xil naqsh).
+    sql`
+      CREATE TABLE IF NOT EXISTS chat_daily_usage (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        usage_date TEXT NOT NULL,
+        message_count INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (user_id, usage_date)
+      )
+    `,
     // Feedback loop — "Fikr bildirish" menyu bandi + AI Yordamchi ichidagi
     // yumshoq 👍/👎 so'rov. `trigger`: 'manual' | 'chat_prompt'.
     sql`
