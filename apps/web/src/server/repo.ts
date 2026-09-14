@@ -3082,6 +3082,44 @@ async function checkPartnerConnectRateLimit(userId: string): Promise<void> {
   await sql`UPDATE partner_connect_attempts SET attempt_count = ${newCount} WHERE user_id = ${userId}`;
 }
 
+// FIX3-13: izoh yozish har post egasiga HAQIQIY Telegram/push bildirishnoma
+// yuboradi — cheksiz tez izoh bilan "bombardimon" qilishning oldini olish
+// uchun (partner-connect naqshiga o'xshab).
+const COMMENT_RATE_LIMIT_MAX_ATTEMPTS = 8;
+const COMMENT_RATE_LIMIT_WINDOW_SECONDS = 60;
+const COMMENT_RATE_LIMIT_BLOCK_SECONDS = 5 * 60;
+
+export async function checkCommentRateLimit(userId: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT attempt_count, window_start, blocked_until FROM comment_rate_limit_attempts WHERE user_id = ${userId}
+  `) as unknown as { attempt_count: number; window_start: string; blocked_until: string | null }[];
+  const row = rows[0];
+  const nowMs = Date.now();
+
+  if (row?.blocked_until && new Date(row.blocked_until).getTime() > nowMs) {
+    throw new ApiError(429, "Juda ko'p izoh yozdingiz — birozdan keyin qayta urinib ko'ring");
+  }
+
+  const windowExpired = !row || new Date(row.window_start).getTime() + COMMENT_RATE_LIMIT_WINDOW_SECONDS * 1000 < nowMs;
+  if (windowExpired) {
+    await sql`
+      INSERT INTO comment_rate_limit_attempts (user_id, attempt_count, window_start, blocked_until)
+      VALUES (${userId}, 1, ${new Date(nowMs).toISOString()}, NULL)
+      ON CONFLICT (user_id) DO UPDATE SET attempt_count = 1, window_start = EXCLUDED.window_start, blocked_until = NULL
+    `;
+    return;
+  }
+
+  const newCount = (row?.attempt_count ?? 0) + 1;
+  if (newCount > COMMENT_RATE_LIMIT_MAX_ATTEMPTS) {
+    const blockedUntil = new Date(nowMs + COMMENT_RATE_LIMIT_BLOCK_SECONDS * 1000).toISOString();
+    await sql`UPDATE comment_rate_limit_attempts SET attempt_count = ${newCount}, blocked_until = ${blockedUntil} WHERE user_id = ${userId}`;
+    throw new ApiError(429, "Juda ko'p izoh yozdingiz — birozdan keyin qayta urinib ko'ring");
+  }
+  await sql`UPDATE comment_rate_limit_attempts SET attempt_count = ${newCount} WHERE user_id = ${userId}`;
+}
+
 interface PartnerLinkRow {
   id: string;
   user_a_id: string;

@@ -238,6 +238,19 @@ async function initSchema() {
         blocked_until TEXT
       )
     `,
+    // FIX3-13: izoh yozishda rate-limit yo'q edi va har bir izoh post
+    // egasiga HAQIQIY Telegram xabari + push bildirishnoma yuborardi —
+    // istalgan login qilgan foydalanuvchi biror insonning postiga
+    // cheksiz tez izoh yozib, uning Telegram/telefoniga bildirishnoma
+    // "bombardimoni" uyushtirishi mumkin edi.
+    sql`
+      CREATE TABLE IF NOT EXISTS comment_rate_limit_attempts (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        window_start TEXT NOT NULL,
+        blocked_until TEXT
+      )
+    `,
     sql`
       CREATE TABLE IF NOT EXISTS pregnancy_profiles (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

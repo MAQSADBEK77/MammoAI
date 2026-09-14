@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jsonError, requireUser, ApiError } from "@/server/api-utils";
-import { addCommunityComment, listCommunityComments } from "@/server/repo";
+import { addCommunityComment, checkCommentRateLimit, listCommunityComments } from "@/server/repo";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -15,6 +15,9 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireUser(request);
+    // FIX3-13: har bir izoh post egasiga HAQIQIY Telegram/push
+    // bildirishnoma yuboradi — bezovtalik vektorining oldini olish uchun.
+    await checkCommentRateLimit(user.id);
     const { id } = await context.params;
     const body = (await request.json()) as { body?: string; isAnonymous?: boolean };
     const text = body.body?.trim() ?? "";
