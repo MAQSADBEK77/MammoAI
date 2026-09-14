@@ -164,6 +164,17 @@ async function initSchema() {
         blocked_until TEXT
       )
     `,
+    // FIX3-18: admin login parolini kiritishda hech qanday urinishlar
+    // cheklovi yo'q edi (oddiy foydalanuvchi OTP'i FIX-04 bilan himoyalangan,
+    // lekin admin login emas) — IP manzil bo'yicha.
+    sql`
+      CREATE TABLE IF NOT EXISTS admin_login_attempts (
+        ip_key TEXT PRIMARY KEY,
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        window_start TEXT NOT NULL,
+        blocked_until TEXT
+      )
+    `,
   ]);
 
   // 1-bosqich: faqat users'ga bog'liq jadvallar (parallel, chunki bir-biriga bog'liq emas).

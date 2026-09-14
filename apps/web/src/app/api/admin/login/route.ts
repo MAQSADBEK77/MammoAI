@@ -8,7 +8,7 @@ import {
   verifyAdminPassword,
   verifyAdminPasswordHash,
 } from "@/server/admin-auth";
-import { findAdminUserByEmail, logAdminAction } from "@/server/repo";
+import { checkAdminLoginRateLimit, findAdminUserByEmail, logAdminAction } from "@/server/repo";
 
 /**
  * ADMIN-001: ikkita yo'l bilan kirish mumkin —
@@ -17,8 +17,19 @@ import { findAdminUserByEmail, logAdminAction } from "@/server/repo";
  *     unutilgan/yo'q holatda ham kirish imkoniyati yo'qolmasligi uchun
  *     ATAYLAB saqlab qolingan.
  */
+
+// FIX3-18: bu endpoint autentifikatsiyasiz ishlaydi — IP manzil so'rovni
+// kim yuborganini tanib olishning yagona vositasi (boshqa shu turdagi
+// endpoint'lar bilan bir xil naqsh).
+function getClientIp(request: NextRequest): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  return request.headers.get("x-real-ip") ?? "unknown";
+}
+
 export async function POST(request: NextRequest) {
   try {
+    await checkAdminLoginRateLimit(getClientIp(request));
     const body = (await request.json()) as { email?: string; password?: string };
     const password = body.password ?? "";
     const res = NextResponse.json({ ok: true });
