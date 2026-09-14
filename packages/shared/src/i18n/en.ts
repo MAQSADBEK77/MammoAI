@@ -280,8 +280,15 @@ const en: Dictionary = {
     perimenopauseCardBody: "Irregular cycles are natural during this time. Instead of a prediction, keep an eye on your symptoms (hot flashes, sleep, mood).",
     ringEmptyLabel: "Set your last period date to see predictions",
     staleDataLabel: "Data is outdated — update your last period date",
-    predictionBasisHistory: (n: number) => `Calculated from your last ${n} cycles`,
-    predictionBasisEstimate: "Estimated — logging more cycles will make this more accurate",
+    predictionExplanation: {
+      noData: "No data yet — relying on the general average",
+      limitedData: (n: number) => `Not much data yet (${n} cycles) — partly relying on the general average`,
+      outliersExcluded: (n: number, outlierCount: number) =>
+        outlierCount === 1
+          ? `Calculated from your last ${n} cycles, 1 unusual cycle was excluded`
+          : `Calculated from your last ${n} cycles, ${outlierCount} unusual cycles were excluded`,
+      standard: (n: number) => `Calculated from your last ${n} cycles`,
+    },
     nextPeriodRangeLabel: (earliest: string, latest: string) => `Expected between ${earliest}–${latest}`,
     confidenceLabel: {
       high: "High confidence",

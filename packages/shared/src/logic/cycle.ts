@@ -331,6 +331,11 @@ export interface AdaptiveCycleSettings {
    * `predictCycle`ga to'g'ridan-to'g'ri uzatiladi. Tartibsiz (isCycleIrregular)
    * foydalanuvchilar uchun KENGROQ (talab 6b). */
   stdDevDays: number;
+  /** CYCLE-ALGO-08: filterOutliers() aniqlagan (ASOSIY o'rtachadan chiqarib
+   * tashlangan) g'ayrioddiy sikl uzunliklari — bo'sh bo'lsa, hech qanday
+   * outlier topilmagan. `explainPrediction()` shaffof tushuntirish uchun
+   * ishlatadi. */
+  cycleLengthOutliers: number[];
 }
 
 /**
@@ -370,6 +375,7 @@ export function deriveAdaptiveCycleSettings(
       confidence: "insufficient",
       personalLutealPhase: null,
       stdDevDays: DEFAULT_STD_DEV_DAYS,
+      cycleLengthOutliers: [],
     };
   }
 
@@ -382,7 +388,7 @@ export function deriveAdaptiveCycleSettings(
   // tashlangani ISHONCH darajasini sun'iy oshirmasligi kerak, chunki outlier
   // borligining o'zi haqiqiy noaniqlik signali.
   const cycleIsIrregular = isCycleIrregular(lengths);
-  const { filtered: cycleLengthsForAvg } = filterOutliers(lengths, cycleIsIrregular);
+  const { filtered: cycleLengthsForAvg, outliers: cycleLengthOutliers } = filterOutliers(lengths, cycleIsIrregular);
   // CYCLE-ALGO-02: oddiy (tekis) o'rtacha o'rniga og'irlik-asoslangan —
   // barcha 6 ta sikl bir xil og'irlikda bo'lgan ilgarigi mantiq eng so'nggi
   // (haqiqatan foydali) o'zgarishlarni eski ma'lumot bilan "suyultirib"
@@ -431,7 +437,32 @@ export function deriveAdaptiveCycleSettings(
     confidence: getPredictionConfidence(lengths.length, lengths),
     stdDevDays,
     personalLutealPhase: computePersonalLutealPhaseDays(logs, starts),
+    cycleLengthOutliers,
   };
+}
+
+/** CYCLE-ALGO-08: foydalanuvchiga "nega shunday bashorat qildik" degan
+ * qisqa, shaffof tushuntirish (loyihaning o'z shaffoflik tamoyili —
+ * CYCLE-002 — bilan mos, va ML-quti (black-box) bilan qiyin bo'lgan narsa).
+ * Til-agnostik "sabab kodi" qaytaradi (UI/i18n xom matnni tanlaydi) —
+ * `dict.cycle.predictionExplanation`dagi bilan bir xil turdagi kalitlar. */
+export type PredictionExplanationReason =
+  | { type: "no_data" }
+  | { type: "limited_data"; cyclesAnalyzed: number }
+  | { type: "outliers_excluded"; cyclesAnalyzed: number; outlierCount: number }
+  | { type: "standard"; cyclesAnalyzed: number };
+
+export function explainPrediction(settings: AdaptiveCycleSettings): PredictionExplanationReason {
+  if (settings.cyclesAnalyzed === 0) return { type: "no_data" };
+  // CYCLE-ALGO-04: SHRINKAGE_K'dan kam sikl bo'lsa, natija hali sezilarli
+  // darajada umumiy o'rtachaga (prior) "tortilgan" — foydalanuvchiga buni
+  // aytish kerak, aks holda "shaxsiy" raqam sifatida noto'g'ri tushunilishi
+  // mumkin.
+  if (settings.cyclesAnalyzed < SHRINKAGE_K) return { type: "limited_data", cyclesAnalyzed: settings.cyclesAnalyzed };
+  if (settings.cycleLengthOutliers.length > 0) {
+    return { type: "outliers_excluded", cyclesAnalyzed: settings.cyclesAnalyzed, outlierCount: settings.cycleLengthOutliers.length };
+  }
+  return { type: "standard", cyclesAnalyzed: settings.cyclesAnalyzed };
 }
 
 // Kechikish shundan ko'p kun davom etsa, "N kun kechikmoqda" degan o'sib
@@ -470,6 +501,10 @@ export interface CyclePrediction {
    * ko'rsatish uchun (CYCLE-002). Chaqiruvchi (buildCycleResponse) adaptiv
    * qiymat bilan qayta belgilaydi — xuddi cyclesAnalyzed kabi. */
   confidence: PredictionConfidence;
+  /** CYCLE-ALGO-08: "nega shunday bashorat qilindi" — chaqiruvchi
+   * (buildCycleResponse) `explainPrediction(adaptive)` orqali qayta
+   * belgilaydi, xuddi cyclesAnalyzed/confidence kabi. */
+  explanationReason: PredictionExplanationReason;
 }
 
 export function predictCycle(
@@ -540,6 +575,7 @@ export function predictCycle(
     cyclesAnalyzed: 0, // chaqiruvchi (buildCycleResponse) adaptiv qiymat bilan qayta belgilaydi
     isStale: daysUntilNextPeriod < -STALE_PREDICTION_DAYS,
     confidence: "insufficient", // chaqiruvchi adaptiv qiymat bilan qayta belgilaydi
+    explanationReason: { type: "no_data" }, // chaqiruvchi adaptiv qiymat bilan qayta belgilaydi
   };
 }
 

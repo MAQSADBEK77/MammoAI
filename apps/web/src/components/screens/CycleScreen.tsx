@@ -12,7 +12,7 @@ import {
   ChevronRight,
   EditOutlined,
 } from "@mui/icons-material";
-import type { CycleResponse, CycleLog, FlowLevel, Mood, PredictionConfidence, Symptom } from "@mammoai/shared";
+import type { CycleResponse, CycleLog, Dictionary, FlowLevel, Mood, PredictionConfidence, PredictionExplanationReason, Symptom } from "@mammoai/shared";
 import { formatDateDisplay, getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -34,6 +34,22 @@ const CONFIDENCE_TONE: Record<PredictionConfidence, "success" | "warning" | "mut
   low: "warning",
   insufficient: "muted",
 };
+
+/** CYCLE-ALGO-08: `explainPrediction()`ning til-agnostik sabab kodini
+ * ekranga chiqariladigan matnga aylantiradi — predictionBasisHistory/
+ * Estimate'ning o'rnini bosadi (endi 2 emas, 4 ta sabab bor). */
+function explainPredictionText(reason: PredictionExplanationReason, dict: Dictionary): string {
+  switch (reason.type) {
+    case "no_data":
+      return dict.cycle.predictionExplanation.noData;
+    case "limited_data":
+      return dict.cycle.predictionExplanation.limitedData(reason.cyclesAnalyzed);
+    case "outliers_excluded":
+      return dict.cycle.predictionExplanation.outliersExcluded(reason.cyclesAnalyzed, reason.outlierCount);
+    case "standard":
+      return dict.cycle.predictionExplanation.standard(reason.cyclesAnalyzed);
+  }
+}
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -305,11 +321,7 @@ export function CycleScreen() {
 
             {data.prediction && (
               <div className="mt-3 flex flex-col items-center gap-1.5">
-                <p className="text-center text-xs text-text-muted">
-                  {data.prediction.cyclesAnalyzed > 0
-                    ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
-                    : dict.cycle.predictionBasisEstimate}
-                </p>
+                <p className="text-center text-xs text-text-muted">{explainPredictionText(data.prediction.explanationReason, dict)}</p>
                 {/* CYCLE-002: aniq sanani tibbiy haqiqat emas, turli aniqlikdagi
                     taxmin sifatida ko'rsatish — foydalanuvchi ishonch darajasini
                     ko'rib, mos ravishda kutishlarini moslashtira oladi. */}

@@ -287,8 +287,18 @@ const uz = {
     perimenopauseCardBody: "Bu davrda tsikl tartibsizlashishi — tabiiy holat. Bashorat o'rniga belgilaringizni (issiqlik bosishi, uyqu, kayfiyat) kuzatib boring.",
     ringEmptyLabel: "Bashorat qilish uchun oxirgi hayz sanasini belgilang",
     staleDataLabel: "Ma'lumot eskirgan — oxirgi hayz sanasini yangilang",
-    predictionBasisHistory: (n: number) => `So'nggi ${n} ta sikl asosida hisoblangan`,
-    predictionBasisEstimate: "Taxminiy — ko'proq kuzatuv qilsangiz aniqroq bo'ladi",
+    // CYCLE-ALGO-08: foydalanuvchiga "nega shunday bashorat qilindi" degan
+    // qisqa, shaffof tushuntirish (`explainPrediction()`dagi 4 ta sabab
+    // kodiga mos) — predictionBasisHistory/Estimate'ning o'rnini bosadi.
+    predictionExplanation: {
+      noData: "Ma'lumot hali yo'q — umumiy o'rtachaga tayanilmoqda",
+      limitedData: (n: number) => `Ma'lumot hali kam (${n} ta sikl) — umumiy o'rtachaga qisman tayanilmoqda`,
+      outliersExcluded: (n: number, outlierCount: number) =>
+        outlierCount === 1
+          ? `So'nggi ${n} ta sikldan hisoblangan, 1 tasi g'ayrioddiy sikl chiqarib tashlandi`
+          : `So'nggi ${n} ta sikldan hisoblangan, ${outlierCount} tasi g'ayrioddiy sikl chiqarib tashlandi`,
+      standard: (n: number) => `So'nggi ${n} ta sikl asosida hisoblangan`,
+    },
     // CYCLE-ALGO-07: aniq sana o'rniga diapazon — past/o'rta ishonchda
     // haqiqiy noaniqlikni yashirmaslik uchun ("13-16 kun" o'rniga bitta
     // "13 kun" degan soxta aniqlik taassuroti bermaslik).

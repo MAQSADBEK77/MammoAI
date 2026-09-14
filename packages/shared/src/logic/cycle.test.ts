@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { Symptom } from "../types";
+import type { AdaptiveCycleSettings } from "./cycle";
 import {
   addDays,
   computeCycleLengths,
@@ -17,6 +18,7 @@ import {
   deriveAdaptiveCycleSettings,
   detectOvulationSignals,
   detectPeriodStarts,
+  explainPrediction,
   filterOutliers,
   getPredictionConfidence,
   isCycleIrregular,
@@ -134,6 +136,7 @@ describe("deriveAdaptiveCycleSettings", () => {
       confidence: "insufficient",
       personalLutealPhase: null, // CYCLE-ALGO-05
       stdDevDays: 4, // CYCLE-ALGO-07: DEFAULT_STD_DEV_DAYS
+      cycleLengthOutliers: [], // CYCLE-ALGO-08
     });
   });
 
@@ -639,5 +642,39 @@ describe("getPredictionConfidence", () => {
       if (!isCycleIrregular(lengths)) continue; // faqat haqiqatan tartibsiz to'plamlarni tekshiramiz
       expect(getPredictionConfidence(lengths.length, lengths)).not.toBe("high");
     }
+  });
+});
+
+// CYCLE-ALGO-08: foydalanuvchiga "nega shunday bashorat qilindi" tushuntirish.
+describe("explainPrediction", () => {
+  const base: AdaptiveCycleSettings = {
+    lastPeriodStart: "2026-01-01",
+    averageCycleLength: 28,
+    averagePeriodLength: 5,
+    cyclesAnalyzed: 0,
+    confidence: "insufficient",
+    personalLutealPhase: null,
+    stdDevDays: 4,
+    cycleLengthOutliers: [],
+  };
+
+  it("cyclesAnalyzed=0 bo'lsa 'no_data'", () => {
+    expect(explainPrediction(base)).toEqual({ type: "no_data" });
+  });
+
+  it("SHRINKAGE_K (3)'dan kam sikl bo'lsa 'limited_data'", () => {
+    expect(explainPrediction({ ...base, cyclesAnalyzed: 2 })).toEqual({ type: "limited_data", cyclesAnalyzed: 2 });
+  });
+
+  it("yetarli sikl va outlier topilgan bo'lsa 'outliers_excluded'", () => {
+    expect(explainPrediction({ ...base, cyclesAnalyzed: 5, cycleLengthOutliers: [52] })).toEqual({
+      type: "outliers_excluded",
+      cyclesAnalyzed: 5,
+      outlierCount: 1,
+    });
+  });
+
+  it("yetarli sikl, outlier yo'q bo'lsa 'standard'", () => {
+    expect(explainPrediction({ ...base, cyclesAnalyzed: 6 })).toEqual({ type: "standard", cyclesAnalyzed: 6 });
   });
 });

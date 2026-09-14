@@ -278,8 +278,15 @@ const ru: Dictionary = {
     perimenopauseCardBody: "В этот период нерегулярность цикла — это естественно. Вместо прогноза отслеживайте свои симптомы (приливы, сон, настроение).",
     ringEmptyLabel: "Отметьте дату последней менструации для прогноза",
     staleDataLabel: "Данные устарели — обновите дату последней менструации",
-    predictionBasisHistory: (n: number) => `Рассчитано на основе последних ${n} циклов`,
-    predictionBasisEstimate: "Приблизительно — станет точнее по мере наблюдений",
+    predictionExplanation: {
+      noData: "Данных пока нет — используется общее среднее",
+      limitedData: (n: number) => `Пока мало данных (${n} циклов) — частично используется общее среднее`,
+      outliersExcluded: (n: number, outlierCount: number) =>
+        outlierCount === 1
+          ? `Рассчитано на основе последних ${n} циклов, 1 необычный цикл был исключён`
+          : `Рассчитано на основе последних ${n} циклов, ${outlierCount} необычных циклов было исключено`,
+      standard: (n: number) => `Рассчитано на основе последних ${n} циклов`,
+    },
     nextPeriodRangeLabel: (earliest: string, latest: string) => `Ожидается между ${earliest}–${latest}`,
     confidenceLabel: {
       high: "Высокая точность",

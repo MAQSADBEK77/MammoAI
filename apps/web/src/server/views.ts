@@ -1,7 +1,15 @@
 // API javoblari uchun "composite" ko'rinishlar — bir nechta route (GET va mutatsiyalar)
 // bir xil natija shaklini qaytarishi kerak bo'lganda shu yerdan qayta ishlatiladi.
 
-import { computeCycleLengths, deriveAdaptiveCycleSettings, isCycleIrregular, predictCycle, getPregnancyStatus, WATER_TARGET_ML } from "@mammoai/shared";
+import {
+  computeCycleLengths,
+  deriveAdaptiveCycleSettings,
+  explainPrediction,
+  isCycleIrregular,
+  predictCycle,
+  getPregnancyStatus,
+  WATER_TARGET_ML,
+} from "@mammoai/shared";
 import type { CycleResponse, PregnancyResponse, WellnessResponse } from "@mammoai/shared";
 import {
   getCycleSettings,
@@ -33,6 +41,8 @@ export async function buildCycleResponse(userId: string, today?: string): Promis
   if (prediction && adaptive) {
     prediction.cyclesAnalyzed = adaptive.cyclesAnalyzed;
     prediction.confidence = adaptive.confidence;
+    // CYCLE-ALGO-08: foydalanuvchiga "nega shunday bashorat qilindi" degan shaffof tushuntirish.
+    prediction.explanationReason = explainPrediction(adaptive);
   }
 
   const isIrregular = isCycleIrregular(computeCycleLengths(historyLogs));

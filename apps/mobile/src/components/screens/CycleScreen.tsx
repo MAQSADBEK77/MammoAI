@@ -5,7 +5,7 @@ import clsx from "clsx";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Portal, Dialog } from "react-native-paper";
-import type { CycleLog, CycleResponse, FlowLevel, Mood, PredictionConfidence, Symptom } from "@mammoai/shared";
+import type { CycleLog, CycleResponse, Dictionary, FlowLevel, Mood, PredictionConfidence, PredictionExplanationReason, Symptom } from "@mammoai/shared";
 import { formatDateDisplay, getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -26,6 +26,20 @@ const CONFIDENCE_TONE: Record<PredictionConfidence, "success" | "warning" | "mut
   low: "warning",
   insufficient: "muted",
 };
+
+// CYCLE-ALGO-08 — web'dagi CycleScreen.tsx bilan bir xil, izoh o'sha yerda.
+function explainPredictionText(reason: PredictionExplanationReason, dict: Dictionary): string {
+  switch (reason.type) {
+    case "no_data":
+      return dict.cycle.predictionExplanation.noData;
+    case "limited_data":
+      return dict.cycle.predictionExplanation.limitedData(reason.cyclesAnalyzed);
+    case "outliers_excluded":
+      return dict.cycle.predictionExplanation.outliersExcluded(reason.cyclesAnalyzed, reason.outlierCount);
+    case "standard":
+      return dict.cycle.predictionExplanation.standard(reason.cyclesAnalyzed);
+  }
+}
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -313,11 +327,7 @@ export function CycleScreen() {
 
               {data.prediction && (
                 <View className="mt-3 items-center gap-1.5">
-                  <Text className="text-center text-xs text-text-muted">
-                    {data.prediction.cyclesAnalyzed > 0
-                      ? dict.cycle.predictionBasisHistory(data.prediction.cyclesAnalyzed)
-                      : dict.cycle.predictionBasisEstimate}
-                  </Text>
+                  <Text className="text-center text-xs text-text-muted">{explainPredictionText(data.prediction.explanationReason, dict)}</Text>
                   {/* CYCLE-002 — web'dagi bilan bir xil, izoh o'sha yerda. */}
                   <Badge tone={CONFIDENCE_TONE[data.prediction.confidence]}>
                     <Text>{dict.cycle.confidenceLabel[data.prediction.confidence]}</Text>
