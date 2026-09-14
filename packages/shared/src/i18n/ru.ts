@@ -358,6 +358,7 @@ const ru: Dictionary = {
       difficulty_concentrating: "Трудности с концентрацией",
       hot_flashes: "Приливы жара",
       night_sweats: "Ночная потливость",
+      ovulation_pain: "Боль при овуляции",
     },
   },
 

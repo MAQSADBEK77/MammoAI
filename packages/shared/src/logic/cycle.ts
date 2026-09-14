@@ -204,6 +204,63 @@ export function computePeriodLength(logs: Pick<CycleLog, "date" | "flow">[], per
   return daysBetween(periodStart, lastDate) + 1;
 }
 
+// CYCLE-ALGO-05: kamida shuncha sikl ovulyatsiya signali bilan mos kelmasa,
+// shaxsiy lyuteal-faza hisoblanmaydi — bitta yakka belgi (masalan
+// noto'g'ri qayd etilgan simptom) shovqin bo'lishi mumkin, kamida 2 ta
+// mustaqil sikl kerak.
+const MIN_LUTEAL_SIGNAL_CYCLES = 2;
+// Fiziologik jihatdan oqilona chegara — talab matnida aytilganidek, lyuteal
+// faza odatda 11-17 kun oralig'ida; biroz kengroq (9-17) olindi, chunki
+// simptom-asoslangan aniqlash BBT/LH-testga qaraganda shovqinliroq.
+const MIN_SANE_LUTEAL_PHASE_DAYS = 9;
+const MAX_SANE_LUTEAL_PHASE_DAYS = 17;
+/** Standart (shaxsiylashtirilmagan) lyuteal faza — ovulyatsiya signali
+ * bo'lmaganda ishlatiladigan klinik faraz (ilgari HAR DOIM shu ishlatilardi). */
+export const DEFAULT_LUTEAL_PHASE_DAYS = 14;
+
+/** CYCLE-ALGO-05: "ovulation_pain" (mittelschmerz) simptomi qayd etilgan
+ * kunlarni qaytaradi — ikki-fazali lyuteal model uchun ovulyatsiya signali.
+ * Alohida funksiya sifatida ajratilgan — kelajakda BBT (bazal tana harorati)
+ * yoki LH-test natijasi kabi yangi signal manbalari qo'shilganda, faqat shu
+ * funksiya ichki mantig'i kengaytiriladi (signature/chaqiruvchilar
+ * o'zgarmaydi). Hozircha `CycleLog`da BBT/LH maydonlari yo'q — shu bosqichda
+ * faqat simptom orqali aniqlash qo'shildi (talab: "hoziroq to'liq BBT UI
+ * qurish shart emas, faqat funksiya signature va joy tayyorlab qo'y"). */
+export function detectOvulationSignals(logs: (Pick<CycleLog, "date"> & Partial<Pick<CycleLog, "symptoms">>)[]): string[] {
+  return [...new Set(logs.filter((l) => l.symptoms?.includes("ovulation_pain")).map((l) => l.date))].sort();
+}
+
+/** CYCLE-ALGO-05: har bir aniqlangan sikl uchun (sikl boshlanishi → keyingi
+ * sikl boshlanishi oralig'ida) ovulyatsiya signali bor-yo'qligini tekshiradi.
+ * Topilsa, o'sha sikldagi LYUTEAL faza uzunligi = ovulyatsiya kunidan
+ * KEYINGI sikl boshlanishigacha (follikulyar faza EMAS — talab: "har bir
+ * ayolda follikulyar faza ancha o'zgaruvchan, lyuteal faza nisbatan
+ * barqaror", shuning uchun aynan lyuteal fazani "o'rganamiz").
+ * `personalLutealPhase = median(shu qiymatlar)` — kamida
+ * MIN_LUTEAL_SIGNAL_CYCLES ta sikl uchun signal topilgandagina hisoblanadi;
+ * aks holda `null` (chaqiruvchi standart DEFAULT_LUTEAL_PHASE_DAYS'ga
+ * tushadi — REGRESSIYA emas, faqat YAXSHILANISH: signal yo'q bo'lsa xatti-
+ * harakat ilgarigidek qoladi). */
+function computePersonalLutealPhaseDays(
+  logs: (Pick<CycleLog, "date"> & Partial<Pick<CycleLog, "symptoms">>)[],
+  starts: string[]
+): number | null {
+  const ovulationDates = detectOvulationSignals(logs);
+  if (ovulationDates.length === 0) return null;
+
+  const lutealLengths: number[] = [];
+  for (let i = 0; i < starts.length - 1; i++) {
+    const cycleStart = starts[i];
+    const nextStart = starts[i + 1];
+    const ovulationInThisCycle = ovulationDates.find((d) => d >= cycleStart && d < nextStart);
+    if (!ovulationInThisCycle) continue;
+    lutealLengths.push(daysBetween(ovulationInThisCycle, nextStart));
+  }
+  if (lutealLengths.length < MIN_LUTEAL_SIGNAL_CYCLES) return null;
+
+  return clamp(Math.round(computeMedian(lutealLengths)), MIN_SANE_LUTEAL_PHASE_DAYS, MAX_SANE_LUTEAL_PHASE_DAYS);
+}
+
 /** Bashorat qanchalik ishonchli ekanligini ko'rsatadi — foydalanuvchiga aniq
  * sanani tibbiy haqiqat sifatida emas, turli aniqlikdagi taxmin sifatida
  * ko'rsatish uchun (CYCLE-002). `insufficient` — hali haqiqiy sikl tarixi yo'q,
@@ -233,6 +290,11 @@ export interface AdaptiveCycleSettings {
   /** getPredictionConfidence(cyclesAnalyzed, lengths) — shu yerda hisoblab
    * qo'yiladi, chunki `lengths` faqat shu funksiya ichida mavjud. */
   confidence: PredictionConfidence;
+  /** CYCLE-ALGO-05: foydalanuvchi tarixidan chiqarilgan shaxsiy lyuteal-faza
+   * uzunligi (kun) — faqat ovulyatsiya signali (masalan "ovulation_pain"
+   * simptomi) mavjud sikllardan hisoblanadi. `null` bo'lsa, `predictCycle`
+   * standart DEFAULT_LUTEAL_PHASE_DAYS (14)ni ishlatadi. */
+  personalLutealPhase: number | null;
 }
 
 /**
@@ -244,7 +306,11 @@ export interface AdaptiveCycleSettings {
  * qo'lda kiritgan/tanlagan `fallback` sozlamalariga tushadi (`cyclesAnalyzed: 0`).
  */
 export function deriveAdaptiveCycleSettings(
-  logs: Pick<CycleLog, "date" | "flow">[],
+  // CYCLE-ALGO-05: "symptoms" qo'shildi — personalLutealPhase hisoblash
+  // uchun kerak (detectOvulationSignals). Mavjud chaqiruvchilar to'liq
+  // CycleLog[] uzatadi, shuning uchun bu keng qamrov ORQAGA MOSLIKni
+  // buzmaydi.
+  logs: (Pick<CycleLog, "date" | "flow"> & Partial<Pick<CycleLog, "symptoms">>)[],
   fallback: Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength">,
   today: string = tashkentDateStr()
 ): AdaptiveCycleSettings | null {
@@ -266,6 +332,7 @@ export function deriveAdaptiveCycleSettings(
       averagePeriodLength: fallback.averagePeriodLength || DEFAULT_PERIOD_LENGTH,
       cyclesAnalyzed: 0,
       confidence: "insufficient",
+      personalLutealPhase: null,
     };
   }
 
@@ -318,6 +385,7 @@ export function deriveAdaptiveCycleSettings(
     averagePeriodLength: clamp(periodLength, MIN_SANE_PERIOD_LENGTH, MAX_SANE_PERIOD_LENGTH),
     cyclesAnalyzed: lengths.length,
     confidence: getPredictionConfidence(lengths.length, lengths),
+    personalLutealPhase: computePersonalLutealPhaseDays(logs, starts),
   };
 }
 
@@ -352,7 +420,11 @@ export interface CyclePrediction {
 }
 
 export function predictCycle(
-  settings: Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength">,
+  settings: Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength"> & {
+    /** CYCLE-ALGO-05: berilmasa (yoki `null`), standart DEFAULT_LUTEAL_PHASE_DAYS
+     * (14) ishlatiladi — ilgarigi (o'zgarishsiz) xatti-harakat. */
+    personalLutealPhase?: number | null;
+  },
   today: string = tashkentDateStr()
 ): CyclePrediction | null {
   if (!settings.lastPeriodStart) return null;
@@ -373,8 +445,16 @@ export function predictCycle(
   const nextPeriodStart = addDays(settings.lastPeriodStart, cycleLength);
   const nextPeriodEnd = addDays(nextPeriodStart, periodLength - 1);
 
-  // Unumdor oyna — ovulyatsiyadan ~5 kun oldin, 1 kun keyin (tsikl oxiridan 14 kun oldin taxminiy).
-  const ovulationDay = addDays(nextPeriodStart, -14);
+  // CYCLE-ALGO-05: ILGARI ovulyatsiya DOIM "cycleLength - 14" (lyuteal faza
+  // qat'iy 14 kun deb faraz qilingan) edi. Haqiqatda follikulyar faza ancha
+  // o'zgaruvchan, lyuteal faza esa har bir ayolda nisbatan BARQAROR — shuning
+  // uchun standart faraz o'rniga foydalanuvchining o'zi tarixidan chiqarilgan
+  // ShAXSIY lyuteal-faza uzunligi (agar ovulyatsiya belgisi — masalan
+  // "ovulation_pain" simptomi — orqali aniqlangan bo'lsa) ishlatiladi.
+  // Xavfsizlik: lyuteal faza butun sikl uzunligidan oshib ketmasligi kerak
+  // (nazariy holat — juda qisqa sikl + juda uzun shaxsiy lyuteal faza).
+  const lutealPhaseDays = Math.min(settings.personalLutealPhase ?? DEFAULT_LUTEAL_PHASE_DAYS, cycleLength - 1);
+  const ovulationDay = addDays(nextPeriodStart, -lutealPhaseDays);
   const fertileWindowStart = addDays(ovulationDay, -5);
   const fertileWindowEnd = addDays(ovulationDay, 1);
 

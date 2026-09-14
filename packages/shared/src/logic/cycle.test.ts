@@ -5,12 +5,15 @@
 // bo'lmasligi uchun regression test sifatida ham xizmat qiladi.
 
 import { describe, expect, it } from "vitest";
+import type { Symptom } from "../types";
 import {
+  addDays,
   computeCycleLengths,
   computeMedian,
   computePeriodLength,
   computeWeightedAverage,
   deriveAdaptiveCycleSettings,
+  detectOvulationSignals,
   detectPeriodStarts,
   filterOutliers,
   getPredictionConfidence,
@@ -127,6 +130,7 @@ describe("deriveAdaptiveCycleSettings", () => {
       averagePeriodLength: 6,
       cyclesAnalyzed: 0,
       confidence: "insufficient",
+      personalLutealPhase: null, // CYCLE-ALGO-05
     });
   });
 
@@ -264,6 +268,98 @@ describe("predictCycle", () => {
     expect(pred?.ovulationDay).toBe("2026-01-15"); // 2026-01-29 - 14 kun
     expect(pred?.fertileWindowStart).toBe("2026-01-10");
     expect(pred?.fertileWindowEnd).toBe("2026-01-16");
+  });
+
+  // CYCLE-ALGO-05: personalLutealPhase berilsa, standart 14 kun o'rniga
+  // shundan foydalanadi.
+  it("personalLutealPhase berilsa, ovulyatsiya kunini standart 14 emas, shaxsiy qiymatdan hisoblaydi", () => {
+    const pred = predictCycle(
+      { lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5, personalLutealPhase: 11 },
+      "2026-01-01"
+    );
+    expect(pred?.ovulationDay).toBe("2026-01-18"); // 2026-01-29 - 11 kun (standart -14 bo'lsa 01-15 bo'lardi)
+  });
+
+  it("personalLutealPhase null bo'lsa, standart 14 kunga tushadi (o'zgarishsiz)", () => {
+    const pred = predictCycle(
+      { lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5, personalLutealPhase: null },
+      "2026-01-01"
+    );
+    expect(pred?.ovulationDay).toBe("2026-01-15");
+  });
+
+  it("juda qisqa siklda ham lyuteal faza butun sikldan oshib ketmaydi (xavfsizlik)", () => {
+    const pred = predictCycle(
+      { lastPeriodStart: "2026-01-01", averageCycleLength: 16, averagePeriodLength: 5, personalLutealPhase: 17 },
+      "2026-01-01"
+    );
+    // nextPeriodStart = 2026-01-17. lutealPhaseDays min(17, 16-1=15)=15 bilan chegaralanadi.
+    expect(pred?.ovulationDay).toBe("2026-01-02");
+  });
+});
+
+describe("detectOvulationSignals", () => {
+  it("faqat 'ovulation_pain' simptomi bor kunlarni qaytaradi", () => {
+    const logs = [
+      { date: "2026-01-01", symptoms: ["cramps" as const] },
+      { date: "2026-01-14", symptoms: ["ovulation_pain"] as Symptom[] },
+      { date: "2026-01-15", symptoms: [] },
+    ];
+    expect(detectOvulationSignals(logs)).toEqual(["2026-01-14"]);
+  });
+
+  it("symptoms maydoni bo'lmasa (ixtiyoriy) xato bermaydi", () => {
+    expect(detectOvulationSignals([{ date: "2026-01-01" }])).toEqual([]);
+  });
+});
+
+// CYCLE-ALGO-05: to'liq integratsiya — ovulyatsiya belgisi bor tarixdan
+// personalLutealPhase to'g'ri chiqarilishi va predictCycle'ga to'g'ri
+// uzatilishini tasdiqlaydi.
+describe("deriveAdaptiveCycleSettings + predictCycle (CYCLE-ALGO-05 ikki-fazali model)", () => {
+  it("ovulyatsiya belgisi bor 3 ta sikldan shaxsiy lyuteal-faza median'ini chiqaradi", () => {
+    // Har bir siklda lyuteal faza = 10 kun (ovulyatsiyadan keyingi sikl
+    // boshlanishigacha), follikulyar faza esa o'zgaruvchan (18, 16, 20 kun) —
+    // aynan talab tasvirlagan holat: "har bir ayolda lyuteal faza barqaror,
+    // follikulyar faza o'zgaruvchan".
+    const logs = [
+      { date: "2026-01-01", flow: "medium" as const, symptoms: [] as Symptom[] },
+      { date: "2026-01-19", flow: null, symptoms: ["ovulation_pain"] as Symptom[] }, // kun 19, lyuteal=10 (01-29gacha)
+      { date: "2026-01-29", flow: "medium" as const, symptoms: [] as Symptom[] },
+      { date: "2026-02-14", flow: null, symptoms: ["ovulation_pain"] as Symptom[] }, // kun +16, lyuteal=10 (02-24gacha)
+      { date: "2026-02-24", flow: "medium" as const, symptoms: [] as Symptom[] },
+      { date: "2026-03-16", flow: null, symptoms: ["ovulation_pain"] as Symptom[] }, // kun +20, lyuteal=10 (03-26gacha)
+      { date: "2026-03-26", flow: "medium" as const, symptoms: [] as Symptom[] },
+    ];
+    const fallback = { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+    const adaptive = deriveAdaptiveCycleSettings(logs, fallback, "2026-03-27");
+    expect(adaptive?.personalLutealPhase).toBe(10);
+
+    // predictCycle endi standart 14 emas, shaxsiy 10 kunlik lyuteal fazani ishlatadi.
+    const pred = adaptive && predictCycle(adaptive, "2026-03-27");
+    const expectedOvulation = addDays(pred!.nextPeriodStart, -10);
+    expect(pred?.ovulationDay).toBe(expectedOvulation);
+  });
+
+  it("ovulyatsiya belgisi YO'Q bo'lsa, personalLutealPhase null qoladi (standart 14ga tushadi)", () => {
+    const logs = [
+      { date: "2026-01-01", flow: "medium" as const, symptoms: [] as Symptom[] },
+      { date: "2026-01-29", flow: "medium" as const, symptoms: [] as Symptom[] },
+    ];
+    const fallback = { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+    const adaptive = deriveAdaptiveCycleSettings(logs, fallback, "2026-01-30");
+    expect(adaptive?.personalLutealPhase).toBeNull();
+  });
+
+  it("bitta sikldagina ovulyatsiya belgisi bo'lsa (MIN_LUTEAL_SIGNAL_CYCLES=2'dan kam), hali ham null qoladi", () => {
+    const logs = [
+      { date: "2026-01-01", flow: "medium" as const, symptoms: [] as Symptom[] },
+      { date: "2026-01-19", flow: null, symptoms: ["ovulation_pain"] as Symptom[] },
+      { date: "2026-01-29", flow: "medium" as const, symptoms: [] as Symptom[] },
+    ];
+    const fallback = { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+    const adaptive = deriveAdaptiveCycleSettings(logs, fallback, "2026-01-30");
+    expect(adaptive?.personalLutealPhase).toBeNull();
   });
 });
 

@@ -107,7 +107,12 @@ export type Symptom =
   // eng xarakterli belgilari, mavjud ro'yxatdagi hech biri ularni qamramaydi.
   // Boshqa rejimlardagi foydalanuvchilar ham xohlasa qayd etishi mumkin.
   | "hot_flashes"
-  | "night_sweats";
+  | "night_sweats"
+  // CYCLE-ALGO-05: mittelschmerz (ovulyatsiya og'rig'i) — ikki-fazali lyuteal
+  // modelning ovulyatsiya SIGNALI sifatida ishlatiladi (cycle.ts#detectOvulationSignals).
+  // Kelajakda BBT/LH-test natijalari qo'shilishi mumkin (roadmap) — bu
+  // simptom hozircha yagona signal manbai.
+  | "ovulation_pain";
 
 export interface CycleLog {
   id: string;

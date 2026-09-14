@@ -49,6 +49,10 @@ const SYMPTOMS: Symptom[] = [
   "fatigue",
   "irritability",
   "difficulty_concentrating",
+  // CYCLE-ALGO-05: ikki-fazali lyuteal modelning ovulyatsiya SIGNALI —
+  // foydalanuvchi shu simptomni qayd etsa, bashorat o'zining shaxsiy
+  // lyuteal-faza uzunligini "o'rganadi" (cycle.ts#detectOvulationSignals).
+  "ovulation_pain",
 ];
 
 /** "Asosiy" (/asosiy) sahifasining Hayz-rejim tarkibi — ilgari alohida /tsikl

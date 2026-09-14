@@ -286,6 +286,7 @@ const SYMPTOM_ICON: Record<Symptom, string> = {
   difficulty_concentrating: "💭",
   hot_flashes: "🥵",
   night_sweats: "💦",
+  ovulation_pain: "🌸", // CYCLE-ALGO-05 — bu onboarding ro'yxatida ko'rsatilmaydi, faqat Record to'liqligi uchun
 };
 
 const HEALTH_CONDITION_ICON: Record<HealthCondition, string> = {

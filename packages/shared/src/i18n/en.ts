@@ -360,6 +360,7 @@ const en: Dictionary = {
       difficulty_concentrating: "Difficulty concentrating",
       hot_flashes: "Hot flashes",
       night_sweats: "Night sweats",
+      ovulation_pain: "Ovulation pain",
     },
   },
 

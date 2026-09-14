@@ -371,6 +371,7 @@ const uz = {
       difficulty_concentrating: "Diqqatni jamlashga qiynalish",
       hot_flashes: "Issiqlik bosishi",
       night_sweats: "Tungi terlash",
+      ovulation_pain: "Ovulyatsiya og'rig'i",
     },
   },
 
