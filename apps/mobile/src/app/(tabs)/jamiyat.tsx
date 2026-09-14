@@ -118,9 +118,19 @@ export default function CommunityScreen() {
   async function toggleNotifications() {
     const opening = !notificationsOpen;
     setNotificationsOpen(opening);
-    if (opening && unreadCount > 0) {
-      setUnreadCount(0);
-      api.notifications.markAllRead().catch(() => {});
+    if (!opening || unreadCount === 0) return;
+    // FIX3-09/FIX3-10: web bilan bir xil — izoh o'sha yerda
+    // ("apps/web/src/app/(app)/jamiyat/page.tsx").
+    try {
+      const fresh = await api.notifications.list();
+      setNotifications(fresh.notifications);
+      setUnreadCount(fresh.unreadCount);
+      if (fresh.unreadCount > 0) {
+        await api.notifications.markAllRead();
+        setUnreadCount(0);
+      }
+    } catch {
+      // Xato bo'lsa — eng so'nggi haqiqiy unreadCount qiymati saqlanib qoladi.
     }
   }
 

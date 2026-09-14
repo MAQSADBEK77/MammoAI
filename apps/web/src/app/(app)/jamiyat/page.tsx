@@ -121,9 +121,30 @@ export default function CommunityPage() {
   async function toggleNotifications() {
     const opening = !notificationsOpen;
     setNotificationsOpen(opening);
-    if (opening && unreadCount > 0) {
-      setUnreadCount(0);
-      api.notifications.markAllRead().catch(() => {});
+    if (!opening || unreadCount === 0) return;
+    // FIX3-09: ilgari sahifa ochilgandagi bir martalik (eski) ro'yxatga
+    // tayanib to'g'ridan-to'g'ri markAllRead chaqirilardi — agar panel
+    // ochilgunga qadar YANGI bildirishnoma kelgan bo'lsa (masalan kimdir
+    // izoh qoldirsa), u foydalanuvchi UMUMAN KO'RMAGAN holda "o'qilgan"
+    // deb belgilanib, butunlay yo'qolib qolardi. Endi markAllRead'dan
+    // OLDIN ro'yxat serverdan qayta yuklanadi.
+    // FIX3-10: `unreadCount` ilgari optimistik ravishda darhol 0ga
+    // o'rnatilib, markAllRead() xatosi butunlay e'tiborsiz qoldirilardi
+    // (`.catch(() => {})`) — server so'rovi muvaffaqiyatsiz bo'lsa, haqiqiy
+    // o'qilmagan yozuvlar DB'da qolardi, lekin foydalanuvchi "0" ko'rardi.
+    // Endi 0ga faqat markAllRead HAQIQATAN muvaffaqiyatli bo'lgandan
+    // keyingina o'rnatiladi — xato bo'lsa, oldingi (haqiqiy) son saqlanadi.
+    try {
+      const fresh = await api.notifications.list();
+      setNotifications(fresh.notifications);
+      setUnreadCount(fresh.unreadCount);
+      if (fresh.unreadCount > 0) {
+        await api.notifications.markAllRead();
+        setUnreadCount(0);
+      }
+    } catch {
+      // Xato bo'lsa — yuqorida hali o'rnatilmagan/eng so'nggi haqiqiy
+      // unreadCount qiymati saqlanib qoladi, qo'shimcha hech narsa kerak emas.
     }
   }
 
