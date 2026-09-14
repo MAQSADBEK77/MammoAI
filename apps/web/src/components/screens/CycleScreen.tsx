@@ -287,7 +287,16 @@ export function CycleScreen() {
           {data.isIrregular && (
             <Card className="bg-warning/10">
               <p className="font-semibold text-text-primary">{dict.cycle.irregularBannerTitle}</p>
-              <p className="mt-1 text-sm text-text-secondary">{dict.cycle.irregularBannerAction}</p>
+              {/* CYCLE-ALGO-11: aniq-sana bashorati bu banner bilan ziddiyatli
+                  signal bermasligi kerak — shuning uchun bu yerda "nega aniq
+                  sana yo'q" tushuntirilib, ustuvorlik tekshiruvga siljitiladi. */}
+              <p className="mt-1 text-sm text-text-secondary">{dict.cycle.irregularPredictionNote}</p>
+              <button
+                onClick={() => router.push("/tekshiruvlar")}
+                className="tap-target mt-3 rounded-full bg-warning/20 px-4 py-2 text-xs font-semibold text-text-primary transition hover:bg-warning/30"
+              >
+                {dict.cycle.irregularCheckupLink}
+              </button>
             </Card>
           )}
 
@@ -300,9 +309,14 @@ export function CycleScreen() {
                 sublabel={
                   data.prediction?.isStale
                     ? dict.cycle.staleDataLabel
-                    : data.prediction
-                      ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)
-                      : dict.cycle.ringEmptyLabel
+                    : !data.prediction
+                      ? dict.cycle.ringEmptyLabel
+                      : // CYCLE-ALGO-11: tartibsiz foydalanuvchiga aniq kun-hisobi
+                        // o'rniga naqsh-kuzatuv xabari — "3+ oy tartibsiz" banneri
+                        // bilan ziddiyatli signal bermasligi uchun.
+                        data.isIrregular
+                        ? dict.cycle.irregularRingLabel
+                        : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)
                 }
               />
             </button>

@@ -294,7 +294,14 @@ export function CycleScreen() {
           {data.isIrregular && (
             <Card className="bg-warning/10">
               <Text className="font-semibold text-text-primary">{dict.cycle.irregularBannerTitle}</Text>
-              <Text className="mt-1 text-sm text-text-secondary">{dict.cycle.irregularBannerAction}</Text>
+              {/* CYCLE-ALGO-11 — web'dagi bilan bir xil, izoh o'sha yerda. */}
+              <Text className="mt-1 text-sm text-text-secondary">{dict.cycle.irregularPredictionNote}</Text>
+              <Pressable
+                onPress={() => router.push("/(tabs)/tekshiruvlar")}
+                className="tap-target mt-3 self-start rounded-full bg-warning/20 px-4 py-2 active:opacity-80"
+              >
+                <Text className="text-xs font-semibold text-text-primary">{dict.cycle.irregularCheckupLink}</Text>
+              </Pressable>
             </Card>
           )}
 
@@ -308,9 +315,11 @@ export function CycleScreen() {
                   sublabel={
                     data.prediction?.isStale
                       ? dict.cycle.staleDataLabel
-                      : data.prediction
-                        ? dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)
-                        : dict.cycle.ringEmptyLabel
+                      : !data.prediction
+                        ? dict.cycle.ringEmptyLabel
+                        : data.isIrregular
+                          ? dict.cycle.irregularRingLabel
+                          : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)
                   }
                 />
               </Pressable>

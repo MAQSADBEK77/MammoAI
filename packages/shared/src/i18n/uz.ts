@@ -282,7 +282,16 @@ const uz = {
           : `Hayzingiz ${Math.abs(days)} kun kechikmoqda`,
     fertileWindowLabel: "Unumdor kunlar oynasi",
     irregularBannerTitle: "3+ oy tartibsiz tsikl aniqlandi",
-    irregularBannerAction: "Tekshiruvdan o'tishni ko'rib chiqing",
+    // CYCLE-ALGO-11: tartibsiz foydalanuvchilarda aniq-sana bashorati
+    // (nextPeriodIn) ginekolog maslahatiga ziddiyatli signal berardi —
+    // "3+ oy tartibsiz" degan ogohlantirish bilan bir vaqtda "N kundan
+    // keyin" deb aniq son ko'rsatish. Endi ring shu holatda qisqa
+    // "naqsh kuzatilmoqda" xabarini, banner esa to'liqroq tushuntirishni
+    // ko'rsatadi.
+    irregularRingLabel: "Sikl naqshi kuzatilmoqda",
+    irregularPredictionNote:
+      "Aniq sanani bashorat qilish qiyin — siklingiz tabiiy ravishda o'zgaruvchan. Buning o'rniga umumiy naqshlaringizni kuzatamiz.",
+    irregularCheckupLink: "Tekshiruvlar bo'limiga o'tish",
     perimenopauseCardTitle: "Perimenopauza kuzatuvi",
     perimenopauseCardBody: "Bu davrda tsikl tartibsizlashishi — tabiiy holat. Bashorat o'rniga belgilaringizni (issiqlik bosishi, uyqu, kayfiyat) kuzatib boring.",
     ringEmptyLabel: "Bashorat qilish uchun oxirgi hayz sanasini belgilang",
