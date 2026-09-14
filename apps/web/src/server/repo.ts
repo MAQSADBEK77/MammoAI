@@ -1856,6 +1856,44 @@ export async function checkAnalyticsIngestRateLimit(ipKey: string): Promise<void
   await sql`UPDATE analytics_ingest_attempts SET attempt_count = ${newCount} WHERE ip_key = ${ipKey}`;
 }
 
+// FIX3-16: POST /api/auth/phone-code/start autentifikatsiyasiz ishlaydi va
+// hech qanday rate-limit yo'q edi — analytics-ingest bilan bir xil
+// (foydalanuvchisiz, IP-asoslangan) naqsh.
+const PHONE_CODE_START_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const PHONE_CODE_START_RATE_LIMIT_WINDOW_SECONDS = 60;
+const PHONE_CODE_START_RATE_LIMIT_BLOCK_SECONDS = 10 * 60;
+
+export async function checkPhoneCodeStartRateLimit(ipKey: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT attempt_count, window_start, blocked_until FROM phone_code_start_attempts WHERE ip_key = ${ipKey}
+  `) as unknown as { attempt_count: number; window_start: string; blocked_until: string | null }[];
+  const row = rows[0];
+  const nowMs = Date.now();
+
+  if (row?.blocked_until && new Date(row.blocked_until).getTime() > nowMs) {
+    throw new ApiError(429, "Juda ko'p urinish — birozdan keyin qayta urinib ko'ring");
+  }
+
+  const windowExpired = !row || new Date(row.window_start).getTime() + PHONE_CODE_START_RATE_LIMIT_WINDOW_SECONDS * 1000 < nowMs;
+  if (windowExpired) {
+    await sql`
+      INSERT INTO phone_code_start_attempts (ip_key, attempt_count, window_start, blocked_until)
+      VALUES (${ipKey}, 1, ${new Date(nowMs).toISOString()}, NULL)
+      ON CONFLICT (ip_key) DO UPDATE SET attempt_count = 1, window_start = EXCLUDED.window_start, blocked_until = NULL
+    `;
+    return;
+  }
+
+  const newCount = (row?.attempt_count ?? 0) + 1;
+  if (newCount > PHONE_CODE_START_RATE_LIMIT_MAX_ATTEMPTS) {
+    const blockedUntil = new Date(nowMs + PHONE_CODE_START_RATE_LIMIT_BLOCK_SECONDS * 1000).toISOString();
+    await sql`UPDATE phone_code_start_attempts SET attempt_count = ${newCount}, blocked_until = ${blockedUntil} WHERE ip_key = ${ipKey}`;
+    throw new ApiError(429, "Juda ko'p urinish — birozdan keyin qayta urinib ko'ring");
+  }
+  await sql`UPDATE phone_code_start_attempts SET attempt_count = ${newCount} WHERE ip_key = ${ipKey}`;
+}
+
 /** Bitta to'plamdagi hodisalarni bitta INSERT bilan yozadi — har bir klik/sahifa
  * ko'rish uchun alohida so'rov yubormaslik uchun (mijoz tomon to'playdi, davriy
  * yuboradi). Noto'g'ri (schema'ga mos kelmaydigan) yozuvlar jimgina tashlanadi —

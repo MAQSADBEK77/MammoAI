@@ -151,6 +151,19 @@ async function initSchema() {
         blocked_until TEXT
       )
     `,
+    // FIX3-16: POST /api/auth/phone-code/start autentifikatsiyasiz ishlaydi
+    // (login/ro'yxatdan o'tishning birinchi qadami) va hech qanday rate-limit
+    // yo'q edi — istalgan kishi cheksiz marta ixtiyoriy telefon raqamlar bilan
+    // so'rov yuborishi mumkin edi. IP manzil bo'yicha — `users`ga bog'liq
+    // emas, shuning uchun 0-bosqichda.
+    sql`
+      CREATE TABLE IF NOT EXISTS phone_code_start_attempts (
+        ip_key TEXT PRIMARY KEY,
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        window_start TEXT NOT NULL,
+        blocked_until TEXT
+      )
+    `,
   ]);
 
   // 1-bosqich: faqat users'ga bog'liq jadvallar (parallel, chunki bir-biriga bog'liq emas).

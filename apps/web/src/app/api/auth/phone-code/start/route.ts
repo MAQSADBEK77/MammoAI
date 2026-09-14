@@ -1,12 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { extractUzPhoneDigits, type Language } from "@mammoai/shared";
 import { jsonError } from "@/server/api-utils";
-import { createPhoneVerification } from "@/server/repo";
+import { checkPhoneCodeStartRateLimit, createPhoneVerification } from "@/server/repo";
 import { getTelegramBotUsername } from "@/server/telegram-bot";
 
 interface StartBody {
   identifier: string;
   language: Language;
+}
+
+// FIX3-16: bu endpoint autentifikatsiyasiz ishlaydi — IP manzil so'rovni
+// kim yuborganini tanib olishning yagona vositasi (analytics/events'dagi
+// bilan bir xil naqsh).
+function getClientIp(request: NextRequest): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  return request.headers.get("x-real-ip") ?? "unknown";
 }
 
 /**
@@ -17,6 +26,7 @@ interface StartBody {
  */
 export async function POST(request: NextRequest) {
   try {
+    await checkPhoneCodeStartRateLimit(getClientIp(request));
     const body = (await request.json()) as StartBody;
     // FIX-05: ilgari faqat trim + bo'sh regex tekshiruvi bo'lardi, hech qanday
     // normalizatsiya yo'q edi — "+998 90 123 45 67" va "998901234567" ikkita
