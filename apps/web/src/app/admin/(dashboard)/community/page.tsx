@@ -47,6 +47,10 @@ function ReportsQueue({ onContentDeleted }: { onContentDeleted: () => void }) {
   }
 
   async function deleteAndResolve(report: CommunityReportAdmin) {
+    // FIX3-19: post_id endi o'chirilgan kontent uchun null bo'lishi mumkin —
+    // bu tugma allaqachon faqat targetExists=true bo'lganda ko'rsatiladi,
+    // lekin TypeScript buni bilmaydi, shuning uchun aniq tekshiruv.
+    if (!report.postId) return;
     if (!window.confirm("Shikoyat qilingan mazmunni butunlay o'chirishni tasdiqlaysizmi?")) return;
     setBusyId(report.id);
     try {

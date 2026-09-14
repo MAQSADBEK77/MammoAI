@@ -399,7 +399,9 @@ export type CommunityReportStatus = "open" | "resolved" | "dismissed";
 export interface CommunityReportAdmin {
   id: string;
   targetType: CommunityReportTargetType;
-  postId: string;
+  /** FIX3-19: post o'chirilgan bo'lsa null (endi SET NULL, CASCADE emas —
+   * hisobot audit izi sifatida saqlanadi). */
+  postId: string | null;
   commentId: string | null;
   reason: CommunityReportReason;
   note: string | null;

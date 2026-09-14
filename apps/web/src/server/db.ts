@@ -643,8 +643,10 @@ async function initSchema() {
         id TEXT PRIMARY KEY,
         reporter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         target_type TEXT NOT NULL,
-        post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
-        comment_id TEXT REFERENCES community_comments(id) ON DELETE CASCADE,
+        -- FIX3-19: SET NULL (CASCADE emas) — hisobot kontent o'chirilgandan
+        -- keyin ham admin audit izi sifatida saqlanishi kerak.
+        post_id TEXT REFERENCES community_posts(id) ON DELETE SET NULL,
+        comment_id TEXT REFERENCES community_comments(id) ON DELETE SET NULL,
         reason TEXT NOT NULL,
         note TEXT,
         status TEXT NOT NULL DEFAULT 'open',
@@ -700,6 +702,20 @@ async function initSchema() {
       )
     `,
   ]);
+
+  // FIX3-19: community_reports.post_id/comment_id CASCADE bilan o'chirilardi —
+  // repo.ts (listOpenCommunityReports) aynan "kontent o'chirilgan, lekin
+  // hisobot qolgan" holatini boshqarish uchun yozilgan edi, lekin bu holat
+  // HECH QACHON yuzaga kelmasdi (hisobot ham o'chirilgan kontent bilan birga
+  // o'chib ketardi) — shikoyat qilingan foydalanuvchi shikoyatni o'z
+  // kontentini o'chirish orqali jim-jimgina yo'qotib, admin audit izini
+  // yo'qotishi mumkin edi. Endi SET NULL — hisobot qatori kontent
+  // o'chirilgandan keyin ham saqlanadi (post_id shuning uchun endi ixtiyoriy).
+  await sql`ALTER TABLE community_reports ALTER COLUMN post_id DROP NOT NULL`;
+  await sql`ALTER TABLE community_reports DROP CONSTRAINT IF EXISTS community_reports_post_id_fkey`;
+  await sql`ALTER TABLE community_reports ADD CONSTRAINT community_reports_post_id_fkey FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE SET NULL`;
+  await sql`ALTER TABLE community_reports DROP CONSTRAINT IF EXISTS community_reports_comment_id_fkey`;
+  await sql`ALTER TABLE community_reports ADD CONSTRAINT community_reports_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES community_comments(id) ON DELETE SET NULL`;
 
   // FIX-UX-03: `checklist_items(user_id, type)`ga UNIQUE indeks qo'yishdan oldin,
   // ensureChecklistItem'dagi eski race condition tufayli produksiyada

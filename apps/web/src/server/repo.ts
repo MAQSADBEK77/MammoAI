@@ -2811,7 +2811,7 @@ export async function listOpenCommunityReports(limit = 50): Promise<CommunityRep
   `) as unknown as {
     id: string;
     target_type: CommunityReportTargetType;
-    post_id: string;
+    post_id: string | null;
     comment_id: string | null;
     reason: CommunityReportReason;
     note: string | null;
