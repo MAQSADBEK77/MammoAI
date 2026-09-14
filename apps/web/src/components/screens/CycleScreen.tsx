@@ -69,6 +69,9 @@ const SYMPTOMS: Symptom[] = [
   // foydalanuvchi shu simptomni qayd etsa, bashorat o'zining shaxsiy
   // lyuteal-faza uzunligini "o'rganadi" (cycle.ts#detectOvulationSignals).
   "ovulation_pain",
+  // CYCLE-ALGO-12: xuddi shu maqsad — ancha keng tarqalgan/ishonchli
+  // ikkinchi ovulyatsiya signali.
+  "cervical_mucus_change",
 ];
 
 /** "Asosiy" (/asosiy) sahifasining Hayz-rejim tarkibi — ilgari alohida /tsikl
@@ -356,6 +359,25 @@ export function CycleScreen() {
               </div>
             )}
           </Card>
+
+          {/* CYCLE-ALGO-12: bashorat qilingan unumdor oyna atrofida — foydalanuvchiga
+              ovulyatsiya signalini qayd etishni taklif qiladi (mavjud "add log"
+              oqimidan foydalanib, yangi UI qurmasdan). */}
+          {data.prediction &&
+            !data.prediction.isStale &&
+            today >= data.prediction.fertileWindowStart &&
+            today <= data.prediction.fertileWindowEnd && (
+              <Card className="bg-primary-light/20">
+                <p className="text-sm font-semibold text-text-primary">{dict.cycle.ovulationSignalPromptTitle}</p>
+                <p className="mt-1 text-xs text-text-secondary">{dict.cycle.ovulationSignalPromptBody}</p>
+                <button
+                  onClick={() => openLogging(today, todayLog)}
+                  className="tap-target mt-3 rounded-full bg-primary/15 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/25"
+                >
+                  {dict.cycle.ovulationSignalPromptButton}
+                </button>
+              </Card>
+            )}
         </>
       )}
 

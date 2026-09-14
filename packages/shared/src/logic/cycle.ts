@@ -1,7 +1,7 @@
 // Hayz tsikli bashorati — spec §2: "ilova keyingi tsiklni bashorat qiladi".
 // Oddiy arifmetika, ML kerak emas.
 
-import type { CycleLog, CycleSettings, FlowLevel } from "../types";
+import type { CycleLog, CycleSettings, FlowLevel, Symptom } from "../types";
 import { tashkentDateStr } from "../date";
 
 export const DEFAULT_CYCLE_LENGTH = 28;
@@ -247,16 +247,25 @@ const MAX_SANE_LUTEAL_PHASE_DAYS = 17;
  * bo'lmaganda ishlatiladigan klinik faraz (ilgari HAR DOIM shu ishlatilardi). */
 export const DEFAULT_LUTEAL_PHASE_DAYS = 14;
 
-/** CYCLE-ALGO-05: "ovulation_pain" (mittelschmerz) simptomi qayd etilgan
- * kunlarni qaytaradi — ikki-fazali lyuteal model uchun ovulyatsiya signali.
- * Alohida funksiya sifatida ajratilgan — kelajakda BBT (bazal tana harorati)
- * yoki LH-test natijasi kabi yangi signal manbalari qo'shilganda, faqat shu
- * funksiya ichki mantig'i kengaytiriladi (signature/chaqiruvchilar
- * o'zgarmaydi). Hozircha `CycleLog`da BBT/LH maydonlari yo'q — shu bosqichda
- * faqat simptom orqali aniqlash qo'shildi (talab: "hoziroq to'liq BBT UI
- * qurish shart emas, faqat funksiya signature va joy tayyorlab qo'y"). */
+// CYCLE-ALGO-12: "ovulation_pain" (mittelschmerz) ayollarning taxminan
+// ~20% ichida his qilinadi va his qilganlar ham uni har doim qayd
+// qilavermaydi — shuning uchun ikki-fazali lyuteal model (CYCLE-ALGO-05)
+// amalda ko'pchilik foydalanuvchida ishga tushmay qolardi.
+// "cervical_mucus_change" (Billings/servikal shilliq usuli) ANCHA KENG
+// TARQALGAN/ishonchli ikkinchi signal sifatida qo'shildi.
+const OVULATION_SIGNAL_SYMPTOMS: Symptom[] = ["ovulation_pain", "cervical_mucus_change"];
+
+/** CYCLE-ALGO-05/12: ovulyatsiya SIGNALI hisoblangan simptomlar (hozircha
+ * "ovulation_pain" va "cervical_mucus_change") qayd etilgan kunlarni
+ * qaytaradi — ikki-fazali lyuteal model uchun. Alohida funksiya sifatida
+ * ajratilgan — kelajakda BBT (bazal tana harorati) yoki LH-test natijasi
+ * kabi yangi signal manbalari qo'shilganda, faqat shu funksiya ichki
+ * mantig'i kengaytiriladi (signature/chaqiruvchilar o'zgarmaydi). Hozircha
+ * `CycleLog`da BBT/LH maydonlari yo'q — shu bosqichda faqat simptomlar
+ * orqali aniqlash qo'shildi (talab: "hoziroq to'liq BBT UI qurish shart
+ * emas, faqat funksiya signature va joy tayyorlab qo'y"). */
 export function detectOvulationSignals(logs: (Pick<CycleLog, "date"> & Partial<Pick<CycleLog, "symptoms">>)[]): string[] {
-  return [...new Set(logs.filter((l) => l.symptoms?.includes("ovulation_pain")).map((l) => l.date))].sort();
+  return [...new Set(logs.filter((l) => l.symptoms?.some((s) => OVULATION_SIGNAL_SYMPTOMS.includes(s))).map((l) => l.date))].sort();
 }
 
 /** CYCLE-ALGO-05: har bir aniqlangan sikl uchun (sikl boshlanishi → keyingi

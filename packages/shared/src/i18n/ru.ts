@@ -272,6 +272,9 @@ const ru: Dictionary = {
           ? `Следующая менструация через ${days} дн.`
           : `Менструация задерживается на ${Math.abs(days)} дн.`,
     fertileWindowLabel: "Окно фертильности",
+    ovulationSignalPromptTitle: "Заметили признаки овуляции?",
+    ovulationSignalPromptBody: "Чувствовали ли вы боль при овуляции или изменение выделений в эти дни? Отметьте — это уточнит прогноз.",
+    ovulationSignalPromptButton: "Отметить",
     irregularBannerTitle: "Обнаружена нерегулярность цикла 3+ месяца",
     irregularRingLabel: "Отслеживаем закономерность",
     irregularPredictionNote: "Точную дату трудно предсказать — ваш цикл естественно меняется. Вместо этого мы отслеживаем общие закономерности.",
@@ -369,6 +372,7 @@ const ru: Dictionary = {
       hot_flashes: "Приливы жара",
       night_sweats: "Ночная потливость",
       ovulation_pain: "Боль при овуляции",
+      cervical_mucus_change: "Изменение выделений",
     },
   },
 
@@ -868,7 +872,7 @@ const ru: Dictionary = {
     periodTomorrow: "Завтра ожидается начало менструации — подготовьтесь 🩷",
     periodSoon: (days: number) => `Менструация начнётся через ${days} дн. 🩷`,
     periodLate: (days: number) => `Менструация задерживается на ${days} дн. — это тоже может быть нормой, но понаблюдайте 🩷`,
-    fertileWindow: "Сейчас у вас окно фертильности",
+    fertileWindow: "Сейчас у вас окно фертильности. Если заметите признаки овуляции, отметьте их в приложении — это уточнит прогноз 🌸",
   },
 
   feedback: {

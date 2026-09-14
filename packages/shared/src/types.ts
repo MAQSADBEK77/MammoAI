@@ -110,9 +110,17 @@ export type Symptom =
   | "night_sweats"
   // CYCLE-ALGO-05: mittelschmerz (ovulyatsiya og'rig'i) — ikki-fazali lyuteal
   // modelning ovulyatsiya SIGNALI sifatida ishlatiladi (cycle.ts#detectOvulationSignals).
-  // Kelajakda BBT/LH-test natijalari qo'shilishi mumkin (roadmap) — bu
-  // simptom hozircha yagona signal manbai.
-  | "ovulation_pain";
+  | "ovulation_pain"
+  // CYCLE-ALGO-12: bachadon bo'yni shilliq qavati o'zgarishi (Billings/
+  // servikal shilliq usuli) — ayollarning ~20% ichida his qilinadigan
+  // "ovulation_pain"dan farqli, ANCHA KENG TARQALGAN va ishonchli
+  // ovulyatsiya signali. `detectOvulationSignals` ikkalasini ham hisobga
+  // oladi. ESLATMA: aniq nom/tavsif tibbiy maslahatchi bilan
+  // aniqlashtirilishi kerak — hozircha ishchi nom sifatida qo'llanildi.
+  // Kelajakda BBT (bazal tana harorati)/LH-test natijalari alohida,
+  // kattaroq bosqich sifatida rejalashtirilgan (CYCLE-ALGO-13 eslatmasiga
+  // qarang — hozircha kiritilmagan).
+  | "cervical_mucus_change";
 
 export interface CycleLog {
   id: string;

@@ -428,6 +428,22 @@ describe("detectOvulationSignals", () => {
   it("symptoms maydoni bo'lmasa (ixtiyoriy) xato bermaydi", () => {
     expect(detectOvulationSignals([{ date: "2026-01-01" }])).toEqual([]);
   });
+
+  // CYCLE-ALGO-12: "cervical_mucus_change" ham ovulyatsiya signali sifatida
+  // hisoblanadi — "ovulation_pain"dan farqli, ancha keng tarqalgan.
+  it("'cervical_mucus_change' simptomini ham signal sifatida hisoblaydi", () => {
+    const logs = [
+      { date: "2026-01-01", symptoms: ["cramps" as const] },
+      { date: "2026-01-14", symptoms: ["cervical_mucus_change"] as Symptom[] },
+      { date: "2026-01-20", symptoms: ["ovulation_pain"] as Symptom[] },
+    ];
+    expect(detectOvulationSignals(logs)).toEqual(["2026-01-14", "2026-01-20"]);
+  });
+
+  it("bir kunda ikkalasi ham qayd etilgan bo'lsa, dublikatsiz bitta sana qaytaradi", () => {
+    const logs = [{ date: "2026-01-14", symptoms: ["ovulation_pain", "cervical_mucus_change"] as Symptom[] }];
+    expect(detectOvulationSignals(logs)).toEqual(["2026-01-14"]);
+  });
 });
 
 // CYCLE-ALGO-05: to'liq integratsiya — ovulyatsiya belgisi bor tarixdan

@@ -50,6 +50,7 @@ export const SYMPTOM_EMOJI: Record<Symptom, string> = {
   hot_flashes: "🥵",
   night_sweats: "💦",
   ovulation_pain: "🌸",
+  cervical_mucus_change: "💧",
 };
 
 export const CYCLE_PHASE_EMOJI: Record<CyclePhase, string> = {

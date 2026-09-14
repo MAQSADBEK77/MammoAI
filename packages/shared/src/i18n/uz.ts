@@ -281,6 +281,13 @@ const uz = {
           ? `Keyingi hayzingiz ${days} kundan keyin`
           : `Hayzingiz ${Math.abs(days)} kun kechikmoqda`,
     fertileWindowLabel: "Unumdor kunlar oynasi",
+    // CYCLE-ALGO-12: bashorat qilingan unumdor oyna atrofida — foydalanuvchiga
+    // ovulyatsiya signalini (simptom) qayd etishni taklif qiladi, bu esa
+    // ikki-fazali lyuteal modelni (CYCLE-ALGO-05) aniqlashtiradi.
+    ovulationSignalPromptTitle: "Ovulyatsiya belgilarini sezdingizmi?",
+    ovulationSignalPromptBody:
+      "Shu kunlarda ovulyatsiya og'rig'ini yoki shilliq qavati o'zgarishini his qildingizmi? Belgilang — bu bashoratni aniqlashtiradi.",
+    ovulationSignalPromptButton: "Belgilash",
     irregularBannerTitle: "3+ oy tartibsiz tsikl aniqlandi",
     // CYCLE-ALGO-11: tartibsiz foydalanuvchilarda aniq-sana bashorati
     // (nextPeriodIn) ginekolog maslahatiga ziddiyatli signal berardi —
@@ -395,6 +402,7 @@ const uz = {
       hot_flashes: "Issiqlik bosishi",
       night_sweats: "Tungi terlash",
       ovulation_pain: "Ovulyatsiya og'rig'i",
+      cervical_mucus_change: "Shilliq qavati o'zgarishi",
     },
   },
 
@@ -924,7 +932,9 @@ const uz = {
     periodTomorrow: "Ertaga hayzingiz boshlanishi kutilmoqda — tayyorgarlik ko'ring 🩷",
     periodSoon: (days: number) => `${days} kundan keyin hayzingiz boshlanadi 🩷`,
     periodLate: (days: number) => `Hayzingiz ${days} kun kechikmoqda — bu me'yorda bo'lishi ham mumkin, lekin kuzatib boring 🩷`,
-    fertileWindow: "Siz hozir unumdor oyna ichidasiz",
+    // CYCLE-ALGO-12: ovulyatsiya signalini qayd etishga nozik taklif —
+    // ilovaga qaytganda bashoratni aniqlashtirish imkoniyatini eslatadi.
+    fertileWindow: "Siz hozir unumdor oyna ichidasiz. Ovulyatsiya belgilarini sezsangiz, ilovada belgilang — bashorat aniqroq bo'ladi 🌸",
   },
 
   feedback: {

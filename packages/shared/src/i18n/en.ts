@@ -274,6 +274,9 @@ const en: Dictionary = {
           ? `Your next period is in ${days} days`
           : `Your period is ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} late`,
     fertileWindowLabel: "Fertile window",
+    ovulationSignalPromptTitle: "Noticing any ovulation signs?",
+    ovulationSignalPromptBody: "Did you feel ovulation pain or notice a change in cervical mucus these days? Log it — it sharpens the prediction.",
+    ovulationSignalPromptButton: "Log it",
     irregularBannerTitle: "3+ months of irregular cycles detected",
     irregularRingLabel: "Tracking your pattern",
     irregularPredictionNote: "An exact date is hard to predict — your cycle naturally varies. We're tracking your overall patterns instead.",
@@ -371,6 +374,7 @@ const en: Dictionary = {
       hot_flashes: "Hot flashes",
       night_sweats: "Night sweats",
       ovulation_pain: "Ovulation pain",
+      cervical_mucus_change: "Cervical mucus change",
     },
   },
 
@@ -870,7 +874,7 @@ const en: Dictionary = {
     periodTomorrow: "Your period is expected to start tomorrow — get ready 🩷",
     periodSoon: (days: number) => `Your period starts in ${days} days 🩷`,
     periodLate: (days: number) => `Your period is ${days} day${days === 1 ? "" : "s"} late — that can be normal too, but keep an eye on it 🩷`,
-    fertileWindow: "You're currently in your fertile window",
+    fertileWindow: "You're currently in your fertile window. If you notice ovulation signs, log them in the app — it sharpens the prediction 🌸",
   },
 
   feedback: {
