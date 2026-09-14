@@ -206,9 +206,11 @@ export function createApiClient(config: ApiClientConfig) {
           body: JSON.stringify({ initData }),
         }),
       /** Foydalanuvchi Telegram'ning "Telefon raqamimni ulashish" popup'ini
-       * tasdiqlaganini (webhook orqali kelganini) tekshirish uchun poll qilinadi. */
-      telegramMiniAppStatus: (telegramUserId: string) =>
-        request<{ phoneReady: boolean }>(`/api/auth/telegram-miniapp/status?telegramUserId=${encodeURIComponent(telegramUserId)}`),
+       * tasdiqlaganini (webhook orqali kelganini) tekshirish uchun poll qilinadi.
+       * FIX3-11: xom telegramUserId o'rniga tasdiqlangan initData yuboriladi —
+       * server o'zi shundan foydalanuvchi ID'sini chiqarib oladi. */
+      telegramMiniAppStatus: (initData: string) =>
+        request<{ phoneReady: boolean }>(`/api/auth/telegram-miniapp/status?initData=${encodeURIComponent(initData)}`),
       /** Telefon tayyor bo'lgach — akkauntni topadi/yaratadi va sessiyani yakunlaydi. */
       telegramMiniAppFinish: (initData: string) =>
         request<PhoneCodeVerifyResponse>("/api/auth/telegram-miniapp/finish", { method: "POST", body: JSON.stringify({ initData }) }),

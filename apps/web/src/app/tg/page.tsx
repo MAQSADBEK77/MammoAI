@@ -71,7 +71,7 @@ export default function TelegramMiniAppPage() {
     if (phase !== "waitingContact" || !initData || !tgUser) return;
     pollRef.current = setInterval(async () => {
       try {
-        const res = await api.auth.telegramMiniAppStatus(String(tgUser.id));
+        const res = await api.auth.telegramMiniAppStatus(initData);
         if (!res.phoneReady) return;
         if (pollRef.current) clearInterval(pollRef.current);
         setPhase("finishing");
