@@ -226,7 +226,15 @@ export type ChecklistItemType =
   | "prenatal_screening_stage1"
   | "prenatal_screening_stage1b"
   | "prenatal_screening_stage1c"
-  | "prenatal_screening_stage2"
+  // FIX3-04: manbadagi "prenatal_screening_stage2" ("faqat 1-bosqichdan
+  // keyin 'xavf guruhi' deb belgilangan homiladorlik uchun") shu yerdan
+  // ATAYLAB OLIB TASHLANDI — bunga kerak bo'ladigan "haqiqiy klinik xavf
+  // guruhi belgisi" (masalan doktor tomonidan UTT natijasi bo'yicha
+  // qo'lda belgilangan) hech qayerda saqlanmaydi. Mavjud "xavf-testi"
+  // (RiskQuizResult) BUTUNLAY BOSHQA narsa — umumiy saraton xavfi, homila
+  // skrininggi natijasi emas — shunga bog'lab qo'yish tibbiy jihatdan
+  // noto'g'ri bo'lardi. Production'da hech qachon ishlab chiqarilmagan
+  // (nol qator), shuning uchun to'liq olib tashlash xavfsiz.
   | "pregnancy_patronage_visit"
   | "postpartum_home_visit"
   | "menopause_checkup"

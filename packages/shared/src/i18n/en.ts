@@ -609,10 +609,6 @@ const en: Dictionary = {
         title: "Prenatal screening — stage 1, 3rd scan (ultrasound)",
         why: "Late-onset growth restriction or functional problems can be missed, delaying intervention.",
       },
-      prenatal_screening_stage2: {
-        title: "Prenatal screening — stage 2 (for high-risk pregnancies)",
-        why: "For flagged pregnancies, skipping this delays genetic diagnosis past the point where all options remain available.",
-      },
       pregnancy_patronage_visit: {
         title: "Pregnancy patronage visit (midwife)",
         why: "Blood pressure spikes (preeclampsia), growth issues, or maternal health problems can go unmonitored between clinic visits.",

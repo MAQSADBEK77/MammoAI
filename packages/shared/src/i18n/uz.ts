@@ -633,10 +633,6 @@ const uz = {
         title: "Homiladorlik skrininggi — 1-bosqich, 3-ko'rik (UTT)",
         why: "Kech namoyon bo'ladigan o'sish orqada qolishi yoki funktsional muammolar payqalmasdan qolishi, aralashuv kechikishi mumkin.",
       },
-      prenatal_screening_stage2: {
-        title: "Homiladorlik skrininggi — 2-bosqich (xavf guruhi uchun)",
-        why: "Xavf guruhiga kiritilgan homiladorlik uchun buni o'tkazib yuborish genetik tashxisni barcha imkoniyatlar mavjud bo'lgan vaqtdan keyinga suradi.",
-      },
       pregnancy_patronage_visit: {
         title: "Homiladorlik patronaji (doya tashrifi)",
         why: "Qon bosimi ko'tarilishi (preeklampsiya), o'sish muammolari yoki ona salomatligi muammolari klinika tashriflari orasida nazoratsiz qolishi mumkin.",
