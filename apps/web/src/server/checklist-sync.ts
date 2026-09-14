@@ -23,6 +23,10 @@ const daysBetween = (a: string, b: string) => {
 
 // FIX-CHECKUPS: tug'ruqdan keyingi standart kuzatuv oynasi.
 const POSTPARTUM_WINDOW_DAYS = 42;
+// FIX3-01: taxminiy tug'ilish sanasidan darhol postpartum'ga o'tmaslik
+// uchun — pregnancy.ts#getPregnancyStatus bilan bir xil "hali homilador"
+// chegarasi (42-hafta = taxminiy sanadan 14 kun keyingacha).
+const POSTPARTUM_GRACE_DAYS = 14;
 
 /**
  * Onboarding profiliga va joriy holatga qarab checklist bandlarini yaratadi/yangilaydi.
@@ -56,12 +60,14 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
   // — due_date hisob-kitobi ertalabki soatlarda bir kun orqada chiqishi mumkin edi.
   const today = tashkentDateStr();
 
-  // FIX-CHECKUPS: tug'ruqdan keyingi ~42 kunlik oyna — bu davrda foydalanuvchi
-  // endi "homilador" emas, "postpartum" hisoblanadi. Haqiqiy tug'ilgan sana
-  // kuzatilmagani uchun (faqat taxminiy dueDate bor) — bu taxminiy chegara,
-  // aniqrog'i mavjud emas (keng tarqalgan qoida sifatida qabul qilingan).
+  // FIX-CHECKUPS/FIX3-01: tug'ruqdan keyingi ~42 kunlik oyna — bu davrda
+  // foydalanuvchi endi "homilador" emas, "postpartum" hisoblanadi. ILGARI
+  // `daysSinceDue > 0` edi — taxminiy sanadan ATIGI 1 kun o'tishi bilan
+  // homiladorlik bandlarini butunlay yo'qotardi, holbuki haqiqiy tug'ruq
+  // taxminiy sanadan bir necha kun/hafta kechikishi tabiiy hol —
+  // POSTPARTUM_GRACE_DAYS shu oynani hisobga oladi.
   const daysSinceDue = pregnancy?.dueDate ? daysBetween(pregnancy.dueDate, today) : null;
-  const isPostpartum = daysSinceDue !== null && daysSinceDue > 0 && daysSinceDue <= POSTPARTUM_WINDOW_DAYS;
+  const isPostpartum = daysSinceDue !== null && daysSinceDue > POSTPARTUM_GRACE_DAYS && daysSinceDue <= POSTPARTUM_WINDOW_DAYS;
   const isPregnant = (profile.isPregnant || !!pregnancy?.dueDate) && !isPostpartum;
   const pregnancyWeek = isPregnant && pregnancy ? (getPregnancyStatus(pregnancy, today)?.currentWeek ?? null) : null;
 
