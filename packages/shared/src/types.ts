@@ -63,6 +63,18 @@ export type HealthCondition =
 // App.pdf §4 — "qayerdan eshitdingiz".
 export type HeardAboutUs = "social_media" | "friend" | "doctor" | "app_store" | "other";
 
+// CYCLE-ALGO-13 (kelajakka tayyorgarlik eslatmasi, hozircha bug EMAS):
+// hozircha bu yerda gormonal kontratseptsiya (tabletka, spiral va h.k.)
+// maydoni YO'Q — shuning uchun bu hozircha muammo yaratmaydi. LEKIN agar
+// kelajakda shunday maydon qo'shilsa: gormonal kontratseptsiya
+// ishlatuvchi foydalanuvchida "hayz" aslida dori sxemasiga bog'liq
+// chekinish qonashi, tabiiy ovulyatsiya YO'Q — bunday foydalanuvchiga
+// unumdor oyna/ovulyatsiya kuni ko'rsatish TIBBIY JIHATDAN CHALG'ITUVCHI
+// (homiladorlikdan himoya haqida noto'g'ri xotirjamlik berishi mumkin).
+// SHU MAYDON QO'SHILGANDA: `cycle.ts#predictCycle`ga shart qo'shish
+// UNUTILMASIN — kontratseptsiya ishlatuvchilarga fertileWindowStart/End
+// va ovulationDay ko'rsatilmasligi (yoki aniq ogohlantirish bilan
+// ko'rsatilishi) kerak.
 export interface OnboardingProfile {
   userId: string;
   name: string | null;
