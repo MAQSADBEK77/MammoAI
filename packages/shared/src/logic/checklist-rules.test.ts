@@ -28,8 +28,20 @@ describe("generateChecklist", () => {
   it("18 yoshda, boshqa xavf omillari yo'q bo'lsa ham asosiy umumiy profilaktika bandlari chiqadi", () => {
     const types = typesOf({ age: 18 });
     expect(types).toContain("annual_preventive_exam");
-    expect(types).toContain("pelvic_exam_speculum");
+    expect(types).toContain("flora_smear");
     expect(types).not.toContain("cervical_cancer_screening"); // sexuallyActive: false
+  });
+
+  // FIX3-06: spekulyum bilan INVAZIV ko'rik jinsiy faol BO'LMAGANLARGA
+  // tavsiya qilinmasligi kerak (odatiy klinik amaliyot) — flora_smear esa
+  // kamroq invaziv, jinsiy faollikdan qat'iy nazar davom etadi.
+  it("pelvic_exam_speculum faqat jinsiy faol bo'lganda, flora_smear faollikdan qat'iy nazar chiqadi", () => {
+    const active = typesOf({ age: 25, sexuallyActive: true });
+    const inactive = typesOf({ age: 25, sexuallyActive: false });
+    expect(active).toContain("pelvic_exam_speculum");
+    expect(inactive).not.toContain("pelvic_exam_speculum");
+    expect(active).toContain("flora_smear");
+    expect(inactive).toContain("flora_smear");
   });
 
   it("eski (endi ishlab chiqarilmaydigan) turlar hech qachon qaytmaydi", () => {

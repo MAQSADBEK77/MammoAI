@@ -121,11 +121,19 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
   if (input.age >= 9 && input.age <= 45) {
     items.push({ type: "hpv_vaccination", dueInDays: 30 });
   }
-  if (input.age >= 18 && input.age <= 65) {
-    // sexually_active_required manbada `false` — bu yerda "jinsiy hayotga
-    // shart emas" (ya'ni cheklanmagan) deb talqin qilindi, "faqat jinsiy
-    // hayoti bo'lmaganlar uchun" emas — chunki bu umumiy ko'rik.
+  // FIX3-06: ilgari `sexually_active_required: false`ni "cheklanmagan"
+  // (hammaga tegishli) deb noto'g'ri talqin qilingan edi — natijada
+  // spekulyum bilan INVAZIV tekshiruv jinsiy faol BO'LMAGAN 18-65 yoshli
+  // barcha ayollarga ham yiliga tavsiya qilinardi, bu odatiy klinik
+  // amaliyotga zid (spekulyum bilan ko'rik odatda jinsiy faol
+  // bemorlarga qo'llaniladi). Endi `pelvic_exam_speculum` ham
+  // `isSexuallyActive`ga bog'liq. `flora_smear` (surtma) — kamroq
+  // invaziv, tashqi/boshqa usul bilan ham olinishi mumkin — cheklanmagan
+  // holicha qoladi.
+  if (input.age >= 18 && input.age <= 65 && isSexuallyActive) {
     items.push({ type: "pelvic_exam_speculum", dueInDays: 365, recurrenceDays: 365 });
+  }
+  if (input.age >= 18 && input.age <= 65) {
     items.push({ type: "flora_smear", dueInDays: 365, recurrenceDays: 365 });
   }
   if (input.age >= 18 && input.age <= 65 && isSexuallyActive) {
