@@ -3158,6 +3158,82 @@ export async function checkCommentRateLimit(userId: string): Promise<void> {
   await sql`UPDATE comment_rate_limit_attempts SET attempt_count = ${newCount} WHERE user_id = ${userId}`;
 }
 
+// FIX3-17: /api/feedback va /api/community/posts/[id]/report'da rate-limit
+// yo'q edi — fikr-mulohaza jadvali spam bilan to'ldirilishi yoki bitta
+// foydalanuvchi ko'p postlarni "shikoyat" qilib moderatsiya navbatini
+// bezovta qilishi mumkin edi. Ikkalasi ham soatlik chegara (kamdan-kam,
+// lekin qonuniy holatlarda bir necha marta ishlatilishi mumkin bo'lgan
+// amallar uchun daqiqalik emas, soatlik oyna mosroq).
+const FEEDBACK_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const FEEDBACK_RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
+const FEEDBACK_RATE_LIMIT_BLOCK_SECONDS = 30 * 60;
+
+export async function checkFeedbackRateLimit(userId: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT attempt_count, window_start, blocked_until FROM feedback_rate_limit_attempts WHERE user_id = ${userId}
+  `) as unknown as { attempt_count: number; window_start: string; blocked_until: string | null }[];
+  const row = rows[0];
+  const nowMs = Date.now();
+
+  if (row?.blocked_until && new Date(row.blocked_until).getTime() > nowMs) {
+    throw new ApiError(429, "Juda ko'p fikr yubordingiz — birozdan keyin qayta urinib ko'ring");
+  }
+
+  const windowExpired = !row || new Date(row.window_start).getTime() + FEEDBACK_RATE_LIMIT_WINDOW_SECONDS * 1000 < nowMs;
+  if (windowExpired) {
+    await sql`
+      INSERT INTO feedback_rate_limit_attempts (user_id, attempt_count, window_start, blocked_until)
+      VALUES (${userId}, 1, ${new Date(nowMs).toISOString()}, NULL)
+      ON CONFLICT (user_id) DO UPDATE SET attempt_count = 1, window_start = EXCLUDED.window_start, blocked_until = NULL
+    `;
+    return;
+  }
+
+  const newCount = (row?.attempt_count ?? 0) + 1;
+  if (newCount > FEEDBACK_RATE_LIMIT_MAX_ATTEMPTS) {
+    const blockedUntil = new Date(nowMs + FEEDBACK_RATE_LIMIT_BLOCK_SECONDS * 1000).toISOString();
+    await sql`UPDATE feedback_rate_limit_attempts SET attempt_count = ${newCount}, blocked_until = ${blockedUntil} WHERE user_id = ${userId}`;
+    throw new ApiError(429, "Juda ko'p fikr yubordingiz — birozdan keyin qayta urinib ko'ring");
+  }
+  await sql`UPDATE feedback_rate_limit_attempts SET attempt_count = ${newCount} WHERE user_id = ${userId}`;
+}
+
+const COMMUNITY_REPORT_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const COMMUNITY_REPORT_RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
+const COMMUNITY_REPORT_RATE_LIMIT_BLOCK_SECONDS = 30 * 60;
+
+export async function checkCommunityReportRateLimit(userId: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT attempt_count, window_start, blocked_until FROM community_report_rate_limit_attempts WHERE user_id = ${userId}
+  `) as unknown as { attempt_count: number; window_start: string; blocked_until: string | null }[];
+  const row = rows[0];
+  const nowMs = Date.now();
+
+  if (row?.blocked_until && new Date(row.blocked_until).getTime() > nowMs) {
+    throw new ApiError(429, "Juda ko'p shikoyat yubordingiz — birozdan keyin qayta urinib ko'ring");
+  }
+
+  const windowExpired = !row || new Date(row.window_start).getTime() + COMMUNITY_REPORT_RATE_LIMIT_WINDOW_SECONDS * 1000 < nowMs;
+  if (windowExpired) {
+    await sql`
+      INSERT INTO community_report_rate_limit_attempts (user_id, attempt_count, window_start, blocked_until)
+      VALUES (${userId}, 1, ${new Date(nowMs).toISOString()}, NULL)
+      ON CONFLICT (user_id) DO UPDATE SET attempt_count = 1, window_start = EXCLUDED.window_start, blocked_until = NULL
+    `;
+    return;
+  }
+
+  const newCount = (row?.attempt_count ?? 0) + 1;
+  if (newCount > COMMUNITY_REPORT_RATE_LIMIT_MAX_ATTEMPTS) {
+    const blockedUntil = new Date(nowMs + COMMUNITY_REPORT_RATE_LIMIT_BLOCK_SECONDS * 1000).toISOString();
+    await sql`UPDATE community_report_rate_limit_attempts SET attempt_count = ${newCount}, blocked_until = ${blockedUntil} WHERE user_id = ${userId}`;
+    throw new ApiError(429, "Juda ko'p shikoyat yubordingiz — birozdan keyin qayta urinib ko'ring");
+  }
+  await sql`UPDATE community_report_rate_limit_attempts SET attempt_count = ${newCount} WHERE user_id = ${userId}`;
+}
+
 interface PartnerLinkRow {
   id: string;
   user_a_id: string;

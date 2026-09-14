@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { CommunityReportReason } from "@mammoai/shared";
 import { jsonError, requireUser, ApiError } from "@/server/api-utils";
-import { createCommunityReport } from "@/server/repo";
+import { checkCommunityReportRateLimit, createCommunityReport } from "@/server/repo";
 
 const VALID_REASONS: CommunityReportReason[] = ["spam", "harassment", "misinformation", "medical_emergency", "other"];
 
@@ -10,6 +10,9 @@ const VALID_REASONS: CommunityReportReason[] = ["spam", "harassment", "misinform
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireUser(request);
+    // FIX3-17: rate-limit yo'q edi — bitta foydalanuvchi ko'p postlarni
+    // "shikoyat" qilib moderatsiya navbatini bezovta qilishi mumkin edi.
+    await checkCommunityReportRateLimit(user.id);
     const { id } = await context.params;
     const body = (await request.json()) as { reason?: CommunityReportReason; note?: string };
     if (!body.reason || !VALID_REASONS.includes(body.reason)) {

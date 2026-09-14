@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jsonError, requireUser } from "@/server/api-utils";
-import { submitFeedback } from "@/server/repo";
+import { checkFeedbackRateLimit, submitFeedback } from "@/server/repo";
 import type { FeedbackTrigger } from "@mammoai/shared";
 
 interface FeedbackBody {
@@ -14,6 +14,8 @@ interface FeedbackBody {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser(request);
+    // FIX3-17: rate-limit yo'q edi — spam fikr-mulohaza jadvalini to'ldirishi mumkin edi.
+    await checkFeedbackRateLimit(user.id);
     const body = (await request.json()) as FeedbackBody;
     if (body.trigger !== "manual" && body.trigger !== "chat_prompt") {
       return NextResponse.json({ error: "Noto'g'ri trigger" }, { status: 400 });

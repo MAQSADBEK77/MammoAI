@@ -264,6 +264,26 @@ async function initSchema() {
         blocked_until TEXT
       )
     `,
+    // FIX3-17: /api/feedback va /api/community/posts/[id]/report'da rate-limit
+    // yo'q edi — fikr-mulohaza jadvali spam bilan to'ldirilishi yoki bitta
+    // foydalanuvchi ko'p postlarni "shikoyat" qilib moderatsiya navbatini
+    // bezovta qilishi mumkin edi.
+    sql`
+      CREATE TABLE IF NOT EXISTS feedback_rate_limit_attempts (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        window_start TEXT NOT NULL,
+        blocked_until TEXT
+      )
+    `,
+    sql`
+      CREATE TABLE IF NOT EXISTS community_report_rate_limit_attempts (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        window_start TEXT NOT NULL,
+        blocked_until TEXT
+      )
+    `,
     sql`
       CREATE TABLE IF NOT EXISTS pregnancy_profiles (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
