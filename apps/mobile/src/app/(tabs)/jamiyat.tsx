@@ -94,14 +94,26 @@ export default function CommunityScreen() {
   // e'tiborsiz qoldiriladi.
   const latestTagRef = useRef<CommunityTag | "all">(tag);
 
+  // FIX3-23: .catch() yo'q edi — so'rov muvaffaqiyatsiz bo'lsa, `posts` hech
+  // qachon o'rnatilmay, Jamiyat tabi ABADIY yuklanish spinnerida qotib
+  // qolardi (FIX2-11'dagi bilan bir xil naqsh).
+  const [postsLoadError, setPostsLoadError] = useState(false);
+
   const loadPosts = useCallback((currentTag: CommunityTag | "all") => {
     latestTagRef.current = currentTag;
     setPosts(null);
-    api.community.listPosts({ tag: currentTag === "all" ? undefined : currentTag, limit: PAGE_SIZE, offset: 0 }).then((res) => {
-      if (latestTagRef.current !== currentTag) return;
-      setPosts(res.posts);
-      setTotal(res.total);
-    });
+    setPostsLoadError(false);
+    api.community
+      .listPosts({ tag: currentTag === "all" ? undefined : currentTag, limit: PAGE_SIZE, offset: 0 })
+      .then((res) => {
+        if (latestTagRef.current !== currentTag) return;
+        setPosts(res.posts);
+        setTotal(res.total);
+      })
+      .catch(() => {
+        if (latestTagRef.current !== currentTag) return;
+        setPostsLoadError(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -299,6 +311,15 @@ export default function CommunityScreen() {
     } finally {
       setReportSubmitting(false);
     }
+  }
+
+  if (postsLoadError && !posts) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center gap-3 bg-background p-6">
+        <Text className="text-center text-sm text-text-secondary">{dict.common.errorGeneric}</Text>
+        <Button onPress={() => loadPosts(tag)}>{dict.common.retryButton}</Button>
+      </SafeAreaView>
+    );
   }
 
   if (!posts && !stats) {

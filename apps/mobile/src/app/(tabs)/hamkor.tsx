@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, View, Text, Pressable, Alert, TextInput } from "react-native";
 import clsx from "clsx";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,10 +35,32 @@ export default function HamkorScreen() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  // FIX3-24: .catch() yo'q edi — so'rov muvaffaqiyatsiz bo'lsa, `status`
+  // hech qachon o'rnatilmay, Hamkor tabi ABADIY yuklanish spinnerida qotib
+  // qolardi (FIX2-11'dagi bilan bir xil naqsh).
+  const [loadError, setLoadError] = useState(false);
+
+  const load = useCallback(() => {
+    setLoadError(false);
+    api.partner
+      .status()
+      .then(setStatus)
+      .catch(() => setLoadError(true));
+  }, []);
 
   useEffect(() => {
-    api.partner.status().then(setStatus);
-  }, []);
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
+
+  if (loadError) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center gap-3 bg-background p-6">
+        <Text className="text-center text-sm text-text-secondary">{dict.common.errorGeneric}</Text>
+        <Button onPress={load}>{dict.common.retryButton}</Button>
+      </SafeAreaView>
+    );
+  }
 
   if (!status) {
     return (

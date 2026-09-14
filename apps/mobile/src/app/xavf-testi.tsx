@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -17,10 +17,23 @@ export default function RiskQuizScreen() {
   const [stepIndex, setStepIndex] = useState(0);
   const [result, setResult] = useState<RiskQuizResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // FIX3-25: .catch() yo'q edi — so'rov muvaffaqiyatsiz bo'lsa, `existingResult`
+  // `undefined`da qolib, foydalanuvchi testni BOSHLAY OLMASDI (FIX2-11'dagi
+  // bilan bir xil naqsh).
+  const [loadError, setLoadError] = useState(false);
+
+  const load = useCallback(() => {
+    setLoadError(false);
+    api.riskQuiz
+      .get()
+      .then(setExistingResult)
+      .catch(() => setLoadError(true));
+  }, []);
 
   useEffect(() => {
-    api.riskQuiz.get().then(setExistingResult);
-  }, []);
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   const question = RISK_QUIZ_QUESTIONS[stepIndex];
   const isLast = stepIndex === RISK_QUIZ_QUESTIONS.length - 1;
@@ -42,6 +55,15 @@ export default function RiskQuizScreen() {
   }
 
   const shown = result ?? (existingResult && !started ? existingResult : null);
+
+  if (loadError && existingResult === undefined) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center gap-3 bg-background p-6">
+        <Text className="text-center text-sm text-text-secondary">{dict.common.errorGeneric}</Text>
+        <Button onPress={load}>{dict.common.retryButton}</Button>
+      </SafeAreaView>
+    );
+  }
 
   if (existingResult === undefined) {
     return (
