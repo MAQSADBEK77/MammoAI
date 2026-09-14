@@ -20,6 +20,14 @@ const ADAPTIVE_MAX_CYCLES = 6; // o'rtacha shu oxirgi N ta sikldan hisoblanadi (
 // "3 ta siklga teng ishonch og'irligi" — n=SHRINKAGE_K'da shaxsiy va umumiy
 // (prior) taxminan teng og'irlikda bo'ladi (n/(n+k) = 3/6 = 50%).
 const SHRINKAGE_K = 3;
+// CYCLE-ALGO-07: bashorat DIAPAZONI shakllanadigan standart og'ish — n<2'da
+// (ishonchli namuna og'ishini hisoblab bo'lmaydigan holatlarda) ishlatiladi.
+// 4 kun — "past ishonch" darajasiga mos keladigan, taxminiy tarqalishni aks
+// ettiruvchi oqilona standart qiymat.
+const DEFAULT_STD_DEV_DAYS = 4;
+// isCycleIrregular=true bo'lganda diapazon KENGROQ bo'lishi kerak (talab 6b:
+// "masalan ±1.5 std dev, ±1 emas").
+const IRREGULAR_STD_DEV_MULTIPLIER = 1.5;
 const MIN_SANE_CYCLE_LENGTH = 15;
 const MAX_SANE_CYCLE_LENGTH = 60;
 const MIN_SANE_PERIOD_LENGTH = 1;
@@ -84,6 +92,18 @@ export function computeMedian(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+/** CYCLE-ALGO-07: standart og'ish (populyatsiya, n'ga bo'lingan — namuna
+ * emas, chunki `values` o'zi ANIQLANGAN sikllarning TO'LIQ to'plami, tasodifiy
+ * namuna emas). n<2'da 0 qaytaradi — chaqiruvchi bu holatda alohida
+ * DEFAULT_STD_DEV_DAYS bilan almashtiradi (bitta nuqtaning "og'ishi" 0 emas,
+ * NOMA'LUM). */
+export function computeStdDev(values: number[]): number {
+  if (values.length < 2) return 0;
+  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+  const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+  return Math.sqrt(variance);
 }
 
 /** Standart Tukey kvartil usuli (median-orqali-bo'lish): pastki/yuqori
@@ -307,6 +327,10 @@ export interface AdaptiveCycleSettings {
    * simptomi) mavjud sikllardan hisoblanadi. `null` bo'lsa, `predictCycle`
    * standart DEFAULT_LUTEAL_PHASE_DAYS (14)ni ishlatadi. */
   personalLutealPhase: number | null;
+  /** CYCLE-ALGO-07: bashorat diapazonining yarim-kengligi (kun) —
+   * `predictCycle`ga to'g'ridan-to'g'ri uzatiladi. Tartibsiz (isCycleIrregular)
+   * foydalanuvchilar uchun KENGROQ (talab 6b). */
+  stdDevDays: number;
 }
 
 /**
@@ -345,6 +369,7 @@ export function deriveAdaptiveCycleSettings(
       cyclesAnalyzed: 0,
       confidence: "insufficient",
       personalLutealPhase: null,
+      stdDevDays: DEFAULT_STD_DEV_DAYS,
     };
   }
 
@@ -356,7 +381,8 @@ export function deriveAdaptiveCycleSettings(
   // hali ham XOM (filtrlanmagan) `lengths`ni ishlatadi — outlier chiqarib
   // tashlangani ISHONCH darajasini sun'iy oshirmasligi kerak, chunki outlier
   // borligining o'zi haqiqiy noaniqlik signali.
-  const { filtered: cycleLengthsForAvg } = filterOutliers(lengths, isCycleIrregular(lengths));
+  const cycleIsIrregular = isCycleIrregular(lengths);
+  const { filtered: cycleLengthsForAvg } = filterOutliers(lengths, cycleIsIrregular);
   // CYCLE-ALGO-02: oddiy (tekis) o'rtacha o'rniga og'irlik-asoslangan —
   // barcha 6 ta sikl bir xil og'irlikda bo'lgan ilgarigi mantiq eng so'nggi
   // (haqiqatan foydali) o'zgarishlarni eski ma'lumot bilan "suyultirib"
@@ -391,12 +417,19 @@ export function deriveAdaptiveCycleSettings(
       ? Math.round(computeWeightedAverage(recentPeriodLengths))
       : (fallback.averagePeriodLength ?? DEFAULT_PERIOD_LENGTH);
 
+  // CYCLE-ALGO-07: bashorat diapazoni — haqiqiy namuna og'ishi (n>=2'da) yoki
+  // DEFAULT_STD_DEV_DAYS (n<2'da, og'ishni ishonchli hisoblab bo'lmaydi).
+  // isCycleIrregular=true bo'lsa KENGROQ (talab 6b: "masalan ±1.5 std dev").
+  const rawStdDev = cycleLengthsForAvg.length >= 2 ? computeStdDev(cycleLengthsForAvg) : DEFAULT_STD_DEV_DAYS;
+  const stdDevDays = cycleIsIrregular ? rawStdDev * IRREGULAR_STD_DEV_MULTIPLIER : rawStdDev;
+
   return {
     lastPeriodStart: lastStart,
     averageCycleLength: avgCycleLength,
     averagePeriodLength: clamp(periodLength, MIN_SANE_PERIOD_LENGTH, MAX_SANE_PERIOD_LENGTH),
     cyclesAnalyzed: lengths.length,
     confidence: getPredictionConfidence(lengths.length, lengths),
+    stdDevDays,
     personalLutealPhase: computePersonalLutealPhaseDays(logs, starts),
   };
 }
@@ -413,6 +446,14 @@ export const STALE_PREDICTION_DAYS = 90; // ~3 ta o'rtacha sikl
 
 export interface CyclePrediction {
   nextPeriodStart: string;
+  /** CYCLE-ALGO-07: `nextPeriodStart` — eng ehtimolli (nuqta) taxmin, hali
+   * ham UI'da asosiy sana sifatida ko'rsatiladi. `nextPeriodStartEarliest`/
+   * `Latest` — haqiqiy noaniqlikni aks ettiruvchi diapazon (CYCLE-002: aniq
+   * sana tibbiy haqiqat sifatida emas, taxmin sifatida ko'rsatilishi kerak).
+   * Kenglik `stdDevDays`ga asoslangan — past ishonchda kengroq, yuqori
+   * ishonchda torroq (deyarli nuqtaga teng). */
+  nextPeriodStartEarliest: string;
+  nextPeriodStartLatest: string;
   nextPeriodEnd: string;
   fertileWindowStart: string;
   fertileWindowEnd: string;
@@ -436,6 +477,10 @@ export function predictCycle(
     /** CYCLE-ALGO-05: berilmasa (yoki `null`), standart DEFAULT_LUTEAL_PHASE_DAYS
      * (14) ishlatiladi — ilgarigi (o'zgarishsiz) xatti-harakat. */
     personalLutealPhase?: number | null;
+    /** CYCLE-ALGO-07: bashorat diapazonining yarim-kengligi (kun) — berilmasa,
+     * DEFAULT_STD_DEV_DAYS ishlatiladi (ma'lumot yo'qligini aks ettiruvchi
+     * "keng" standart qiymat). */
+    stdDevDays?: number;
   },
   today: string = tashkentDateStr()
 ): CyclePrediction | null {
@@ -457,6 +502,17 @@ export function predictCycle(
   const nextPeriodStart = addDays(settings.lastPeriodStart, cycleLength);
   const nextPeriodEnd = addDays(nextPeriodStart, periodLength - 1);
 
+  // CYCLE-ALGO-07: ILGARI bashorat FAQAT bitta aniq sana edi — bu haqiqiy
+  // noaniqlikni yashirib, soxta aniqlik taassurotini berardi. Endi
+  // `stdDevDays` (chaqiruvchi — deriveAdaptiveCycleSettings — tomonidan
+  // hisoblangan, tartibsiz foydalanuvchilar uchun kengaytirilgan) asosida
+  // diapazon ham qaytariladi. `nextPeriodStart` hali ham asosiy (nuqta)
+  // taxmin sifatida saqlanadi — UI past/o'rta ishonchda diapazonni, yuqori
+  // ishonchda nuqtaga yaqinroq tor diapazonni ko'rsatishi mumkin.
+  const rangeDays = Math.max(1, Math.round(settings.stdDevDays ?? DEFAULT_STD_DEV_DAYS));
+  const nextPeriodStartEarliest = addDays(nextPeriodStart, -rangeDays);
+  const nextPeriodStartLatest = addDays(nextPeriodStart, rangeDays);
+
   // CYCLE-ALGO-05: ILGARI ovulyatsiya DOIM "cycleLength - 14" (lyuteal faza
   // qat'iy 14 kun deb faraz qilingan) edi. Haqiqatda follikulyar faza ancha
   // o'zgaruvchan, lyuteal faza esa har bir ayolda nisbatan BARQAROR — shuning
@@ -474,6 +530,8 @@ export function predictCycle(
 
   return {
     nextPeriodStart,
+    nextPeriodStartEarliest,
+    nextPeriodStartLatest,
     nextPeriodEnd,
     fertileWindowStart,
     fertileWindowEnd,

@@ -289,6 +289,10 @@ const uz = {
     staleDataLabel: "Ma'lumot eskirgan — oxirgi hayz sanasini yangilang",
     predictionBasisHistory: (n: number) => `So'nggi ${n} ta sikl asosida hisoblangan`,
     predictionBasisEstimate: "Taxminiy — ko'proq kuzatuv qilsangiz aniqroq bo'ladi",
+    // CYCLE-ALGO-07: aniq sana o'rniga diapazon — past/o'rta ishonchda
+    // haqiqiy noaniqlikni yashirmaslik uchun ("13-16 kun" o'rniga bitta
+    // "13 kun" degan soxta aniqlik taassuroti bermaslik).
+    nextPeriodRangeLabel: (earliest: string, latest: string) => `${earliest}–${latest} oralig'ida kutilmoqda`,
     // CYCLE-002: aniq sana o'rniga ishonch darajasi — bashorat tibbiy haqiqat
     // emas, turli aniqlikdagi taxmin ekanini ochiq ko'rsatish uchun.
     confidenceLabel: {

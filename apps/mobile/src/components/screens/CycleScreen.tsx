@@ -6,7 +6,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Portal, Dialog } from "react-native-paper";
 import type { CycleLog, CycleResponse, FlowLevel, Mood, PredictionConfidence, Symptom } from "@mammoai/shared";
-import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { formatDateDisplay, getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useThemeColors } from "@/lib/theme";
@@ -322,6 +322,15 @@ export function CycleScreen() {
                   <Badge tone={CONFIDENCE_TONE[data.prediction.confidence]}>
                     <Text>{dict.cycle.confidenceLabel[data.prediction.confidence]}</Text>
                   </Badge>
+                  {/* CYCLE-ALGO-07 — web'dagi bilan bir xil, izoh o'sha yerda. */}
+                  {data.prediction.confidence !== "high" && !data.prediction.isStale && data.prediction.daysUntilNextPeriod >= 0 && (
+                    <Text className="text-center text-xs text-text-muted">
+                      {dict.cycle.nextPeriodRangeLabel(
+                        formatDateDisplay(data.prediction.nextPeriodStartEarliest),
+                        formatDateDisplay(data.prediction.nextPeriodStartLatest)
+                      )}
+                    </Text>
+                  )}
                 </View>
               )}
             </Card>

@@ -280,6 +280,7 @@ const ru: Dictionary = {
     staleDataLabel: "Данные устарели — обновите дату последней менструации",
     predictionBasisHistory: (n: number) => `Рассчитано на основе последних ${n} циклов`,
     predictionBasisEstimate: "Приблизительно — станет точнее по мере наблюдений",
+    nextPeriodRangeLabel: (earliest: string, latest: string) => `Ожидается между ${earliest}–${latest}`,
     confidenceLabel: {
       high: "Высокая точность",
       medium: "Средняя точность",

@@ -11,7 +11,9 @@ import {
   computeCycleLengths,
   computeMedian,
   computePeriodLength,
+  computeStdDev,
   computeWeightedAverage,
+  daysBetween,
   deriveAdaptiveCycleSettings,
   detectOvulationSignals,
   detectPeriodStarts,
@@ -131,6 +133,7 @@ describe("deriveAdaptiveCycleSettings", () => {
       cyclesAnalyzed: 0,
       confidence: "insufficient",
       personalLutealPhase: null, // CYCLE-ALGO-05
+      stdDevDays: 4, // CYCLE-ALGO-07: DEFAULT_STD_DEV_DAYS
     });
   });
 
@@ -295,6 +298,78 @@ describe("predictCycle", () => {
     );
     // nextPeriodStart = 2026-01-17. lutealPhaseDays min(17, 16-1=15)=15 bilan chegaralanadi.
     expect(pred?.ovulationDay).toBe("2026-01-02");
+  });
+
+  // CYCLE-ALGO-07: aniq sana o'rniga diapazon.
+  it("stdDevDays berilmasa, standart (DEFAULT_STD_DEV_DAYS=4) diapazon ishlatiladi", () => {
+    const pred = predictCycle({ lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5 }, "2026-01-01");
+    expect(pred?.nextPeriodStart).toBe("2026-01-29");
+    expect(pred?.nextPeriodStartEarliest).toBe("2026-01-25"); // -4 kun
+    expect(pred?.nextPeriodStartLatest).toBe("2026-02-02"); // +4 kun
+  });
+
+  it("stdDevDays kichik bo'lsa, diapazon torroq bo'ladi (yuqori ishonch)", () => {
+    const pred = predictCycle(
+      { lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5, stdDevDays: 1 },
+      "2026-01-01"
+    );
+    expect(pred?.nextPeriodStartEarliest).toBe("2026-01-28");
+    expect(pred?.nextPeriodStartLatest).toBe("2026-01-30");
+  });
+
+  it("stdDevDays 0 bo'lsa ham, diapazon kamida ±1 kun bo'ladi (soxta aniqlik bermaslik uchun)", () => {
+    const pred = predictCycle(
+      { lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5, stdDevDays: 0 },
+      "2026-01-01"
+    );
+    expect(pred?.nextPeriodStartEarliest).toBe("2026-01-28");
+    expect(pred?.nextPeriodStartLatest).toBe("2026-01-30");
+  });
+});
+
+describe("computeStdDev", () => {
+  it("2 tadan kam qiymatda 0 qaytaradi", () => {
+    expect(computeStdDev([28])).toBe(0);
+    expect(computeStdDev([])).toBe(0);
+  });
+
+  it("barcha qiymatlar bir xil bo'lsa, 0 qaytaradi", () => {
+    expect(computeStdDev([28, 28, 28])).toBe(0);
+  });
+
+  it("tarqoq qiymatlar uchun musbat son qaytaradi", () => {
+    expect(computeStdDev([20, 28, 36])).toBeCloseTo(6.53, 1);
+  });
+});
+
+// CYCLE-ALGO-06/07 integratsiyasi: tartibsiz foydalanuvchilar uchun diapazon
+// SEZILARLI kengroq bo'lishi kerak (talab 6b).
+describe("deriveAdaptiveCycleSettings + predictCycle (CYCLE-ALGO-07 diapazon)", () => {
+  it("tartibsiz (isCycleIrregular) foydalanuvchi uchun diapazon barqaror foydalanuvchidan kengroq", () => {
+    const fallback = { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+    // Barqaror: 28,29,27,28,29,27 — juda kichik tarqalish.
+    const stableLogs = [
+      { date: "2026-01-01", flow: "medium" as const, symptoms: [] as Symptom[] },
+      { date: "2026-01-29", flow: "medium" as const, symptoms: [] as Symptom[] }, // +28
+      { date: "2026-02-27", flow: "medium" as const, symptoms: [] as Symptom[] }, // +29
+      { date: "2026-03-26", flow: "medium" as const, symptoms: [] as Symptom[] }, // +27
+    ];
+    // Tartibsiz: 28, 45, 20 — katta tarqalish (PCOS-o'xshash).
+    const irregularLogs = [
+      { date: "2026-01-01", flow: "medium" as const, symptoms: [] as Symptom[] },
+      { date: "2026-01-29", flow: "medium" as const, symptoms: [] as Symptom[] }, // +28
+      { date: "2026-03-15", flow: "medium" as const, symptoms: [] as Symptom[] }, // +45
+      { date: "2026-04-04", flow: "medium" as const, symptoms: [] as Symptom[] }, // +20
+    ];
+    const stableAdaptive = deriveAdaptiveCycleSettings(stableLogs, fallback, "2026-03-27");
+    const irregularAdaptive = deriveAdaptiveCycleSettings(irregularLogs, fallback, "2026-04-05");
+    expect(irregularAdaptive!.stdDevDays).toBeGreaterThan(stableAdaptive!.stdDevDays);
+
+    const stablePred = predictCycle(stableAdaptive!, "2026-03-27");
+    const irregularPred = predictCycle(irregularAdaptive!, "2026-04-05");
+    const stableRangeWidth = daysBetween(stablePred!.nextPeriodStartEarliest, stablePred!.nextPeriodStartLatest);
+    const irregularRangeWidth = daysBetween(irregularPred!.nextPeriodStartEarliest, irregularPred!.nextPeriodStartLatest);
+    expect(irregularRangeWidth).toBeGreaterThan(stableRangeWidth);
   });
 });
 

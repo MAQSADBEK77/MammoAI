@@ -282,6 +282,7 @@ const en: Dictionary = {
     staleDataLabel: "Data is outdated — update your last period date",
     predictionBasisHistory: (n: number) => `Calculated from your last ${n} cycles`,
     predictionBasisEstimate: "Estimated — logging more cycles will make this more accurate",
+    nextPeriodRangeLabel: (earliest: string, latest: string) => `Expected between ${earliest}–${latest}`,
     confidenceLabel: {
       high: "High confidence",
       medium: "Medium confidence",

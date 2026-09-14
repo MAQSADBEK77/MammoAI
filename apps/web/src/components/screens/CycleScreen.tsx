@@ -13,7 +13,7 @@ import {
   EditOutlined,
 } from "@mui/icons-material";
 import type { CycleResponse, CycleLog, FlowLevel, Mood, PredictionConfidence, Symptom } from "@mammoai/shared";
-import { getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { formatDateDisplay, getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -316,6 +316,17 @@ export function CycleScreen() {
                 <Badge tone={CONFIDENCE_TONE[data.prediction.confidence]}>
                   {dict.cycle.confidenceLabel[data.prediction.confidence]}
                 </Badge>
+                {/* CYCLE-ALGO-07: "yuqori" ishonchda aniq sana yetarli (diapazon
+                    deyarli nuqtaga teng) — faqat past/o'rta ishonchda haqiqiy
+                    diapazonni ko'rsatib, soxta aniqlik taassurotini oldini olamiz. */}
+                {data.prediction.confidence !== "high" && !data.prediction.isStale && data.prediction.daysUntilNextPeriod >= 0 && (
+                  <p className="text-center text-xs text-text-muted">
+                    {dict.cycle.nextPeriodRangeLabel(
+                      formatDateDisplay(data.prediction.nextPeriodStartEarliest),
+                      formatDateDisplay(data.prediction.nextPeriodStartLatest)
+                    )}
+                  </p>
+                )}
               </div>
             )}
           </Card>
