@@ -105,6 +105,16 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
   if (input.age >= 15 && input.age <= 49) {
     items.push({ type: "annual_preventive_exam", dueInDays: 365, recurrenceDays: 365 });
   }
+  // FIX3-03: manbada annual_preventive_exam 49 yoshda tugaydi va
+  // menopause_checkup faqat "perimenopauza" MAQSADI tanlangan
+  // foydalanuvchilarga chiqadi — natijada 50+ yoshli, lekin boshqa
+  // maqsad (masalan "tekshiruvlar"/"farovonlik") tanlagan foydalanuvchi
+  // UMUMAN hech qanday umumiy konsultatsiya bandini olmasdi. Perimenopauza
+  // maqsadidagilar allaqachon menopause_checkup oladi — faqat QOLGANLARI
+  // uchun annual_preventive_exam davom ettiriladi.
+  if (input.age >= 50 && !input.isPerimenopause) {
+    items.push({ type: "annual_preventive_exam", dueInDays: 365, recurrenceDays: 365 });
+  }
   if (input.age >= 14 && input.age <= 18) {
     items.push({ type: "first_gyn_visit", dueInDays: 30, recurrenceDays: 365 });
   }

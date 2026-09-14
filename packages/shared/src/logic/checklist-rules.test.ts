@@ -80,6 +80,14 @@ describe("generateChecklist", () => {
     expect(typesOf({ age: 50, isPerimenopause: false })).not.toContain("menopause_checkup");
   });
 
+  // FIX3-03: annual_preventive_exam 49 yoshda tugaydi, menopause_checkup esa
+  // faqat perimenopauza MAQSADIGA bog'liq — 50+ yoshli, lekin boshqa maqsad
+  // tanlagan foydalanuvchi umuman umumiy konsultatsiya bandisiz qolmasligi kerak.
+  it("50+ yoshda, perimenopauza maqsadi tanlanmagan bo'lsa ham, umumiy konsultatsiya bandi bor", () => {
+    const types = typesOf({ age: 55, isPerimenopause: false });
+    expect(types).toContain("annual_preventive_exam");
+  });
+
   it("homiladorlikni rejalashtirayotganda preconception_checkup va torch_panel qo'shiladi", () => {
     const types = typesOf({ age: 28, isTryingToConceive: true, sexuallyActive: true });
     expect(types).toContain("preconception_checkup");
