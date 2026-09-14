@@ -331,7 +331,22 @@ export async function confirmPhoneViaContact(
   }
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
-  await sql`UPDATE phone_verifications SET code = ${code} WHERE token = ${row.token}`;
+  // FIX3-07: SELECT va UPDATE orasida hech qanday qulf yo'q edi — Telegram
+  // webhookni ikki marta yuborsa (masalan kechikish tufayli qayta urinish),
+  // ikkala so'rov ham "kod hali yo'q" (yuqoridagi SELECT) deb ko'rib,
+  // ikkita TURLI kod generatsiya qilib, ikkalasini ham yuborishi mumkin
+  // edi — oxirgisi saqlanadi, foydalanuvchi esa birinchi (endi noto'g'ri)
+  // kodni ko'rib, tasdiqlashda muvaffaqiyatsiz bo'laveradi. Endi bitta
+  // atomik `UPDATE ... WHERE code IS NULL` — agar bu ikkitasi orasida
+  // boshqa (parallel) chaqiruv allaqachon kod yozgan bo'lsa, bu UPDATE
+  // hech qanday qator o'zgartirmaydi va chaqiruvchi jim qoladi (xuddi
+  // "topilmadi" holatidagi kabi — ikkinchi, ziddiyatli kod yubormaydi).
+  const updated = (await sql`
+    UPDATE phone_verifications SET code = ${code}
+    WHERE token = ${row.token} AND code IS NULL
+    RETURNING token
+  `) as unknown as { token: string }[];
+  if (updated.length === 0) return null;
   return { matched: true, phone: row.phone, language: row.language, code };
 }
 
