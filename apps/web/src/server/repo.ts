@@ -298,9 +298,18 @@ function normalizePhoneDigits(raw: string): string {
  * "telefon raqamni ulashish" tugmasi so'raladi, server/telegram-bot.ts). */
 export async function registerTelegramStart(token: string, chatId: string): Promise<{ phone: string; language: Language } | null> {
   await ensureSchema();
+  // FIX3-12: ilgari bir xil token uchun ikkinchi marta /start bosilsa
+  // (masalan forward qilingan havola yoki ikkinchi qurilma orqali), eski
+  // telegram_chat_id HECH QANDAY TEKSHIRUVSIZ yangi chat bilan
+  // almashtirilardi — birinchi foydalanuvchining login urinishi jimgina
+  // o'ladi (kodi endi BOSHQA chatga yuboriladi), token esa oxirgi bosgan
+  // kishiga "tegishli" bo'lib qolardi. Endi "birinchi da'vogar yutadi" —
+  // agar allaqachon boshqa (turli) chatga bog'langan bo'lsa, UPDATE hech
+  // narsani o'zgartirmaydi (0 qator, null qaytadi).
   const rows = (await sql`
     UPDATE phone_verifications SET telegram_chat_id = ${chatId}
     WHERE token = ${token} AND verified_at IS NULL AND code IS NULL
+      AND (telegram_chat_id IS NULL OR telegram_chat_id = ${chatId})
     RETURNING phone, language
   `) as unknown as { phone: string; language: Language }[];
   return rows[0] ?? null;
