@@ -28,7 +28,19 @@ const MEDICAL_CONCERN_KEYWORDS = [
   "yashashni xohlamayman",
 ];
 
+// FIX3-21: kalit so'zlar ro'yxati faqat oddiy apostrof (') bilan yozilgan,
+// lekin ko'p foydalanuvchi haqiqiy o'zbekcha teskari vergul (ʻ/ʼ) yoki
+// mobil avtokorrekt qo'yadigan qiyshiq tirnoq (') ishlatadi — bunday matnlar
+// hech qachon mos kelmasdi. Solishtirishdan oldin barcha variantlarni bitta
+// standart belgiga normalizatsiya qilamiz.
+const APOSTROPHE_VARIANTS = /[’‘ʻʼ`´]/g;
+function normalizeApostrophes(text: string): string {
+  return text.replace(APOSTROPHE_VARIANTS, "'");
+}
+
+const NORMALIZED_KEYWORDS = MEDICAL_CONCERN_KEYWORDS.map(normalizeApostrophes);
+
 export function detectsMedicalConcern(text: string): boolean {
-  const lower = text.toLowerCase();
-  return MEDICAL_CONCERN_KEYWORDS.some((kw) => lower.includes(kw));
+  const lower = normalizeApostrophes(text.toLowerCase());
+  return NORMALIZED_KEYWORDS.some((kw) => lower.includes(kw));
 }

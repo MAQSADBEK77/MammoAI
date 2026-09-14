@@ -13,4 +13,14 @@ describe("detectsMedicalConcern", () => {
   it("oddiy, xavotirsiz postni belgilamaydi", () => {
     expect(detectsMedicalConcern("Bugun ajoyib kayfiyatdaman, hamma bilan baham ko'rgim keldi!")).toBe(false);
   });
+
+  // FIX3-21: haqiqiy o'zbekcha teskari vergul (ʻ) va mobil avtokorrektning
+  // qiyshiq tirnog'i (') bilan yozilgan matn ham aniqlanishi kerak.
+  it("haqiqiy o'zbekcha teskari vergul (ʻ) bilan yozilgan matnni ham aniqlaydi", () => {
+    expect(detectsMedicalConcern("Qattiq ogʻri bor, chidab boʻlmas holatdaman")).toBe(true);
+  });
+
+  it("mobil avtokorrektning qiyshiq tirnog'i (’) bilan yozilgan matnni ham aniqlaydi", () => {
+    expect(detectsMedicalConcern("Kuchli og’ri bor, tez yordam chaqirishim kerakmi?")).toBe(true);
+  });
 });
