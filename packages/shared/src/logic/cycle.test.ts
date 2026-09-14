@@ -549,4 +549,20 @@ describe("getPredictionConfidence", () => {
   it("3+ sikl bo'lsa-da katta tarqoqlik bo'lsa — 'low'", () => {
     expect(getPredictionConfidence(3, [20, 28, 40])).toBe("low"); // farq 20
   });
+
+  // CYCLE-ALGO-06: isCycleIrregular=true bo'lgan HECH QANDAY sikl to'plami
+  // "high" ishonch bermasligi kerak — tartibsizlik davomida yuqori ishonch
+  // matematik jihatdan noto'g'ri xabar bo'lardi.
+  it("isCycleIrregular=true bo'lgan har qanday to'plam uchun 'high' hech qachon qaytarilmaydi", () => {
+    const candidates = [
+      [28, 20, 36],
+      [30, 22, 38, 30],
+      [25, 40, 25, 30, 28, 33],
+      [28, 28, 28, 15, 45],
+    ];
+    for (const lengths of candidates) {
+      if (!isCycleIrregular(lengths)) continue; // faqat haqiqatan tartibsiz to'plamlarni tekshiramiz
+      expect(getPredictionConfidence(lengths.length, lengths)).not.toBe("high");
+    }
+  });
 });

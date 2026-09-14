@@ -275,6 +275,18 @@ export function getPredictionConfidence(cyclesAnalyzed: number, recentCycleLengt
   if (cyclesAnalyzed < 3) return "low";
   const relevant = recentCycleLengths.slice(-cyclesAnalyzed);
   const spread = Math.max(...relevant) - Math.min(...relevant);
+  // CYCLE-ALGO-06: tartibsiz (isCycleIrregular) foydalanuvchiga HECH QACHON
+  // "high" ishonch bermaymiz — tartibsizlik davomida haqiqatan yuqori ishonch
+  // matematik jihatdan noto'g'ri xabar bo'lardi. ESLATMA: bugungi aniq
+  // konstantalar bilan (IRREGULARITY chegarasi=7 kun > "high" chegarasi=4
+  // kun) bu holat allaqachon bilvosita kafolatlangan edi (isCycleIrregular
+  // oxirgi 3 tasining tarqalishini tekshiradi, bu doim TO'LIQ tarqalishdan
+  // kichik yoki teng) — lekin aniq himoya qo'shildi, chunki bu ikki
+  // konstanta MUSTAQIL sozlanadi va kelajakda birortasi o'zgarsa, bilvosita
+  // kafolat sinishi mumkin edi.
+  if (isCycleIrregular(recentCycleLengths)) {
+    return spread <= 9 ? "medium" : "low";
+  }
   if (spread <= 4) return "high";
   if (spread <= 9) return "medium";
   return "low";
