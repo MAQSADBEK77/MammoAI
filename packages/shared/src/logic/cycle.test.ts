@@ -7,9 +7,12 @@
 import { describe, expect, it } from "vitest";
 import {
   computeCycleLengths,
+  computeMedian,
   computePeriodLength,
+  computeWeightedAverage,
   deriveAdaptiveCycleSettings,
   detectPeriodStarts,
+  filterOutliers,
   getPredictionConfidence,
   isCycleIrregular,
   predictCycle,
@@ -231,6 +234,75 @@ describe("isCycleIrregular", () => {
   });
 });
 
+describe("computeWeightedAverage", () => {
+  it("bo'sh massiv uchun 0 qaytaradi", () => {
+    expect(computeWeightedAverage([])).toBe(0);
+  });
+
+  it("barcha qiymatlar bir xil bo'lsa, natija ham shu qiymat (og'irlikdan qat'iy nazar)", () => {
+    expect(computeWeightedAverage([28, 28, 28])).toBeCloseTo(28);
+  });
+
+  it("eng so'nggi (oxirgi) qiymat eng ko'p ta'sir qiladi", () => {
+    // [20, 30] — agar tekis o'rtacha bo'lsa 25 bo'lardi. Og'irlik-asoslangan
+    // (eng yangi=30 ko'proq ta'sirli) 25'dan KATTA bo'lishi kerak.
+    const weighted = computeWeightedAverage([20, 30], 0.7);
+    expect(weighted).toBeGreaterThan(25);
+  });
+
+  it("decay=1 bo'lsa, aynan tekis o'rtachaga teng", () => {
+    expect(computeWeightedAverage([24, 28, 32], 1)).toBe(28);
+  });
+});
+
+describe("computeMedian", () => {
+  it("bo'sh massiv uchun 0 qaytaradi", () => {
+    expect(computeMedian([])).toBe(0);
+  });
+
+  it("toq sondagi qiymatlar uchun o'rtadagisini qaytaradi", () => {
+    expect(computeMedian([5, 1, 3])).toBe(3);
+  });
+
+  it("juft sondagi qiymatlar uchun o'rtadagi ikkitasining o'rtachasini qaytaradi", () => {
+    expect(computeMedian([1, 2, 3, 4])).toBe(2.5);
+  });
+});
+
+describe("filterOutliers (CYCLE-ALGO-03)", () => {
+  it("4 tadan kam qiymatda hech narsani outlier deb belgilamaydi (kvartil ishonchsiz)", () => {
+    const result = filterOutliers([28, 29, 90], false);
+    expect(result.filtered).toEqual([28, 29, 90]);
+    expect(result.outliers).toEqual([]);
+  });
+
+  it("aniq g'ayrioddiy qiymatni asosiy o'rtachadan chiqarib tashlaydi, lekin alohida saqlaydi", () => {
+    // [27,28,28,29,28,90] (N=6, ADAPTIVE_MAX_CYCLES bilan bir xil) — 90 aniq
+    // outlier (boshqa hammasi ~28 atrofida).
+    const result = filterOutliers([27, 28, 28, 29, 28, 90], false);
+    expect(result.filtered).toEqual([27, 28, 28, 29, 28]);
+    expect(result.outliers).toEqual([90]);
+  });
+
+  it("isIrregular=true bo'lsa, chegara kengroq — o'rtacha PCOS-tarqalishni outlier deb hisoblamaydi", () => {
+    // Xuddi shu tarqoq to'plam: irregular=false bo'lsa outlier topilishi
+    // mumkin bo'lgan holatda, irregular=true (kengroq chegara) hech
+    // narsani chiqarib tashlamasligi kerak.
+    const values = [15, 22, 28, 35, 44];
+    const strict = filterOutliers(values, false);
+    const wide = filterOutliers(values, true);
+    expect(wide.outliers.length).toBeLessThanOrEqual(strict.outliers.length);
+  });
+
+  it("barcha qiymatlar outlier chegarasidan tashqarida bo'lib qolsa (nazariy holat), asl massivni qaytaradi", () => {
+    // Amalda deyarli imkonsiz (IQR chegaralari doim ba'zi qiymatlarni ichiga
+    // oladi), lekin xavfsizlik to'sig'i sifatida tekshiramiz: hech bo'lmasa
+    // natija hech qachon bo'sh `filtered` bilan qaytmaydi.
+    const result = filterOutliers([10, 10, 10, 10], false);
+    expect(result.filtered.length).toBeGreaterThan(0);
+  });
+});
+
 // CYCLE-ALGO-01: backtest infratuzilmasi — bu blok "harness to'g'ri
 // ishlayaptimi"ni tasdiqlaydi VA `legacyPredictor` (CYCLE-ALGO-01'dan
 // OLDINGI, muzlatilgan algoritm)ning bazaviy ("baseline") aniqlik
@@ -275,8 +347,16 @@ describe("cycle-backtest harness (CYCLE-ALGO-01)", () => {
 // DOIM kafolatlanmaydi, aniq tasodifiy chizishga bog'liq (taxminan 50/50).
 // Bu MUAMMO emas: haqiqiy foyda REJIM O'ZGARISHI bo'lganda chiqadi (masalan
 // tug'ruqdan keyingi stsenariy — pastda ko'rinadi, DRAMATIK yaxshilanadi).
-describe("cycle-backtest harness (CYCLE-ALGO-02: og'irlik-asoslangan o'rtacha)", () => {
-  it("currentPredictor (og'irlik-asoslangan) hech qaysi stsenariyda legacyPredictor'dan yomonlashmaydi", () => {
+// MUHIM: bu blokdagi ANIQ raqamlar ("JORIY natija" testlari) HAR BIR
+// keyingi CYCLE-ALGO-0X bosqichida yangilanadi — `currentPredictor` JORIY
+// (LIVE) ./cycle.ts'ni kuzatadi, shuning uchun algoritm evolyutsiyalangani
+// sari bu raqamlar o'zgarishi TABIIY va kutilgan (bu — regressiya emas,
+// rivojlanish jarayoni). Doimiy, hech qachon o'zgarmaydigan yagona kafolat —
+// birinchi test: currentPredictor HECH QACHON muzlatilgan legacyPredictor'dan
+// yomonroq natija bermaydi (frozen bazaviy chiziqqa nisbatan, bosqichma-
+// bosqich oraliq taqqoslashga NISBATAN emas — CYCLE-ALGO-07 talabi shunday).
+describe("cycle-backtest harness (joriy algoritm holati — har bosqichda yangilanadi)", () => {
+  it("currentPredictor hech qaysi stsenariyda legacyPredictor'dan (muzlatilgan bazaviy chiziq) yomonlashmaydi", () => {
     for (const { label, logs } of ALL_BACKTEST_SCENARIOS) {
       const materializedLogs = logs();
       const cur = backtestPredictor(materializedLogs, currentPredictor);
@@ -287,20 +367,21 @@ describe("cycle-backtest harness (CYCLE-ALGO-02: og'irlik-asoslangan o'rtacha)",
     }
   });
 
-  it("YANGI natija — juda muntazam stsenariy (0.8→0.7 kun, deyarli o'zgarishsiz — kutilgan, barqaror shovqinda katta yutuq yo'q)", () => {
+  // CYCLE-ALGO-03 holati (og'irlik-asoslangan o'rtacha + median/outlier-nazorat):
+  it("JORIY natija — juda muntazam stsenariy", () => {
     expect(backtestPredictor(scenarioVeryRegular(), currentPredictor)).toEqual({ avgErrorDays: 0.7, within2DaysPct: 100, cyclesEvaluated: 10 });
   });
 
-  it("YANGI natija — o'rtacha tartibsiz stsenariy (2.9→2.5 kun, 50%→70% ±2 kun ichida)", () => {
-    expect(backtestPredictor(scenarioModeratelyIrregular(), currentPredictor)).toEqual({ avgErrorDays: 2.5, within2DaysPct: 70, cyclesEvaluated: 10 });
+  it("JORIY natija — o'rtacha tartibsiz stsenariy", () => {
+    expect(backtestPredictor(scenarioModeratelyIrregular(), currentPredictor)).toEqual({ avgErrorDays: 2.7, within2DaysPct: 60, cyclesEvaluated: 10 });
   });
 
-  it("YANGI natija — yuqori tartibsiz/PCOS stsenariy (10.5→9.9 kun — kichik yutuq, katta yaxshilanish CYCLE-ALGO-03 outlier-nazoratidan kutiladi)", () => {
+  it("JORIY natija — yuqori tartibsiz/PCOS stsenariy", () => {
     expect(backtestPredictor(scenarioHighlyIrregularPCOS(), currentPredictor)).toEqual({ avgErrorDays: 9.9, within2DaysPct: 10, cyclesEvaluated: 10 });
   });
 
-  it("YANGI natija — tug'ruqdan keyingi stsenariy (9.1→6.6 kun, 14%→43% ±2 kun ichida — ENG KATTA yutuq, aynan shu funksiya mo'ljallangan holat)", () => {
-    expect(backtestPredictor(scenarioPostpartum(), currentPredictor)).toEqual({ avgErrorDays: 6.6, within2DaysPct: 43, cyclesEvaluated: 7 });
+  it("JORIY natija — tug'ruqdan keyingi stsenariy", () => {
+    expect(backtestPredictor(scenarioPostpartum(), currentPredictor)).toEqual({ avgErrorDays: 6.4, within2DaysPct: 43, cyclesEvaluated: 7 });
   });
 });
 

@@ -72,6 +72,65 @@ export function computeWeightedAverage(values: number[], decay = RECENCY_DECAY):
   return weightedSum / weightTotal;
 }
 
+/** CYCLE-ALGO-03: medianani hisoblaydi (mean bilan parallel, outlier-filtrlash
+ * chegaralari uchun ishlatiladi). */
+export function computeMedian(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+/** Standart Tukey kvartil usuli (median-orqali-bo'lish): pastki/yuqori
+ * yarmilarning medianasi — mediana o'zi hech qaysi yarimga kirmaydi (N toq
+ * bo'lsa). N juda kichik (<4) bo'lganda kvartillar tabiiy ravishda keng
+ * bo'ladi — bu to'g'ri, chunki kam ma'lumotda hech narsani ishonchli
+ * "outlier" deb bo'lmaydi. */
+function computeQuartiles(values: number[]): { q1: number; q3: number } {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const lowerHalf = sorted.slice(0, mid);
+  const upperHalf = sorted.length % 2 === 0 ? sorted.slice(mid) : sorted.slice(mid + 1);
+  return { q1: computeMedian(lowerHalf), q3: computeMedian(upperHalf) };
+}
+
+// CYCLE-ALGO-03: "median'dan ±1.5×IQR" so'zma-so'z emas, standart Tukey
+// "fence" formulasi ishlatiladi — [Q1 - k·IQR, Q3 + k·IQR] — chunki bu
+// statistik jihatda to'g'ri/qabul qilingan usul (mediana atrofida simmetrik
+// chegara chayqoq taqsimotlarda noto'g'ri natija berardi). `isIrregular`
+// bo'lsa chegara kengroq (2.5×) — PCOS kabi tabiiy katta tarqalishni
+// noto'g'ri "xato" deb chiqarib tashlamaslik uchun.
+const OUTLIER_IQR_MULTIPLIER = 1.5;
+const OUTLIER_IQR_MULTIPLIER_IRREGULAR = 2.5;
+
+export interface OutlierFilterResult {
+  filtered: number[];
+  outliers: number[];
+  median: number;
+}
+
+/** CYCLE-ALGO-03: bitta g'ayrioddiy sikl (kasallik, stress, dori o'zgarishi,
+ * homiladorlikni yo'qotish) butun o'rtachani og'ishtirib yubormasligi uchun —
+ * IQR-chegaradan tashqaridagi qiymatlar ASOSIY o'rtachadan chiqarib
+ * tashlanadi (lekin alohida `outliers`da qaytariladi — UI'da "bir marta
+ * g'ayrioddiy sikl kuzatildi" kabi shaffof tushuntirish uchun foydali,
+ * CYCLE-ALGO-08). Filtrlash BARCHA nuqtalarni chiqarib tashlasa (juda
+ * ekstremal holat, deyarli imkonsiz lekin nazariy), xavfsizlik uchun asl
+ * massiv qaytariladi — bo'sh massivdan o'rtacha olib bo'lmaydi. */
+export function filterOutliers(values: number[], isIrregular: boolean): OutlierFilterResult {
+  const median = computeMedian(values);
+  if (values.length < 4) return { filtered: values, outliers: [], median }; // N<4'da kvartil ishonchsiz — filtrlanmaydi
+  const { q1, q3 } = computeQuartiles(values);
+  const iqr = q3 - q1;
+  const k = isIrregular ? OUTLIER_IQR_MULTIPLIER_IRREGULAR : OUTLIER_IQR_MULTIPLIER;
+  const lowerBound = q1 - k * iqr;
+  const upperBound = q3 + k * iqr;
+  const filtered = values.filter((v) => v >= lowerBound && v <= upperBound);
+  const outliers = values.filter((v) => v < lowerBound || v > upperBound);
+  if (filtered.length === 0) return { filtered: values, outliers: [], median };
+  return { filtered, outliers, median };
+}
+
 /** Saralangan sanalarni ketma-ket (CYCLE_GAP_DAYS ichida) "streak"larga
  * guruhlaydi — bitta kunlik bo'shliq (unutilgan yozuv) butun hayzni ikkiga
  * bo'lib yubormasligi uchun. `detectPeriodStarts` VA `computePeriodLength`
@@ -198,11 +257,20 @@ export function deriveAdaptiveCycleSettings(
     };
   }
 
+  // CYCLE-ALGO-03: o'rtachani hisoblashdan OLDIN g'ayrioddiy (outlier) sikllarni
+  // chiqarib tashlaymiz (bitta kasallik/stress/dori o'zgarishi/homiladorlikni
+  // yo'qotish tufayli bo'lgan sikl butun o'rtachani og'ishtirib yubormasin) —
+  // `isCycleIrregular` true bo'lsa chegara kengroq (haqiqiy PCOS naqshini
+  // "xato" deb hisoblamaslik uchun). MUHIM: `getPredictionConfidence` pastda
+  // hali ham XOM (filtrlanmagan) `lengths`ni ishlatadi — outlier chiqarib
+  // tashlangani ISHONCH darajasini sun'iy oshirmasligi kerak, chunki outlier
+  // borligining o'zi haqiqiy noaniqlik signali.
+  const { filtered: cycleLengthsForAvg } = filterOutliers(lengths, isCycleIrregular(lengths));
   // CYCLE-ALGO-02: oddiy (tekis) o'rtacha o'rniga og'irlik-asoslangan —
   // barcha 6 ta sikl bir xil og'irlikda bo'lgan ilgarigi mantiq eng so'nggi
   // (haqiqatan foydali) o'zgarishlarni eski ma'lumot bilan "suyultirib"
   // yuborardi.
-  const avgCycleLength = clamp(Math.round(computeWeightedAverage(lengths)), MIN_SANE_CYCLE_LENGTH, MAX_SANE_CYCLE_LENGTH);
+  const avgCycleLength = clamp(Math.round(computeWeightedAverage(cycleLengthsForAvg)), MIN_SANE_CYCLE_LENGTH, MAX_SANE_CYCLE_LENGTH);
   const lastStart = starts[starts.length - 1];
   // FIX2-19: nomi va hujjati "oxirgi bir necha davrdan o'rtacha" deydi (xuddi
   // averageCycleLength kabi), lekin ilgari faqat ENG SO'NGGI davr uzunligi
