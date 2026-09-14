@@ -18,6 +18,9 @@ export default function AdminPregnancyContentPage() {
     babyDevelopment: "",
     motherChanges: "",
   });
+  // FIX3-14: backdrop bosilganda qoralamani tasodifan yo'qotmaslik uchun
+  // ochilgandagi holat bilan solishtiramiz.
+  const [initialDraft, setInitialDraft] = useState(draft);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,9 +30,17 @@ export default function AdminPregnancyContentPage() {
 
   function openWeekEditor(week: number) {
     const existing = weeks?.get(week);
-    setDraft({ sizeLabel: existing?.sizeLabel ?? "", babyDevelopment: existing?.babyDevelopment ?? "", motherChanges: existing?.motherChanges ?? "" });
+    const next = { sizeLabel: existing?.sizeLabel ?? "", babyDevelopment: existing?.babyDevelopment ?? "", motherChanges: existing?.motherChanges ?? "" };
+    setDraft(next);
+    setInitialDraft(next);
     setOpenWeek(week);
     setError(null);
+  }
+
+  function closeEditor() {
+    const isDirty = draft.sizeLabel !== initialDraft.sizeLabel || draft.babyDevelopment !== initialDraft.babyDevelopment || draft.motherChanges !== initialDraft.motherChanges;
+    if (isDirty && !window.confirm("Saqlanmagan o'zgarishlar bor. Ularni bekor qilib chiqishni xohlaysizmi?")) return;
+    setOpenWeek(null);
   }
 
   async function save() {
@@ -86,7 +97,7 @@ export default function AdminPregnancyContentPage() {
       )}
 
       {openWeek !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpenWeek(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeEditor}>
           <Card className="flex w-full max-w-lg flex-col gap-3" onClick={(e) => e.stopPropagation()}>
             <p className="text-lg font-bold text-text-primary">{openWeek}-hafta</p>
             {error && <p className="text-sm font-medium text-danger">{error}</p>}
@@ -117,7 +128,7 @@ export default function AdminPregnancyContentPage() {
               />
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <Button variant="ghost" className="px-4! py-2! text-xs" onClick={() => setOpenWeek(null)} disabled={saving}>
+              <Button variant="ghost" className="px-4! py-2! text-xs" onClick={closeEditor} disabled={saving}>
                 Bekor qilish
               </Button>
               <Button className="px-4! py-2! text-xs" onClick={save} disabled={saving}>
