@@ -209,6 +209,18 @@ body {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 }
 
+/* Bosh sahifa (mammo.uz) uchun ILIQ gradient fonlar — lalu.uz'dan ilhomlangan
+   dizayn yangilanishi (2026-09-15). Faqat LandingPage.tsx'da ishlatiladi —
+   boshqa ekranlar hamon yuqoridagi sovuqroq/binafsha "aurora" fonlaridan
+   foydalanadi (ularga tegilmagan, ORQAGA MOSLIK saqlanadi). */
+.bg-landing-hero {
+  background: linear-gradient(135deg, #ffe9dc 0%, #ffd3c4 40%, #fde1ec 100%);
+}
+
+.bg-landing-cta {
+  background: linear-gradient(135deg, #ff8b6b 0%, var(--color-primary) 100%);
+}
+
 .glass-card {
   background: var(--glass-light);
   border: 1px solid var(--glass-border);

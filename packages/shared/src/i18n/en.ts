@@ -962,11 +962,23 @@ const en: Dictionary = {
   },
   landing: {
     navCta: "Get started",
+    navLinks: {
+      howItWorks: "How it works",
+      features: "Features",
+      trust: "Trust",
+      faq: "FAQ",
+    },
     heroEyebrow: "Built for women in Uzbekistan",
     heroTitle: "Your health, in your control",
     heroSubtitle: "Track your cycle, pregnancy, and medical checkups in one place. Simple, private, and available in your language.",
     ctaPrimary: "Try it for free",
     ctaSecondary: "How it works",
+    factsStrip: [
+      { value: "23+", label: "medically-grounded checkup types" },
+      { value: "3", label: "languages: Uzbek, Russian, English" },
+      { value: "100%", label: "core features free" },
+      { value: "0", label: "ads" },
+    ],
     featuresTitle: "Everything you need, in one app",
     featuresSubtitle: "A tool for every stage of your health journey.",
     features: {
@@ -1001,6 +1013,9 @@ const en: Dictionary = {
       { title: "Choose your goal", desc: "Cycle tracking, pregnancy, or planning — the app adapts to you." },
       { title: "Track and learn", desc: "Take control with personal tips, reminders, and clear statistics." },
     ],
+    sourceTrustTitle: "Grounded in trusted sources",
+    sourceTrustBody:
+      "Our checkup schedule is based on Uzbekistan's Ministry of Health national program, uzaig.uz national clinical protocols, and WHO recommendations. This isn't a medical consultation — see a specialist for an exact diagnosis.",
     trustTitle: "Why MammoAI?",
     trustItems: [
       { title: "Privacy first", desc: "Your data is encrypted and never shared with anyone, including advertisers." },

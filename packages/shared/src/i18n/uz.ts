@@ -1029,11 +1029,30 @@ const uz = {
   // ---------------------------------------------------------------------
   landing: {
     navCta: "Boshlash",
+    // lalu.uz uslubidagi ko'p bandli navigatsiya — mavjud bo'limlarga (#id)
+    // havola, yangi sahifa emas.
+    navLinks: {
+      howItWorks: "Qanday ishlaydi",
+      features: "Imkoniyatlar",
+      trust: "Ishonch",
+      faq: "Savol-javob",
+    },
     heroEyebrow: "O'zbek ayollari uchun",
     heroTitle: "Sog'ligingiz — sizning nazoratingizda",
     heroSubtitle: "Hayz tsikli, homiladorlik va tibbiy tekshiruvlarni bir joyda kuzating. Oddiy, xavfsiz va butunlay o'zbek tilida.",
     ctaPrimary: "Bepul sinab ko'rish",
     ctaSecondary: "Qanday ishlaydi",
+    // lalu.uz uslubidagi qisqa "raqam + izoh" bo'limi — HAQIQIY, tekshirilgan
+    // faktlar (soxta foydalanuvchi soni/reyting emas — bunday ma'lumot yo'q).
+    // "23+" checklist-rules.ts#generateChecklist'ning barcha yosh/holat
+    // kombinatsiyasi bo'yicha to'liq brute-force tekshiruvi bilan tasdiqlangan
+    // (aynan 23 ta noyob faol tur).
+    factsStrip: [
+      { value: "23+", label: "tibbiy asoslangan tekshiruv turi" },
+      { value: "3", label: "tilda: o'zbek, rus, ingliz" },
+      { value: "100%", label: "bepul asosiy imkoniyatlar" },
+      { value: "0", label: "reklama" },
+    ],
     featuresTitle: "Bitta ilovada — bor narsa",
     featuresSubtitle: "Sog'lig'ingizning har bir bosqichi uchun kerakli vosita.",
     features: {
@@ -1068,6 +1087,12 @@ const uz = {
       { title: "Maqsadingizni tanlang", desc: "Tsikl kuzatuvimi, homiladorlikmi yoki tayyorgarlikmi — ilova sizga moslashadi." },
       { title: "Kuzating va bilib boring", desc: "Shaxsiy tavsiyalar, eslatmalar va tushunarli statistikalar bilan nazoratni qo'lga oling." },
     ],
+    // lalu.uz'dagi "shifokor tomonidan ko'rib chiqilgan" ishonch ustuniga
+    // mos — HAQIQIY manba (FIX-CHECKUPS ishida qo'shilgan tekshiruv bazasi
+    // aynan shu manbalardan tuzilgan, soxta da'vo emas).
+    sourceTrustTitle: "Ishonchli manbalarga asoslangan",
+    sourceTrustBody:
+      "Tekshiruv jadvalimiz O'zbekiston SSV milliy dasturi, uzaig.uz milliy klinik protokollari va JSSST (WHO) tavsiyalariga asoslangan. Bu shifokor konsultatsiyasi emas — aniq tashxis yoki davolash uchun mutaxassisga murojaat qiling.",
     trustTitle: "Nega aynan MammoAI?",
     trustItems: [
       { title: "Maxfiylik birinchi o'rinda", desc: "Ma'lumotlaringiz shifrlanadi va hech kimga, hatto reklama beruvchilarga ham berilmaydi." },
