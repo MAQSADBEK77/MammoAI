@@ -348,6 +348,14 @@ export function createApiClient(config: ApiClientConfig) {
       /** Admin panelda tanlangan illyustratsiyalar xaritasi — ochiq (autentifikatsiyasiz). */
       get: () => request<{ slots: Record<IllustrationSlotKey, string> }>("/api/illustrations"),
     },
+    telegram: {
+      /** Botning ochiq (autentifikatsiyasiz) t.me havolasi — "sinab ko'rish"
+       * tugmasi endi veb onboarding o'rniga to'g'ridan-to'g'ri shu yerga
+       * yo'naltiradi (foydalanuvchi so'rovi: Telegram Mini App orqali kirish
+       * ustuvor, telefon+SMS veb oqimi emas). Bot hali sozlanmagan bo'lsa
+       * `url: null` — chaqiruvchi tomon veb onboarding'ga qaytish kerak. */
+      getStartLink: () => request<{ url: string | null }>("/api/telegram/link"),
+    },
     analytics: {
       /** Foydalanish hodisalari (sahifa ko'rish/tugma bosish) — to'plamda yuboriladi.
        * Xato bo'lsa ham ilova ishlashiga ta'sir qilmasligi kerak — chaqiruvchi tomon

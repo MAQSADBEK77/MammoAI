@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { goalToLandingTab } from "@mammoai/shared";
 import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 import { LoadingSpinner } from "@/components/ui";
 import { LandingPage } from "@/components/LandingPage";
+import { api } from "@/lib/api";
 
 export default function RootPage() {
   const { status, onboardingProfile } = useSession();
@@ -16,13 +17,45 @@ export default function RootPage() {
   // Sessiyasi bor (onboarding'ni tugatgan) foydalanuvchi mammo.uz'ga qayta
   // kirganda to'g'ridan-to'g'ri ilovaga tushadi — landing faqat ANONIM
   // (birinchi marta kirgan yoki hali ro'yxatdan o'tmagan) tashrifchilarga
-  // ko'rsatiladi (foydalanuvchi so'rovi: "1-marta kirganda landing ochilishi
-  // kerak, sinab ko'rish tugmasi bosilganda dasturga kirishi kerak").
+  // ko'rsatiladi.
   useEffect(() => {
     if (status !== "onboarded" || !onboardingProfile) return;
     const tab = goalToLandingTab(onboardingProfile.primaryGoal);
     router.replace(tab === "checkups" ? "/tekshiruvlar" : tab === "partner" ? "/hamkor" : "/asosiy");
   }, [status, onboardingProfile, router]);
+
+  // Foydalanuvchi so'rovi (2026-09-16): "sinab ko'rmoqchi bo'lsa telegramdagi
+  // landing pagega yo'naltirsin saytdagi dasturga emas" — "Boshlash"/"Bepul
+  // sinab ko'rish" tugmalari endi VEB onboarding ("/onboarding") o'rniga
+  // to'g'ridan-to'g'ri Telegram botga (u yerdagi Mini App "landing"
+  // tajribasiga — apps/web/src/app/tg/page.tsx, Telegram identifikatsiyasi
+  // orqali avtomatik autentifikatsiya, telefon+SMS qadamlarsiz) yo'naltiradi.
+  // Bot hali admin panelda sozlanmagan (yoki so'rov muvaffaqiyatsiz) bo'lsa —
+  // eski xatti-harakat (veb onboarding) ZAXIRA (fallback) sifatida saqlanadi,
+  // tugma hech qachon "o'lik" bo'lib qolmasligi uchun.
+  const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.telegram
+      .getStartLink()
+      .then((res) => {
+        if (!cancelled) setTelegramLink(res.url);
+      })
+      .catch(() => {
+        // jim yutiladi — pastdagi handleStart veb onboarding'ga qaytadi
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function handleStart() {
+    if (telegramLink) {
+      window.location.href = telegramLink;
+    } else {
+      router.push("/onboarding");
+    }
+  }
 
   if (status === "loading" || status === "onboarded") {
     return (
@@ -32,5 +65,5 @@ export default function RootPage() {
     );
   }
 
-  return <LandingPage onStart={() => router.push("/onboarding")} />;
+  return <LandingPage onStart={handleStart} />;
 }
