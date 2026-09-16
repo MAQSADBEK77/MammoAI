@@ -221,6 +221,27 @@ body {
   background: linear-gradient(135deg, #ff8b6b 0%, var(--color-primary) 100%);
 }
 
+/* lalu.uz'dagi bosh banner ostidagi uzluksiz aylanuvchi "pill" teg-lenta.
+   Ro'yxat JSX'da IKKI marta takrorlanadi (LandingTicker), bu esa faqat -50%
+   siljiydi — natijada chok ko'rinmaydi (uzluksiz halqa illyuziyasi). Faqat
+   LandingPage.tsx'da ishlatiladi. */
+@keyframes landing-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.landing-ticker-track {
+  animation: landing-ticker-scroll 28s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-ticker-track {
+    animation: none;
+  }
+}
+
 .glass-card {
   background: var(--glass-light);
   border: 1px solid var(--glass-border);

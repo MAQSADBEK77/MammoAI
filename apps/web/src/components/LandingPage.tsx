@@ -4,9 +4,6 @@ import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import {
-  CalendarMonthOutlined,
-  PregnantWomanOutlined,
-  LocalHospitalOutlined,
   GroupsOutlined,
   LocationOnOutlined,
   MenuBookOutlined,
@@ -15,36 +12,41 @@ import {
   TranslateOutlined,
   KeyboardArrowDownOutlined,
   ExpandMoreOutlined,
+  PeopleAltOutlined,
+  NotificationsActiveOutlined,
 } from "@mui/icons-material";
 import { useI18n } from "@/lib/i18n";
 import { useIllustrations } from "@/lib/illustrations";
 import { Button, Card } from "@/components/ui";
+import { PublicCalculators } from "@/components/landing/PublicCalculators";
 
-const FEATURE_KEYS = ["cycle", "pregnancy", "checkups", "community", "clinics", "articles"] as const;
-const FEATURE_ICONS = [
-  CalendarMonthOutlined,
-  PregnantWomanOutlined,
-  LocalHospitalOutlined,
-  GroupsOutlined,
-  LocationOnOutlined,
-  MenuBookOutlined,
-];
+const LIFE_STAGE_KEYS = ["cycle", "pregnancy", "checkups"] as const;
+const LIFE_STAGE_ILLUSTRATIONS = ["/illustrations/calendar.svg", "/illustrations/expecting.svg", "/illustrations/library/all-checked_d3u6.svg"];
+const LIFE_STAGE_TINTS = ["bg-primary/8", "bg-secondary/8", "bg-accent/8"];
+
+const SECONDARY_FEATURE_KEYS = ["community", "clinics", "articles"] as const;
+const SECONDARY_FEATURE_ICONS = [GroupsOutlined, LocationOnOutlined, MenuBookOutlined];
 const TRUST_ICONS = [ShieldOutlined, CheckCircleOutlined, TranslateOutlined, LocationOnOutlined];
 
-// 2026-09-15 dizayn yangilanishi (lalu.uz'dan ilhomlangan): uchta brend rangi
-// (pushti/binafsha/moviy-yashil — MammoAI'ning o'zining mavjud tokenlari,
-// design-tokens.ts) navbat bilan ishlatiladi — bir xil rangdagi "quruq"
-// ro'yxat o'rniga lalu uslubidagi rang xilma-xilligi, lekin YANGI palitra
-// EMAS (butun ilova bo'ylab ishlatiladigan --color-primary/secondary/accent
-// tokenlariga tayanadi, shuning uchun qorong'u rejimda ham xavfsiz).
+// 2026-09-15/16 dizayn yangilanishi (lalu.uz'dan ilhomlangan, so'ng foydalanuvchi
+// talabiga ko'ra ANCHA yaqinroq struktura bilan — LANDING-CALC/bento/ticker):
+// uchta brend rangi (pushti/binafsha/moviy-yashil — MammoAI'ning o'zining mavjud
+// tokenlari, design-tokens.ts) navbat bilan ishlatiladi — YANGI palitra EMAS.
 const ACCENT_CHIP_CLASSES = ["bg-primary/10 text-primary", "bg-secondary/10 text-secondary", "bg-accent/10 text-accent"];
 const ACCENT_SOLID_CLASSES = ["bg-primary", "bg-secondary", "bg-accent"];
 const ACCENT_TEXT_CLASSES = ["text-primary", "text-secondary", "text-accent"];
 
 const HOW_ANCHOR = "qanday-ishlaydi";
 const FEATURES_ANCHOR = "imkoniyatlar";
+const CALC_ANCHOR = "kalkulyatorlar";
 const TRUST_ANCHOR = "ishonch";
 const FAQ_ANCHOR = "savol-javob";
+
+/** Kichik, katta harfli "eyebrow" yorliq — lalu.uz'dagi bo'lim sarlavhalari
+ * ustidagi takrorlanuvchi naqsh. `accentIndex` ACCENT_TEXT_CLASSES'ga mos. */
+function Eyebrow({ children, accentIndex = 0 }: { children: React.ReactNode; accentIndex?: number }) {
+  return <p className={clsx("text-center text-xs font-extrabold tracking-widest", ACCENT_TEXT_CLASSES[accentIndex % 3])}>{children}</p>;
+}
 
 /** Bo'lim fonidagi dekorativ illyustratsiya — juda xira (o'qishga xalaqit
  * bermaydi), sahifaga "quruq" oq/kulrang bo'lib qolmasligi uchun chuqurlik
@@ -106,15 +108,46 @@ function AppPreviewCarousel() {
   );
 }
 
+/** Bosh banner ostidagi uzluksiz aylanuvchi "pill" teg-lenta (lalu.uz'dagi
+ * naqsh). Ro'yxat IKKI marta chiziladi va CSS animatsiyasi faqat -50%
+ * siljiydi — shuning uchun chok ko'rinmaydi (uzluksiz halqa illyuziyasi). */
+function LandingTicker({ tags }: { tags: string[] }) {
+  return (
+    <div className="relative overflow-hidden border-y border-border/60 bg-surface py-4" aria-hidden={false}>
+      <div className="landing-ticker-track flex w-max gap-3">
+        {[...tags, ...tags].map((tag, i) => (
+          <span
+            key={i}
+            className={clsx(
+              "shrink-0 rounded-full px-4 py-1.5 text-xs font-bold",
+              ACCENT_CHIP_CLASSES[i % 3]
+            )}
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * mammo.uz'ga birinchi marta (anonim, ro'yxatdan o'tmagan holatda) kirilganda
- * ko'rsatiladigan marketing bosh sahifasi (referens: flo.health, helloclue.com,
- * 2026-09-15'dan boshlab lalu.uz uslubidagi iliq/yumaloq dizayn yangilanishi
- * bilan — ko'p bandli navigatsiya, "raqam + izoh" fakt-qatori, navbatlashuvchi
- * brend ranglari, organik "blob" fon shakllari). "Bepul sinab ko'rish" tugmasi
- * bosilganda haqiqiy ilovaga (onboarding) o'tadi — sessiya bo'lgan
- * foydalanuvchilar bu sahifani umuman ko'rmaydi (page.tsx'da to'g'ridan-to'g'ri
- * ilovaga yo'naltiriladi).
+ * ko'rsatiladigan marketing bosh sahifasi (referens: lalu.uz — foydalanuvchi
+ * so'roviga ko'ra 2026-09-16'da ANCHA yaqinroq struktura bilan qayta ishlandi:
+ * rangli-so'zli sarlavha, aylanuvchi teg-lenta, muqobil joylashuvli 3 ta
+ * "hayot bosqichi" kartasi, bento-tarmoq, ro'yxatdan o'tmasdan ishlaydigan
+ * kalkulyatorlar). "Bepul sinab ko'rish" tugmasi bosilganda haqiqiy ilovaga
+ * (onboarding) o'tadi — sessiya bo'lgan foydalanuvchilar bu sahifani umuman
+ * ko'rmaydi (page.tsx'da to'g'ridan-to'g'ri ilovaga yo'naltiriladi).
+ *
+ * MUHIM — bu 1-to-1 klon EMAS, chunki lalu.uz'dagi ba'zi bo'limlar MammoAI
+ * uchun HAQIQIY mazmun bilan to'ldirib bo'lmaydi (foydalanuvchi bilan
+ * kelishilgan holda hal qilindi): haqiqiy sharh/reyting yo'qligi uchun
+ * "sharhlar" bo'limi o'rniga kengaytirilgan manba-ishonch bo'limi qo'llanildi;
+ * mavjud unDraw-uslubidagi sahna-illyustratsiyalar ishlatilgan (maxsus
+ * multfilm-personajlar EMAS); asosiy CTA hamon web onboarding'ga olib
+ * boradi (App Store/Google Play tugmalari EMAS — ilova hali nashr etilmagan).
  */
 export function LandingPage({ onStart }: { onStart: () => void }) {
   const { dict } = useI18n();
@@ -143,6 +176,9 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
             <a href={`#${FEATURES_ANCHOR}`} className="text-sm font-semibold text-text-secondary transition hover:text-text-primary">
               {l.navLinks.features}
             </a>
+            <a href={`#${CALC_ANCHOR}`} className="text-sm font-semibold text-text-secondary transition hover:text-text-primary">
+              {l.navLinks.calculators}
+            </a>
             <a href={`#${TRUST_ANCHOR}`} className="text-sm font-semibold text-text-secondary transition hover:text-text-primary">
               {l.navLinks.trust}
             </a>
@@ -159,17 +195,28 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
       <section className="bg-landing-hero relative isolate overflow-hidden">
         <BgArt src={resolve("landing.heroLeft")} className="-left-16 -top-10 h-72 w-72 -rotate-12 md:h-96 md:w-96" />
         <BgArt src={resolve("landing.heroRight")} className="-right-14 bottom-0 h-64 w-64 rotate-6 md:h-80 md:w-80" />
-        <div className="animate-fade-in-up relative mx-auto flex max-w-5xl flex-col items-center gap-6 px-5 pb-14 pt-14 text-center md:pt-20">
+        <div className="animate-fade-in-up relative mx-auto flex max-w-5xl flex-col items-center gap-6 px-5 pb-10 pt-14 text-center md:pt-20">
           <span className="rounded-full bg-white/70 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-primary shadow-sm">
             {l.heroEyebrow}
           </span>
           {/* MUHIM: bu bo'lim (bg-landing-hero) qorong'u rejimda ham DOIM
               o'zgarmaydigan iliq pastel gradient fon — shuning uchun matn
-              rangi ham QORONG'U REJIMGA MOSLASHUVCHI tokenlar (text-text-
-              primary/secondary, ular qorong'u rejimda OCH rangga almashadi
-              va shu och pastel fonda o'qib bo'lmay qolardi) EMAS, qat'iy
-              (light-mode qiymati bilan bir xil) ranglarda yozilgan. */}
-          <h1 className="max-w-2xl text-4xl font-extrabold leading-tight text-[#1f2937] md:text-5xl">{l.heroTitle}</h1>
+              rangi ham QORONG'U REJIMGA MOSLASHUVCHI tokenlar EMAS, qat'iy
+              (light-mode qiymati bilan bir xil) ranglarda yozilgan. Faqat
+              `accent` bilan belgilangan segmentlar brend tokenlaridan
+              (--color-primary/secondary/accent) rang oladi — ular ham fon
+              o'zgarmasligi sababli doimiy ko'rinadi. */}
+          <h1 className="max-w-2xl text-4xl font-extrabold leading-tight text-[#1f2937] md:text-5xl">
+            {l.heroTitleSegments.map((seg, i) =>
+              "accent" in seg && seg.accent ? (
+                <span key={i} className={ACCENT_TEXT_CLASSES[["primary", "secondary", "accent"].indexOf(seg.accent)]}>
+                  {seg.text}
+                </span>
+              ) : (
+                <span key={i}>{seg.text}</span>
+              )
+            )}
+          </h1>
           <p className="max-w-xl text-lg text-[#4b5563]">{l.heroSubtitle}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button onClick={onStart} className="px-8! py-3! text-base!">
@@ -187,10 +234,12 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
+      <LandingTicker tags={l.tickerTags} />
+
       {/* lalu.uz uslubidagi qisqa "raqam + izoh" fakt-qatori — soxta
           foydalanuvchi soni/reyting emas, kodning o'zidan tekshirilgan
           haqiqiy faktlar (dict.landing.factsStrip izohiga qarang). */}
-      <section className="border-y border-border/60 bg-surface">
+      <section className="border-b border-border/60 bg-surface">
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-y-6 px-5 py-10 sm:grid-cols-4">
           {l.factsStrip.map((fact, i) => (
             <div key={i} className="text-center">
@@ -201,19 +250,70 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
-      <section id={FEATURES_ANCHOR} className="relative isolate overflow-hidden">
+      {/* lalu.uz'dagi 3 ta muqobil-joylashuvli "hayot bosqichi" karta —
+          MammoAI'ning haqiqiy 3 ustuni: tsikl, homiladorlik, tekshiruvlar
+          (lalu'dagi "chaqaloq parvarishi" o'rniga — bunday funksiya
+          MammoAI'da yo'q, soxta xususiyat qo'shilmadi). */}
+      <section id={FEATURES_ANCHOR} className="relative isolate overflow-hidden py-16">
         <BgArt src={resolve("landing.features")} className="-right-16 -top-16 h-72 w-72 rotate-6 md:h-96 md:w-96" />
-        <div className="relative mx-auto max-w-5xl px-5 py-16">
-          <div className="mx-auto max-w-xl text-center">
-            <h2 className="text-2xl font-extrabold text-text-primary md:text-3xl">{l.featuresTitle}</h2>
-            <p className="mt-2 text-text-secondary">{l.featuresSubtitle}</p>
+        <div className="relative mx-auto max-w-5xl px-5">
+          <Eyebrow accentIndex={0}>{l.eyebrows.features}</Eyebrow>
+          <h2 className="mt-2 text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.featuresTitle}</h2>
+          <p className="mx-auto mt-2 max-w-xl text-center text-text-secondary">{l.featuresSubtitle}</p>
+
+          <div className="mt-10 space-y-6">
+            {LIFE_STAGE_KEYS.map((key, i) => {
+              const f = l.features[key];
+              const reversed = i % 2 === 1;
+              return (
+                <div
+                  key={key}
+                  className={clsx(
+                    "flex flex-col items-center gap-6 rounded-[34px] p-8 md:gap-10 md:p-10",
+                    LIFE_STAGE_TINTS[i],
+                    reversed ? "md:flex-row-reverse" : "md:flex-row"
+                  )}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- statik SVG illyustratsiya */}
+                  <img src={LIFE_STAGE_ILLUSTRATIONS[i]} alt="" className="h-40 w-40 shrink-0 md:h-48 md:w-48" />
+                  <div className="text-center md:text-left">
+                    <h3 className={clsx("text-xl font-extrabold", ACCENT_TEXT_CLASSES[i])}>{f.title}</h3>
+                    <p className="mt-2 text-text-secondary">{f.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURE_KEYS.map((key, i) => {
-              const Icon = FEATURE_ICONS[i];
+        </div>
+      </section>
+
+      {/* lalu.uz'dagi "bento" tarmoq (1 katta + 1 kichik + 3 teng) — yuqoridagi
+          3 asosiy ustundan TASHQARI qolgan ikkinchi darajali imkoniyatlar. */}
+      <section className="relative isolate overflow-hidden bg-surface-muted py-16">
+        <div className="relative mx-auto max-w-5xl px-5">
+          <Eyebrow accentIndex={1}>{l.eyebrows.bento}</Eyebrow>
+          <h2 className="mt-2 text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.bentoTitle}</h2>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            <Card className="p-7! md:col-span-2">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <PeopleAltOutlined />
+              </div>
+              <h3 className="text-lg font-bold text-text-primary">{l.bentoPartner.title}</h3>
+              <p className="mt-1 text-sm text-text-secondary">{l.bentoPartner.desc}</p>
+            </Card>
+            <Card className="p-7!">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/10 text-secondary">
+                <NotificationsActiveOutlined />
+              </div>
+              <h3 className="text-lg font-bold text-text-primary">{l.bentoReminders.title}</h3>
+              <p className="mt-1 text-sm text-text-secondary">{l.bentoReminders.desc}</p>
+            </Card>
+            {SECONDARY_FEATURE_KEYS.map((key, i) => {
+              const Icon = SECONDARY_FEATURE_ICONS[i];
               const f = l.features[key];
               return (
-                <Card key={key} className="p-6!">
+                <Card key={key} className="p-7!">
                   <div className={clsx("mb-3 flex h-12 w-12 items-center justify-center rounded-2xl", ACCENT_CHIP_CLASSES[i % 3])}>
                     <Icon />
                   </div>
@@ -226,10 +326,27 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
+      {/* LANDING-CALC: ro'yxatdan o'tmasdan ishlaydigan bepul kalkulyatorlar —
+          lalu.uz'dagi 4 ta vositaga mos (packages/shared/src/logic/
+          public-calculators.ts, faqat umumiy formulalar/ma'lumotnoma, tashxis
+          EMAS — shuning uchun disclaimer har doim ko'rinadi). */}
+      <section id={CALC_ANCHOR} className="relative isolate overflow-hidden py-16">
+        <div className="relative mx-auto max-w-5xl px-5">
+          <Eyebrow accentIndex={2}>{l.eyebrows.calculators}</Eyebrow>
+          <h2 className="mt-2 text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.calculatorsTitle}</h2>
+          <p className="mx-auto mt-2 max-w-xl text-center text-text-secondary">{l.calculatorsSubtitle}</p>
+          <div className="mt-10">
+            <PublicCalculators />
+          </div>
+          <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-text-muted">{l.calculatorsDisclaimer}</p>
+        </div>
+      </section>
+
       <section id={HOW_ANCHOR} className="relative isolate overflow-hidden bg-surface-muted py-16">
         <BgArt src={resolve("landing.howItWorks")} className="-left-16 -bottom-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
         <div className="relative mx-auto max-w-4xl px-5">
-          <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.howTitle}</h2>
+          <Eyebrow accentIndex={0}>{l.eyebrows.how}</Eyebrow>
+          <h2 className="mt-2 text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.howTitle}</h2>
           <div className="mt-10 grid gap-8 sm:grid-cols-3">
             {l.howSteps.map((step, i) => (
               <div key={i} className="text-center">
@@ -249,16 +366,23 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
+      {/* "Ishonch" bo'limi — lalu.uz'dagi sharh/reyting bo'limining o'rnini
+          bosadi (foydalanuvchi bilan kelishilgan yechim: haqiqiy do'kon
+          sharhlari yo'q, shuning uchun soxta emas — manba-asoslangan ishonch
+          bloki + shifokor illyustratsiyasi bilan kengaytirildi). */}
       <section id={TRUST_ANCHOR} className="relative isolate overflow-hidden">
         <BgArt src={resolve("landing.trust")} className="-right-14 -bottom-14 h-64 w-64 rotate-6 md:h-80 md:w-80" />
         <div className="relative mx-auto max-w-5xl px-5 py-16">
-          <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.trustTitle}</h2>
+          <Eyebrow accentIndex={1}>{l.eyebrows.trust}</Eyebrow>
+          <h2 className="mt-2 text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.trustTitle}</h2>
 
-          {/* lalu.uz'dagi "shifokor tomonidan ko'rib chiqilgan" ishonch
-              ustuniga mos, HAQIQIY manba bilan (FIX-CHECKUPS ishi). */}
-          <div className="mx-auto mt-8 max-w-3xl rounded-3xl bg-primary/5 p-6 text-center">
-            <h3 className="text-base font-bold text-text-primary">{l.sourceTrustTitle}</h3>
-            <p className="mt-2 text-sm text-text-secondary">{l.sourceTrustBody}</p>
+          <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-6 rounded-[34px] bg-secondary/8 p-8 text-center md:flex-row md:text-left">
+            {/* eslint-disable-next-line @next/next/no-img-element -- statik SVG illyustratsiya */}
+            <img src="/illustrations/doctor.svg" alt="" className="h-32 w-32 shrink-0" />
+            <div>
+              <h3 className="text-base font-bold text-text-primary">{l.sourceTrustTitle}</h3>
+              <p className="mt-2 text-sm text-text-secondary">{l.sourceTrustBody}</p>
+            </div>
           </div>
 
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -281,7 +405,8 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
       <section id={FAQ_ANCHOR} className="relative isolate overflow-hidden bg-surface-muted py-16">
         <BgArt src={resolve("landing.faq")} className="-left-14 -top-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
         <div className="relative mx-auto max-w-2xl px-5">
-          <h2 className="text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.faqTitle}</h2>
+          <Eyebrow accentIndex={2}>{l.eyebrows.faq}</Eyebrow>
+          <h2 className="mt-2 text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.faqTitle}</h2>
           <div className="mt-8 space-y-3">
             {l.faq.map((item, i) => (
               <Accordion
@@ -307,19 +432,23 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
-      <section className="bg-landing-cta relative isolate overflow-hidden px-5 py-16 text-center text-white">
-        <div className="pointer-events-none absolute -left-10 -top-16 -z-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -right-10 -bottom-16 -z-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="relative mx-auto max-w-lg">
-          <h2 className="text-2xl font-extrabold md:text-3xl">{l.finalCtaTitle}</h2>
-          <p className="mt-2 text-white/85">{l.finalCtaSubtitle}</p>
-          <button
-            type="button"
-            onClick={onStart}
-            className="tap-target mt-6 rounded-full bg-white px-8 py-3 text-base font-extrabold text-primary shadow-lg transition active:scale-[0.98] hover:brightness-95"
-          >
-            {l.finalCtaButton}
-          </button>
+      {/* lalu.uz'dagi kabi, chekka-chekkaga EMAS, ICHKI ("inset") yumaloq
+          gradient CTA kartasi — sahifa fonidan bo'shliq bilan ajratilgan. */}
+      <section className="px-5 py-16">
+        <div className="bg-landing-cta relative isolate mx-auto max-w-4xl overflow-hidden rounded-[34px] px-6 py-14 text-center text-white">
+          <div className="pointer-events-none absolute -left-10 -top-16 -z-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -right-10 -bottom-16 -z-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="relative mx-auto max-w-lg">
+            <h2 className="text-2xl font-extrabold md:text-3xl">{l.finalCtaTitle}</h2>
+            <p className="mt-2 text-white/85">{l.finalCtaSubtitle}</p>
+            <button
+              type="button"
+              onClick={onStart}
+              className="tap-target mt-6 rounded-full bg-white px-8 py-3 text-base font-extrabold text-primary shadow-lg transition active:scale-[0.98] hover:brightness-95"
+            >
+              {l.finalCtaButton}
+            </button>
+          </div>
         </div>
       </section>
 
@@ -330,6 +459,9 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
           </a>
           <a href={`#${FEATURES_ANCHOR}`} className="hover:text-text-primary">
             {l.navLinks.features}
+          </a>
+          <a href={`#${CALC_ANCHOR}`} className="hover:text-text-primary">
+            {l.navLinks.calculators}
           </a>
           <a href={`#${TRUST_ANCHOR}`} className="hover:text-text-primary">
             {l.navLinks.trust}

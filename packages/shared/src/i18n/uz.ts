@@ -1034,14 +1034,51 @@ const uz = {
     navLinks: {
       howItWorks: "Qanday ishlaydi",
       features: "Imkoniyatlar",
+      calculators: "Kalkulyatorlar",
       trust: "Ishonch",
       faq: "Savol-javob",
     },
+    // Har bir bo'lim sarlavhasi ustidagi kichik, katta harfli "eyebrow"
+    // yorliq — lalu.uz'da yashil/to'q sariq rangda takrorlanadigan naqsh
+    // (LandingPage.tsx'da ACCENT_TEXT_CLASSES bilan navbatlab rangланади).
+    eyebrows: {
+      features: "ASOSIY YO'NALISHLAR",
+      bento: "IMKONIYATLAR",
+      calculators: "BEPUL KALKULYATORLAR",
+      how: "QANDAY ISHLAYDI",
+      trust: "ISHONCH",
+      faq: "SAVOL-JAVOB",
+    },
     heroEyebrow: "O'zbek ayollari uchun",
-    heroTitle: "Sog'ligingiz — sizning nazoratingizda",
+    // lalu.uz'dagi kabi sarlavha ichida alohida rangdagi so'zlar — matn 3 ta
+    // segmentga bo'lingan, har biri ixtiyoriy `accent` bilan (LandingPage.tsx
+    // ACCENT_TEXT_CLASSES'dagi primary/secondary/accent tokenlariga mos —
+    // YANGI rang PALITRASI emas, mavjud brend ranglari).
+    heroTitleSegments: [
+      { text: "Bitta ilovada — " },
+      { text: "tsikl", accent: "primary" as const },
+      { text: ", " },
+      { text: "homiladorlik", accent: "secondary" as const },
+      { text: " va " },
+      { text: "tekshiruvlar", accent: "accent" as const },
+      { text: " nazorati." },
+    ],
     heroSubtitle: "Hayz tsikli, homiladorlik va tibbiy tekshiruvlarni bir joyda kuzating. Oddiy, xavfsiz va butunlay o'zbek tilida.",
     ctaPrimary: "Bepul sinab ko'rish",
     ctaSecondary: "Qanday ishlaydi",
+    // Bosh banner ostidagi uzluksiz aylanuvchi teg-lenta (lalu.uz'dagi
+    // "pill" teglar qatoriga o'xshash) — hammasi haqiqiy, mavjud
+    // imkoniyat/faktlarga asoslangan, soxta so'z birikmalari emas.
+    tickerTags: [
+      "Tsikl bashorati",
+      "Homiladorlik kundaligi",
+      "23+ tekshiruv turi",
+      "Hamkor bilan ulashish",
+      "Klinikalar bazasi",
+      "3 tilda",
+      "100% bepul",
+      "Ta'limiy maqolalar",
+    ],
     // lalu.uz uslubidagi qisqa "raqam + izoh" bo'limi — HAQIQIY, tekshirilgan
     // faktlar (soxta foydalanuvchi soni/reyting emas — bunday ma'lumot yo'q).
     // "23+" checklist-rules.ts#generateChecklist'ning barcha yosh/holat
@@ -1079,6 +1116,56 @@ const uz = {
       articles: {
         title: "Ta'limiy maqolalar",
         desc: "Tsikl, homiladorlik va profilaktika bo'yicha tushunarli, ishonchli manbalarga asoslangan maqolalar.",
+      },
+    },
+    // lalu.uz'dagi "bento" (1 katta + 1 kichik + 3 teng) tarmoq — asosiy
+    // 3 hayot-bosqichi kartasidan (features.cycle/pregnancy/checkups,
+    // yuqorida alohida bo'limda ko'rsatiladi) TASHQARI qolgan ikkinchi
+    // darajali imkoniyatlar uchun.
+    bentoTitle: "Yana nima bor?",
+    bentoPartner: {
+      title: "Hamkor",
+      desc: "Yaqin insoningizni jarayoningizga hamkor sifatida taklif qiling — u faqat siz ruxsat bergan qismini ko'radi.",
+    },
+    bentoReminders: {
+      title: "Aqlli eslatmalar",
+      desc: "Tekshiruv, unumdor kunlar va muhim sanalar haqida o'z vaqtida eslatib turadi.",
+    },
+    // Ro'yxatdan o'tmasdan ishlaydigan ochiq kalkulyatorlar (LANDING-CALC,
+    // packages/shared/src/logic/public-calculators.ts) — lalu.uz'dagi 4 ta
+    // bepul vositaga mos. Natijalar TAXMINIY (umumiy akusherlik
+    // formulalari/ma'lumotnoma jadvali) — tashxis emas, shuning uchun
+    // `disclaimer` har doim kalkulyatorlar bilan birga ko'rsatiladi.
+    calculatorsTitle: "Ro'yxatdan o'tmasdan hisoblang",
+    calculatorsSubtitle: "To'rtta bepul kalkulyator — natija bir zumda.",
+    calculatorsLmpLabel: "Oxirgi hayz boshlangan sana",
+    calculatorsCycleLengthLabel: "Sikl uzunligi (kun)",
+    calculatorsWeekLabel: "Homiladorlik haftasi",
+    calculatorsDisclaimer:
+      "Natijalar taxminiy va umumiy tibbiy formulalarga asoslangan — tashxis emas. Aniq holat uchun shifokorga murojaat qiling.",
+    calculators: {
+      dueDate: {
+        title: "Tug'ilish sanasi",
+        desc: "Oxirgi hayz sanasidan hisoblanadi.",
+        result: (date: string, week: number) => `Taxminiy sana: ${date} (hozir ${week}-hafta)`,
+      },
+      ovulation: {
+        title: "Ovulyatsiya",
+        desc: "Eng unumdor kunlaringizni bilib oling.",
+        resultOvulation: (date: string) => `Ovulyatsiya: ${date}`,
+        resultFertile: (start: string, end: string) => `Unumdor oyna: ${start} — ${end}`,
+        resultNextPeriod: (date: string) => `Keyingi hayz: ${date}`,
+      },
+      weekToMonth: {
+        title: "Haftadan oyga",
+        desc: "Homiladorlik haftasini oyga aylantiring.",
+        result: (month: number) => `${month}-oy`,
+      },
+      hcg: {
+        title: "XGCH darajasi",
+        desc: "Haftaga mos taxminiy XGCH (hCG) diapazoni.",
+        result: (label: string, min: string, max: string) => `${label}: ${min}–${max} mIU/mL`,
+        outOfRange: "Bu hafta uchun ma'lumot yo'q (jadval 3–42 haftani qamrab oladi).",
       },
     },
     howTitle: "Uch qadamda boshlang",
@@ -1123,7 +1210,7 @@ const uz = {
         a: "O'zbek (lotin va kirill), rus va ingliz tillarida — istalgan vaqt sozlamalardan almashtirishingiz mumkin.",
       },
     ],
-    finalCtaTitle: "Bugundan boshlang",
+    finalCtaTitle: "Nihoyat sog'lig'ingizni tushunasiz",
     finalCtaSubtitle: "Ro'yxatdan o'tish bir daqiqadan kam vaqt oladi.",
     finalCtaButton: "Bepul sinab ko'rish",
     footerTagline: "Ayollar salomatligi uchun shaxsiy yordamchi.",

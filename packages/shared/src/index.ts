@@ -5,6 +5,7 @@ export * from "./logic/cycle";
 export * from "./logic/cycle-phase";
 export * from "./logic/cycle-backtest";
 export * from "./logic/pregnancy";
+export * from "./logic/public-calculators";
 export * from "./logic/checklist-rules";
 export * from "./logic/risk-quiz";
 export * from "./logic/goal";
