@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { LoadingSpinner } from "@/components/ui";
 import { LandingPage } from "@/components/LandingPage";
 import { api } from "@/lib/api";
+import { isMedianApp } from "@/lib/median";
 
 export default function RootPage() {
   const { status, onboardingProfile } = useSession();
@@ -23,6 +24,19 @@ export default function RootPage() {
     const tab = goalToLandingTab(onboardingProfile.primaryGoal);
     router.replace(tab === "checkups" ? "/tekshiruvlar" : tab === "partner" ? "/hamkor" : "/asosiy");
   }, [status, onboardingProfile, router]);
+
+  // Foydalanuvchi so'rovi (2026-09-16): "median orqali qilsam landing page
+  // ham qo'shilib appga qo'shilib ketyapti" — Median.co butun saytni
+  // o'zgarishsiz WebView'da ochadi, shuning uchun marketing LandingPage
+  // native ilova ichida ham chiqib qolardi. ANONIM (hali onboarding'dan
+  // o'tmagan) Median-ilova foydalanuvchisi uchun landing butunlay
+  // o'tkazib yuboriladi — to'g'ridan-to'g'ri onboarding'ga (lib/median.ts).
+  // Sessiyasi bor foydalanuvchi uchun hech narsa o'zgarmaydi — yuqoridagi
+  // effekt allaqachon uni asosiy ekranga olib chiqadi.
+  const isMedian = isMedianApp();
+  useEffect(() => {
+    if (isMedian && status === "anonymous") router.replace("/onboarding");
+  }, [isMedian, status, router]);
 
   // Foydalanuvchi so'rovi (2026-09-16): "sinab ko'rmoqchi bo'lsa telegramdagi
   // landing pagega yo'naltirsin saytdagi dasturga emas" — "Boshlash"/"Bepul
@@ -57,7 +71,7 @@ export default function RootPage() {
     }
   }
 
-  if (status === "loading" || status === "onboarded") {
+  if (status === "loading" || status === "onboarded" || (isMedian && status === "anonymous")) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background">
         <LoadingSpinner label={dict.common.loading} />
