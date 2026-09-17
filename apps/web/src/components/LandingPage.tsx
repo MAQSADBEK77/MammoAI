@@ -21,7 +21,7 @@ import { useI18n } from "@/lib/i18n";
 import { useIllustrations } from "@/lib/illustrations";
 import { Button, Card } from "@/components/ui";
 import { PublicCalculators } from "@/components/landing/PublicCalculators";
-import { Reveal } from "@/components/landing/motion-primitives";
+import { Reveal, PopIn } from "@/components/landing/motion-primitives";
 
 const LIFE_STAGE_KEYS = ["cycle", "pregnancy", "checkups"] as const;
 const LIFE_STAGE_ILLUSTRATIONS = ["/illustrations/calendar.svg", "/illustrations/expecting.svg", "/illustrations/library/all-checked_d3u6.svg"];
@@ -38,6 +38,10 @@ const TRUST_ICONS = [ShieldOutlined, CheckCircleOutlined, TranslateOutlined, Loc
 const ACCENT_CHIP_CLASSES = ["bg-primary/10 text-primary", "bg-secondary/10 text-secondary", "bg-accent/10 text-accent"];
 const ACCENT_SOLID_CLASSES = ["bg-primary", "bg-secondary", "bg-accent"];
 const ACCENT_TEXT_CLASSES = ["text-primary", "text-secondary", "text-accent"];
+
+/** MOTION-05: Bento karta hover-fidbeki — yengil ko'tarilish + soyaning
+ * kuchayishi, --motion-duration-section (400ms) bilan mos. */
+const BENTO_CARD_HOVER = "transition-[translate,box-shadow] duration-[var(--motion-duration-section)] hover:-translate-y-1 hover:shadow-lg";
 
 const HOW_ANCHOR = "qanday-ishlaydi";
 const FEATURES_ANCHOR = "imkoniyatlar";
@@ -484,18 +488,22 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
           <Eyebrow accentIndex={1}>{l.eyebrows.bento}</Eyebrow>
           <h2 className="mt-2 text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.bentoTitle}</h2>
 
+          {/* MOTION-05: kartalar hover'da yengil ko'tariladi (translateY -4px
+              + soyaning kuchayishi — `BENTO_CARD_HOVER`, 400ms/--motion-
+              duration-section bilan mos), ikonkalar sahifaga kirganda kichik
+              "pop" bilan paydo bo'ladi (`<PopIn>`, spring). */}
           <div className="mt-10 grid gap-5 md:grid-cols-3">
-            <Card className="p-7! md:col-span-2">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Card className={clsx("p-7! md:col-span-2", BENTO_CARD_HOVER)}>
+              <PopIn index={0} className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <PeopleAltOutlined />
-              </div>
+              </PopIn>
               <h3 className="text-lg font-bold text-text-primary">{l.bentoPartner.title}</h3>
               <p className="mt-1 text-sm text-text-secondary">{l.bentoPartner.desc}</p>
             </Card>
-            <Card className="p-7!">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/10 text-secondary">
+            <Card className={clsx("p-7!", BENTO_CARD_HOVER)}>
+              <PopIn index={1} className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/10 text-secondary">
                 <NotificationsActiveOutlined />
-              </div>
+              </PopIn>
               <h3 className="text-lg font-bold text-text-primary">{l.bentoReminders.title}</h3>
               <p className="mt-1 text-sm text-text-secondary">{l.bentoReminders.desc}</p>
             </Card>
@@ -503,10 +511,10 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
               const Icon = SECONDARY_FEATURE_ICONS[i];
               const f = l.features[key];
               return (
-                <Card key={key} className="p-7!">
-                  <div className={clsx("mb-3 flex h-12 w-12 items-center justify-center rounded-2xl", ACCENT_CHIP_CLASSES[i % 3])}>
+                <Card key={key} className={clsx("p-7!", BENTO_CARD_HOVER)}>
+                  <PopIn index={i + 2} className={clsx("mb-3 flex h-12 w-12 items-center justify-center rounded-2xl", ACCENT_CHIP_CLASSES[i % 3])}>
                     <Icon />
-                  </div>
+                  </PopIn>
                   <h3 className="text-lg font-bold text-text-primary">{f.title}</h3>
                   <p className="mt-1 text-sm text-text-secondary">{f.desc}</p>
                 </Card>
