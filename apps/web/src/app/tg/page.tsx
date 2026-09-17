@@ -88,6 +88,13 @@ export default function TelegramMiniAppPage() {
     pollRef.current = setInterval(async () => {
       try {
         const res = await api.auth.telegramMiniAppStatus(initData);
+        // WEB3-02: `await`dan OLDIN emas, KEYIN tekshiriladi — so'rov
+        // jo'natilgandan keyin, LEKIN javob kelgunga qadar taймаут (yoki
+        // boshqa poll-tsikl) allaqachon "settled"ni true qilgan bo'lishi
+        // mumkin (masalan foydalanuvchi "Qayta urinish"ni bosib, YANGI
+        // poll-tsikl boshlagan). Bunday holatda kechikkan javob joriy
+        // holatni/intervalni O'ZGARTIRMASLIGI kerak.
+        if (settled) return;
         if (!res.phoneReady) return;
         settled = true;
         if (pollRef.current) clearInterval(pollRef.current);
