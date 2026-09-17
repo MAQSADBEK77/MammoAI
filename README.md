@@ -1,15 +1,22 @@
 # Ayollar salomatligi platformasi (MammoAI)
 
-Hayz tsikli, homiladorlik va tekshiruv (checkup) kuzatuvchisi — veb va mobil ilova,
-bitta backend. Texnik asos: `docs/technical-spec.md` va `docs/mobile-ui-brief.md`.
+Hayz tsikli, homiladorlik va tekshiruv (checkup) kuzatuvchisi — veb ilova (bitta
+backend), Android'da esa Median.co orqali WebView sifatida qadoqlanadi. Texnik
+asos: `docs/technical-spec.md` va `docs/mobile-ui-brief.md`.
+
+> **2026-09-17**: bu repo avval `apps/mobile/` ostida alohida Expo (React
+> Native) mobil ilova ham saqlagan (EAS Build orqali qurilgan) — u endi olib
+> tashlandi, chunki Android ilovasi endi Median.co orqali `apps/web`'ning
+> o'zini WebView'da qadoqlash yo'li bilan tayyorlanadi (alohida mobil kod bazasi
+> shart emas). Eski kod git tarixida saqlanib qoladi.
 
 ## Tuzilma
 
 ```
 packages/shared/   — umumiy tiplar, dizayn tokenlari, uz+ru lug'atlar, biznes mantiq,
-                      API mijozi (ham web, ham mobil shundan foydalanadi)
-apps/web/           — Next.js 16 veb-sayt + backend (API route'lar, Postgres/Supabase)
-apps/mobile/        — Expo (React Native) mobil ilova, xuddi shu backend'ga ulanadi
+                      API mijozi
+apps/web/           — Next.js 16 veb-sayt + backend (API route'lar, Postgres/Supabase),
+                      shu sayt Android'da Median.co orqali WebView ilova sifatida ham qadoqlanadi
 ```
 
 ## Ishga tushirish — veb
@@ -46,10 +53,6 @@ qo'shish shart — pastga qarang).
    qo'yib `npm run seed` ishga tushiring (namunaviy klinikalar/maqolalarni
    to'ldirish uchun) — bazaga to'g'ridan-to'g'ri ulanadi, Vercel'ga deploy shart
    emas.
-5. Mobil ilova (`apps/mobile/eas.json` → `build.preview.env.EXPO_PUBLIC_API_URL`)
-   manzilini Vercel domeningizga (masalan `https://mammoai.vercel.app`) o'zgartiring
-   — shunda APK istalgan tarmoqdan ishlaydi (lokal Wi-Fi shart emas).
-
 ## Admin panel (`/admin`)
 
 Foydalanuvchi/tizim sessiyasidan butunlay alohida, bitta parol bilan himoyalangan
@@ -68,17 +71,6 @@ doirasidan tashqarida qoldirildi). Shuning uchun boshqaruv panelida shu o'rniga
 haqiqiy foydalanish/faollik statistikasi ko'rsatiladi; real trafik/so'rovlar
 sonini bilish uchun to'g'ridan-to'g'ri [Vercel dashboard](https://vercel.com/dashboard)
 ga qarang.
-
-## Ishga tushirish — mobil
-
-```bash
-cp apps/mobile/.env.example apps/mobile/.env
-# .env faylida EXPO_PUBLIC_API_URL'ni kompyuteringizning lokal IP'siga o'zgartiring
-# (telefon "localhost"ga ulana olmaydi)
-
-npm run dev:web              # backend fon rejimida ishlab tursin
-npm run dev:mobile           # Expo dev server, QR kodni Expo Go bilan skanerlang
-```
 
 ## Test
 

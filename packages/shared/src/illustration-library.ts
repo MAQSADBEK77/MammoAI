@@ -24,8 +24,8 @@ export interface LibraryIllustration {
 }
 
 // Ilovaning dastlabki (hali admin tanlovi yo'q paytdagi) illyustratsiyalari —
-// apps/web/public/illustrations/*.svg va apps/mobile/assets/illustrations/*.svg
-// ildizida joylashgan, "library/" quyi papkasida EMAS.
+// apps/web/public/illustrations/*.svg ildizida joylashgan, "library/" quyi
+// papkasida EMAS.
 const CLASSICS: LibraryIllustration[] = [
   { slug: "classic-welcome", name: "Xush kelibsiz (asl)", category: "classic" },
   { slug: "classic-secure-login", name: "Xavfsiz kirish (asl)", category: "classic" },
