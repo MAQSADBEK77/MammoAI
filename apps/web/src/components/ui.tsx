@@ -441,12 +441,13 @@ export function IconChip({
  * o'tishda ham saqlab qolindi — faqat orqa fon endi MUI Backdrop orqali
  * (haqiqiy Material modal-fon xatti-harakati bilan).
  */
-// WEB3-14 (butun ilovaga ta'sir qiladi): `label` prop qabul qilinardi (har
-// bir chaqiruvchi tarjima qilingan matn — "Yuklanmoqda...", va h.k. —
-// uzatadi), lekin `_label`ga o'zgartirilib HECH QAYERDA render qilinmasdi —
-// foydalanuvchi faqat aylanuvchi spinner ko'rardi, matn yo'q, ekran-o'quvchi
-// uchun ham hech qanday e'lon yo'q edi. Endi matn spinner ostida ko'rinadi
-// va butun blok `role="status"`/`aria-live="polite"` bilan belgilanadi.
+// WEB3-14 + keyingi foydalanuvchi so'rovi (2026-09-17, "Yuklanmoqda... text
+// chiqmasin"): `label` VIZUAL ravishda ko'rsatilmaydi — faqat aylanuvchi
+// spinner ko'rinadi, avvalgidek. Lekin WEB3-14'ning asosiy maqsadi
+// (ekran-o'quvchilar uchun holat e'lon qilish) saqlanib qoladi: matn
+// `sr-only` bilan vizual jihatdan yashirilgan, lekin DOM'da bor va
+// `role="status"`/`aria-live="polite"` orqali skrin-rider'ga baribir
+// o'qib beriladi.
 export function LoadingSpinner({ label }: { label?: string }) {
   return (
     <Backdrop
@@ -467,7 +468,7 @@ export function LoadingSpinner({ label }: { label?: string }) {
     >
       <div role="status" aria-live="polite" className="flex flex-col items-center gap-3">
         <span className="loader" />
-        {label && <span className="text-sm font-semibold text-text-secondary">{label}</span>}
+        {label && <span className="sr-only">{label}</span>}
       </div>
     </Backdrop>
   );
