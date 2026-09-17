@@ -248,8 +248,44 @@ body {
 .landing-ticker-track {
   animation: landing-ticker-scroll 28s linear infinite;
 }
+/* MOTION-02: Hero fon-blob shakllarining sekin "nafas olishi" — juda past
+   amplituda (scale 1↔1.03), faqat "tirik" tuyg'usi uchun, deyarli sezilmas.
+   `scale` (Tailwind v4'ning MUSTAQIL CSS xususiyati — `transform` emas!)
+   orqali, shuning uchun BlobArt'ning o'zidagi translate/rotate utility
+   klasslariga (ular ham mustaqil `translate`/`rotate` xususiyatlari)
+   TA'SIR QILMAYDI. */
+@keyframes motion-breathe {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 1.03;
+  }
+}
+.motion-breathe {
+  animation: motion-breathe 7s var(--motion-ease-brand) infinite;
+}
+
+/* Hero telefon-mokapining doimiy juda yengil suzishi — `translate` orqali
+   (yana mustaqil xususiyat, mokapning `-rotate-2` klassiga ta'sir qilmaydi). */
+@keyframes motion-float {
+  0%,
+  100% {
+    translate: 0 -6px;
+  }
+  50% {
+    translate: 0 6px;
+  }
+}
+.motion-float {
+  animation: motion-float 5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .landing-ticker-track {
+  .landing-ticker-track,
+  .motion-breathe,
+  .motion-float {
     animation: none;
   }
 }

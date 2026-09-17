@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
+import { motion, useReducedMotion } from "motion/react";
+import { DURATION, EASE_BRAND } from "@/lib/motion";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import {
   GroupsOutlined,
@@ -62,8 +64,14 @@ function BgArt({ src, className }: { src: string; className: string }) {
 /** lalu.uz uslubidagi "organik" (blob) dekorativ shakl — burchaklari
  * notekis radiusli, xira va xiralashtirilgan, faqat fon chuqurligi uchun.
  * Yangi rasm/SVG kerak emas — sof CSS border-radius texnikasi. */
-function BlobArt({ className }: { className: string }) {
-  return <div aria-hidden className={clsx("pointer-events-none absolute -z-10 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] blur-2xl", className)} />;
+function BlobArt({ className, breatheDelay }: { className: string; breatheDelay?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={clsx("motion-breathe pointer-events-none absolute -z-10 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] blur-2xl", className)}
+      style={breatheDelay ? { animationDelay: breatheDelay } : undefined}
+    />
+  );
 }
 
 /** MOTION-00 (asos): Hero bo'limi DOIM (qorong'u rejimda ham) o'zgarmaydigan
@@ -84,6 +92,81 @@ function HeroWaveDivider() {
     >
       <path d="M0,32 C320,80 1120,0 1440,40 L1440,80 L0,80 Z" fill="var(--color-surface)" />
     </svg>
+  );
+}
+
+const HERO_STAGGER_STEP_S = 0.07; // 70ms — foydalanuvchi so'rovi ("60-80ms")
+
+/** Hero sarlavhasi — segmentlar (so'z-guruhlari) birma-bir, pastdan yengil
+ * yuqoriga siljib, xiradan-aniqqa chiqadi. Scroll-reveal EMAS (Hero birinchi
+ * ekranda, mount bo'lishi bilan ishga tushadi) — shuning uchun umumiy
+ * `<Reveal>` primitivi (whileInView) o'rniga shu yerda alohida, mount-
+ * asosli variant. `useReducedMotion()` yoqilgan bo'lsa — kechikishsiz,
+ * darhol to'liq holatda (`initial={false}`) — matn HECH QACHON
+ * ko'rinmasdan qolib ketmaydi. */
+function HeroHeadline({ segments, accentClassOf }: { segments: { text: string; accent?: string }[]; accentClassOf: (accent: string) => string }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <h1 className="max-w-2xl text-4xl font-extrabold leading-tight text-[#1f2937] md:text-5xl">
+      {segments.map((seg, i) =>
+        reduceMotion ? (
+          <span key={i} className={seg.accent ? accentClassOf(seg.accent) : undefined}>
+            {seg.text}
+          </span>
+        ) : (
+          <motion.span
+            key={i}
+            // MUHIM: `inline-block` EMAS — segmentlar orasidagi bo'shliqlar
+            // (matn ichida, masalan " va ") inline-block chegarasida
+            // yeyilib ketadi ("homiladorlikvatekshiruvlar" bo'lib qolgan
+            // edi). Oddiy `inline` (span standart holati) bilan
+            // `transform`/opacity animatsiyasi baribir to'g'ri ishlaydi.
+            className={seg.accent ? accentClassOf(seg.accent) : undefined}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: DURATION.page, ease: EASE_BRAND, delay: i * HERO_STAGGER_STEP_S }}
+          >
+            {seg.text}
+          </motion.span>
+        )
+      )}
+    </h1>
+  );
+}
+
+/** Telefon-mokapning sichqoncha pozitsiyasiga qarab yumshoq 3D nishabi
+ * (desktop) + doimiy yengil suzishi (.motion-float, CSS). Reduced-motion
+ * yoqilgan bo'lsa — nishab butunlay o'chadi (float ham CSS orqali
+ * globals.css'dagi umumiy qoidada o'chadi), faqat statik mokap qoladi. */
+function PhoneTilt({ children }: { children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (reduceMotion || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5; // -0.5..0.5
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    const MAX_DEG = 4;
+    setTilt({ x: -py * MAX_DEG * 2, y: px * MAX_DEG * 2 });
+  }
+
+  function handleMouseLeave() {
+    setTilt({ x: 0, y: 0 });
+  }
+
+  return (
+    <div style={{ perspective: 800 }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+      <motion.div
+        ref={ref}
+        className="motion-float"
+        animate={reduceMotion ? undefined : { rotateX: tilt.x, rotateY: tilt.y }}
+        transition={{ type: "spring", stiffness: 150, damping: 15 }}
+      >
+        {children}
+      </motion.div>
+    </div>
   );
 }
 
@@ -129,23 +212,25 @@ function AppPreviewCarousel() {
   return (
     <div className="relative mt-2">
       <BlobArt className="left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 bg-primary-light/50" />
-      <BlobArt className="left-1/2 top-1/2 h-64 w-64 -translate-x-[65%] -translate-y-[35%] rotate-45 bg-accent-light/30" />
-      <div className="relative w-[220px] -rotate-2 overflow-hidden rounded-[2rem] border-[8px] border-[#1f2937] bg-[#1f2937] shadow-2xl">
-        <div className="absolute left-1/2 top-2 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-[#1f2937]" />
-        <div className="relative aspect-[624/1168] w-full">
-          {APP_PREVIEWS.map((src, i) =>
-            i > maxLoadedIndex ? null : (
-              // eslint-disable-next-line @next/next/no-img-element -- statik skrinshot, next/image optimizatsiyasi kerak emas
-              <img
-                key={src}
-                src={src}
-                alt=""
-                className={clsx("absolute inset-0 h-full w-full transition-opacity duration-700 ease-in-out", i === index ? "opacity-100" : "opacity-0")}
-              />
-            )
-          )}
+      <BlobArt className="left-1/2 top-1/2 h-64 w-64 -translate-x-[65%] -translate-y-[35%] rotate-45 bg-accent-light/30" breatheDelay="-3.5s" />
+      <PhoneTilt>
+        <div className="relative w-[220px] -rotate-2 overflow-hidden rounded-[2rem] border-[8px] border-[#1f2937] bg-[#1f2937] shadow-2xl">
+          <div className="absolute left-1/2 top-2 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-[#1f2937]" />
+          <div className="relative aspect-[624/1168] w-full">
+            {APP_PREVIEWS.map((src, i) =>
+              i > maxLoadedIndex ? null : (
+                // eslint-disable-next-line @next/next/no-img-element -- statik skrinshot, next/image optimizatsiyasi kerak emas
+                <img
+                  key={src}
+                  src={src}
+                  alt=""
+                  className={clsx("absolute inset-0 h-full w-full transition-opacity duration-700 ease-in-out", i === index ? "opacity-100" : "opacity-0")}
+                />
+              )
+            )}
+          </div>
         </div>
-      </div>
+      </PhoneTilt>
       <div className="mt-4 flex justify-center gap-1.5">
         {APP_PREVIEWS.map((_, i) => (
           <span key={i} className={clsx("h-1.5 rounded-full transition-all duration-500", i === index ? "w-5 bg-primary" : "w-1.5 bg-primary/25")} />
@@ -256,20 +341,16 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
               `accent` bilan belgilangan segmentlar brend tokenlaridan
               (--color-primary/secondary/accent) rang oladi — ular ham fon
               o'zgarmasligi sababli doimiy ko'rinadi. */}
-          <h1 className="max-w-2xl text-4xl font-extrabold leading-tight text-[#1f2937] md:text-5xl">
-            {l.heroTitleSegments.map((seg, i) =>
-              "accent" in seg && seg.accent ? (
-                <span key={i} className={ACCENT_TEXT_CLASSES[["primary", "secondary", "accent"].indexOf(seg.accent)]}>
-                  {seg.text}
-                </span>
-              ) : (
-                <span key={i}>{seg.text}</span>
-              )
-            )}
-          </h1>
+          <HeroHeadline
+            segments={l.heroTitleSegments}
+            accentClassOf={(accent) => ACCENT_TEXT_CLASSES[["primary", "secondary", "accent"].indexOf(accent)]}
+          />
           <p className="max-w-xl text-lg text-[#4b5563]">{l.heroSubtitle}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Button onClick={onStart} className="px-8! py-3! text-base!">
+            {/* MOTION-02: mikro-fidbek (150ms, --motion-duration-micro bilan mos) —
+                `scale` mustaqil CSS xususiyati orqali, mavjud MUI hover/soya
+                o'tishiga (buttonSx) ta'sir qilmaydi. */}
+            <Button onClick={onStart} className="px-8! py-3! text-base! duration-150 hover:scale-[1.02] active:scale-[0.98]">
               {l.ctaPrimary}
             </Button>
             <a
