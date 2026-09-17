@@ -1052,7 +1052,7 @@ const uz = {
       trust: "ISHONCH",
       faq: "SAVOL-JAVOB",
     },
-    heroEyebrow: "O'zbek ayollari uchun",
+    heroEyebrow: "Ayollar uchun",
     // lalu.uz'dagi kabi sarlavha ichida alohida rangdagi so'zlar — matn 3 ta
     // segmentga bo'lingan, har biri ixtiyoriy `accent` bilan (LandingPage.tsx
     // ACCENT_TEXT_CLASSES'dagi primary/secondary/accent tokenlariga mos —

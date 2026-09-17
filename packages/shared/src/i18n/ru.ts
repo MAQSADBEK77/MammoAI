@@ -976,7 +976,7 @@ const ru: Dictionary = {
       trust: "ДОВЕРИЕ",
       faq: "ВОПРОСЫ",
     },
-    heroEyebrow: "Для женщин Узбекистана",
+    heroEyebrow: "Для женщин",
     heroTitleSegments: [
       { text: "Всё для контроля " },
       { text: "цикла", accent: "primary" as const },

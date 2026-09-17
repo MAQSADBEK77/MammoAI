@@ -978,7 +978,7 @@ const en: Dictionary = {
       trust: "TRUST",
       faq: "FAQ",
     },
-    heroEyebrow: "Built for women in Uzbekistan",
+    heroEyebrow: "Built for women",
     heroTitleSegments: [
       { text: "One app for your " },
       { text: "cycle", accent: "primary" as const },
