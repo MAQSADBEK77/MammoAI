@@ -95,10 +95,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             telegram.org'dan yuklanadi. Oddiy brauzerda zararsiz — window.Telegram
             aniqlanmaydi, lib/telegram.ts shunga qarab ishlaydi. */}
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
-        {/* Yandex Metrica — counter ID hali yo'qligi uchun (yuqoridagi izohga
-            qarang) hozircha HECH NARSA render qilinmaydi. `webvisor:true` —
-            Yandex'ning o'zi ham sessiya-yozuvi/issiqlik xaritasi va sahifama-
-            sahifa "qolib ketish" hisobotini beradi (admin panelning
+        {/* Yandex Metrica — 2026-09-17'da foydalanuvchi Yandex'ning o'zi bergan
+            aniq skriptni ulashtirdi (counter 112748907); shu skriptning HAR
+            BIR sozlamasi (ssr/ecommerce/referrer/url) ATAYLAB SO'ZMA-SO'Z
+            saqlangan — o'zboshimchalik bilan soddalashtirilmagan. `webvisor:
+            true` — Yandex'ning o'zi ham sessiya-yozuvi/issiqlik xaritasi va
+            sahifama-sahifa "qolib ketish" hisobotini beradi (admin panelning
             /admin/analitika'dagi "Sahifama-sahifa qolib ketish" bilan bir
             xil g'oya — biri bizning bazamiz, biri Yandex'ning o'zi). */}
         {YANDEX_METRICA_ID && (
@@ -111,13 +113,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   m[i].l=1*new Date();
                   for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
                   k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-                  (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-                  ym(${JSON.stringify(YANDEX_METRICA_ID)}, "init", {
-                    clickmap:true,
-                    trackLinks:true,
-                    accurateTrackBounce:true,
-                    webvisor:true
-                  });`,
+                  (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=${YANDEX_METRICA_ID}", "ym");
+                  ym(${Number(YANDEX_METRICA_ID)}, "init", {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});`,
               }}
             />
             <noscript>
