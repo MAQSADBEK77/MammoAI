@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RISK_QUIZ_QUESTIONS } from "@mammoai/shared";
 import type { RiskQuizAnswers, RiskQuizResult } from "@mammoai/shared";
@@ -18,10 +18,25 @@ export default function RiskQuizPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [result, setResult] = useState<RiskQuizResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // WEB3-10: ClinicsScreen'dagi FIX-UX-08 bilan bir xil naqsh — .catch()
+  // yo'q edi, so'rov muvaffaqiyatsiz bo'lsa (masalan vaqtinchalik tarmoq
+  // uzilishi) `existingResult` hech qachon yangilanmay, ekran ABADIY
+  // yuklanish holatida qolib ketardi.
+  const [loadError, setLoadError] = useState(false);
+
+  const load = useCallback(() => {
+    setLoadError(false);
+    api.riskQuiz.get().then(setExistingResult).catch(() => setLoadError(true));
+  }, []);
 
   useEffect(() => {
-    api.riskQuiz.get().then(setExistingResult);
-  }, []);
+    // setTimeout(0): `load()` sinxron `setState` chaqiradi (loadError reset)
+    // — effekt ichida to'g'ridan-to'g'ri chaqirilsa ESLint qoidasi ("Calling
+    // setState synchronously within an effect") xato beradi (ClinicsScreen'da
+    // ham bir xil naqsh).
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   const question = RISK_QUIZ_QUESTIONS[stepIndex];
   const isLast = stepIndex === RISK_QUIZ_QUESTIONS.length - 1;
@@ -44,6 +59,14 @@ export default function RiskQuizPage() {
 
   const shown = result ?? (existingResult && !started ? existingResult : null);
 
+  if (loadError) {
+    return (
+      <Card className="flex flex-col items-center gap-3 py-8 text-center text-sm text-text-secondary">
+        <p>{dict.common.errorGeneric}</p>
+        <Button onClick={load}>{dict.common.retryButton}</Button>
+      </Card>
+    );
+  }
   if (existingResult === undefined) {
     return <LoadingSpinner label={dict.common.loading} />;
   }
