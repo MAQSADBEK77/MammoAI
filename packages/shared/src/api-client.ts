@@ -353,8 +353,11 @@ export function createApiClient(config: ApiClientConfig) {
        * tugmasi endi veb onboarding o'rniga to'g'ridan-to'g'ri shu yerga
        * yo'naltiradi (foydalanuvchi so'rovi: Telegram Mini App orqali kirish
        * ustuvor, telefon+SMS veb oqimi emas). Bot hali sozlanmagan bo'lsa
-       * `url: null` — chaqiruvchi tomon veb onboarding'ga qaytish kerak. */
-      getStartLink: () => request<{ url: string | null }>("/api/telegram/link"),
+       * `url: null` — chaqiruvchi tomon veb onboarding'ga qaytish kerak.
+       * WEB3-03: `options.signal` — chaqiruvchi (masalan page.tsx'dagi
+       * Median-yo'naltirish) bu so'rov osilib qolgan taqdirda ham foydalanuvchi
+       * abadiy kutmasligi uchun AbortController bilan taймаут qo'yishi kerak. */
+      getStartLink: (options?: { signal?: AbortSignal }) => request<{ url: string | null }>("/api/telegram/link", options),
     },
     analytics: {
       /** Foydalanish hodisalari (sahifa ko'rish/tugma bosish) — to'plamda yuboriladi.

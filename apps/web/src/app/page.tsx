@@ -41,20 +41,31 @@ export default function RootPage() {
   const [telegramLinkChecked, setTelegramLinkChecked] = useState(false);
   useEffect(() => {
     let cancelled = false;
+    // WEB3-03: bu so'rov osilib qolgan taqdirda ham (loyihada avval bir necha
+    // marta yuz bergan DB-ulanish osilib qolish holati bilan bir xil turdagi
+    // muammo — postgres-pool-hang-bug xotirasiga qarang) Median foydalanuvchisi
+    // ABADIY yuklanish holatida qolib ketmasin — 4 soniyadan keyin so'rovning
+    // o'zi bekor qilinadi, quyidagi .catch/.finally baribir ishga tushib
+    // fallback (veb onboarding) yo'liga o'tkazadi.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
     api.telegram
-      .getStartLink()
+      .getStartLink({ signal: controller.signal })
       .then((res) => {
         if (!cancelled) setTelegramLink(res.url);
       })
       .catch(() => {
-        // jim yutiladi — pastdagi handleStart/Median-effekti veb
-        // onboarding'ga qaytadi
+        // jim yutiladi (taймаут ham shu yerga tushadi) — pastdagi
+        // handleStart/Median-effekti veb onboarding'ga qaytadi
       })
       .finally(() => {
+        clearTimeout(timeout);
         if (!cancelled) setTelegramLinkChecked(true);
       });
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
+      controller.abort();
     };
   }, []);
 
