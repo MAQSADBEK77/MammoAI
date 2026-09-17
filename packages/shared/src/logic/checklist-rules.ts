@@ -73,9 +73,17 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
     if (isPregnancyWindowRelevant(week, 16, 20)) items.push({ type: "prenatal_screening_stage1b", dueInDays: week === null ? 0 : daysUntilPregnancyWeek(week, 16) });
     if (isPregnancyWindowRelevant(week, 28, 32)) items.push({ type: "prenatal_screening_stage1c", dueInDays: week === null ? 0 : daysUntilPregnancyWeek(week, 28) });
     if (isPregnancyWindowRelevant(week, 35, 37)) items.push({ type: "group_b_strep_screening", dueInDays: week === null ? 0 : daysUntilPregnancyWeek(week, 35) });
+    // WEB3-04: ilgari 12-haftadan keyin maqsad 32-haftaga "sakrardi" —
+    // dueInDays 11-haftada 7 (hozir kerak) dan 12-haftada BIRDANIGA 140ga
+    // (~20 hafta keyin kerak) o'zgarardi, aynan shu bandning o'zi "hozir
+    // dolzarb" deb belgilagan 12-31 hafta oynasining BOSHIDA. Boshqa
+    // barcha oyna-asosli bandlar kabi (stage1/1b/1c/group_b_strep —
+    // barchasi FAQAT windowStart'ga qarab hisoblaydi, windowEnd faqat
+    // isPregnancyWindowRelevant'da dolzarblik oynasi uchun ishlatiladi),
+    // bu ham endi doim windowStart=12'ga barqaror qoladi — 12-haftadan
+    // 32-haftagacha butun oyna davomida dueInDays=0 ("hozir kerak").
     if (isPregnancyWindowRelevant(week, 12, 32)) {
-      const dueInDays = week === null ? 0 : week < 12 ? daysUntilPregnancyWeek(week, 12) : daysUntilPregnancyWeek(week, 32);
-      items.push({ type: "pregnancy_patronage_visit", dueInDays });
+      items.push({ type: "pregnancy_patronage_visit", dueInDays: week === null ? 0 : daysUntilPregnancyWeek(week, 12) });
     }
     if (week === null || week <= 13) items.push({ type: "bv_targeted_screening", dueInDays: 14 });
     if (input.age >= 18 && input.age <= 45) items.push({ type: "torch_panel", dueInDays: 14 });

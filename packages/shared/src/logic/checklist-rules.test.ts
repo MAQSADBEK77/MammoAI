@@ -117,6 +117,21 @@ describe("generateChecklist", () => {
     expect(annual?.recurrenceDays).toBe(365);
     expect(hpv?.recurrenceDays).toBeUndefined();
   });
+
+  // WEB3-04: pregnancy_patronage_visit'ning maqsad sanasi 12-haftada
+  // windowStart (12) dan windowEnd (32)ga "sakramasligi" kerak — 11-hafta
+  // (oynadan oldin, hali kutilmoqda) va 12-31 hafta (oyna ichida, "hozir
+  // kerak") uzluksiz bo'lishi kerak.
+  it("pregnancy_patronage_visit maqsad sanasi 12-haftada sakramaydi (windowStart'da barqaror)", () => {
+    const week11 = generateChecklist({ ...BASE, isPregnant: true, pregnancyWeek: 11 }).find((i) => i.type === "pregnancy_patronage_visit");
+    const week12 = generateChecklist({ ...BASE, isPregnant: true, pregnancyWeek: 12 }).find((i) => i.type === "pregnancy_patronage_visit");
+    const week20 = generateChecklist({ ...BASE, isPregnant: true, pregnancyWeek: 20 }).find((i) => i.type === "pregnancy_patronage_visit");
+    const week31 = generateChecklist({ ...BASE, isPregnant: true, pregnancyWeek: 31 }).find((i) => i.type === "pregnancy_patronage_visit");
+    expect(week11?.dueInDays).toBe(7); // 12-haftagacha 1 hafta qoldi
+    expect(week12?.dueInDays).toBe(0); // oyna boshlandi — "hozir kerak"
+    expect(week20?.dueInDays).toBe(0); // oyna ichida — hamon "hozir kerak", 140ga sakramaydi
+    expect(week31?.dueInDays).toBe(0); // oyna oxirigacha ham barqaror
+  });
 });
 
 describe("CHECKLIST_ITEM_IS_FREE / CHECKUP_CATEGORY", () => {
