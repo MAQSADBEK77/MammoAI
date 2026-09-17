@@ -229,8 +229,24 @@ body {
   background: linear-gradient(135deg, #ffe9dc 0%, #ffd3c4 40%, #fde1ec 100%);
 }
 
+/* MOTION-10: fon gradienti juda sekin (18s), deyarli sezilmas tarzda
+   siljib turadi — "tirik" lekin chalg'itmaydigan. `background-position`
+   (paint xususiyati, layout'ga ta'sir qilmaydi) orqali — gradient
+   elementdan 2x katta (`background-size: 200% 200%`), shuning uchun
+   pozitsiya siljishi ko'rinadigan rang siljishini beradi. */
 .bg-landing-cta {
-  background: linear-gradient(135deg, #ff8b6b 0%, var(--color-primary) 100%);
+  background: linear-gradient(135deg, #ff8b6b 0%, var(--color-primary) 50%, #ff8b6b 100%);
+  background-size: 200% 200%;
+  animation: motion-cta-drift 18s ease-in-out infinite;
+}
+@keyframes motion-cta-drift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* lalu.uz'dagi bosh banner ostidagi uzluksiz aylanuvchi "pill" teg-lenta.
@@ -285,7 +301,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .landing-ticker-track,
   .motion-breathe,
-  .motion-float {
+  .motion-float,
+  .bg-landing-cta {
     animation: none;
   }
 }
