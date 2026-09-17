@@ -37,6 +37,22 @@ export default function AdminArticlesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  // WEB3-08: forma "dirty" (saqlanmagan o'zgarish bor) ekanligini bilish uchun
+  // — forma ochilgan/muvaffaqiyatli saqlangan paytdagi qiymat bilan
+  // solishtiriladi.
+  const [initialForm, setInitialForm] = useState<FormState>(EMPTY_FORM);
+
+  function isFormDirty(): boolean {
+    return formOpen && JSON.stringify(form) !== JSON.stringify(initialForm);
+  }
+
+  /** Boshqa maqolani tahrirlashga/yangi maqola yaratishga o'tishdan oldin —
+   * forma "dirty" bo'lsa, tasdiqlash so'raydi. Foydalanuvchi rad etsa
+   * `false` qaytadi (chaqiruvchi hech narsa qilmasligi kerak). */
+  function confirmDiscardIfDirty(): boolean {
+    if (!isFormDirty()) return true;
+    return window.confirm("Saqlanmagan o'zgarishlar bor. Ularni bekor qilib davom etasizmi?");
+  }
 
   function load() {
     setLoading(true);
@@ -54,14 +70,19 @@ export default function AdminArticlesPage() {
   }, []);
 
   function openCreate() {
+    if (!confirmDiscardIfDirty()) return;
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setInitialForm(EMPTY_FORM);
     setFormOpen(true);
   }
 
   function openEdit(article: Article) {
+    if (!confirmDiscardIfDirty()) return;
+    const next = { slug: article.slug, category: article.category, title: article.title, excerpt: article.excerpt, body: article.body };
     setEditingId(article.id);
-    setForm({ slug: article.slug, category: article.category, title: article.title, excerpt: article.excerpt, body: article.body });
+    setForm(next);
+    setInitialForm(next);
     setFormOpen(true);
   }
 
