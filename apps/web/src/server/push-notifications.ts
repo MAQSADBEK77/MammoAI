@@ -1,18 +1,26 @@
 // Haqiqiy telefon push-bildirishnomasi — Expo Push API orqali (roadmap
-// 10-band: "app ni o'zida bildirishnomalarni yaxshilash", ilgari faqat
-// Telegram bot orqali edi, Mini App'da native push yo'qligi uchun; lekin
-// haqiqiy mobil ilova — expo-notifications — buni qo'llab-quvvatlaydi).
+// 10-band). Bu FAQAT o'chirilgan apps/mobile (Expo/expo-notifications)
+// uchun mo'ljallangan edi — Mini App/veb'da native push yo'q.
 //
-// MUHIM: Android'da Expo push ISHLASHI uchun loyihada FCM (Firebase Cloud
-// Messaging) hisob ma'lumotlari sozlangan bo'lishi kerak (`eas credentials`
-// orqali yuklanadi) — bu HALI qilinmagan (google-services.json yo'q).
-// Shuning uchun bu funksiya XAVFSIZ jim qoladi (xato tashlamaydi) agar
-// token yo'q yoki Expo API xato qaytarsa — FCM sozlanmaguncha push
-// jismonan yetib bormaydi, lekin ilova/boshqa bildirishnoma kanallari
-// (Telegram, ilova ichi) buzilmaydi.
-
-const EXPO_PUSH_ENDPOINT = "https://exp.host/--/api/v2/push/send";
-
+// WEB2-04 (2026-09-17): apps/mobile butunlay olib tashlandi (d7b52f5),
+// shuning uchun bazadagi barcha `expo_push_token` qiymatlari ENDI ABADIY
+// yaroqsiz — ularga yuborilgan har bir so'rov 100% muvaffaqiyatsiz
+// bo'lishi kafolatlangan (hech qanday klient bu token'larni yangilay
+// olmaydi — POST /api/push-token'ga endi hech kim so'rov yubormaydi).
+// Avval bu funksiya "xavfsiz jim" qolardi (FCM sozlanmagani uchun xato
+// yutilardi) — endi esa har chaqiriqda ATAYLAB behuda tarmoq so'rovi
+// yuborilardi (notifyUser() har bir bildirishnomada, daily-reminders.ts
+// kuniga bir marta). Shu behuda so'rovlarni to'xtatish uchun funksiya
+// endi hech narsa qilmasdan darhol qaytadi — chaqiruvchi tomonlarni
+// (repo.ts#notifyUser, daily-reminders.ts) o'zgartirish shart emas,
+// ular allaqachon xatoni/natijani e'tiborsiz qoldiradi.
+//
+// KEYINGI TOZALASH BOSQICHI (hozircha REJALASHTIRILGAN, bajarilmagan):
+// `expo_push_token` ustunini (db.ts) va uni o'qiydigan/yozadigan barcha
+// joylarni (repo.ts#setExpoPushToken/notifyUser, daily-reminders.ts,
+// apps/web/src/app/api/push-token/route.ts) butunlay olib tashlash —
+// bu DB sxemasini o'zgartiradigan alohida migratsiya talab qiladi,
+// shuning uchun bu safar qilinmadi.
 export interface PushPayload {
   title: string;
   body: string;
@@ -20,19 +28,5 @@ export interface PushPayload {
 }
 
 export async function sendExpoPushNotification(token: string, payload: PushPayload): Promise<void> {
-  try {
-    await fetch(EXPO_PUSH_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        to: token,
-        title: payload.title,
-        body: payload.body,
-        data: payload.data,
-        sound: "default",
-      }),
-    });
-  } catch {
-    // Tarmoq xatosi — push yo'qoladi, lekin asosiy amal davom etadi.
-  }
+  // Ataylab no-op — yuqoridagi izohga qarang.
 }

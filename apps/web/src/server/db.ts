@@ -539,6 +539,13 @@ async function initSchema() {
     // qurilmada kirsa eskisi ustidan yoziladi, ko'p-qurilma qo'llab-quvvatlash
     // V1'da yo'q). NULL = hali ro'yxatga olinmagan (ruxsat berilmagan yoki
     // FCM/APNs hali sozlanmagan bo'lishi mumkin).
+    // WEB2-04 (2026-09-17): apps/mobile (Expo) butunlay olib tashlangani
+    // sababli bu ustun ENDI ABADIY eskirgan — hech qanday klient uni
+    // yangilamaydi. `sendExpoPushNotification` (push-notifications.ts)
+    // shu tufayli no-op qilib qo'yildi. Ustunning o'zini (va
+    // /api/push-token route'ini) olib tashlash REJALASHTIRILGAN, lekin
+    // bu safar bajarilmagan — DB sxema o'zgarishi alohida migratsiya
+    // sifatida qilinishi kerak.
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS expo_push_token TEXT`,
     // FIX-04: OTP kodini cheksiz sinab ko'rishning oldini olish uchun —
     // repo.ts:verifyPhoneCode shu ustunni token bo'yicha oshirib boradi va
