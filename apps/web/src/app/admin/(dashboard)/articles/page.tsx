@@ -88,10 +88,20 @@ export default function AdminArticlesPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    // WEB3-09: slugify() faqat lotin harflarini qabul qiladi (kirill/rus
+    // sarlavha butunlay bo'sh slug'ga aylanadi) — bunday holatda avvalgidek
+    // bo'sh slug bilan yuborish o'rniga (server keyin buni chalkash
+    // "sarlavha kerak" xatosiga aylantirardi, aslida sarlavha bor edi),
+    // aniq va tushunarli xato ko'rsatib, yuborishni to'xtatamiz.
+    const slug = form.slug.trim() || slugify(form.title);
+    if (!slug) {
+      setError("Slug avtomatik yaratilmadi — sarlavha lotin harflarisiz bo'lishi mumkin. \"Slug\" maydoniga qo'lda (lotin harflarida) kiriting.");
+      return;
+    }
     setSaving(true);
     setError(null);
     const payload = {
-      slug: form.slug.trim() || slugify(form.title),
+      slug,
       category: form.category,
       title: form.title.trim(),
       excerpt: form.excerpt.trim(),
