@@ -30,7 +30,9 @@ export const metadata: Metadata = {
   verification: { google: "B8SNUTi-DyBjndWe-QIY6wzg_VQ2a_Hb5gngp6EJlVM" },
   // logo.svg endi faqat shaffof (fonsiz) belgi — bryauzer tab fonida ko'rinmasligi
   // mumkin, shuning uchun favicon uchun brend-fonli PNG ishlatiladi.
-  icons: { icon: "/favicon.png" },
+  // WEB3-20: apple-touch-icon yo'q edi — iOS'da "Bosh ekranga qo'shish"
+  // qilinganda Apple standart (bo'sh/skrinshot) belgi qo'yardi.
+  icons: { icon: "/favicon.png", apple: "/apple-touch-icon.png" },
   openGraph: {
     type: "website",
     locale: "uz_UZ",
