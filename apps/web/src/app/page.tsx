@@ -25,19 +25,6 @@ export default function RootPage() {
     router.replace(tab === "checkups" ? "/tekshiruvlar" : tab === "partner" ? "/hamkor" : "/asosiy");
   }, [status, onboardingProfile, router]);
 
-  // Foydalanuvchi so'rovi (2026-09-16): "median orqali qilsam landing page
-  // ham qo'shilib appga qo'shilib ketyapti" — Median.co butun saytni
-  // o'zgarishsiz WebView'da ochadi, shuning uchun marketing LandingPage
-  // native ilova ichida ham chiqib qolardi. ANONIM (hali onboarding'dan
-  // o'tmagan) Median-ilova foydalanuvchisi uchun landing butunlay
-  // o'tkazib yuboriladi — to'g'ridan-to'g'ri onboarding'ga (lib/median.ts).
-  // Sessiyasi bor foydalanuvchi uchun hech narsa o'zgarmaydi — yuqoridagi
-  // effekt allaqachon uni asosiy ekranga olib chiqadi.
-  const isMedian = isMedianApp();
-  useEffect(() => {
-    if (isMedian && status === "anonymous") router.replace("/onboarding");
-  }, [isMedian, status, router]);
-
   // Foydalanuvchi so'rovi (2026-09-16): "sinab ko'rmoqchi bo'lsa telegramdagi
   // landing pagega yo'naltirsin saytdagi dasturga emas" — "Boshlash"/"Bepul
   // sinab ko'rish" tugmalari endi VEB onboarding ("/onboarding") o'rniga
@@ -48,6 +35,10 @@ export default function RootPage() {
   // eski xatti-harakat (veb onboarding) ZAXIRA (fallback) sifatida saqlanadi,
   // tugma hech qachon "o'lik" bo'lib qolmasligi uchun.
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  // WEB2-05: pastdagi Median-effekti telegramLink hali "yo'q" (fetch
+  // tugamagan) bilan "chindan sozlanmagan" (fetch tugadi, url yo'q)ni
+  // farqlashi kerak — shuning uchun alohida "tugadimi" bayrog'i.
+  const [telegramLinkChecked, setTelegramLinkChecked] = useState(false);
   useEffect(() => {
     let cancelled = false;
     api.telegram
@@ -56,7 +47,11 @@ export default function RootPage() {
         if (!cancelled) setTelegramLink(res.url);
       })
       .catch(() => {
-        // jim yutiladi — pastdagi handleStart veb onboarding'ga qaytadi
+        // jim yutiladi — pastdagi handleStart/Median-effekti veb
+        // onboarding'ga qaytadi
+      })
+      .finally(() => {
+        if (!cancelled) setTelegramLinkChecked(true);
       });
     return () => {
       cancelled = true;
@@ -70,6 +65,29 @@ export default function RootPage() {
       router.push("/onboarding");
     }
   }
+
+  // Foydalanuvchi so'rovi (2026-09-16, keyinroq LANDING-01/WEB2-05 sifatida
+  // qayd etilgan): "median orqali qilsam landing page ham qo'shilib appga
+  // qo'shilib ketyapti" — Median.co butun saytni o'zgarishsiz WebView'da
+  // ochadi, shuning uchun marketing LandingPage native ilova ichida ham
+  // chiqib qolardi. ANONIM (hali onboarding'dan o'tmagan) Median-ilova
+  // foydalanuvchisi uchun landing butunlay o'tkazib yuboriladi — LEKIN
+  // qayerga yo'naltirish yuqoridagi `handleStart` bilan BIR XIL qoidaga
+  // bo'ysunadi: avval Telegram bot (agar sozlangan bo'lsa), aks holda veb
+  // onboarding. Shuning uchun bu effekt `telegramLinkChecked` tugashini
+  // kutadi — aks holda fetch hali tugamagan paytda doim onboarding'ga
+  // shoshilib, botni hech qachon sinab ko'rmasdi. Sessiyasi bor
+  // foydalanuvchi uchun hech narsa o'zgarmaydi — yuqoridagi birinchi
+  // effekt allaqachon uni asosiy ekranga olib chiqadi.
+  const isMedian = isMedianApp();
+  useEffect(() => {
+    if (!isMedian || status !== "anonymous" || !telegramLinkChecked) return;
+    if (telegramLink) {
+      window.location.href = telegramLink;
+    } else {
+      router.replace("/onboarding");
+    }
+  }, [isMedian, status, telegramLinkChecked, telegramLink, router]);
 
   if (status === "loading" || status === "onboarded" || (isMedian && status === "anonymous")) {
     return (
