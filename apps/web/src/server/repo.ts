@@ -1303,8 +1303,23 @@ export async function ensureChecklistItem(
   }
 }
 
+// WEB3-01 (xavfsizlik): CHECKLIST_ITEM_IS_FREE ilgari FAQAT mijoz tomonda
+// (UI'da tugmani ko'rsatish/yashirish uchun) tekshirilardi — bu funksiyaning
+// o'zi hech qanday premium tekshiruvi qilmasdi, shuning uchun to'g'ridan-
+// to'g'ri POST /api/checklist/[id]/complete so'rovi bilan har qanday
+// (pullik) bandni bepul "bajarilgan" deb belgilash mumkin edi.
 export async function completeChecklistItem(userId: string, id: string): Promise<void> {
   await ensureSchema();
+  const rows = (await sql`
+    SELECT type FROM checklist_items WHERE id = ${id} AND user_id = ${userId}
+  `) as unknown as { type: ChecklistItemType }[];
+  const item = rows[0];
+  // Topilmasa — avvalgidek jim o'tkaziladi (pastdagi UPDATE ham hech narsa
+  // qilmagan bo'lardi, xatti-harakat o'zgarmadi).
+  if (!item) return;
+  if (!CHECKLIST_ITEM_IS_FREE[item.type] && !(await hasPremiumAccess(userId))) {
+    throw new ApiError(402, "Bu tekshiruv turini bajarilgan deb belgilash Premium obuna talab qiladi", "premium_required");
+  }
   await sql`
     UPDATE checklist_items SET status = 'done', completed_at = ${now()} WHERE id = ${id} AND user_id = ${userId}
   `;
