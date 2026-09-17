@@ -66,6 +66,27 @@ function BlobArt({ className }: { className: string }) {
   return <div aria-hidden className={clsx("pointer-events-none absolute -z-10 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] blur-2xl", className)} />;
 }
 
+/** MOTION-00 (asos): Hero bo'limi DOIM (qorong'u rejimda ham) o'zgarmaydigan
+ * iliq pastel fonga ega (`.bg-landing-hero`), undan keyingi bo'lim (ticker)
+ * esa TEMA-MOSLASHUVCHAN `bg-surface`ga — qorong'u rejimda bu ikkisi
+ * orasida juda qattiq, "kesilgan" chegara paydo bo'lardi (och pushti →
+ * to'q-ko'k, to'g'ri chiziq bo'ylab). Bu yumshoq to'lqinsimon SVG ajratuvchi
+ * fill'i `var(--color-surface)` (keyingi bo'lim foni bilan BIR XIL, tema
+ * bilan avtomatik moslashadi) — chegara endi to'g'ri chiziq emas, yumshoq
+ * egri chiziq bo'ylab o'tadi. */
+function HeroWaveDivider() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 1440 80"
+      preserveAspectRatio="none"
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-12 w-full translate-y-px md:h-16"
+    >
+      <path d="M0,32 C320,80 1120,0 1440,40 L1440,80 L0,80 Z" fill="var(--color-surface)" />
+    </svg>
+  );
+}
+
 // Ilovaning haqiqiy ekranlaridan olingan skrinshotlar (namunaviy ma'lumot bilan) —
 // tsikl, homiladorlik, tekshiruvlar, hamkor va hamjamiyat. Yasama illyustratsiya
 // emas, real UI — bir nechtasi navbat bilan almashinib turadi ("animatsiyaga
@@ -139,7 +160,10 @@ function AppPreviewCarousel() {
  * siljiydi — shuning uchun chok ko'rinmaydi (uzluksiz halqa illyuziyasi). */
 function LandingTicker({ tags }: { tags: string[] }) {
   return (
-    <div className="relative overflow-hidden border-y border-border/60 bg-surface py-4" aria-hidden={false}>
+    // MOTION-00: tepadagi border endi yo'q — Hero'ning HeroWaveDivider'i
+    // shu chegarani allaqachon yumshoq egri chiziq bilan qamrab oladi,
+    // qattiq to'g'ri chiziq TAKRORLANMASLIGI kerak.
+    <div className="relative overflow-hidden border-b border-border/60 bg-surface py-4" aria-hidden={false}>
       <div className="landing-ticker-track flex w-max gap-3">
         {[...tags, ...tags].map((tag, i) => (
           <span
@@ -258,6 +282,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
           </div>
           <AppPreviewCarousel />
         </div>
+        <HeroWaveDivider />
       </section>
 
       <LandingTicker tags={l.tickerTags} />
@@ -280,7 +305,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
           MammoAI'ning haqiqiy 3 ustuni: tsikl, homiladorlik, tekshiruvlar
           (lalu'dagi "chaqaloq parvarishi" o'rniga — bunday funksiya
           MammoAI'da yo'q, soxta xususiyat qo'shilmadi). */}
-      <section id={FEATURES_ANCHOR} className="relative isolate overflow-hidden py-16">
+      <section id={FEATURES_ANCHOR} className="relative isolate scroll-mt-24 overflow-hidden py-16">
         <BgArt src={resolve("landing.features")} className="-right-16 -top-16 h-72 w-72 rotate-6 md:h-96 md:w-96" />
         <div className="relative mx-auto max-w-5xl px-5">
           <Eyebrow accentIndex={0}>{l.eyebrows.features}</Eyebrow>
@@ -356,7 +381,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
           lalu.uz'dagi 4 ta vositaga mos (packages/shared/src/logic/
           public-calculators.ts, faqat umumiy formulalar/ma'lumotnoma, tashxis
           EMAS — shuning uchun disclaimer har doim ko'rinadi). */}
-      <section id={CALC_ANCHOR} className="relative isolate overflow-hidden py-16">
+      <section id={CALC_ANCHOR} className="relative isolate scroll-mt-24 overflow-hidden py-16">
         <div className="relative mx-auto max-w-5xl px-5">
           <Eyebrow accentIndex={2}>{l.eyebrows.calculators}</Eyebrow>
           <h2 className="mt-2 text-center text-2xl font-extrabold text-text-primary md:text-3xl">{l.calculatorsTitle}</h2>
@@ -368,7 +393,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
-      <section id={HOW_ANCHOR} className="relative isolate overflow-hidden bg-surface-muted py-16">
+      <section id={HOW_ANCHOR} className="relative isolate scroll-mt-24 overflow-hidden bg-surface-muted py-16">
         <BgArt src={resolve("landing.howItWorks")} className="-left-16 -bottom-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
         <div className="relative mx-auto max-w-4xl px-5">
           <Eyebrow accentIndex={0}>{l.eyebrows.how}</Eyebrow>
@@ -396,7 +421,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
           bosadi (foydalanuvchi bilan kelishilgan yechim: haqiqiy do'kon
           sharhlari yo'q, shuning uchun soxta emas — manba-asoslangan ishonch
           bloki + shifokor illyustratsiyasi bilan kengaytirildi). */}
-      <section id={TRUST_ANCHOR} className="relative isolate overflow-hidden">
+      <section id={TRUST_ANCHOR} className="relative isolate scroll-mt-24 overflow-hidden">
         <BgArt src={resolve("landing.trust")} className="-right-14 -bottom-14 h-64 w-64 rotate-6 md:h-80 md:w-80" />
         <div className="relative mx-auto max-w-5xl px-5 py-16">
           <Eyebrow accentIndex={1}>{l.eyebrows.trust}</Eyebrow>
@@ -428,7 +453,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
-      <section id={FAQ_ANCHOR} className="relative isolate overflow-hidden bg-surface-muted py-16">
+      <section id={FAQ_ANCHOR} className="relative isolate scroll-mt-24 overflow-hidden bg-surface-muted py-16">
         <BgArt src={resolve("landing.faq")} className="-left-14 -top-10 h-64 w-64 -rotate-6 md:h-80 md:w-80" />
         <div className="relative mx-auto max-w-2xl px-5">
           <Eyebrow accentIndex={2}>{l.eyebrows.faq}</Eyebrow>

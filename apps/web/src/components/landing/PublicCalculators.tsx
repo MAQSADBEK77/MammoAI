@@ -83,7 +83,12 @@ export function PublicCalculators() {
   const hcgResult = useMemo(() => calcHcgEstimateFromLmp(hcgLmp, today), [hcgLmp, today]);
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
+    // MOTION-00 (asos): `items-start` yo'q edi — CSS Grid standart bo'yicha
+    // (align-items: stretch) har bir kartani QATORDAGI ENG BALAND kartaga
+    // teng balandlikka cho'zardi. "Ovulyatsiya" kartasi (sikl uzunligi
+    // g'ildiragi + 3 natija qatori bilan) eng baland bo'lgani uchun
+    // "Tug'ilish sanasi" kartasi ostida katta bo'sh joy qolardi.
+    <div className="grid items-start gap-5 sm:grid-cols-2">
       <CalcCard icon={EventOutlined} accentClass={ACCENT_CHIP_CLASSES[0]} title={l.dueDate.title} desc={l.dueDate.desc}>
         <DateWheelPicker value={dueLmp} onChange={setDueLmp} monthLabels={months} minYear={thisYear - 3} maxYear={thisYear} />
         {dueResult && <ResultLine>{l.dueDate.result(formatDateDisplay(dueResult.dueDate), dueResult.currentWeek)}</ResultLine>}
