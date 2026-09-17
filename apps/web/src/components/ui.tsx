@@ -441,7 +441,13 @@ export function IconChip({
  * o'tishda ham saqlab qolindi — faqat orqa fon endi MUI Backdrop orqali
  * (haqiqiy Material modal-fon xatti-harakati bilan).
  */
-export function LoadingSpinner({ label: _label }: { label?: string }) {
+// WEB3-14 (butun ilovaga ta'sir qiladi): `label` prop qabul qilinardi (har
+// bir chaqiruvchi tarjima qilingan matn — "Yuklanmoqda...", va h.k. —
+// uzatadi), lekin `_label`ga o'zgartirilib HECH QAYERDA render qilinmasdi —
+// foydalanuvchi faqat aylanuvchi spinner ko'rardi, matn yo'q, ekran-o'quvchi
+// uchun ham hech qanday e'lon yo'q edi. Endi matn spinner ostida ko'rinadi
+// va butun blok `role="status"`/`aria-live="polite"` bilan belgilanadi.
+export function LoadingSpinner({ label }: { label?: string }) {
   return (
     <Backdrop
       open
@@ -459,7 +465,10 @@ export function LoadingSpinner({ label: _label }: { label?: string }) {
         backdropFilter: "blur(12px)",
       }}
     >
-      <span className="loader" />
+      <div role="status" aria-live="polite" className="flex flex-col items-center gap-3">
+        <span className="loader" />
+        {label && <span className="text-sm font-semibold text-text-secondary">{label}</span>}
+      </div>
     </Backdrop>
   );
 }
