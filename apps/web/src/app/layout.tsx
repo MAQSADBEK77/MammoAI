@@ -64,6 +64,16 @@ export const viewport: Viewport = {
   ],
 };
 
+// Foydalanuvchi so'rovi (2026-09-17): "yandex analytics ni ulash kerak ekan".
+// Counter ID hali yo'q (Yandex Metrica hisobi ochilmagan) — shuning uchun
+// bu butunlay ENV o'zgaruvchi orqali yoqiladi/o'chadi: hisob ochilib,
+// counter ID olingach, Vercel'da `NEXT_PUBLIC_YANDEX_METRICA_ID`ni
+// o'rnatish kifoya — qayta kod o'zgartirish/deploy shart emas (Vercel'ning
+// o'zi env o'zgarishida avtomatik qayta build qiladi). Hozircha bu o'zgaruvchi
+// yo'qligi uchun skript butunlay chiqarilmaydi (bo'sh/soxta counter ID bilan
+// sinab urinish yo'q).
+const YANDEX_METRICA_ID = process.env.NEXT_PUBLIC_YANDEX_METRICA_ID;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="uz" className={nunito.variable} suppressHydrationWarning>
@@ -85,6 +95,41 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             telegram.org'dan yuklanadi. Oddiy brauzerda zararsiz — window.Telegram
             aniqlanmaydi, lib/telegram.ts shunga qarab ishlaydi. */}
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+        {/* Yandex Metrica — counter ID hali yo'qligi uchun (yuqoridagi izohga
+            qarang) hozircha HECH NARSA render qilinmaydi. `webvisor:true` —
+            Yandex'ning o'zi ham sessiya-yozuvi/issiqlik xaritasi va sahifama-
+            sahifa "qolib ketish" hisobotini beradi (admin panelning
+            /admin/analitika'dagi "Sahifama-sahifa qolib ketish" bilan bir
+            xil g'oya — biri bizning bazamiz, biri Yandex'ning o'zi). */}
+        {YANDEX_METRICA_ID && (
+          <>
+            <Script
+              id="yandex-metrica"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+                  m[i].l=1*new Date();
+                  for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+                  k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+                  (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+                  ym(${JSON.stringify(YANDEX_METRICA_ID)}, "init", {
+                    clickmap:true,
+                    trackLinks:true,
+                    accurateTrackBounce:true,
+                    webvisor:true
+                  });`,
+              }}
+            />
+            <noscript>
+              {/* eslint-disable-next-line @next/next/no-img-element -- Yandex'ning o'zi bergan JS-siz kuzatuv piksel */}
+              <img
+                src={`https://mc.yandex.ru/watch/${YANDEX_METRICA_ID}`}
+                style={{ position: "absolute", left: "-9999px" }}
+                alt=""
+              />
+            </noscript>
+          </>
+        )}
         {/* Sarlavha panelini shaffof qilib, ilovani ekranning yuqori qismigacha
             kengaytiradi (foydalanuvchi so'rovi) + bo'shab qolgan joyni
             --tg-safe-area-top/bottom CSS o'zgaruvchisi orqali e'lon qiladi
