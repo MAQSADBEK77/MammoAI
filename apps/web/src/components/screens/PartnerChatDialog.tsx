@@ -12,6 +12,21 @@ import { LoadingSpinner } from "@/components/ui";
 
 const POLL_INTERVAL_MS = 3000;
 
+// WEB3-13: poll (server'ning TO'LIQ ro'yxati) bilan optimistik qo'shilgan
+// xabarlarni ALMASHTIRISH o'rniga BIRLASHTIRADI. Race: poll so'rovi xabar
+// yuborilishidan OLDIN boshlanib, undan KEYIN javob bersa — server javobi
+// hali yangi xabarni o'z ichiga olmaydi; oddiy `setMessages(res.messages)`
+// bu holda yangi yuborilgan xabarni ekrandan navbatdagi poll (~3s)gacha
+// yo'qotib yuborardi. Endi joriy holatdagi, lekin poll javobida yo'q
+// (id bo'yicha) xabarlar saqlab qolinadi — keyingi poll ularni server
+// tomondan ham qaytarganda, bir xil id tufayli takrorlanmaydi.
+function mergeIncomingMessages(current: PartnerChatMessage[] | null, incoming: PartnerChatMessage[]): PartnerChatMessage[] {
+  if (!current) return incoming;
+  const incomingIds = new Set(incoming.map((m) => m.id));
+  const optimisticOnly = current.filter((m) => !incomingIds.has(m.id));
+  return [...incoming, ...optimisticOnly].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
 /**
  * Hamkor bilan to'liq suhbat — Telegram uslubidagi chat (foydalanuvchi so'roviga
  * ko'ra: avvalgi "bir martalik xabar" modali o'rniga). Websocket infratuzilmasi
@@ -42,7 +57,7 @@ export function PartnerChatDialog({
     async function load() {
       try {
         const res = await api.partner.chatMessages();
-        if (!cancelled) setMessages(res.messages);
+        if (!cancelled) setMessages((prev) => mergeIncomingMessages(prev, res.messages));
       } catch {
         // Polling xatosi jimgina o'tkazib yuboriladi — keyingi urinishda tuzaladi.
       }
