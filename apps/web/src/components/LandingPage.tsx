@@ -583,17 +583,18 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
             </div>
           </div>
 
+          {/* MOTION-08: bento kartalari bilan bir xil naqsh — izchillik uchun. */}
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {l.trustItems.map((item, i) => {
               const Icon = TRUST_ICONS[i];
               return (
-                <div key={i} className="rounded-3xl bg-surface p-5 text-center shadow-sm shadow-text-primary/5">
+                <Reveal key={i} index={i} className="rounded-3xl bg-surface p-5 text-center shadow-sm shadow-text-primary/5">
                   <div className={clsx("mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full", ACCENT_CHIP_CLASSES[i % 3])}>
                     <Icon fontSize="small" />
                   </div>
                   <h3 className="text-sm font-bold text-text-primary">{item.title}</h3>
                   <p className="mt-1 text-xs text-text-secondary">{item.desc}</p>
-                </div>
+                </Reveal>
               );
             })}
           </div>
