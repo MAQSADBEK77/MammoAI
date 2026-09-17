@@ -110,7 +110,12 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
   }
 
   // --- Umumiy profilaktika (general_prevention) — asosiy yosh-bog'liq jadval ---
-  if (input.age >= 15 && input.age <= 49) {
+  // WEB3-05: FIX3-03 shu istisnoni FAQAT 50+ filialiga (pastda) qo'shgan edi —
+  // 45-49 yoshli, isPerimenopause=true foydalanuvchi yuqoridagi
+  // menopause_checkup'ni OLGAN holda, bu yerdan ham annual_preventive_exam
+  // olardi (ikkalasi ham umumiy konsultatsiya turi, takrorlanish). Endi bu
+  // filial ham 50+ filiali bilan bir xil istisnoga bo'ysunadi.
+  if (input.age >= 15 && input.age <= 49 && !input.isPerimenopause) {
     items.push({ type: "annual_preventive_exam", dueInDays: 365, recurrenceDays: 365 });
   }
   // FIX3-03: manbada annual_preventive_exam 49 yoshda tugaydi va

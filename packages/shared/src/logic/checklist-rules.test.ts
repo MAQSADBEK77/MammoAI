@@ -92,6 +92,15 @@ describe("generateChecklist", () => {
     expect(typesOf({ age: 50, isPerimenopause: false })).not.toContain("menopause_checkup");
   });
 
+  // WEB3-05: 45-49 yoshli, isPerimenopause=true foydalanuvchi menopause_checkup
+  // OLADI (yuqoridagi test) — shuning uchun 15-49 filialidan annual_preventive_exam
+  // takror qo'shilmasligi kerak (ikkalasi ham umumiy konsultatsiya turi).
+  it("45-49 yoshda, perimenopauza maqsadi tanlangan bo'lsa, annual_preventive_exam takrorlanmaydi", () => {
+    const types = typesOf({ age: 47, isPerimenopause: true });
+    expect(types).toContain("menopause_checkup");
+    expect(types).not.toContain("annual_preventive_exam");
+  });
+
   // FIX3-03: annual_preventive_exam 49 yoshda tugaydi, menopause_checkup esa
   // faqat perimenopauza MAQSADIGA bog'liq — 50+ yoshli, lekin boshqa maqsad
   // tanlagan foydalanuvchi umuman umumiy konsultatsiya bandisiz qolmasligi kerak.
