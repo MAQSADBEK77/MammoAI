@@ -127,7 +127,20 @@ export default function AdminAnalyticsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Analitika</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold text-text-primary">Analitika</h1>
+            {/* Yandex Metrica uslubidagi "hozir onlayn" — pulslovchi nuqta bilan,
+                `days` filtridan mustaqil (doim so'nggi 5 daqiqa). */}
+            {summary && (
+              <div className="flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-bold text-success">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+                </span>
+                Hozir onlayn: {summary.liveNow}
+              </div>
+            )}
+          </div>
           <p className="mt-1 text-sm text-text-secondary">Foydalanuvchilar qaysi sahifada qancha vaqt o&apos;tkazgani va nimani bosgani</p>
         </div>
         <div className="flex rounded-full border border-border bg-surface p-1">
@@ -152,11 +165,14 @@ export default function AdminAnalyticsPage() {
 
       {summary && (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
             <StatCard icon="🧭" label="Jami seanslar" value={summary.totals.sessions} hint={`So'nggi ${days} kun`} />
             <StatCard icon="📄" label="Sahifa ko'rishlar" value={summary.totals.pageviews} />
             <StatCard icon="👆" label="Tugma bosishlar" value={summary.totals.clicks} />
             <StatCard icon="⏱️" label="O'rtacha seans davomiyligi" value={formatDuration(summary.totals.avgSessionDurationMs)} />
+            {/* Yandex Metrica/Google Analytics'dagi klassik "bounce rate" —
+                bitta sahifa ko'rib, hech narsa bosmasdan ketganlar foizi. */}
+            <StatCard icon="🚪" label="Tashlab ketish (bounce rate)" value={`${summary.bounceRatePct}%`} hint="1 sahifa, 0 bosish" />
           </div>
 
           <Card>

@@ -677,6 +677,14 @@ export interface AnalyticsEventInput {
 }
 
 export interface AnalyticsSummary {
+  /** Yandex Metrica uslubidagi "hozir onlayn" — so'nggi 5 daqiqada hodisa
+   * yuborgan noyob seanslar soni. `days` filtriga bog'liq emas — doim
+   * real vaqtga yaqin. */
+  liveNow: number;
+  /** Yandex Metrica uslubidagi "otказ" (bounce rate) — TANLANGAN oyna
+   * ichida faqat BITTA sahifa ko'rib, hech qanday tugma bosmasdan
+   * ketgan seanslar foizi. */
+  bounceRatePct: number;
   totals: {
     sessions: number;
     pageviews: number;

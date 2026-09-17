@@ -2030,7 +2030,7 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
   const sinceInterval = `${clampedDays} days`;
   const seriesStartInterval = `${clampedDays - 1} days`;
 
-  const [totalsRows, avgSessionRows, dailyRows, topPagesRows, topButtonsRows, qrSignupRows, pageDropOffRows] = (await Promise.all([
+  const [totalsRows, avgSessionRows, dailyRows, topPagesRows, topButtonsRows, qrSignupRows, pageDropOffRows, liveNowRows, bounceRows] = (await Promise.all([
     sql`
       SELECT count(DISTINCT session_id)::int as sessions,
         count(*) FILTER (WHERE type = 'pageview')::int as pageviews,
@@ -2115,6 +2115,29 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
       ORDER BY (coalesce(x.exit_count, 0)::float / e.entry_count) DESC, e.entry_count DESC
       LIMIT 20
     `,
+    // Yandex Metrica uslubidagi "hozir onlayn" — `days` filtridan MUSTAQIL,
+    // doim so'nggi 5 daqiqaga qaraydi (real vaqtga yaqin ko'rsatkich).
+    sql`
+      SELECT count(DISTINCT session_id)::int as live_now
+      FROM analytics_events
+      WHERE (created_at)::timestamptz >= now() - interval '5 minutes'
+    `,
+    // "Otказ" (bounce rate) — TANLANGAN oyna ichida FAQAT BITTA sahifa
+    // ko'rib, hech qanday tugma bosmasdan ketgan seanslar foizi (Yandex
+    // Metrica/Google Analytics'dagi klassik ta'rif bilan bir xil).
+    sql`
+      SELECT
+        count(*) FILTER (WHERE pv = 1 AND cl = 0)::int as bounced,
+        count(*)::int as total
+      FROM (
+        SELECT session_id,
+          count(*) FILTER (WHERE type = 'pageview') as pv,
+          count(*) FILTER (WHERE type = 'click') as cl
+        FROM analytics_events
+        WHERE (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+        GROUP BY session_id
+      ) t
+    `,
   ])) as unknown as [
     { sessions: number; pageviews: number; clicks: number }[],
     { avg_ms: number }[],
@@ -2123,12 +2146,17 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
     { label: string; path: string | null; count: number }[],
     { source: string; count: number }[],
     { path: string; entry_count: number; exit_count: number }[],
+    { live_now: number }[],
+    { bounced: number; total: number }[],
   ];
 
   const totals = totalsRows[0] ?? { sessions: 0, pageviews: 0, clicks: 0 };
   const avgSessionDurationMs = Number(avgSessionRows[0]?.avg_ms ?? 0);
+  const bounce = bounceRows[0] ?? { bounced: 0, total: 0 };
 
   return {
+    liveNow: liveNowRows[0]?.live_now ?? 0,
+    bounceRatePct: bounce.total > 0 ? Math.round((bounce.bounced / bounce.total) * 1000) / 10 : 0,
     totals: { ...totals, avgSessionDurationMs },
     dailyActivity: dailyRows.map((r) => ({ day: r.day, sessions: r.sessions, pageviews: r.pageviews, clicks: r.clicks })),
     topPages: topPagesRows.map((r) => ({
