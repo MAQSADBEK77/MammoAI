@@ -84,6 +84,7 @@ const en: Dictionary = {
     miniAppShareButton: "📱 Share my phone number",
     miniAppWaiting: "Waiting for you to allow it in the Telegram popup...",
     miniAppDeclined: "The number wasn't shared. The app needs your phone number to work — please try again.",
+    miniAppTimeout: "The wait timed out — no signal arrived. Please try again.",
     miniAppRetryButton: "Try again",
     miniAppNotInTelegram: "This page only opens inside the Telegram app.",
     miniAppError: "Something went wrong — please try again.",

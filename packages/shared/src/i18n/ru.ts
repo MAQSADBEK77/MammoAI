@@ -82,6 +82,7 @@ const ru: Dictionary = {
     miniAppShareButton: "📱 Поделиться номером телефона",
     miniAppWaiting: "Ждём подтверждения в окне Telegram...",
     miniAppDeclined: "Номер не был передан. Для работы приложения нужен номер телефона — попробуйте снова.",
+    miniAppTimeout: "Время ожидания истекло — сигнал не пришёл. Попробуйте снова.",
     miniAppRetryButton: "Попробовать снова",
     miniAppNotInTelegram: "Эта страница открывается только внутри приложения Telegram.",
     miniAppError: "Произошла ошибка — попробуйте снова.",

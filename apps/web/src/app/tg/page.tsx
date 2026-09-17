@@ -10,8 +10,15 @@ import { api } from "@/lib/api";
 import { LoadingSpinner, Button } from "@/components/ui";
 
 const STATUS_POLL_MS = 2000;
+// WEB2-03: avvalgi kodda BU YERDA hech qanday chegara yo'q edi — agar
+// webhook signal umuman kelmasa (Telegram klient xatosi, eski versiya va
+// h.k.), sahifa ABADIY "Kutilmoqda..." holatida qolib ketardi. 90 soniya —
+// odatiy holatda popup tasdig'i bir necha soniyada keladi, shuning uchun
+// bu real foydalanuvchini shoshiltirmasdan, aniq buzilgan holatni ushlab
+// qolish uchun yetarlicha keng zaxira.
+const WAITING_CONTACT_TIMEOUT_MS = 90_000;
 
-type Phase = "loading" | "notTelegram" | "needsContact" | "waitingContact" | "declined" | "finishing" | "error";
+type Phase = "loading" | "notTelegram" | "needsContact" | "waitingContact" | "declined" | "timeout" | "finishing" | "error";
 
 /**
  * Telegram Mini App kirish nuqtasi — BotFather'da shu URL ("https://mammo.uz/tg")
@@ -73,12 +80,16 @@ export default function TelegramMiniAppPage() {
   }
 
   // "waitingContact" holatida — webhook orqali raqam kelishini poll qilamiz.
+  // WEB2-03: cheksiz kutish o'rniga WAITING_CONTACT_TIMEOUT_MS'dan keyin
+  // "timeout" holatiga o'tadi (declined'ga o'xshash — qayta urinish tugmasi).
   useEffect(() => {
     if (phase !== "waitingContact" || !initData || !tgUser) return;
+    let settled = false;
     pollRef.current = setInterval(async () => {
       try {
         const res = await api.auth.telegramMiniAppStatus(initData);
         if (!res.phoneReady) return;
+        settled = true;
         if (pollRef.current) clearInterval(pollRef.current);
         setPhase("finishing");
         const finishRes = await api.auth.telegramMiniAppFinish(initData);
@@ -88,8 +99,15 @@ export default function TelegramMiniAppPage() {
         // Navbatdagi poll'da qayta urinib ko'ramiz — bitta muvaffaqiyatsiz so'rov jim o'tkaziladi.
       }
     }, STATUS_POLL_MS);
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      if (pollRef.current) clearInterval(pollRef.current);
+      setPhase("timeout");
+    }, WAITING_CONTACT_TIMEOUT_MS);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      clearTimeout(timeout);
     };
   }, [phase, initData, tgUser, applyMeResponse, router]);
 
@@ -101,12 +119,13 @@ export default function TelegramMiniAppPage() {
     );
   }
 
-  if (phase === "needsContact" || phase === "waitingContact" || phase === "declined") {
+  if (phase === "needsContact" || phase === "waitingContact" || phase === "declined" || phase === "timeout") {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <h1 className="text-xl font-bold text-text-primary">{dict.auth.miniAppShareTitle}</h1>
         <p className="text-sm leading-relaxed text-text-secondary">{dict.auth.miniAppShareIntro}</p>
         {phase === "declined" && <p className="text-sm font-medium text-danger">{dict.auth.miniAppDeclined}</p>}
+        {phase === "timeout" && <p className="text-sm font-medium text-danger">{dict.auth.miniAppTimeout}</p>}
         {phase === "waitingContact" ? (
           <p className="text-sm text-text-secondary">{dict.auth.miniAppWaiting}</p>
         ) : (
@@ -116,7 +135,7 @@ export default function TelegramMiniAppPage() {
             className="tap-target mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#26A5E4] text-base font-bold text-white transition hover:brightness-95"
           >
             <SendOutlined sx={{ fontSize: 20 }} />
-            {phase === "declined" ? dict.auth.miniAppRetryButton : dict.auth.miniAppShareButton}
+            {phase === "declined" || phase === "timeout" ? dict.auth.miniAppRetryButton : dict.auth.miniAppShareButton}
           </button>
         )}
       </div>

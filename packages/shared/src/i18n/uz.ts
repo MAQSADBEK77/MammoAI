@@ -89,6 +89,9 @@ const uz = {
     miniAppShareButton: "📱 Telefon raqamimni ulashish",
     miniAppWaiting: "Telegram popup'ida ruxsat berishingizni kutmoqdamiz...",
     miniAppDeclined: "Raqam ulashilmadi. Ilova ishlashi uchun telefon raqamingiz kerak — qayta urinib ko'ring.",
+    // WEB2-03: cheksiz "Kutilmoqda..." holati o'rniga — belgilangan vaqtdan
+    // keyin (webhook signal kelmasa) ko'rsatiladi.
+    miniAppTimeout: "Kutish vaqti tugadi — signal kelmadi. Qaytadan urinib ko'ring.",
     miniAppRetryButton: "Qayta urinish",
     miniAppNotInTelegram: "Bu sahifa faqat Telegram ilovasi ichida ochilishi kerak.",
     miniAppError: "Xatolik yuz berdi — qayta urinib ko'ring.",
