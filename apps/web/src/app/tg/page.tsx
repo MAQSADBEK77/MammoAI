@@ -24,19 +24,25 @@ export default function TelegramMiniAppPage() {
   const { dict } = useI18n();
   const router = useRouter();
   const { applyMeResponse, refresh } = useSession();
-  const { webApp, isTelegram, initData, tgUser } = useTelegram();
+  const { webApp, initData, tgUser, status: telegramStatus } = useTelegram();
 
   const [phase, setPhase] = useState<Phase>("loading");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // `useTelegram()` bir necha yuz ms poll qilib window.Telegram'ni kutadi —
-  // shuncha vaqt "loading" holatida turamiz, keyin haqiqatan Telegram
-  // ichida emasligini bilib olamiz.
+  // WEB2-02: ilgari bu yerda useTelegram()'dan MUSTAQIL o'z 2500ms taymeri
+  // bo'lardi — u lib/telegram.ts'ning ICHKI 2000ms poll'idan atigi 500ms
+  // farq qilardi, shuning uchun sekin tarmoqda haqiqiy Telegram
+  // foydalanuvchisi ham "bu Telegram emas" xatosini ko'rishi mumkin edi.
+  // Endi bitta manba — useTelegram()'ning o'zi qaytaradigan `status`
+  // ("checking" / "found" / "not-found", 5.5s'gacha kutadi) — ikkinchi,
+  // mos kelmaydigan taймаут yo'q.
   useEffect(() => {
-    if (webApp) return;
-    const timeout = setTimeout(() => setPhase((p) => (p === "loading" ? "notTelegram" : p)), 2500);
+    if (telegramStatus !== "not-found") return;
+    // FIX-07 bilan bir xil naqsh — setState effekt ICHIDA sinxron
+    // chaqirilmaydi (kaskadli render'larni oldini olish uchun).
+    const timeout = setTimeout(() => setPhase((p) => (p === "loading" ? "notTelegram" : p)), 0);
     return () => clearTimeout(timeout);
-  }, [webApp]);
+  }, [telegramStatus]);
 
   useEffect(() => {
     if (!initData) return;

@@ -77,13 +77,31 @@ export function getTelegramWebApp(): TelegramWebApp | null {
   return window.Telegram?.WebApp ?? null;
 }
 
+// WEB2-02: bu poll qancha urinishdan keyin "topilmadi" deb topshirishini
+// belgilaydi — chaqiruvchilar (masalan tg/page.tsx) shu bilan bir xil
+// bo'lishi uchun `status` ham qaytariladi (pastga qarang), o'zining alohida
+// mustaqil taймаутini yozmasin. 55×100ms = 5.5s — sekin mobil tarmoqda
+// Telegram skripti yuklanishi uchun oldingi 2s'dan ancha kengroq zaxira.
+const WEBAPP_POLL_INTERVAL_MS = 100;
+const WEBAPP_MAX_ATTEMPTS = 55;
+
+export type TelegramDetectionStatus = "checking" | "found" | "not-found";
+
 /**
  * Telegram Mini App kontekstini aniqlaydi va ilovani to'liq ekranga kengaytiradi
  * (`ready`/`expand`). Oddiy brauzerda (Telegramdan tashqarida) `isTelegram: false`
  * qaytadi — ilova odatdagidek ishlayveradi.
+ *
+ * `status` — "checking" (hali qidirilmoqda) / "found" / "not-found" (barcha
+ * urinishlardan keyin topilmadi) — chaqiruvchi tomon (masalan tg/page.tsx)
+ * "haqiqatan Telegram emas" xulosasini FAQAT "not-found"da chiqarishi kerak,
+ * o'zining mustaqil taймаути bilan emas (WEB2-02: ikkita mos kelmaydigan
+ * taймаут — 2000ms bu yerda, 2500ms chaqiruvchida — sekin tarmoqda haqiqiy
+ * Telegram foydalanuvchisiga noto'g'ri xato ko'rsatardi).
  */
 export function useTelegram() {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
+  const [status, setStatus] = useState<TelegramDetectionStatus>("checking");
 
   useEffect(() => {
     // Script <Script strategy="beforeInteractive"> bilan yuklanadi, lekin
@@ -97,9 +115,14 @@ export function useTelegram() {
         app.ready();
         app.expand();
         setWebApp(app);
+        setStatus("found");
         return;
       }
-      if (attempts++ < 20) setTimeout(tryInit, 100);
+      if (attempts++ < WEBAPP_MAX_ATTEMPTS) {
+        setTimeout(tryInit, WEBAPP_POLL_INTERVAL_MS);
+      } else {
+        setStatus("not-found");
+      }
     };
     tryInit();
     return () => {
@@ -110,6 +133,7 @@ export function useTelegram() {
   return {
     webApp,
     isTelegram: !!webApp,
+    status,
     initData: webApp?.initData || null,
     tgUser: webApp?.initDataUnsafe?.user ?? null,
   };
