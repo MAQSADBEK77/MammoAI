@@ -1763,6 +1763,12 @@ export async function getAdminStats(): Promise<AdminStats> {
     sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE`,
     sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz >= now() - interval '1 day'`,
     sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz >= now() - interval '7 days'`,
+    // WEB3-06: ilgari faqat cycle_logs/pregnancy_vitals/checklist_items
+    // hisobga olinardi — wellness_logs (suv/kaloriya), pregnancy_kicks
+    // (tepish hisoblagichi), chat_messages (AI Yordamchi), community_posts/
+    // community_comments (hamjamiyat), pregnancy_visits (tashrif kundaligi)
+    // va feedback_responses (fikr-mulohaza) UMUMAN hisoblanmasdi — real
+    // faollik sezilarli kam ko'rsatilardi.
     sql`
       SELECT count(DISTINCT recent.user_id)::int as count FROM (
         SELECT user_id, created_at FROM cycle_logs WHERE (created_at)::timestamptz >= now() - interval '7 days'
@@ -1770,6 +1776,20 @@ export async function getAdminStats(): Promise<AdminStats> {
         SELECT user_id, created_at FROM pregnancy_vitals WHERE (created_at)::timestamptz >= now() - interval '7 days'
         UNION ALL
         SELECT user_id, completed_at FROM checklist_items WHERE completed_at IS NOT NULL AND (completed_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, date FROM wellness_logs WHERE (date)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, date FROM pregnancy_kicks WHERE (date)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, created_at FROM chat_messages WHERE (created_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, created_at FROM community_posts WHERE (created_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, created_at FROM community_comments WHERE (created_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, created_at FROM pregnancy_visits WHERE (created_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        SELECT user_id, created_at FROM feedback_responses WHERE (created_at)::timestamptz >= now() - interval '7 days'
       ) recent
       JOIN users u ON u.id = recent.user_id AND u.is_test_account = FALSE
     `,
