@@ -75,6 +75,16 @@ const PREVIEW_INTERVAL_MS = 2800;
 
 function AppPreviewCarousel() {
   const [index, setIndex] = useState(0);
+  // WEB3-19: 5 ta skrinshot (jami ~818KB) BARCHASI sahifa ochilishi bilan
+  // darhol yuklanmasin (barchasi bir vaqtning o'zida bittadan ko'rinsa ham)
+  // — faqat hozirgi + navbatdagi (bir qadam oldindan, silliq almashish
+  // uchun) rasm mount qilinadi. Native `loading="lazy"` bu yerda ishlamaydi,
+  // chunki rasmlar allaqachon ko'rinadigan hero ichida, faqat opacity:0
+  // bilan yashiringan (brauzer buni "offscreen" deb hisoblamaydi) — shuning
+  // uchun DOM'ga qo'shilishning o'zi cheklanadi. Boshlang'ich qiymat 1
+  // (0-rasm + oldindan yuklanayotgan 1-rasm) — qolgan 3 tasi faqat navbati
+  // kelganda (setInterval callback'i ichida, quyida) mount qilinadi.
+  const [maxLoadedIndex, setMaxLoadedIndex] = useState(() => Math.min(1, APP_PREVIEWS.length - 1));
 
   useEffect(() => {
     // LANDING-03: harakatga sezgir (vestibular) foydalanuvchilar uchun —
@@ -82,7 +92,16 @@ function AppPreviewCarousel() {
     // xil qoida: shu sozlama yoqilgan bo'lsa, avtomatik almashinuvni umuman
     // ishga tushirmaymiz (birinchi rasm bilan statik qoladi).
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % APP_PREVIEWS.length), PREVIEW_INTERVAL_MS);
+    const id = setInterval(() => {
+      setIndex((i) => {
+        const next = (i + 1) % APP_PREVIEWS.length;
+        // Navbatdagi rasmni ("next"dan keyingisi) shu daqiqada oldindan
+        // yuklashni boshlaydi — butun ~2.8s almashish davri davomida
+        // yuklanib ulguradi, almashishda "bo'sh kadr" bo'lmaydi.
+        setMaxLoadedIndex((m) => Math.max(m, Math.min(next + 1, APP_PREVIEWS.length - 1)));
+        return next;
+      });
+    }, PREVIEW_INTERVAL_MS);
     return () => clearInterval(id);
   }, []);
 
@@ -93,15 +112,17 @@ function AppPreviewCarousel() {
       <div className="relative w-[220px] -rotate-2 overflow-hidden rounded-[2rem] border-[8px] border-[#1f2937] bg-[#1f2937] shadow-2xl">
         <div className="absolute left-1/2 top-2 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-[#1f2937]" />
         <div className="relative aspect-[624/1168] w-full">
-          {APP_PREVIEWS.map((src, i) => (
-            // eslint-disable-next-line @next/next/no-img-element -- statik skrinshot, next/image optimizatsiyasi kerak emas
-            <img
-              key={src}
-              src={src}
-              alt=""
-              className={clsx("absolute inset-0 h-full w-full transition-opacity duration-700 ease-in-out", i === index ? "opacity-100" : "opacity-0")}
-            />
-          ))}
+          {APP_PREVIEWS.map((src, i) =>
+            i > maxLoadedIndex ? null : (
+              // eslint-disable-next-line @next/next/no-img-element -- statik skrinshot, next/image optimizatsiyasi kerak emas
+              <img
+                key={src}
+                src={src}
+                alt=""
+                className={clsx("absolute inset-0 h-full w-full transition-opacity duration-700 ease-in-out", i === index ? "opacity-100" : "opacity-0")}
+              />
+            )
+          )}
         </div>
       </div>
       <div className="mt-4 flex justify-center gap-1.5">
