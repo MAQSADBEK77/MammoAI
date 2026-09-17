@@ -205,6 +205,30 @@ export default function AdminAnalyticsPage() {
 
           <Card>
             <div className="mb-4">
+              <h2 className="text-base font-bold text-text-primary">Sahifama-sahifa qolib ketish (exit rate)</h2>
+              <p className="text-xs text-text-secondary">
+                Har bir sahifa uchun ALOHIDA: shu sahifani ko&apos;rgan foydalanuvchilarning necha foizi aynan SHU YERDAN
+                (boshqa sahifaga o&apos;tmasdan) chiqib ketgan — umumiy son emas. Eng yuqori foiz — eng ko&apos;p tashlab
+                ketilayotgan sahifa. Shovqin uchun kamida 5 ta tashrifi bo&apos;lgan sahifalar ko&apos;rsatiladi.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              {summary.pageDropOff.length === 0 && <p className="text-sm text-text-muted">Hali ma&apos;lumot yo&apos;q</p>}
+              {summary.pageDropOff.map((p) => (
+                <RankedBar
+                  key={p.path}
+                  label={p.path}
+                  sublabel={`${p.entries} tashrif`}
+                  valueLabel={`${p.exitRatePct}% (${p.exits} ta)`}
+                  value={p.exitRatePct}
+                  max={100}
+                />
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <div className="mb-4">
               <h2 className="text-base font-bold text-text-primary">QR-funnel ro&apos;yxatdan o&apos;tishlar</h2>
               <p className="text-xs text-text-secondary">
                 <code className="rounded bg-surface-muted px-1">/baholash?src=...</code> havolasi orqali kelib, ro&apos;yxatdan o&apos;tganlar (manba bo&apos;yicha)

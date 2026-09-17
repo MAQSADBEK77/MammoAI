@@ -2030,7 +2030,7 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
   const sinceInterval = `${clampedDays} days`;
   const seriesStartInterval = `${clampedDays - 1} days`;
 
-  const [totalsRows, avgSessionRows, dailyRows, topPagesRows, topButtonsRows, qrSignupRows] = (await Promise.all([
+  const [totalsRows, avgSessionRows, dailyRows, topPagesRows, topButtonsRows, qrSignupRows, pageDropOffRows] = (await Promise.all([
     sql`
       SELECT count(DISTINCT session_id)::int as sessions,
         count(*) FILTER (WHERE type = 'pageview')::int as pageviews,
@@ -2085,6 +2085,36 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
       ORDER BY count DESC
       LIMIT 20
     `,
+    // Foydalanuvchi so'rovi (2026-09-17): har bir sahifa uchun "qolib
+    // ketish" (exit rate) — umumiy sondan farqli, sahifama-sahifa. `last_view`
+    // — har bir seansning ENG OXIRGI ko'rgan sahifasi (`DISTINCT ON` +
+    // `created_at DESC`). `entries` — shu sahifani ko'rgan noyob seanslar
+    // soni. Ikkalasini `path` bo'yicha birlashtirib, "shu yerdan chiqib
+    // ketishgan" foizni hisoblaymiz. Shovqinni kamaytirish uchun kamida 5 ta
+    // kirishi bo'lgan sahifalar (`HAVING`), eng yuqori foizdan boshlab.
+    sql`
+      WITH last_view AS (
+        SELECT DISTINCT ON (session_id) session_id, path
+        FROM analytics_events
+        WHERE type = 'pageview' AND path IS NOT NULL AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+        ORDER BY session_id, (created_at)::timestamptz DESC
+      ),
+      entries AS (
+        SELECT path, count(DISTINCT session_id)::int as entry_count
+        FROM analytics_events
+        WHERE type = 'pageview' AND path IS NOT NULL AND (created_at)::timestamptz >= now() - ${sinceInterval}::interval
+        GROUP BY path
+      ),
+      exits AS (
+        SELECT path, count(*)::int as exit_count FROM last_view GROUP BY path
+      )
+      SELECT e.path, e.entry_count, coalesce(x.exit_count, 0)::int as exit_count
+      FROM entries e
+      LEFT JOIN exits x ON x.path = e.path
+      WHERE e.entry_count >= 5
+      ORDER BY (coalesce(x.exit_count, 0)::float / e.entry_count) DESC, e.entry_count DESC
+      LIMIT 20
+    `,
   ])) as unknown as [
     { sessions: number; pageviews: number; clicks: number }[],
     { avg_ms: number }[],
@@ -2092,6 +2122,7 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
     { path: string; view_count: number; total_duration_ms: number }[],
     { label: string; path: string | null; count: number }[],
     { source: string; count: number }[],
+    { path: string; entry_count: number; exit_count: number }[],
   ];
 
   const totals = totalsRows[0] ?? { sessions: 0, pageviews: 0, clicks: 0 };
@@ -2108,6 +2139,12 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
     })),
     topButtons: topButtonsRows.map((r) => ({ label: r.label, path: r.path, count: r.count })),
     qrSignups: qrSignupRows.map((r) => ({ source: r.source, count: r.count })),
+    pageDropOff: pageDropOffRows.map((r) => ({
+      path: r.path,
+      entries: r.entry_count,
+      exits: r.exit_count,
+      exitRatePct: r.entry_count > 0 ? Math.round((r.exit_count / r.entry_count) * 1000) / 10 : 0,
+    })),
   };
 }
 

@@ -693,6 +693,14 @@ export interface AnalyticsSummary {
   /** QR-flyer funneli (`/baholash?src=...`) orqali ro'yxatdan o'tishlar,
    * manba bo'yicha guruhlangan (kamayish tartibida). */
   qrSignups: { source: string; count: number }[];
+  /** Har bir sahifa uchun "qolib ketish" (exit rate) — foydalanuvchi so'rovi
+   * (2026-09-17): "qaysi sahifada har bitta user qancha qolib ketyapti,
+   * umumiy emas, bitta-bitta". `entries` — shu sahifani ko'rgan noyob
+   * seanslar soni; `exits` — shu SAHIFA seansning OXIRGI ko'rgan sahifasi
+   * bo'lgan holatlar soni (ya'ni shu yerdan "chiqib ketishgan"); kamida
+   * 5 ta kirish bo'lgan sahifalar (shovqinni kamaytirish uchun), eng yuqori
+   * qolib ketish foizidan boshlab tartiblangan. */
+  pageDropOff: { path: string; entries: number; exits: number; exitRatePct: number }[];
 }
 
 export interface AnalyticsUserSummary {
