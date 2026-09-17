@@ -9,7 +9,9 @@
 
 import { useMemo, useState } from "react";
 import clsx from "clsx";
+import { motion, useReducedMotion } from "motion/react";
 import { CalculateOutlined, FavoriteBorderOutlined, EventOutlined, ScienceOutlined } from "@mui/icons-material";
+import { DURATION, EASE_BRAND } from "@/lib/motion";
 import {
   calcDueDateEstimate,
   calcHcgEstimateFromLmp,
@@ -60,8 +62,27 @@ function CalcCard({
   );
 }
 
+/** MOTION-06: qiymat o'zgarganda (foydalanuvchi g'ildirakni aylantirganda)
+ * qisqa (400ms) yorqinlik-yaltirash bilan "men yangilandim" signalini
+ * beradi — fon rangi bir zumga to'qroq bo'lib, asliga qaytadi.
+ * `key={String(children)}` — matn o'zgarganda komponent qayta MOUNT
+ * bo'ladi, shuning uchun `initial→animate` har safar qaytadan ishga
+ * tushadi (Framer Motion'ning standart "key orqali qayta ishga
+ * tushirish" texnikasi). `useReducedMotion()` yoqilgan bo'lsa — hech
+ * qanday yaltirash, darhol yakuniy fon rangi. */
 function ResultLine({ children }: { children: React.ReactNode }) {
-  return <p className="mt-3 rounded-2xl bg-background px-4 py-3 text-sm font-bold text-text-primary">{children}</p>;
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.p
+      key={String(children)}
+      initial={reduceMotion ? false : { backgroundColor: "color-mix(in srgb, var(--color-primary) 35%, var(--color-background))" }}
+      animate={{ backgroundColor: "var(--color-background)" }}
+      transition={{ duration: DURATION.section, ease: EASE_BRAND }}
+      className="mt-3 rounded-2xl px-4 py-3 text-sm font-bold text-text-primary"
+    >
+      {children}
+    </motion.p>
+  );
 }
 
 export function PublicCalculators() {
