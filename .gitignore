@@ -18,6 +18,13 @@ apps/web/data/
 .env*
 !.env.example
 
+# WEB2-01: vaqtinchalik build artefaktlari uchun (masalan mobil .aab/.apk
+# fayllar) ba'zan shu papkaga qo'lda tashlab qo'yilgan — bu `apps/web/public/`
+# ostida bo'lgani uchun HAR QANDAY narsa shu yerga tushsa avtomatik ravishda
+# ochiq (public) URL orqali serverdan uzatiladi. Endi bunday qoldiq
+# fayllarni tasodifan commit qilish mumkin bo'lmasin.
+apps/web/public/temp/
+
 # misc
 .DS_Store
 *.pem
