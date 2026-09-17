@@ -77,6 +77,11 @@ function AppPreviewCarousel() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    // LANDING-03: harakatga sezgir (vestibular) foydalanuvchilar uchun —
+    // ticker-lenta (globals.css'dagi prefers-reduced-motion bloki) bilan bir
+    // xil qoida: shu sozlama yoqilgan bo'lsa, avtomatik almashinuvni umuman
+    // ishga tushirmaymiz (birinchi rasm bilan statik qoladi).
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const id = setInterval(() => setIndex((i) => (i + 1) % APP_PREVIEWS.length), PREVIEW_INTERVAL_MS);
     return () => clearInterval(id);
   }, []);
