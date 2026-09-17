@@ -36,9 +36,15 @@ function BarTrendChart({ points, valueSuffix }: { points: { label: string; value
                   {p.label} · {p.value} {valueSuffix}
                 </div>
               )}
+              {/* WEB3-15: `Math.max(heightPct, 4)` haqiqiy 0 qiymatni (masalan
+                  "0 ta og'riq kuni" — bu YAXSHI xabar) ham kamida 4% balandlikdagi
+                  ustun sifatida ko'rsatardi, past-lekin-nolmas qiymatdan farqlab
+                  bo'lmasdi. Endi 4% minimal balandlik FAQAT qiymat >0 bo'lganda
+                  qo'llanadi — aniq 0 esa ustunsiz (bo'sh) holat sifatida
+                  ko'rsatiladi (tooltip'da aniq "0" qiymati hamon ko'rinadi). */}
               <div
                 className={clsx("w-full max-w-[18px] rounded-t-[4px] transition-colors", isHovered ? "bg-primary-dark" : "bg-primary/60")}
-                style={{ height: `${Math.max(heightPct, 4)}%` }}
+                style={{ height: p.value > 0 ? `${Math.max(heightPct, 4)}%` : 0 }}
               />
             </div>
           );
