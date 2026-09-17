@@ -1123,6 +1123,14 @@ const en: Dictionary = {
     footerRights: (year: number) => `© ${year} MammoAI. All rights reserved.`,
   },
 
+  errorPages: {
+    notFoundTitle: "Page not found",
+    notFoundBody: "This address doesn't exist or may have moved.",
+    appErrorTitle: "Something went wrong",
+    appErrorBody: "An unexpected error occurred while loading the page. Please try again.",
+    goHomeButton: "Back to home",
+  },
+
   apiErrors: {
     invalid_tag: "Invalid topic",
     post_too_short: "Write at least a few words",

@@ -1121,6 +1121,14 @@ const ru: Dictionary = {
     footerRights: (year: number) => `© ${year} MammoAI. Все права защищены.`,
   },
 
+  errorPages: {
+    notFoundTitle: "Страница не найдена",
+    notFoundBody: "Этого адреса не существует или он был перемещён.",
+    appErrorTitle: "Что-то пошло не так",
+    appErrorBody: "При загрузке страницы произошла непредвиденная ошибка. Попробуйте снова.",
+    goHomeButton: "Вернуться на главную",
+  },
+
   apiErrors: {
     invalid_tag: "Неверная тема",
     post_too_short: "Напишите хотя бы несколько слов",

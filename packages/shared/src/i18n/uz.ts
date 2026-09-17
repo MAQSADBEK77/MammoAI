@@ -1221,6 +1221,17 @@ const uz = {
     footerRights: (year: number) => `© ${year} MammoAI. Barcha huquqlar himoyalangan.`,
   },
 
+  // WEB3-16: brendlangan not-found.tsx/error.tsx uchun (global-error.tsx bu
+  // lug'atga tayana olmaydi — u ROOT layout'ning o'zi qulaganda ishga
+  // tushadi, shuning uchun qattiq yozilgan, tarjimasiz matn ishlatadi).
+  errorPages: {
+    notFoundTitle: "Sahifa topilmadi",
+    notFoundBody: "Bu manzil mavjud emas yoki ko'chirilgan bo'lishi mumkin.",
+    appErrorTitle: "Nimadir xato ketdi",
+    appErrorBody: "Sahifani yuklashda kutilmagan xato yuz berdi. Qayta urinib ko'ring.",
+    goHomeButton: "Bosh sahifaga qaytish",
+  },
+
   // FIX2-20: server validatsiya/limit xatolari uchun tarjima qilingan matn —
   // `ApiError.key` orqali server yuborgan barqaror kod (masalan
   // "post_too_short") shu ro'yxatdan qidiriladi (translateApiError()).
