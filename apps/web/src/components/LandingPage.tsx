@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
-import { motion, useReducedMotion } from "motion/react";
-import { DURATION, EASE_BRAND } from "@/lib/motion";
+import { motion, useInView, useReducedMotion } from "motion/react";
+import { DURATION, EASE_BRAND, VIEWPORT_ONCE } from "@/lib/motion";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import {
   GroupsOutlined,
@@ -43,6 +43,59 @@ const FEATURES_ANCHOR = "imkoniyatlar";
 const CALC_ANCHOR = "kalkulyatorlar";
 const TRUST_ANCHOR = "ishonch";
 const FAQ_ANCHOR = "savol-javob";
+
+/** "23+", "100%", "0" kabi qiymatlardan sonli qismini ("prefiks"/"sufiks"
+ * bilan) ajratib oladi — MOTION-03: statistika-lentasi raqamlari son
+ * bo'lmagan belgilar (+/%) BILAN to'g'ri hisoblanishi uchun. */
+function parseCountValue(raw: string): { number: number; prefix: string; suffix: string } {
+  const match = /^(\D*)(\d+)(\D*)$/.exec(raw);
+  if (!match) return { number: 0, prefix: "", suffix: raw };
+  return { number: Number(match[2]), prefix: match[1], suffix: match[3] };
+}
+
+const COUNT_UP_DURATION_MS = 1200;
+
+/** Ko'rinish maydoniga kirganda 0'dan haqiqiy qiymatgacha animatsion
+ * hisoblaydi — oxirida sekinlashib to'xtaydigan ease-out (doim bir xil
+ * tezlikda emas). `useReducedMotion()` yoqilgan bo'lsa — darhol yakuniy
+ * qiymat, hisoblashsiz. */
+function CountUpStat({ value, className }: { value: string; className: string }) {
+  const { number, prefix, suffix } = useMemo(() => parseCountValue(value), [value]);
+  const ref = useRef<HTMLParagraphElement>(null);
+  const inView = useInView(ref, VIEWPORT_ONCE);
+  const reduceMotion = useReducedMotion();
+  const [display, setDisplay] = useState(number);
+
+  useEffect(() => {
+    if (!inView || reduceMotion) {
+      // setState effekt ICHIDA sinxron chaqirilmaydi (kaskadli render'larni
+      // oldini olish uchun) — loyihada allaqachon bor FIX-07 naqshi.
+      const timeout = setTimeout(() => setDisplay(number), 0);
+      return () => clearTimeout(timeout);
+    }
+    let raf: number;
+    const start = performance.now();
+    function tick(now: number) {
+      const t = Math.min(1, (now - start) / COUNT_UP_DURATION_MS);
+      const eased = 1 - (1 - t) ** 3; // ease-out cubic — oxirida sekinlashadi
+      // Birinchi kadr `t`si deyarli 0 bo'lgani uchun `display` allaqachon
+      // ~0'dan boshlanadi — alohida "setDisplay(0)" sinxron chaqiruvi shart
+      // emas (bu ham yuqoridagi bilan bir xil ESLint qoidasini ilib olardi).
+      setDisplay(Math.round(eased * number));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, number, reduceMotion]);
+
+  return (
+    <p ref={ref} className={className}>
+      {prefix}
+      {display}
+      {suffix}
+    </p>
+  );
+}
 
 /** Kichik, katta harfli "eyebrow" yorliq — lalu.uz'dagi bo'lim sarlavhalari
  * ustidagi takrorlanuvchi naqsh. `accentIndex` ACCENT_TEXT_CLASSES'ga mos. */
@@ -375,7 +428,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-y-6 px-5 py-10 sm:grid-cols-4">
           {l.factsStrip.map((fact, i) => (
             <div key={i} className="text-center">
-              <p className={clsx("text-3xl font-extrabold", ACCENT_TEXT_CLASSES[i % 3])}>{fact.value}</p>
+              <CountUpStat value={fact.value} className={clsx("text-3xl font-extrabold tabular-nums", ACCENT_TEXT_CLASSES[i % 3])} />
               <p className="mt-1 text-xs text-text-secondary">{fact.label}</p>
             </div>
           ))}
