@@ -85,12 +85,12 @@ export function PublicCalculators() {
   return (
     <div className="grid gap-5 sm:grid-cols-2">
       <CalcCard icon={EventOutlined} accentClass={ACCENT_CHIP_CLASSES[0]} title={l.dueDate.title} desc={l.dueDate.desc}>
-        <DateWheelPicker value={dueLmp} onChange={setDueLmp} monthLabels={months} minYear={thisYear - 1} maxYear={thisYear} />
+        <DateWheelPicker value={dueLmp} onChange={setDueLmp} monthLabels={months} minYear={thisYear - 3} maxYear={thisYear} />
         {dueResult && <ResultLine>{l.dueDate.result(formatDateDisplay(dueResult.dueDate), dueResult.currentWeek)}</ResultLine>}
       </CalcCard>
 
       <CalcCard icon={FavoriteBorderOutlined} accentClass={ACCENT_CHIP_CLASSES[1]} title={l.ovulation.title} desc={l.ovulation.desc}>
-        <DateWheelPicker value={ovulLmp} onChange={setOvulLmp} monthLabels={months} minYear={thisYear - 1} maxYear={thisYear} />
+        <DateWheelPicker value={ovulLmp} onChange={setOvulLmp} monthLabels={months} minYear={thisYear - 3} maxYear={thisYear} />
         <div className="mt-3">
           <p className="mb-1 text-xs font-semibold text-text-secondary">{dict.landing.calculatorsCycleLengthLabel}</p>
           <WheelPicker compact options={CYCLE_LENGTH_OPTIONS} value={cycleLength} suffix="kun" onChange={setCycleLength} />
@@ -113,7 +113,7 @@ export function PublicCalculators() {
       </CalcCard>
 
       <CalcCard icon={ScienceOutlined} accentClass={ACCENT_CHIP_CLASSES[3]} title={l.hcg.title} desc={l.hcg.desc}>
-        <DateWheelPicker value={hcgLmp} onChange={setHcgLmp} monthLabels={months} minYear={thisYear - 1} maxYear={thisYear} />
+        <DateWheelPicker value={hcgLmp} onChange={setHcgLmp} monthLabels={months} minYear={thisYear - 3} maxYear={thisYear} />
         <ResultLine>
           {hcgResult ? l.hcg.result(hcgResult.weekLabel, hcgResult.min.toLocaleString("ru-RU"), hcgResult.max.toLocaleString("ru-RU")) : l.hcg.outOfRange}
         </ResultLine>
