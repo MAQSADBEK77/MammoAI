@@ -1710,10 +1710,17 @@ export async function listCommunityCommentsAdmin(postId: string): Promise<(Commu
   }));
 }
 
+// WEB3-07: FIX2-28'da toggleCommunityLike'ga xuddi shu turdagi tuzatish
+// kiritilgan edi — DELETE 0 qator o'zgartirsa ham (masalan izoh
+// allaqachon o'chirilgan/boshqa admin tomonidan) comments_count shartsiz
+// kamayardi, vaqt o'tishi bilan haqiqiy izohlar soni bilan
+// comments_count orasida farq to'planardi.
 export async function deleteCommunityCommentAdmin(postId: string, commentId: string): Promise<void> {
   await ensureSchema();
-  await sql`DELETE FROM community_comments WHERE id = ${commentId} AND post_id = ${postId}`;
-  await sql`UPDATE community_posts SET comments_count = GREATEST(comments_count - 1, 0) WHERE id = ${postId}`;
+  const deleted = await sql`DELETE FROM community_comments WHERE id = ${commentId} AND post_id = ${postId}`;
+  if (deleted.count > 0) {
+    await sql`UPDATE community_posts SET comments_count = GREATEST(comments_count - 1, 0) WHERE id = ${postId}`;
+  }
 }
 
 // ---------------------------------------------------------------------------
