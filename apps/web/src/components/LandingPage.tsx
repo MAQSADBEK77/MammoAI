@@ -21,6 +21,7 @@ import { useI18n } from "@/lib/i18n";
 import { useIllustrations } from "@/lib/illustrations";
 import { Button, Card } from "@/components/ui";
 import { PublicCalculators } from "@/components/landing/PublicCalculators";
+import { Reveal } from "@/components/landing/motion-primitives";
 
 const LIFE_STAGE_KEYS = ["cycle", "pregnancy", "checkups"] as const;
 const LIFE_STAGE_ILLUSTRATIONS = ["/illustrations/calendar.svg", "/illustrations/expecting.svg", "/illustrations/library/all-checked_d3u6.svg"];
@@ -451,8 +452,12 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
               const f = l.features[key];
               const reversed = i % 2 === 1;
               return (
-                <div
+                // MOTION-04: har biri ko'rinish maydoniga kirganda pastdan-
+                // yuqoriga + xiradan-aniqqa, bir-biridan ~120ms kechikish
+                // bilan ("to'lqin" effekti — foydalanuvchi so'ragan).
+                <Reveal
                   key={key}
+                  index={i}
                   className={clsx(
                     "flex flex-col items-center gap-6 rounded-[34px] p-8 md:gap-10 md:p-10",
                     LIFE_STAGE_TINTS[i],
@@ -465,7 +470,7 @@ export function LandingPage({ onStart }: { onStart: () => void }) {
                     <h3 className={clsx("text-xl font-extrabold", ACCENT_TEXT_CLASSES[i])}>{f.title}</h3>
                     <p className="mt-2 text-text-secondary">{f.desc}</p>
                   </div>
-                </div>
+                </Reveal>
               );
             })}
           </div>
