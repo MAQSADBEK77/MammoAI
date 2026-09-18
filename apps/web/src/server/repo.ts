@@ -2879,9 +2879,23 @@ export async function deleteCommunityComment(userId: string, postId: string, com
 export async function getCommunityStats(): Promise<CommunityStats> {
   await ensureSchema();
   const [[{ count: totalMembers }], [{ count: totalPosts }], [{ count: postsToday }]] = (await Promise.all([
-    sql`SELECT count(*)::int as count FROM users`,
+    // DATA-ACCURACY-06: `is_test_account = FALSE` filtri YO'Q edi — bu
+    // FOYDALANUVCHIGA ko'rsatiladigan "N a'zo" (Jamiyat ekrani) rivojlanish
+    // davomida yaratilgan/o'chirilgan barcha sinov hisoblarini ham hisobga
+    // olib, haqiqiy hamjamiyat hajmini oshirib ko'rsatardi — `getAdminStats`
+    // va deyarli barcha boshqa foydalanuvchi-soni so'rovlarida bu filtr
+    // ALLAQACHON bor edi, faqat shu yerda unutilgan edi.
+    sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE`,
     sql`SELECT count(*)::int as count FROM community_posts`,
-    sql`SELECT count(*)::int as count FROM community_posts WHERE (created_at)::timestamptz >= now() - interval '1 day'`,
+    // DATA-ACCURACY-06: "Bugun N ta" (FOYDALANUVCHIGA ko'rinadigan Jamiyat
+    // ekrani) KALENDAR kunini anglatadi, lekin `now() - interval '1 day'`
+    // SO'NGGI 24 SOATLIK aylanuvchi oyna edi — DATA-ACCURACY-05'da
+    // getAdminStats'da tuzatilgan bilan bir xil sinf xato, bu yerda ham bor
+    // edi. Endi Toshkent mahalliy yarim tunidan hisoblanadi.
+    sql`
+      SELECT count(*)::int as count FROM community_posts
+      WHERE (created_at)::timestamptz >= date_trunc('day', now() AT TIME ZONE 'Asia/Tashkent') AT TIME ZONE 'Asia/Tashkent'
+    `,
   ])) as unknown as [{ count: number }[], { count: number }[], { count: number }[]];
   return { totalMembers, totalPosts, postsToday };
 }

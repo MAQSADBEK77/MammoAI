@@ -48,6 +48,7 @@ import {
   hasLoggedToday,
   incrementDailyChatUsage,
   decrementDailyChatUsage,
+  getCommunityStats,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
@@ -445,6 +446,40 @@ async function main() {
     SELECT extract(isodow FROM date_trunc('week', now() AT TIME ZONE 'Asia/Tashkent'))::int as week_start_dow
   `) as unknown as { week_start_dow: number }[];
   assert(weekStartDow === 1, "DATA-ACCURACY-05: kalendar hafta chegarasi DUSHANBADAN boshlanadi (ISO hafta kuni 1)");
+
+  // --- DATA-ACCURACY-06: getCommunityStats — sinov hisoblari HAQIQIY
+  // "a'zolar" soniga qo'shilmasligi, va yangi post darhol "Bugun"ga
+  // (postsToday) qo'shilishi kerak. ---
+  const statsBeforeTestUser = await getCommunityStats();
+  const testAccountId = randomUUID();
+  await sql`
+    INSERT INTO users (id, phone, created_at, is_test_account)
+    VALUES (${testAccountId}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text, TRUE)
+  `;
+  const statsAfterTestUser = await getCommunityStats();
+  assert(
+    statsAfterTestUser.totalMembers === statsBeforeTestUser.totalMembers,
+    "DATA-ACCURACY-06: is_test_account=TRUE foydalanuvchi 'a'zolar' soniga qo'shilmaydi"
+  );
+
+  const realAccountId = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${realAccountId}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  const statsAfterRealUser = await getCommunityStats();
+  assert(
+    statsAfterRealUser.totalMembers === statsBeforeTestUser.totalMembers + 1,
+    "DATA-ACCURACY-06: oddiy (test bo'lmagan) foydalanuvchi 'a'zolar' soniga +1 qo'shadi"
+  );
+
+  const communityPost = await createCommunityPost(realAccountId, { tag: "general", body: "DATA-ACCURACY-06 test posti", isAnonymous: false });
+  const statsAfterPost = await getCommunityStats();
+  assert(
+    statsAfterPost.postsToday === statsAfterRealUser.postsToday + 1 && statsAfterPost.totalPosts === statsAfterRealUser.totalPosts + 1,
+    "DATA-ACCURACY-06: yangi post darhol 'Bugun' (kalendar kuni) hisobiga qo'shiladi"
+  );
+
+  await sql`DELETE FROM community_posts WHERE id = ${communityPost.id}`;
+  await sql`DELETE FROM users WHERE id = ${testAccountId}`;
+  await sql`DELETE FROM users WHERE id = ${realAccountId}`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {
