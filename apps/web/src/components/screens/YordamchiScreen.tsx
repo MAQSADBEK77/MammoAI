@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined, WorkspacePremiumRounded } from "@mui/icons-material";
 import type { ChatMessage, InsightsSummary, SymptomPattern } from "@mammoai/shared";
 import { ApiError, translateApiError } from "@mammoai/shared";
@@ -12,8 +13,30 @@ import { api } from "@/lib/api";
 import { ScreenHeader, LoadingSpinner, Card, Button } from "@/components/ui";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
 import { Emoji } from "@/components/Emoji";
+import { DURATION, EASE_BRAND } from "@/lib/motion";
 
 const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
+
+/** MOTION-APP-04: har bir yangi xabar/pufakcha ekranga kirganda yengil
+ * fade+ko'tarilish — `Reveal`dan farqli (scroll-ichida-ko'rinish emas,
+ * chunki chat pastga qarab avtomatik skroll qiladi), shunchaki HAR SAFAR
+ * yangi elementning o'zi mount bo'lganda ishga tushadi. Eski, allaqachon
+ * ko'rsatilgan xabarlar qayta animatsiya qilinmaydi (remount bo'lmagani
+ * uchun). */
+function ChatBubbleEnter({ className, children }: { className?: string; children: ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion) return <div className={className}>{children}</div>;
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: DURATION.micro, ease: EASE_BRAND }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 /**
  * AI Yordamchi — sikl/homiladorlik/simptom tarixini "eslab qoladigan" chat +
@@ -184,14 +207,14 @@ export function YordamchiScreen() {
             {messages === null ? (
               <LoadingSpinner label={dict.common.loading} />
             ) : messages.length === 0 ? (
-              <div className="flex justify-start">
+              <ChatBubbleEnter className="flex justify-start">
                 <div className="max-w-[85%] rounded-2xl rounded-bl-sm bg-surface-muted px-4 py-2.5 text-sm leading-relaxed text-text-primary">
                   {dict.chat.emptyGreeting}
                 </div>
-              </div>
+              </ChatBubbleEnter>
             ) : (
               messages.map((m) => (
-                <div key={m.id} className={clsx("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+                <ChatBubbleEnter key={m.id} className={clsx("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                   <div
                     className={clsx(
                       "max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words",
@@ -200,16 +223,16 @@ export function YordamchiScreen() {
                   >
                     {m.content}
                   </div>
-                </div>
+                </ChatBubbleEnter>
               ))
             )}
             {sending && (
-              <div className="flex justify-start">
+              <ChatBubbleEnter className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-sm bg-surface-muted px-4 py-2.5 text-sm text-text-muted">{dict.chat.thinking}</div>
-              </div>
+              </ChatBubbleEnter>
             )}
             {showFeedbackPrompt && (
-              <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-2.5">
+              <ChatBubbleEnter className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-2.5">
                 <p className="text-sm font-medium text-text-primary">{dict.feedback.chatPromptQuestion}</p>
                 <div className="flex shrink-0 items-center gap-1">
                   <button
@@ -234,7 +257,7 @@ export function YordamchiScreen() {
                     ✕
                   </button>
                 </div>
-              </div>
+              </ChatBubbleEnter>
             )}
           </div>
 
