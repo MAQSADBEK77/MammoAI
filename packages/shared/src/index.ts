@@ -4,6 +4,7 @@ export * from "./design-tokens";
 export * from "./logic/cycle";
 export * from "./logic/cycle-phase";
 export * from "./logic/cycle-backtest";
+export * from "./logic/insights";
 export * from "./logic/pregnancy";
 export * from "./logic/public-calculators";
 export * from "./logic/checklist-rules";
