@@ -136,6 +136,39 @@ Deploy qilindi + smoke-check o'tdi.
 
 Battareya: 64% → 63%.
 
+## Tsikl 5 — 01:05
+
+**OVERNIGHT-08**: Homiladorlik kontenti sahifasini tekshirishda uning
+o'z izohi ("Maqolalar/Klinikalar bilan bir xil naqsh") meni boshqa
+sahifalarni qayta tekshirishga undadi. Natijada UX-00/UX-04-Admin
+seriyalarida hali qamrab olinmagan 3 ta sahifada (Homiladorlik
+kontenti, Adminlar — 2 ta mustaqil so'rov, Fikr-mulohazalar) bir xil
+"boshlang'ich yuklashda .catch() yo'q -> abadiy Yuklanmoqda…" xato
+sinfi topildi va tuzatildi. Playwright orqali har uch sahifada
+alohida-alohida qasddan 500 xato inject qilib tasdiqlandi — barchasida
+endi xato+qayta-urinish to'g'ri ko'rinadi. Deploy jarayonda.
+
+Battareya: 63% → 62%.
+
+**OVERNIGHT-09**: Butun admin panelni ikkita xato sinfi bo'yicha
+TO'LIQ (barcha 15 sahifa) qayta tekshirdim: (1) yuklashda `.catch()`
+yo'qligi, (2) `.catch()` bor, lekin tekshiruv TARTIBI noto'g'ri
+(xato-tekshiruv "yuklanmoqda"dan KEYIN kelib, hech qachon
+ishlamaydi — ai-settings.tsx'da OVERNIGHT-02'da topilgan xato sinfi).
+Illyustratsiyalar sahifasida ikkinchi sinf xato topildi va tuzatildi.
+Qolgan sahifalar (Articles/Clinics/Subscriptions/Users) BOSHQA,
+xavfsizroq naqshdan (`[]` standart + alohida `loading` + `.finally()`)
+foydalanadi — ular tekshirilib, JIDDIY muammo yo'qligi tasdiqlandi.
+
+Bu admin panelning yuklash-xatosi bo'yicha TO'LIQ audit yakunini
+bildiradi — barcha 15 admin sahifasi endi yoki (a) to'g'ri xato+qayta-
+urinish ko'rsatadi, yoki (b) allaqachon xavfsiz (abadiy qotib
+qolmaydigan) naqshdan foydalanadi.
+
+Deploy navbatda.
+
+Battareya: 62% → 61%.
+
 **⚠️ MUHIM TOPILMA (kod xatosi EMAS, AI modelining o'zi — ERTALAB
 KO'RIB CHIQISH KERAK)**: RU tiliga o'rnatilgan hisobda ruscha xabar
 ("Скорая помощь нужна, сильная боль") yozilganda, AI (joriy faol
