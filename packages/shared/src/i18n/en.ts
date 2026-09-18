@@ -901,6 +901,8 @@ const en: Dictionary = {
     predictionAccuracyHint: "Calculated by testing past cycles retroactively — a real number, not a marketing claim.",
     predictionAccuracyLowDataHint: "Tested on very few cycles so far — this number becomes more reliable over time.",
     aiInsightTitle: "AI analysis",
+    medicalConcernBanner: "⚕️ This looks like it could be a medical emergency — please contact a doctor or emergency services.",
+    medicalConcernCta: "View clinics",
   },
 
   reminders: {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined, WorkspacePremiumRounded } from "@mui/icons-material";
 import type { ChatMessage, InsightsSummary, SymptomPattern } from "@mammoai/shared";
-import { ApiError, translateApiError } from "@mammoai/shared";
+import { ApiError, detectsMedicalConcern, translateApiError } from "@mammoai/shared";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -289,16 +289,45 @@ export function YordamchiScreen() {
               </ChatBubbleEnter>
             ) : (
               messages.map((m) => (
-                <ChatBubbleEnter key={m.id} className={clsx("flex", m.role === "user" ? "justify-end" : "justify-start")}>
-                  <div
-                    className={clsx(
-                      "max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words",
-                      m.role === "user" ? "rounded-br-sm bg-primary text-white" : "rounded-bl-sm bg-surface-muted text-text-primary"
-                    )}
-                  >
-                    {m.content}
-                  </div>
-                </ChatBubbleEnter>
+                <div key={m.id} className="flex flex-col gap-1.5">
+                  <ChatBubbleEnter className={clsx("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+                    <div
+                      className={clsx(
+                        "max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words",
+                        m.role === "user" ? "rounded-br-sm bg-primary text-white" : "rounded-bl-sm bg-surface-muted text-text-primary"
+                      )}
+                    >
+                      {m.content}
+                    </div>
+                  </ChatBubbleEnter>
+                  {/* OVERNIGHT-06: jamiyat postlarida allaqachon ishlatilayotgan
+                      bir xil, ATAYLAB kengroq (soxta-musbat xavfsiz) kalit-so'z
+                      aniqlagichi — bu yerda AI'ning o'zi HECH NARSA "hal
+                      qilmaydi" (LLM'ga ishonib qolmaslik uchun ATAYLAB
+                      deterministik/mijoz-tomon) — foydalanuvchi shoshilinch
+                      ko'rinishdagi narsa yozganda, klinikalarga taklif
+                      ko'rsatiladi. Tashxis emas, faqat yumshoq signal. */}
+                  {m.role === "user" && detectsMedicalConcern(m.content) && (
+                    <ChatBubbleEnter className="flex justify-end">
+                      <div className="flex max-w-[85%] flex-col gap-2 rounded-2xl rounded-br-sm bg-warning/10 px-4 py-2.5">
+                        <p className="text-xs font-medium text-warning">{dict.chat.medicalConcernBanner}</p>
+                        {/* OVERNIGHT-06 tuzatish: "/klinikalar" — RedirectToAsosiy
+                            orqali "/asosiy"ga qaytaradigan ESKI/bekor qilingan
+                            yo'l ekan (tirik tekshirishda topildi) — Klinikalar
+                            bo'limi HAQIQATDA "/asosiy" ichidagi yopiladigan-
+                            ochiladigan segment. `checklistItemId` esa faqat
+                            referral-kuzatuv uchun (haqiqiy tekshiruv bandi
+                            ID'siga bog'liq) — bu yerda mos kelmaydi, shuning
+                            uchun soxta ID o'ylab topmasdan shunchaki "/asosiy"ga
+                            yo'naltiramiz (foydalanuvchi Klinikalar segmentini
+                            o'zi ochadi). */}
+                        <Button className="self-start px-4! py-1.5! text-xs!" onClick={() => router.push("/asosiy")}>
+                          {dict.chat.medicalConcernCta}
+                        </Button>
+                      </div>
+                    </ChatBubbleEnter>
+                  )}
+                </div>
               ))
             )}
             {sending && (

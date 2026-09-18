@@ -977,6 +977,10 @@ const uz = {
     // asoslangan bo'lishi mumkin — bu haqiqiy statistik ishonchni emas.
     predictionAccuracyLowDataHint: "Hali kam sikl bilan tekshirilgan — bu raqam ko'proq ma'lumot bilan barqarorlashadi.",
     aiInsightTitle: "AI tahlili",
+    // OVERNIGHT-06: jamiyat postlaridagi `community.medicalConcernBanner`
+    // bilan bir xil g'oya, chat uchun — klinikalarga taklif qo'shilgan.
+    medicalConcernBanner: "⚕️ Bu shoshilinch tibbiy holatga o'xshaydi — iltimos, shifokorga yoki tez tibbiy yordamga murojaat qiling.",
+    medicalConcernCta: "Klinikalar ro'yxatini ko'rish",
   },
 
   // Kunlik eslatmalar — bot orqali (server/daily-reminders.ts) va ilova ichidagi

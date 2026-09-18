@@ -899,6 +899,8 @@ const ru: Dictionary = {
     predictionAccuracyHint: "Рассчитано ретроспективно по прошлым циклам — реальная цифра, не реклама.",
     predictionAccuracyLowDataHint: "Проверено пока на малом числе циклов — это число станет надёжнее со временем.",
     aiInsightTitle: "Анализ ИИ",
+    medicalConcernBanner: "⚕️ Похоже на неотложное медицинское состояние — пожалуйста, обратитесь к врачу или в скорую помощь.",
+    medicalConcernCta: "Посмотреть список клиник",
   },
 
   reminders: {
