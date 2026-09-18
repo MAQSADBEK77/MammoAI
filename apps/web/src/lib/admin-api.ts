@@ -83,6 +83,18 @@ export interface YandexMetrikaSettings {
   counterId: string | null;
 }
 
+export interface YandexMetrikaDashboardData {
+  totals: { visits: number; users: number; pageviews: number; bounceRatePct: number; avgVisitDurationSec: number };
+  daily: { date: string; visits: number; users: number }[];
+  trafficSources: { label: string; visits: number }[];
+  devices: { label: string; visits: number }[];
+  topPages: { path: string; pageviews: number }[];
+  geography: { country: string; city: string; visits: number }[];
+  cachedAt: string;
+}
+
+export type YandexMetrikaDashboardResponse = { configured: false } | ({ configured: true } & YandexMetrikaDashboardData);
+
 export interface AdminStats {
   totalUsers: number;
   newUsersToday: number;
@@ -258,6 +270,8 @@ export const adminApi = {
     update: (patch: { token?: string; counterId?: string }) =>
       request<{ ok: true }>("/yandex-metrika", { method: "PATCH", body: JSON.stringify(patch) }),
     test: () => request<{ ok: true; message: string }>("/yandex-metrika/test", { method: "POST" }),
+    dashboard: (days: number, force = false) =>
+      request<YandexMetrikaDashboardResponse>(`/yandex-metrika/dashboard?days=${days}${force ? "&force=1" : ""}`),
   },
   feedback: {
     list: (params: { limit?: number; offset?: number }) => {

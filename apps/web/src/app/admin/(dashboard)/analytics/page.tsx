@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { adminApi } from "@/lib/admin-api";
+import Link from "next/link";
+import { adminApi, type YandexMetrikaDashboardResponse } from "@/lib/admin-api";
 import type { AnalyticsSummary, AnalyticsUserSummary } from "@mammoai/shared";
 import { Card, Button } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
@@ -57,6 +58,181 @@ function RankedBar({ label, sublabel, valueLabel, value, max }: { label: string;
         <div className="h-full rounded-full bg-primary/70" style={{ width: `${Math.max(pct, 3)}%` }} />
       </div>
     </div>
+  );
+}
+
+function formatCachedAt(iso: string): string {
+  const ageMs = Date.now() - new Date(iso).getTime();
+  const ageMin = Math.round(ageMs / 60000);
+  if (ageMin <= 0) return "hozirgina";
+  if (ageMin === 1) return "1 daqiqa oldin";
+  if (ageMin < 60) return `${ageMin} daqiqa oldin`;
+  const ageHours = Math.round(ageMin / 60);
+  return `${ageHours} soat oldin`;
+}
+
+/**
+ * YANDEX-METRIKA-04: mammo.uz'ga ulangan Yandex Metrika hisobidan (haqiqiy
+ * VEB-TASHRIF analitikasi) tortib olingan ma'lumot — ATAYLAB alohida bo'lim,
+ * yuqoridagi ICHKI `analytics_events` (ilova ichidagi harakat) bilan
+ * ARALASHTIRILMAYDI: ikkalasi BOSHQA-BOSHQA narsani o'lchaydi.
+ */
+function YandexMetrikaSection() {
+  const [days, setDays] = useState(30);
+  const [data, setData] = useState<YandexMetrikaDashboardResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback((selectedDays: number, force: boolean) => {
+    if (force) setRefreshing(true);
+    setError(null);
+    adminApi.yandexMetrika
+      .dashboard(selectedDays, force)
+      .then((res) => setData(res))
+      .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"))
+      .finally(() => {
+        if (force) setRefreshing(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    // FIX: setState'ni to'g'ridan-to'g'ri effekt ichida emas, keyingi
+    // macrotask'da chaqirish uchun (react-hooks/set-state-in-effect) —
+    // xuddi shu naqsh telegram-bot/page.tsx'da ham ishlatiladi.
+    const timeout = setTimeout(() => load(days, false), 0);
+    return () => clearTimeout(timeout);
+  }, [days, load]);
+
+  const maxTraffic = Math.max(1, ...(data && data.configured ? data.trafficSources.map((t) => t.visits) : [1]));
+  const maxDevice = Math.max(1, ...(data && data.configured ? data.devices.map((d) => d.visits) : [1]));
+  const maxPageviews = Math.max(1, ...(data && data.configured ? data.topPages.map((p) => p.pageviews) : [1]));
+  const maxGeoVisits = Math.max(1, ...(data && data.configured ? data.geography.map((g) => g.visits) : [1]));
+
+  return (
+    <Card className="flex flex-col gap-6 border border-border/60">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-text-primary">
+            <Emoji e="🌐" /> Yandex Metrika (tashqi veb-trafik)
+          </h2>
+          <p className="mt-1 text-xs text-text-secondary">
+            mammo.uz&apos;ga ulangan Yandex Metrika hisobidan — bu YUQORIDAGI ichki foydalanuvchi-harakati bilan bir xil
+            narsa EMAS, saytga tashqi tashrif statistikasi
+          </p>
+        </div>
+        {data?.configured && (
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-full border border-border bg-surface p-1">
+              {DAY_OPTIONS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDays(d)}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                    days === d ? "bg-primary text-white" : "text-text-secondary hover:bg-surface-muted"
+                  }`}
+                >
+                  {d} kun
+                </button>
+              ))}
+            </div>
+            <Button variant="secondary" className="px-4! py-2! text-xs" disabled={refreshing} onClick={() => load(days, true)}>
+              {refreshing ? "Yangilanmoqda…" : "🔄 Yangilash"}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {error && <Card className="border border-danger/20 bg-danger/5 text-sm font-medium text-danger">{error}</Card>}
+
+      {!data && !error && <p className="py-6 text-center text-sm text-text-muted">Yuklanmoqda…</p>}
+
+      {data && !data.configured && (
+        <Card className="flex flex-col items-center gap-3 border border-border/60 bg-surface-muted/40 py-10 text-center">
+          <Emoji e="🌐" size={32} />
+          <p className="text-sm font-semibold text-text-primary">Yandex Metrika hali ulanmagan</p>
+          <p className="max-w-sm text-xs text-text-secondary">
+            Counter ID va OAuth tokenni sozlab, saytga haqiqiy tashqi tashrif analitikasini shu yerda ko&apos;ring.
+          </p>
+          <Link href="/admin/yandex-metrika">
+            <Button className="px-5! py-2! text-sm">Sozlash</Button>
+          </Link>
+        </Card>
+      )}
+
+      {data && data.configured && (
+        <>
+          <p className="-mt-2 text-xs text-text-muted">Yangilangan: {formatCachedAt(data.cachedAt)}</p>
+
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <StatCard icon="🧭" label="Tashriflar" value={data.totals.visits} hint={`So'nggi ${days} kun`} />
+            <StatCard icon="🙋" label="Foydalanuvchilar" value={data.totals.users} />
+            <StatCard icon="📄" label="Sahifa ko'rishlar" value={data.totals.pageviews} />
+            <StatCard icon="🚪" label="Sakrash darajasi" value={`${data.totals.bounceRatePct}%`} />
+            <StatCard icon="⏱️" label="O'rtacha davomiylik" value={formatDuration(data.totals.avgVisitDurationSec * 1000)} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Card variant="flat">
+              <h3 className="mb-3 text-sm font-bold text-text-primary">Kunlik tashriflar</h3>
+              <SignupsChart data={data.daily.map((d) => ({ day: d.date, count: d.visits }))} />
+            </Card>
+            <Card variant="flat">
+              <h3 className="mb-3 text-sm font-bold text-text-primary">Kunlik foydalanuvchilar</h3>
+              <SignupsChart data={data.daily.map((d) => ({ day: d.date, count: d.users }))} />
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Card variant="flat">
+              <h3 className="mb-3 text-sm font-bold text-text-primary">Trafik manbalari</h3>
+              <div className="flex flex-col gap-3">
+                {data.trafficSources.length === 0 && <p className="text-sm text-text-muted">Hali ma&apos;lumot yo&apos;q</p>}
+                {data.trafficSources.map((t) => (
+                  <RankedBar key={t.label} label={t.label} valueLabel={`${t.visits} ta`} value={t.visits} max={maxTraffic} />
+                ))}
+              </div>
+            </Card>
+            <Card variant="flat">
+              <h3 className="mb-3 text-sm font-bold text-text-primary">Qurilma turi</h3>
+              <div className="flex flex-col gap-3">
+                {data.devices.length === 0 && <p className="text-sm text-text-muted">Hali ma&apos;lumot yo&apos;q</p>}
+                {data.devices.map((d) => (
+                  <RankedBar key={d.label} label={d.label} valueLabel={`${d.visits} ta`} value={d.visits} max={maxDevice} />
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <Card variant="flat">
+            <h3 className="mb-3 text-sm font-bold text-text-primary">Eng ko&apos;p ko&apos;rilgan sahifalar</h3>
+            <div className="flex flex-col gap-3">
+              {data.topPages.length === 0 && <p className="text-sm text-text-muted">Hali ma&apos;lumot yo&apos;q</p>}
+              {data.topPages.map((p) => (
+                <RankedBar key={p.path} label={p.path} valueLabel={`${p.pageviews} ko'rish`} value={p.pageviews} max={maxPageviews} />
+              ))}
+            </div>
+          </Card>
+
+          <Card variant="flat">
+            <h3 className="mb-3 text-sm font-bold text-text-primary">Geografiya</h3>
+            <div className="flex flex-col gap-3">
+              {data.geography.length === 0 && <p className="text-sm text-text-muted">Hali ma&apos;lumot yo&apos;q</p>}
+              {data.geography.map((g) => (
+                <RankedBar
+                  key={`${g.country}-${g.city}`}
+                  label={g.city}
+                  sublabel={g.country}
+                  valueLabel={`${g.visits} ta`}
+                  value={g.visits}
+                  max={maxGeoVisits}
+                />
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+    </Card>
   );
 }
 
@@ -357,6 +533,8 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
       </Card>
+
+      <YandexMetrikaSection />
     </div>
   );
 }
