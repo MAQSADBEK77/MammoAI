@@ -60,10 +60,23 @@ import {
   SLOT_KEYS,
   detectPeriodStarts,
   getPregnancyStatus,
+  tashkentDateStr,
 } from "@mammoai/shared";
 
 const now = () => new Date().toISOString();
-const today = () => now().slice(0, 10);
+// DATA-ACCURACY-04: avval `now().slice(0, 10)` — bu server UTC vaqtidan
+// kalendar sanasini olardi. Vercel funksiyalarida TZ o'rnatilmagani uchun
+// (standart UTC) bu Toshkent mahalliy 00:00-04:59 oralig'ida (UTC 19:00-
+// 23:59, oldingi kun) haqiqiy mahalliy kundan BIR KUN ORQADA qolardi — xuddi
+// FIX2-23/CYCLE-ALGO'da allaqachon tuzatilgan sinf xato, lekin bu yerda
+// (pregnancy_kicks, wellness_logs suv/kaloriya, chat_daily_usage, checklist
+// "muddati o'tgan" belgisi va boshqa `today()` chaqiruvchilar) hech qachon
+// tuzatilmagan edi. Amaliy ta'sir: shu oraliqda suv/kaloriya qo'shsa,
+// KECHAGI kunga yozilardi (bugungi jami 0 ko'rsatilardi yoki kechagi
+// qiymatga qo'shilib ketardi). `now()`ning o'zi (to'liq ISO vaqt belgisi,
+// `created_at`/`updated_at` uchun) ATAYLAB o'zgartirilmagan — UTC saqlash
+// bu yerda to'g'ri, faqat undan olingan "kalendar KUNI" noto'g'ri edi.
+const today = () => tashkentDateStr();
 
 // ---------------------------------------------------------------------------
 // Users

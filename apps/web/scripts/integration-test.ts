@@ -40,9 +40,18 @@ import {
   checkAnalyticsIngestRateLimit,
   createSystemNotification,
   hasSentDailyReminderRecently,
+  addWater,
+  addCalories,
+  getWellnessToday,
+  incrementKicks,
+  getKicksToday,
+  hasLoggedToday,
+  incrementDailyChatUsage,
+  decrementDailyChatUsage,
 } from "../src/server/repo";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
+import { tashkentDateStr } from "@mammoai/shared";
 
 let failures = 0;
 let checks = 0;
@@ -367,6 +376,65 @@ async function main() {
   assert(updatedAtBefore !== updatedAtAfter, "FIX2-26: mavjud kunni tahrirlash updated_at'ni yangilaydi (logsCount o'zgarmasa ham AI keshi eskirgan deb topiladi)");
   await sql`DELETE FROM cycle_logs WHERE user_id = ${insightUser}`;
   await sql`DELETE FROM users WHERE id = ${insightUser}`;
+
+  // --- DATA-ACCURACY-04: repo.ts'ning ichki `today()`si endi tashkentDateStr()
+  // ga asoslanadi (avval server UTC vaqtidan olinardi — Toshkent mahalliy
+  // 00:00-04:59 oralig'ida bir kun orqada qolardi). Bu yerda suv/kaloriya/
+  // tepish/AI-chat kunlik hisoblagichlarining KO'P MARTA chaqirilganda TO'G'RI
+  // yig'ilishini va "bugun" sifatida haqiqiy Toshkent sanasini ishlatishini
+  // tekshiramiz. ---
+  const wellnessUser = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${wellnessUser}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+
+  const expectedToday = tashkentDateStr();
+
+  const afterFirstGlass = await addWater(wellnessUser, 250);
+  assert(afterFirstGlass.waterMl === 250, "addWater: birinchi qo'shishdan keyin 250ml");
+  assert(afterFirstGlass.date === expectedToday, "addWater: `date` haqiqiy Toshkent sanasiga teng (server UTC'ga emas)");
+
+  const afterSecondGlass = await addWater(wellnessUser, 300);
+  assert(afterSecondGlass.waterMl === 550, "addWater: ikkinchi marta qo'shilganda JAMI to'g'ri yig'iladi (250+300=550)");
+
+  const afterUndo = await addWater(wellnessUser, -1000);
+  assert(afterUndo.waterMl === 0, "addWater: manfiy delta (bekor qilish) 0 dan pastga tushmaydi (GREATEST floor)");
+
+  const afterCal1 = await addCalories(wellnessUser, 200);
+  const afterCal2 = await addCalories(wellnessUser, 150);
+  assert(afterCal2.calories === 350, "addCalories: bir necha marta qo'shilganda jami to'g'ri yig'iladi (200+150=350)");
+  assert(afterCal1.waterMl === 0 && afterCal2.waterMl === 0, "addCalories: suv qiymatiga ta'sir qilmaydi (mustaqil ustunlar)");
+
+  const wellnessSnapshot = await getWellnessToday(wellnessUser);
+  assert(
+    wellnessSnapshot.waterMl === 0 && wellnessSnapshot.calories === 350,
+    "getWellnessToday: addWater/addCalories orqali yig'ilgan qiymatlarni to'g'ri qaytaradi"
+  );
+
+  const kicksAfter1 = await incrementKicks(wellnessUser);
+  const kicksAfter2 = await incrementKicks(wellnessUser);
+  assert(kicksAfter1 === 1 && kicksAfter2 === 2, "incrementKicks: ketma-ket chaqiruvlar 1, 2 qaytaradi (jami to'g'ri yig'iladi)");
+  assert((await getKicksToday(wellnessUser)) === 2, "getKicksToday: incrementKicks bilan bir xil jamini ko'radi");
+
+  assert(!(await hasLoggedToday(wellnessUser)), "hasLoggedToday: hali cycle_log yo'q bo'lsa false");
+  await upsertCycleLog(wellnessUser, { date: expectedToday, flow: "medium", mood: null, symptoms: [] });
+  assert(await hasLoggedToday(wellnessUser), "hasLoggedToday: bugungi (Toshkent) sanada yozuv bo'lsa true");
+
+  const chatUsage1 = await incrementDailyChatUsage(wellnessUser);
+  const chatUsage2 = await incrementDailyChatUsage(wellnessUser);
+  assert(chatUsage1 === 1 && chatUsage2 === 2, "incrementDailyChatUsage: ketma-ket chaqiruvlar 1, 2 qaytaradi");
+  await decrementDailyChatUsage(wellnessUser);
+  const [{ message_count: chatUsageAfterDecrement }] = (await sql`
+    SELECT message_count FROM chat_daily_usage WHERE user_id = ${wellnessUser} AND usage_date = ${expectedToday}
+  `) as unknown as { message_count: number }[];
+  assert(
+    chatUsageAfterDecrement === 1,
+    "DATA-ACCURACY-02: decrementDailyChatUsage muvaffaqiyatsiz AI urinishidan keyin hisoblagichni to'g'ri qaytaradi (2->1)"
+  );
+
+  await sql`DELETE FROM cycle_logs WHERE user_id = ${wellnessUser}`;
+  await sql`DELETE FROM wellness_logs WHERE user_id = ${wellnessUser}`;
+  await sql`DELETE FROM pregnancy_kicks WHERE user_id = ${wellnessUser}`;
+  await sql`DELETE FROM chat_daily_usage WHERE user_id = ${wellnessUser}`;
+  await sql`DELETE FROM users WHERE id = ${wellnessUser}`;
 
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {
