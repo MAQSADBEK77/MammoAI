@@ -102,10 +102,13 @@ export default function ProfilePage() {
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
 
   useEffect(() => {
-    api.cycle.get().then((res) => {
-      setLogsCount(res.logs.length);
-      setCycleSettings(res.settings);
-    });
+    api.cycle
+      .get()
+      .then((res) => {
+        setLogsCount(res.logs.length);
+        setCycleSettings(res.settings);
+      })
+      .catch(() => {}); // OVERNIGHT-10: pastda `logsCount ?? "—"` — muvaffaqiyatsizlikda soxta "0" o'rniga ochiq "noma'lum" holati ko'rsatiladi
   }, []);
 
   useEffect(() => {
@@ -362,7 +365,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2 rounded-2xl bg-white/15 px-3.5 py-3">
             <NotebookPen sx={{ fontSize: 18 }} className="text-white" />
             <div>
-              <p className="text-sm font-extrabold text-white">{logsCount ?? 0}</p>
+              <p className="text-sm font-extrabold text-white">{logsCount ?? "—"}</p>
               <p className="text-[11px] text-white/75">{dict.profile.statsLogsLabel}</p>
             </div>
           </div>
