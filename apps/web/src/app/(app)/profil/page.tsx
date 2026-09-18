@@ -587,7 +587,11 @@ export default function ProfilePage() {
       {/* COMM-001: jamiyatda bloklangan hisoblarni boshqarish. */}
       <button type="button" onClick={openBlockedList} className="w-full text-left">
         <Card interactive className="space-y-1">
-          <SettingsRow icon="🚫" label={dict.community.blockedUsersTitle} last>
+          {/* OVERNIGHT-05: 🚫'ning mahalliy Twemoji SVG fayli yo'q edi
+              (87 fayllik to'plamda mavjud emas) — "buzuq rasm" belgisi
+              ko'rinardi. 🔒 mavjud to'plamda bor va ma'no jihatidan ham
+              mos ("bloklangan" = kirish taqiqlangan). */}
+          <SettingsRow icon="🔒" label={dict.community.blockedUsersTitle} last>
             <span className="text-text-muted">›</span>
           </SettingsRow>
         </Card>

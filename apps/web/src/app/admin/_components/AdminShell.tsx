@@ -10,12 +10,15 @@ import { Emoji } from "@/components/Emoji";
 
 const NAV_ITEMS: { href: string; label: string; icon: string; exact?: boolean }[] = [
   { href: "/admin", label: "Boshqaruv paneli", icon: "📊", exact: true },
-  { href: "/admin/traction", label: "Traction", icon: "🚀" },
-  { href: "/admin/subscriptions", label: "Obuna", icon: "💎" },
+  // OVERNIGHT-05: 🚀/💎/🤖'ning mahalliy Twemoji SVG fayli yo'q edi (87
+  // fayllik to'plamda emas) — "buzuq rasm" belgisi ko'rinardi. Mavjud
+  // to'plamdan almashtirildi (⭐/🔥/📱).
+  { href: "/admin/traction", label: "Traction", icon: "⭐" },
+  { href: "/admin/subscriptions", label: "Obuna", icon: "🔥" },
   { href: "/admin/users", label: "Foydalanuvchilar", icon: "👥" },
   { href: "/admin/analytics", label: "Analitika", icon: "📈" },
   { href: "/admin/community", label: "Hamjamiyat", icon: "💬" },
-  { href: "/admin/telegram-bot", label: "Telegram bot", icon: "🤖" },
+  { href: "/admin/telegram-bot", label: "Telegram bot", icon: "📱" },
   { href: "/admin/ai-settings", label: "AI Yordamchi", icon: "✨" },
   { href: "/admin/yandex-metrika", label: "Yandex Metrika", icon: "🌐" },
   { href: "/admin/feedback", label: "Fikr-mulohazalar", icon: "💬" },

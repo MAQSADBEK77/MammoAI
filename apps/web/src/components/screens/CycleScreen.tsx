@@ -408,7 +408,8 @@ export function CycleScreen() {
         // "tartibsiz sikl" ogohlantirishi ham ko'rsatilmaydi (bu yerda
         // tartibsizlik KUTILGAN holat, xavotir belgisi emas).
         <Card className="animate-fade-in-up flex flex-col items-center gap-2 py-8 text-center">
-          <Emoji e="🌇" size={36} />
+          {/* OVERNIGHT-05: 🌇'ning mahalliy Twemoji SVG fayli yo'q edi. */}
+          <Emoji e="🌸" size={36} />
           <p className="text-lg font-bold text-text-primary">{dict.cycle.perimenopauseCardTitle}</p>
           <p className="max-w-sm text-sm text-text-secondary">{dict.cycle.perimenopauseCardBody}</p>
         </Card>

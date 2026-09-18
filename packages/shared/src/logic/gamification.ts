@@ -34,12 +34,19 @@ export interface BadgeDefinition {
   threshold: number;
 }
 
+// OVERNIGHT-05: 💯/🏆/👑'ning mahalliy Twemoji SVG fayli YO'Q edi (87 ta
+// fayllik to'plamda faqat 87 ta belgi bor — bu uchtasi ichida emas), shuning
+// uchun bu 3 ta nishonni qo'lga kiritgan HAR BIR foydalanuvchi "buzuq rasm"
+// belgisini ko'rardi (Emoji.tsx'da fallback yo'q — oddiy <img>). Ilgari xuddi
+// shu sinf muammo (nutrition/self_care) ham xuddi shunday — MAVJUD to'plamdan
+// almashtirib tuzatilgan edi, bu safar ham shu naqsh: ⭐/✨/❤️ — uchalasi ham
+// to'plamda bor, va mavjud 🌱(first_log)/🔥(week_streak) bilan to'qnashmaydi.
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: "first_log", icon: "🌱", metric: "totalLogsCount", threshold: 1 },
   { id: "week_streak", icon: "🔥", metric: "longestStreakDays", threshold: 7 },
-  { id: "hundred_logs", icon: "💯", metric: "totalLogsCount", threshold: 100 },
-  { id: "month_streak", icon: "🏆", metric: "longestStreakDays", threshold: 30 },
-  { id: "loyal_90", icon: "👑", metric: "longestStreakDays", threshold: 90 },
+  { id: "hundred_logs", icon: "⭐", metric: "totalLogsCount", threshold: 100 },
+  { id: "month_streak", icon: "✨", metric: "longestStreakDays", threshold: 30 },
+  { id: "loyal_90", icon: "❤️", metric: "longestStreakDays", threshold: 90 },
 ];
 
 /**

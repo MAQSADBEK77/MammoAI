@@ -164,12 +164,15 @@ function YandexMetrikaSection() {
         <>
           <p className="-mt-2 text-xs text-text-muted">Yangilangan: {formatCachedAt(data.cachedAt)}</p>
 
+          {/* OVERNIGHT-05: 🧭/🙋/📄/⏱️'ning mahalliy Twemoji SVG fayli yo'q
+              edi — "buzuq rasm" belgisi ko'rinardi. Mavjud to'plamdan
+              almashtirildi. */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-            <StatCard icon="🧭" label="Tashriflar" value={data.totals.visits} hint={`So'nggi ${days} kun`} />
-            <StatCard icon="🙋" label="Foydalanuvchilar" value={data.totals.users} />
-            <StatCard icon="📄" label="Sahifa ko'rishlar" value={data.totals.pageviews} />
+            <StatCard icon="📊" label="Tashriflar" value={data.totals.visits} hint={`So'nggi ${days} kun`} />
+            <StatCard icon="👥" label="Foydalanuvchilar" value={data.totals.users} />
+            <StatCard icon="📖" label="Sahifa ko'rishlar" value={data.totals.pageviews} />
             <StatCard icon="🚪" label="Sakrash darajasi" value={`${data.totals.bounceRatePct}%`} />
-            <StatCard icon="⏱️" label="O'rtacha davomiylik" value={formatDuration(data.totals.avgVisitDurationSec * 1000)} />
+            <StatCard icon="📅" label="O'rtacha davomiylik" value={formatDuration(data.totals.avgVisitDurationSec * 1000)} />
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -351,10 +354,10 @@ export default function AdminAnalyticsPage() {
       {summary && (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-            <StatCard icon="🧭" label="Jami seanslar" value={summary.totals.sessions} hint={`So'nggi ${days} kun`} />
-            <StatCard icon="📄" label="Sahifa ko'rishlar" value={summary.totals.pageviews} />
-            <StatCard icon="👆" label="Tugma bosishlar" value={summary.totals.clicks} />
-            <StatCard icon="⏱️" label="O'rtacha seans davomiyligi" value={formatDuration(summary.totals.avgSessionDurationMs)} />
+            <StatCard icon="📊" label="Jami seanslar" value={summary.totals.sessions} hint={`So'nggi ${days} kun`} />
+            <StatCard icon="📖" label="Sahifa ko'rishlar" value={summary.totals.pageviews} />
+            <StatCard icon="📱" label="Tugma bosishlar" value={summary.totals.clicks} />
+            <StatCard icon="📅" label="O'rtacha seans davomiyligi" value={formatDuration(summary.totals.avgSessionDurationMs)} />
             {/* Yandex Metrica/Google Analytics'dagi klassik "bounce rate" —
                 bitta sahifa ko'rib, hech narsa bosmasdan ketganlar foizi. */}
             <StatCard icon="🚪" label="Tashlab ketish (bounce rate)" value={`${summary.bounceRatePct}%`} hint="1 sahifa, 0 bosish" />

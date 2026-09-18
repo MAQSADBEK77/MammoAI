@@ -123,7 +123,8 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
         </div>
       ) : (
         <Button variant="secondary" onClick={pickFile} className="gap-2">
-          <Emoji e="📷" size={16} />
+          {/* OVERNIGHT-05: 📷'ning mahalliy Twemoji SVG fayli yo'q edi. */}
+          <Emoji e="🖼️" size={16} />
           {dict.pregnancy.albumAddButton}
         </Button>
       )}

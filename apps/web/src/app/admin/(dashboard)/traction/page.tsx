@@ -127,7 +127,7 @@ export default function AdminTractionPage() {
         <>
           {/* ACQUISITION */}
           <div className="flex flex-col gap-3">
-            <SectionHeader icon="📣" title="Acquisition (jalb qilish)" subtitle={`So'nggi ${data.periodDays} kun`} />
+            <SectionHeader icon="👥" title="Acquisition (jalb qilish)" subtitle={`So'nggi ${data.periodDays} kun`} />
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
               <StatCard
                 icon="📱"
@@ -136,10 +136,10 @@ export default function AdminTractionPage() {
                 hint={data.acquisition.qrScansTotal === 0 ? "Bugundan boshlab yig'ilmoqda" : undefined}
               />
               <StatCard icon="🌐" label="Sayt tashrifchilari" value={data.acquisition.websiteVisitors} />
-              <StatCard icon="✈️" label="Telegram /start" value={data.acquisition.telegramStarts} />
+              <StatCard icon="💬" label="Telegram /start" value={data.acquisition.telegramStarts} />
               <StatCard icon="✅" label="Ro'yxatdan o'tishlar" value={data.acquisition.registrations} />
               <StatCard
-                icon="🔁"
+                icon="📈"
                 label="Konversiya (start→ro'yxat)"
                 value={pctLabel(data.acquisition.conversionRate)}
                 hint="Telegram bot orqali tasdiqlash majburiy bo'lgani uchun"
@@ -196,7 +196,7 @@ export default function AdminTractionPage() {
               <StatCard icon="☀️" label="DAU" value={data.engagement.dau} />
               <StatCard icon="📅" label="WAU" value={data.engagement.wau} />
               <StatCard icon="🗓️" label="MAU" value={data.engagement.mau} />
-              <StatCard icon="🧭" label="Seans/foydalanuvchi" value={data.engagement.sessionsPerActiveUser} hint="30 kunlik" />
+              <StatCard icon="📊" label="Seans/foydalanuvchi" value={data.engagement.sessionsPerActiveUser} hint="30 kunlik" />
               <StatCard icon="🩸" label="Simptom/foydalanuvchi" value={data.engagement.symptomsLoggedPerUser} hint="Jami" />
               <StatCard icon="💬" label="Xabar/foydalanuvchi" value={data.engagement.chatMessagesPerUser} hint="Jami" />
             </div>
@@ -204,7 +204,7 @@ export default function AdminTractionPage() {
 
           {/* RETENTION */}
           <div className="flex flex-col gap-3">
-            <SectionHeader icon="🔄" title="Retention (qaytish)" subtitle="Ro'yxatdan o'tgan kundan aynan N kun keyin qaytganlar foizi" />
+            <SectionHeader icon="✅" title="Retention (qaytish)" subtitle="Ro'yxatdan o'tgan kundan aynan N kun keyin qaytganlar foizi" />
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: "Day 1", pct: data.retention.d1, cohort: data.retention.d1CohortSize },
@@ -222,7 +222,7 @@ export default function AdminTractionPage() {
 
           {/* PRODUCT */}
           <div className="flex flex-col gap-3">
-            <SectionHeader icon="🧩" title="Product" subtitle={`So'nggi ${data.periodDays} kun`} />
+            <SectionHeader icon="🔍" title="Product" subtitle={`So'nggi ${data.periodDays} kun`} />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <Card>
                 <h3 className="mb-3 text-sm font-bold text-text-primary">Eng ko&apos;p ishlatilgan bo&apos;limlar</h3>
@@ -295,9 +295,9 @@ export default function AdminTractionPage() {
 
           {/* QUALITY / BUGS */}
           <div className="flex flex-col gap-3">
-            <SectionHeader icon="🐞" title="Shikoyatlar" subtitle="Fikr-mulohazalar bo'limidagi 👎 va matnli izohlar" />
+            <SectionHeader icon="🤕" title="Shikoyatlar" subtitle="Fikr-mulohazalar bo'limidagi 👎 va matnli izohlar" />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <StatCard icon="👎" label="Manfiy baho" value={data.quality.complaintsCount} hint={`So'nggi ${data.periodDays} kun`} />
+              <StatCard icon="😔" label="Manfiy baho" value={data.quality.complaintsCount} hint={`So'nggi ${data.periodDays} kun`} />
               <Card className="lg:col-span-2">
                 <h3 className="mb-3 text-sm font-bold text-text-primary">So&apos;nggi izohlar</h3>
                 <div className="flex flex-col gap-2">
@@ -320,17 +320,17 @@ export default function AdminTractionPage() {
               subtitle="QR manba nomi bo'yicha — maktab-/universitet-/klinika- prefiksi bilan belgilang"
             />
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-              <StatCard icon="🏫" label="Maktab" value={data.growth.school} />
-              <StatCard icon="🎓" label="Universitet" value={data.growth.university} />
+              <StatCard icon="📖" label="Maktab" value={data.growth.school} />
+              <StatCard icon="📝" label="Universitet" value={data.growth.university} />
               <StatCard icon="🏥" label="Klinika" value={data.growth.clinic} />
               <StatCard icon="🌿" label="Organik" value={data.growth.organic} hint="QR-belgisiz to'g'ridan-to'g'ri" />
-              <StatCard icon="🔗" label="Referral" value="—" hint="Hali kuzatilmayapti" />
+              <StatCard icon="📍" label="Referral" value="—" hint="Hali kuzatilmayapti" />
             </div>
           </div>
 
           {/* REVENUE */}
           <div className="flex flex-col gap-3">
-            <SectionHeader icon="💰" title="Revenue" subtitle="Kelajakda" />
+            <SectionHeader icon="⚙️" title="Revenue" subtitle="Kelajakda" />
             <Card className="bg-surface-muted text-sm text-text-secondary">
               Pullik reja hali yo&apos;q — Premium konversiya / ARPU / CAC / LTV monetizatsiya qo&apos;shilgach shu yerda paydo bo&apos;ladi.
             </Card>

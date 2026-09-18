@@ -70,7 +70,8 @@ export function WellnessCard() {
 
       <div className="space-y-2 border-t border-border pt-3">
         <span className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
-          <Emoji e="🍽️" size={18} />
+          {/* OVERNIGHT-05: 🍽️'ning mahalliy Twemoji SVG fayli yo'q edi. */}
+          <Emoji e="🥑" size={18} />
           {dict.wellness.caloriesLabel}
           <span className="ml-auto text-sm font-normal text-text-secondary">{dict.wellness.caloriesUnit(data.today.calories)}</span>
         </span>
