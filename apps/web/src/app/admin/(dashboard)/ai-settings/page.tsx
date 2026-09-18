@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { adminApi, type AiProvider, type AiSettings } from "@/lib/admin-api";
-import { Card, Button, Badge } from "@/components/ui";
+import { Card, Button, Badge, ErrorState } from "@/components/ui";
 import clsx from "clsx";
 
 function inputClass() {
@@ -21,6 +21,15 @@ const HUAWEI_DAILY_REFERENCE = 10_000_000;
 
 export default function AdminAiSettingsPage() {
   const [settings, setSettings] = useState<AiSettings | null>(null);
+  // OVERNIGHT-02: bu ilgari BITTA `error` holati bilan ham boshlang'ich
+  // yuklash, ham saqlash-amali xatosini bildirardi — pastdagi `if (!settings)`
+  // tekshiruvi har doim BIRINCHI ishga tushgani uchun, yuklash muvaffaqiyatsiz
+  // bo'lsa ham `error` matni HECH QACHON ko'rinmasdi ("Yuklanmoqda…" abadiy
+  // qolib ketardi) — UX-00 seriyasida butun ilova bo'ylab tuzatilgan xato
+  // sinfi, bu (bugungi kechqurun qo'shilgan) sahifada hali bor edi. Endi
+  // ikkitasi mustaqil (`loadError` vs `error`), UX-04-Admin'dagi
+  // ReportsQueue bilan bir xil naqsh.
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -30,7 +39,8 @@ export default function AdminAiSettingsPage() {
   const [huaweiModelInput, setHuaweiModelInput] = useState("");
   const [saving, setSaving] = useState(false);
 
-  function load() {
+  const load = useCallback(() => {
+    setLoadError(null);
     adminApi.aiSettings
       .get()
       .then((res) => {
@@ -38,13 +48,13 @@ export default function AdminAiSettingsPage() {
         setProvider(res.provider);
         setHuaweiModelInput(res.huaweiModel);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"));
-  }
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Yuklashda xatolik"));
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(load, 0);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [load]);
 
   async function saveProvider(next: AiProvider) {
     setSaving(true);
@@ -97,6 +107,15 @@ export default function AdminAiSettingsPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-bold text-text-primary">AI Yordamchi</h1>
+        <ErrorState message={loadError} retry={{ label: "Qayta urinish", onClick: load }} />
+      </div>
+    );
   }
 
   if (!settings) {
