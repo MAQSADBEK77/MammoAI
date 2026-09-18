@@ -185,3 +185,45 @@ almashtirib xuddi shu stsenariyni qayta sinab ko'ring — agar Gemini'da
 bunday bo'lmasa, bu GLM-5.2'ga xos muammo. Real foydalanuvchi uchun
 xavfli-noaniqlik (shoshilinch payt noto'g'ri tilda javob) bo'lgani
 uchun buni ERTAGA ALBATTA hal qilish tavsiya etiladi.
+
+## Tsikl 6 — 01:20-01:40
+
+Holatni tekshirish: `npm run typecheck` + `npm run lint --workspace=apps/web`
++ `npm test --workspace=packages/shared` — barchasi toza/238/238 (davom
+etishdan oldin standart tsikl-boshlanish tekshiruvi).
+
+**OVERNIGHT-10**: Profil sahifasida (`profil/page.tsx`) tsikl
+statistikasi so'rovi (`api.cycle.get()`) hech qanday `.catch()`ga ega
+emas edi, va `{logsCount ?? 0}` ko'rsatilishi so'rov muvaffaqiyatsiz
+bo'lganda foydalanuvchiga soxta "0 ta yozuv" deb ko'rsatardi — DATA-
+ACCURACY topshirig'ining "hech qachon noto'g'ri-to'g'ri ko'ringan
+raqam ko'rsatma" tamoyiliga zid. Tuzatildi: `.catch(() => {})` +
+`{logsCount ?? "—"}`.
+
+**OVERNIGHT-11**: OVERNIGHT-08/09'dan keyin ham qolgan ikkita admin
+sahifada (Yandex Metrika, Telegram bot) xuddi shu "abadiy Yuklanmoqda"
+xato sinfi topildi — `error` holati saqlash-amali uchun to'g'ri
+ishlatilardi, lekin boshlang'ich yuklash xatosi hech qachon
+ko'rsatilmasdi (tekshiruv tartibi noto'g'ri). Traction/Analitika/
+Hamjamiyat sahifalarini ham qayta ko'rib chiqdim — ularda tekshiruv
+tartibi allaqachon to'g'ri yoki xavfsiz naqshdan foydalaniladi,
+o'zgartirish kerak emas edi. Tirik tekshirildi (Playwright, admin
+sifatida kirib, ikkala sahifaning GET so'rovini qasddan 500 bilan
+almashtirib) — ikkalasida ham endi "Qayta urinish" to'g'ri ko'rindi.
+
+npm run typecheck/lint — toza. npm test --workspace=packages/shared —
+238/238.
+
+**⚠️ Deploy anomaliyasi**: OVERNIGHT-08/09'ni joylashtirish uchun
+boshlangan `vercel --prod` deploy (`mammoai-fv5akezss...`) 16+ daqiqa
+"Initializing" holatida qotib qoldi (build davomiyligi doim "?" —
+odatiy deploylar 25-45 soniyada tugaydi). **Foydalanuvchiga ta'sir
+YO'Q** — production alias (`mammo.uz`) butun vaqt davomida oldingi
+"Ready" deploy'ga (`mammoai-qon57k7q7...`) bog'langancha qoldi. Bu
+qotib qolgan deploy'ni bekor qilmadim (buzilmagan, faqat foydasiz) —
+shunchaki OVERNIGHT-10/11 bilan birga YANGI `vercel --prod` deployni
+boshladim, natijasi keyingi tsiklda tasdiqlanadi. Ertalab: agar
+`mammoai-fv5akezss...` hali ham "Initializing" bo'lsa, Vercel
+dashboard'da qo'lda bekor qilish xavfsiz (production'ga ta'siri yo'q).
+
+Battareya: 61% → ~60%.
