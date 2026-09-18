@@ -9,10 +9,10 @@
 // sabab bugungi kundan boshlab yig'iladi, tarixiy ma'lumot yo'q; shunday
 // holatlarda "hali yetarli ma'lumot yo'q" ko'rsatiladi, 0 emas.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "@/lib/admin-api";
 import type { TractionSummary } from "@mammoai/shared";
-import { Card } from "@/components/ui";
+import { Card, ErrorState } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 
 const DAY_OPTIONS = [7, 14, 30, 90];
@@ -75,7 +75,9 @@ export default function AdminTractionPage() {
   const [data, setData] = useState<TractionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // UX-04: ilgari "qayta urinish" tugmasi yo'q edi — faqat xato-banner.
+  const load = useCallback(() => {
+    setError(null);
     adminApi.traction
       .get(days)
       .then((res) => {
@@ -84,6 +86,11 @@ export default function AdminTractionPage() {
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"));
   }, [days]);
+
+  useEffect(() => {
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -110,8 +117,11 @@ export default function AdminTractionPage() {
         </div>
       </div>
 
-      {error && <Card className="border border-danger/20 bg-danger/5 text-sm font-medium text-danger">{error}</Card>}
-      {!data && !error && <Card className="py-10 text-center text-sm text-text-muted">Yuklanmoqda…</Card>}
+      {error ? (
+        <ErrorState message={error} retry={{ label: "Qayta urinish", onClick: load }} />
+      ) : (
+        !data && <Card className="py-10 text-center text-sm text-text-muted">Yuklanmoqda…</Card>
+      )}
 
       {data && (
         <>

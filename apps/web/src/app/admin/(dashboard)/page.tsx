@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { adminApi, type AdminStats } from "@/lib/admin-api";
-import { Card, LoadingSpinner } from "@/components/ui";
+import { Card, LoadingSpinner, ErrorState } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { SignupsChart } from "./_components/SignupsChart";
 
@@ -52,20 +52,23 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // UX-04: ilgari "qayta urinish" imkoni yo'q edi — statistikani yuklab
+  // bo'lmasa, faqat butun sahifani qo'lda yangilash (F5) yordam berardi.
+  const load = useCallback(() => {
+    setError(null);
     adminApi
       .stats()
       .then(setStats)
       .catch((err) => setError(err instanceof Error ? err.message : "Statistikani olishda xatolik"));
   }, []);
 
+  useEffect(() => {
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
+
   if (error) {
-    return (
-      <Card className="border border-danger/20 bg-danger/5 text-danger">
-        <p className="font-semibold">Statistikani yuklab bo&apos;lmadi</p>
-        <p className="mt-1 text-sm">{error}</p>
-      </Card>
-    );
+    return <ErrorState message={error} retry={{ label: "Qayta urinish", onClick: load }} />;
   }
 
   if (!stats) {

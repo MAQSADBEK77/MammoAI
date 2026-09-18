@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CommunityReportAdmin, CommunityReportReason, CommunityTag } from "@mammoai/shared";
 import { adminApi, type AdminCommunityComment, type AdminCommunityPost } from "@/lib/admin-api";
-import { Card, Badge, Button } from "@/components/ui";
+import { Card, Badge, Button, ErrorState } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 
 const PAGE_SIZE = 20;
@@ -22,16 +22,25 @@ function ReportsQueue({ onContentDeleted }: { onContentDeleted: () => void }) {
   const [reports, setReports] = useState<CommunityReportAdmin[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // UX-04: HAQIQIY BUG — ilgari boshlang'ich yuklash muvaffaqiyatsiz bo'lsa,
+  // `error` o'rnatilardi-yu, lekin `reports` HECH QACHON to'lmagani uchun
+  // `if (!reports) return <Card>Yuklanmoqda…</Card>` bloki ustunlik qilib,
+  // xato hech qachon ko'rsatilmasdi — ekran ABADIY "yuklanmoqda" holatida
+  // qolib ketardi (bu — pastdagi harakat-xatolari uchun ishlatiladigan
+  // `error`dan ALOHIDA holat).
+  const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(() => {
+    setLoadError(false);
     adminApi.community.reports
       .list()
       .then((res) => setReports(res.reports))
-      .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"));
+      .catch(() => setLoadError(true));
   }, []);
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
   }, [load]);
 
   async function resolve(id: string, status: "resolved" | "dismissed") {
@@ -66,6 +75,7 @@ function ReportsQueue({ onContentDeleted }: { onContentDeleted: () => void }) {
     }
   }
 
+  if (loadError) return <ErrorState message="Yuklashda xatolik" retry={{ label: "Qayta urinish", onClick: load }} />;
   if (!reports) return <Card className="py-10 text-center text-sm text-text-muted">Yuklanmoqda…</Card>;
   if (reports.length === 0) return <Card className="py-10 text-center text-sm text-text-muted">Ochiq shikoyat yo&apos;q 🎉</Card>;
 

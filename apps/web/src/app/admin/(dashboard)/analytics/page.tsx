@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { adminApi, type YandexMetrikaDashboardResponse } from "@/lib/admin-api";
 import type { AnalyticsSummary, AnalyticsUserSummary } from "@mammoai/shared";
-import { Card, Button } from "@/components/ui";
+import { Card, Button, ErrorState } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { SignupsChart } from "../_components/SignupsChart";
 
@@ -248,7 +248,9 @@ export default function AdminAnalyticsPage() {
   const [usersLoading, setUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // UX-04: ilgari "qayta urinish" tugmasi yo'q edi — faqat xato-banner.
+  const loadSummary = useCallback(() => {
+    setSummaryError(null);
     adminApi.analytics
       .summary(days)
       .then((res) => {
@@ -257,6 +259,11 @@ export default function AdminAnalyticsPage() {
       })
       .catch((err) => setSummaryError(err instanceof Error ? err.message : "Yuklashda xatolik"));
   }, [days]);
+
+  useEffect(() => {
+    const timeout = setTimeout(loadSummary, 0);
+    return () => clearTimeout(timeout);
+  }, [loadSummary]);
 
   // FIX2-03: tez ketma-ket kiritilgan qidiruv so'rovlari orasida tartib
   // kafolati yo'q edi — eskisi keyinroq qaytsa, yangi natijani bosib
@@ -335,9 +342,11 @@ export default function AdminAnalyticsPage() {
         </div>
       </div>
 
-      {summaryError && <Card className="border border-danger/20 bg-danger/5 text-sm font-medium text-danger">{summaryError}</Card>}
-
-      {!summary && !summaryError && <Card className="py-10 text-center text-sm text-text-muted">Yuklanmoqda…</Card>}
+      {summaryError ? (
+        <ErrorState message={summaryError} retry={{ label: "Qayta urinish", onClick: loadSummary }} />
+      ) : (
+        !summary && <Card className="py-10 text-center text-sm text-text-muted">Yuklanmoqda…</Card>
+      )}
 
       {summary && (
         <>
