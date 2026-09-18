@@ -77,6 +77,12 @@ export interface AiSettings {
   maskedKey: string | null;
 }
 
+export interface YandexMetrikaSettings {
+  hasToken: boolean;
+  maskedToken: string | null;
+  counterId: string | null;
+}
+
 export interface AdminStats {
   totalUsers: number;
   newUsersToday: number;
@@ -246,6 +252,12 @@ export const adminApi = {
   aiSettings: {
     get: () => request<AiSettings>("/ai-settings"),
     update: (patch: { apiKey: string }) => request<{ ok: true }>("/ai-settings", { method: "PATCH", body: JSON.stringify(patch) }),
+  },
+  yandexMetrika: {
+    get: () => request<YandexMetrikaSettings>("/yandex-metrika"),
+    update: (patch: { token?: string; counterId?: string }) =>
+      request<{ ok: true }>("/yandex-metrika", { method: "PATCH", body: JSON.stringify(patch) }),
+    test: () => request<{ ok: true; message: string }>("/yandex-metrika/test", { method: "POST" }),
   },
   feedback: {
     list: (params: { limit?: number; offset?: number }) => {

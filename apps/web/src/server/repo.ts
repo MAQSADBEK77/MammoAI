@@ -248,6 +248,20 @@ export async function setSetting(key: string, value: string): Promise<void> {
   `;
 }
 
+/** `getSetting` + qachon yozilgani — YANDEX-METRIKA-03: shu `updated_at`ni
+ * TTL (eskirish) hisoblash uchun ishlatib, `app_settings`ning o'zi umumiy
+ * kesh sifatida qayta ishlatiladi (alohida kesh jadvali qurilmaydi). */
+export async function getSettingWithUpdatedAt(key: string): Promise<{ value: string; updatedAt: string } | null> {
+  await ensureSchema();
+  const rows = (await sql`SELECT value, updated_at FROM app_settings WHERE key = ${key}`) as unknown as {
+    value: string | null;
+    updated_at: string;
+  }[];
+  const row = rows[0];
+  if (!row || row.value === null) return null;
+  return { value: row.value, updatedAt: row.updated_at };
+}
+
 // ---------------------------------------------------------------------------
 // Telefon raqamni Telegram bot orqali tasdiqlash — foydalanuvchi telefon
 // kiritgach vaqtinchalik yozuv yaratiladi (token), botga "Start" bosilgach

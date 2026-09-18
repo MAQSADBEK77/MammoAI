@@ -17,6 +17,7 @@ const NAV_ITEMS: { href: string; label: string; icon: string; exact?: boolean }[
   { href: "/admin/community", label: "Hamjamiyat", icon: "💬" },
   { href: "/admin/telegram-bot", label: "Telegram bot", icon: "🤖" },
   { href: "/admin/ai-settings", label: "AI Yordamchi", icon: "✨" },
+  { href: "/admin/yandex-metrika", label: "Yandex Metrika", icon: "🌐" },
   { href: "/admin/feedback", label: "Fikr-mulohazalar", icon: "💬" },
   { href: "/admin/clinics", label: "Klinikalar", icon: "🏥" },
   { href: "/admin/articles", label: "Maqolalar", icon: "📰" },
