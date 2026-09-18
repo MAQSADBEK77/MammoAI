@@ -222,8 +222,26 @@ YO'Q** — production alias (`mammo.uz`) butun vaqt davomida oldingi
 "Ready" deploy'ga (`mammoai-qon57k7q7...`) bog'langancha qoldi. Bu
 qotib qolgan deploy'ni bekor qilmadim (buzilmagan, faqat foydasiz) —
 shunchaki OVERNIGHT-10/11 bilan birga YANGI `vercel --prod` deployni
-boshladim, natijasi keyingi tsiklda tasdiqlanadi. Ertalab: agar
-`mammoai-fv5akezss...` hali ham "Initializing" bo'lsa, Vercel
-dashboard'da qo'lda bekor qilish xavfsiz (production'ga ta'siri yo'q).
+boshladim (`mammoai-8srcqemo8...`) — LEKIN bu IKKINCHI deploy ham
+AYNAN BIR XIL tarzda 6+ daqiqa "Initializing"da qotib qoldi (build
+davomiyligi yana doim "?"). Ikkita mutlaqo mustaqil deploy urinishi
+bir xil tarzda qotishi kodga emas, balki Vercel platformasining
+o'zida BUGUNGI KECHA vaqtinchalik muammo borligini ko'rsatadi — shuning
+uchun uchinchi marta qayta urinib vaqt/battareya sarflamadim.
 
-Battareya: 61% → ~60%.
+**Foydalanuvchiga ta'sir HALI HAM YO'Q** — `mammo.uz` production alias
+butun vaqt davomida oldingi "Ready" deploy'ga (`mammoai-qon57k7q7...`,
+OVERNIGHT-07'gacha bo'lgan kodni o'z ichiga oladi) bog'langancha
+qoldi — foydalanuvchilar hech narsani sezmaydi, faqat OVERNIGHT-08
+dan 11'gacha bo'lgan tuzatishlar hali production'da JONLI EMAS
+(GitHub'da va CI'da esa ha — barcha commit push qilingan, CI yashil).
+
+**ERTALABGA QOLDI**: `mammoai-fv5akezss...` va `mammoai-8srcqemo8...`
+ikkalasi ham Vercel dashboard'da "Initializing"da qotgan bo'lishi
+mumkin — ikkalasini ham qo'lda bekor qilish/tozalash xavfsiz
+(production'ga ta'siri yo'q). Keyin bitta yangi `vercel --prod`
+qo'lda ishga tushirilsa, OVERNIGHT-08 dan hozirgача bo'lgan barcha
+tuzatishlar (10 tadan ortiq kichik commit) bir yo'la production'ga
+chiqadi.
+
+Battareya: 61% → 60%.
