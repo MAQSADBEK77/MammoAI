@@ -9,6 +9,18 @@
 
 import { getSetting, setSetting } from "./repo";
 import { ApiError } from "./api-utils";
+import {
+  formatYandexBreakdown,
+  formatYandexDailySeries,
+  formatYandexGeography,
+  formatYandexTopPages,
+  formatYandexVisitsTotals,
+  type YandexBreakdownItem,
+  type YandexDailyPoint,
+  type YandexGeoItem,
+  type YandexTopPage,
+  type YandexVisitsTotals,
+} from "@mammoai/shared";
 
 const SETTING_TOKEN = "yandex_metrika_oauth_token";
 const SETTING_COUNTER_ID = "yandex_metrika_counter_id";
@@ -91,4 +103,92 @@ export async function testYandexMetrikaConnection(overrides?: { token?: string; 
     overrides
   );
   return { visits: Math.round(res.totals?.[0] ?? 0), days };
+}
+
+// -----------------------------------------------------------------------
+// YANDEX-METRIKA-02: Reporting API'ni o'rab oluvchi funksiyalar. Xom
+// javobni tiplangan shaklga o'tkazish (parsing) `@mammoai/shared`dagi SOF
+// `formatYandex*` funksiyalariga berilgan — shu tufayli o'sha qism DB/
+// tarmoqsiz test qilingan (`yandex-metrika-format.test.ts`), bu yerda faqat
+// "qaysi metrika/dimension so'ralsin" qoladi.
+// -----------------------------------------------------------------------
+
+export interface YandexVisitsSummary {
+  totals: YandexVisitsTotals;
+  daily: YandexDailyPoint[];
+}
+
+/** Umumiy KPI'lar (tashriflar/foydalanuvchilar/sahifa ko'rishlar/bounce
+ * rate/o'rtacha davomiylik) + kunlik tashriflar-foydalanuvchilar trendi. */
+export async function getVisitsSummary(dateFrom: string, dateTo: string): Promise<YandexVisitsSummary> {
+  const metrics = "ym:s:visits,ym:s:users,ym:s:pageviews,ym:s:bounceRate,ym:s:avgVisitDurationSeconds";
+  const [totalsRes, dailyRes] = await Promise.all([
+    callYandexMetrikaApi({ date1: dateFrom, date2: dateTo, metrics }),
+    callYandexMetrikaApi({ date1: dateFrom, date2: dateTo, metrics: "ym:s:visits,ym:s:users", dimensions: "ym:s:date" }),
+  ]);
+  return {
+    totals: formatYandexVisitsTotals(totalsRes.totals ?? []),
+    daily: formatYandexDailySeries(dailyRes.data ?? []),
+  };
+}
+
+/** To'g'ridan-to'g'ri / qidiruv tizimlari / ijtimoiy tarmoqlar / referral taqsimoti. */
+export async function getTrafficSources(dateFrom: string, dateTo: string): Promise<YandexBreakdownItem[]> {
+  const res = await callYandexMetrikaApi({
+    date1: dateFrom,
+    date2: dateTo,
+    metrics: "ym:s:visits",
+    dimensions: "ym:s:lastTrafficSource",
+    sort: "-ym:s:visits",
+  });
+  return formatYandexBreakdown(res.data ?? []);
+}
+
+/** Desktop/mobil/planshet taqsimoti. */
+export async function getDeviceBreakdown(dateFrom: string, dateTo: string): Promise<YandexBreakdownItem[]> {
+  const res = await callYandexMetrikaApi({
+    date1: dateFrom,
+    date2: dateTo,
+    metrics: "ym:s:visits",
+    dimensions: "ym:s:deviceCategory",
+    sort: "-ym:s:visits",
+  });
+  return formatYandexBreakdown(res.data ?? []);
+}
+
+/** Eng ko'p ko'rilgan sahifalar (sahifa yo'li + ko'rishlar soni). */
+export async function getTopPages(dateFrom: string, dateTo: string, limit = 10): Promise<YandexTopPage[]> {
+  const res = await callYandexMetrikaApi({
+    date1: dateFrom,
+    date2: dateTo,
+    metrics: "ym:pv:pageviews",
+    dimensions: "ym:pv:URLPathFull",
+    sort: "-ym:pv:pageviews",
+    limit: String(limit),
+  });
+  return formatYandexTopPages(res.data ?? []);
+}
+
+/** Geografiya — mamlakat+shahar bo'yicha (asosan O'zbekiston shaharlari kutiladi). */
+export async function getGeography(dateFrom: string, dateTo: string, limit = 15): Promise<YandexGeoItem[]> {
+  const res = await callYandexMetrikaApi({
+    date1: dateFrom,
+    date2: dateTo,
+    metrics: "ym:s:visits",
+    dimensions: "ym:s:regionCountry,ym:s:regionCity",
+    sort: "-ym:s:visits",
+    limit: String(limit),
+  });
+  return formatYandexGeography(res.data ?? []);
+}
+
+/** Ixtiyoriy — Yandex Metrika'da Maqsad (Goal) sozlangan va uning ID'lari
+ * berilgan bo'lsagina chaqiriladi (kodga qattiq yozilmagan, hozircha admin
+ * UI'da ishlatilmaydi — Goal ID'lar sozlanmagan). */
+export async function getGoalConversions(dateFrom: string, dateTo: string, goalIds: string[]): Promise<YandexBreakdownItem[]> {
+  if (!goalIds.length) return [];
+  const metrics = goalIds.map((id) => `ym:s:goal${id}visits`).join(",");
+  const res = await callYandexMetrikaApi({ date1: dateFrom, date2: dateTo, metrics });
+  const totals = res.totals ?? [];
+  return goalIds.map((id, i) => ({ label: id, visits: Math.round(totals[i] ?? 0) }));
 }
