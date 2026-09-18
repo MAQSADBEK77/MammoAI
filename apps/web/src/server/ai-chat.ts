@@ -29,6 +29,7 @@ import {
   getPregnancyProfile,
   getSetting,
   listCycleLogs,
+  recordAiUsage,
   setSetting,
 } from "./repo";
 import { dictionaries, getPregnancyStatus } from "@mammoai/shared";
@@ -190,6 +191,9 @@ interface GeminiChatChoice {
 
 interface GeminiChatResponse {
   choices?: GeminiChatChoice[];
+  // AI-PROVIDER-02: kunlik token sarfini kuzatish uchun — ikkala provayder
+  // ham (Gemini VA Huawei MaaS) OpenAI-mos shaklda shu maydonni qaytaradi.
+  usage?: { total_tokens?: number };
 }
 
 // Gemini'ning OpenAI-mos endpointi standart OpenAI chat-completions shaklida
@@ -224,6 +228,7 @@ export async function callGemini(systemPrompt: string, history: { role: "user" |
   }
   const text = json.choices?.[0]?.message?.content;
   if (!text) throw new ApiError(502, "AI yordamchidan bo'sh javob keldi");
+  if (json.usage?.total_tokens) await recordAiUsage("gemini", json.usage.total_tokens).catch(() => {}); // hisoblash muvaffaqiyatsiz bo'lsa ham asosiy javob buzilmasin
   return text;
 }
 
@@ -259,6 +264,7 @@ export async function callHuaweiMaas(systemPrompt: string, history: { role: "use
   }
   const text = json.choices?.[0]?.message?.content;
   if (!text) throw new ApiError(502, "AI yordamchidan bo'sh javob keldi");
+  if (json.usage?.total_tokens) await recordAiUsage("huawei_maas", json.usage.total_tokens).catch(() => {});
   return text;
 }
 

@@ -14,6 +14,11 @@ const PROVIDERS: { value: AiProvider; label: string }[] = [
   { value: "huawei_maas", label: "Huawei Cloud MaaS (GLM/DeepSeek)" },
 ];
 
+// Ochiq manbalarga ko'ra (Huawei'ning o'zi API orqali aniq kvota qoldig'ini
+// berish imkoni yo'q) — GLM modellari uchun bepul reja kuniga ~10M token.
+// FAQAT taxminiy ma'lumot-nuqta, aniq holatni Huawei konsolidan tekshirish kerak.
+const HUAWEI_DAILY_REFERENCE = 10_000_000;
+
 export default function AdminAiSettingsPage() {
   const [settings, setSettings] = useState<AiSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +119,44 @@ export default function AdminAiSettingsPage() {
 
       {error && <Card className="border border-danger/20 bg-danger/5 text-sm font-medium text-danger">{error}</Card>}
       {success && <Card className="border border-success/20 bg-success/5 text-sm font-medium text-success">{success}</Card>}
+
+      <Card className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-text-primary">Bugungi foydalanish</h2>
+          <span className="text-xs text-text-muted">{PROVIDERS.find((p) => p.value === settings.provider)?.label}</span>
+        </div>
+        <p className="text-2xl font-extrabold text-text-primary">
+          {settings.usageToday.toLocaleString("ru-RU")} <span className="text-sm font-medium text-text-muted">token</span>
+        </p>
+        {settings.provider === "huawei_maas" && (
+          <>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${Math.min(100, (settings.usageToday / HUAWEI_DAILY_REFERENCE) * 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-text-muted">
+              Taxminan {Math.round((settings.usageToday / HUAWEI_DAILY_REFERENCE) * 100)}% — ochiq manbalarga ko&apos;ra Huawei MaaS bepul rejasi
+              kuniga ~10M token (GLM). Aniq raqamni Huawei konsolidan tekshiring — bu FAQAT bizning o&apos;z hisobimiz.
+            </p>
+          </>
+        )}
+        <div className="mt-1 flex items-end gap-1.5">
+          {settings.usageHistory.map((d) => {
+            const max = Math.max(1, ...settings.usageHistory.map((x) => x.totalTokens));
+            const heightPct = d.totalTokens > 0 ? Math.max((d.totalTokens / max) * 100, 4) : 0;
+            return (
+              <div key={d.day} className="flex flex-1 flex-col items-center gap-1">
+                <div className="flex h-16 w-full items-end">
+                  <div className="w-full rounded-t bg-primary/70" style={{ height: `${heightPct}%` }} />
+                </div>
+                <span className="text-[10px] text-text-muted">{d.day.slice(5)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
 
       <Card className="flex flex-col gap-4">
         <h2 className="text-base font-bold text-text-primary">Joriy provayder</h2>

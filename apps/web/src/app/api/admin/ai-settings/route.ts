@@ -12,6 +12,9 @@ import {
   setHuaweiMaasModel,
   type AiProvider,
 } from "@/server/ai-chat";
+import { getAiUsageRecent } from "@/server/repo";
+
+const USAGE_HISTORY_DAYS = 7;
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,8 +25,13 @@ export async function GET(request: NextRequest) {
       getHuaweiMaasApiKey(),
       getHuaweiMaasModel(),
     ]);
+    // AI-PROVIDER-02: joriy provayderning oxirgi N kunlik token sarfi —
+    // bizning o'z hisobimiz (provayderning haqiqiy jonli kvotasi emas).
+    const usageHistory = await getAiUsageRecent(provider, USAGE_HISTORY_DAYS);
     return NextResponse.json({
       provider,
+      usageHistory,
+      usageToday: usageHistory[usageHistory.length - 1]?.totalTokens ?? 0,
       // ORQAGA MOSLIK: eski admin UI hali ham `hasKey`/`maskedKey`ni o'qiydi —
       // bular joriy TANLANGAN provayderning kalitini ko'rsatadi.
       hasKey: provider === "huawei_maas" ? !!huaweiKey : !!geminiKey,

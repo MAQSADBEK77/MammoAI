@@ -112,6 +112,23 @@ async function initSchema() {
         updated_at TEXT NOT NULL
       )
     `,
+    // AI-PROVIDER-02: har bir AI chaqiruvining (Gemini/Huawei MaaS) o'z
+    // `usage.total_tokens`ini kuniga (Toshkent kuni bo'yicha) yig'ib boradi —
+    // bepul kvotaga qancha yaqinlashganini admin panelda ko'rsatish uchun.
+    // MUHIM: bu FAQAT bizning o'z hisobimiz (har bir muvaffaqiyatli chaqiruvdan
+    // keyin qo'shiladigan son) — provayderning HAQIQIY, JONLI kvota-qoldig'i
+    // EMAS (Huawei buni so'rash uchun ochiq API bermaydi). `users`ga bog'liq
+    // emas, shuning uchun 0-bosqichda.
+    sql`
+      CREATE TABLE IF NOT EXISTS ai_usage_daily (
+        provider TEXT NOT NULL,
+        day DATE NOT NULL,
+        total_tokens BIGINT NOT NULL DEFAULT 0,
+        request_count INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (provider, day)
+      )
+    `,
     // Telegram bot orqali telefon raqamni tasdiqlash — foydalanuvchi telefon
     // kiritgach, shu jadvalga vaqtinchalik yozuv qo'shiladi (token — Telegram
     // chuqur havolasi uchun); botga "Start" bosilgach, chat_id va tasodifiy kod

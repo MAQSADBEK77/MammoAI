@@ -276,6 +276,52 @@ export async function getSettingWithUpdatedAt(key: string): Promise<{ value: str
 }
 
 // ---------------------------------------------------------------------------
+// AI-PROVIDER-02: kunlik token sarfini kuzatish (Gemini/Huawei MaaS) — FAQAT
+// bizning o'z hisobimiz (har muvaffaqiyatli chaqiruvdan keyin qo'shiladi),
+// provayderning haqiqiy jonli kvota-qoldig'i EMAS (ochiq API yo'q).
+// ---------------------------------------------------------------------------
+
+export async function recordAiUsage(provider: string, tokens: number): Promise<void> {
+  await ensureSchema();
+  const nowStr = now();
+  await sql`
+    INSERT INTO ai_usage_daily (provider, day, total_tokens, request_count, updated_at)
+    VALUES (${provider}, (now() AT TIME ZONE 'Asia/Tashkent')::date, ${tokens}, 1, ${nowStr})
+    ON CONFLICT (provider, day) DO UPDATE SET
+      total_tokens = ai_usage_daily.total_tokens + ${tokens},
+      request_count = ai_usage_daily.request_count + 1,
+      updated_at = ${nowStr}
+  `;
+}
+
+export interface AiUsageDay {
+  day: string;
+  totalTokens: number;
+  requestCount: number;
+}
+
+/** Oxirgi `days` kun (bugungisi bilan birga) — bugun uchun yozuv umuman
+ * bo'lmasa (hali hech qanday chaqiruv bo'lmagan), 0 bilan to'ldiriladi (UI
+ * "bugun 0 token" deb aniq ko'rsatsin, kunni umuman o'tkazib yubormasin). */
+export async function getAiUsageRecent(provider: string, days: number): Promise<AiUsageDay[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT
+      d.day::text as day,
+      COALESCE(u.total_tokens, 0)::int as total_tokens,
+      COALESCE(u.request_count, 0)::int as request_count
+    FROM generate_series(
+      (now() AT TIME ZONE 'Asia/Tashkent')::date - ${days - 1},
+      (now() AT TIME ZONE 'Asia/Tashkent')::date,
+      interval '1 day'
+    ) as d(day)
+    LEFT JOIN ai_usage_daily u ON u.day = d.day AND u.provider = ${provider}
+    ORDER BY d.day ASC
+  `) as unknown as { day: string; total_tokens: number; request_count: number }[];
+  return rows.map((r) => ({ day: r.day, totalTokens: r.total_tokens, requestCount: r.request_count }));
+}
+
+// ---------------------------------------------------------------------------
 // Telefon raqamni Telegram bot orqali tasdiqlash — foydalanuvchi telefon
 // kiritgach vaqtinchalik yozuv yaratiladi (token), botga "Start" bosilgach
 // shu yozuvga chat_id + kod qo'shiladi (server/telegram-bot.ts), foydalanuvchi

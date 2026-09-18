@@ -74,6 +74,12 @@ export interface AdminFeedbackEntry {
 
 export type AiProvider = "gemini" | "huawei_maas";
 
+export interface AiUsageDay {
+  day: string;
+  totalTokens: number;
+  requestCount: number;
+}
+
 export interface AiSettings {
   provider: AiProvider;
   hasKey: boolean;
@@ -83,6 +89,8 @@ export interface AiSettings {
   hasHuaweiKey: boolean;
   maskedHuaweiKey: string | null;
   huaweiModel: string;
+  usageToday: number;
+  usageHistory: AiUsageDay[];
 }
 
 export interface YandexMetrikaSettings {
