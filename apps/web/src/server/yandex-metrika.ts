@@ -7,7 +7,7 @@
 //
 // YANDEX-METRIKA-01: sozlama saqlash + ulanishni tekshirish.
 
-import { getSetting, setSetting } from "./repo";
+import { getSetting, getSettingWithUpdatedAt, setSetting } from "./repo";
 import { ApiError } from "./api-utils";
 import {
   formatYandexBreakdown,
@@ -191,4 +191,89 @@ export async function getGoalConversions(dateFrom: string, dateTo: string, goalI
   const res = await callYandexMetrikaApi({ date1: dateFrom, date2: dateTo, metrics });
   const totals = res.totals ?? [];
   return goalIds.map((id, i) => ({ label: id, visits: Math.round(totals[i] ?? 0) }));
+}
+
+// -----------------------------------------------------------------------
+// YANDEX-METRIKA-03: keshlash — Yandex Reporting API'ning so'rov chastotasi
+// cheklovini hurmat qilish uchun. Alohida kesh jadvali QURILMAYDI: mavjud
+// `app_settings`ning o'zi (key-value + `updated_at`) TTL hisoblash uchun
+// yetarli — har bir so'rov turi (summary/traffic/devices/pages/geo) `days`
+// bo'yicha ALOHIDA kalit ostida keshlanadi (aniq sana emas — jadvalning
+// cheksiz o'sishini oldini olish uchun; 30 daqiqalik oynada sana chegarasi
+// deyarli hech qachon muhim farq qilmaydi).
+// -----------------------------------------------------------------------
+
+const CACHE_TTL_MS = 30 * 60 * 1000;
+const FORCE_REFRESH_COOLDOWN_MS = 60 * 1000;
+const FORCE_REFRESH_KEY = "yandex_metrika_last_force_refresh";
+
+async function getCachedOrFetch<T>(
+  cacheKey: string,
+  forceRefresh: boolean,
+  fetcher: () => Promise<T>
+): Promise<{ value: T; cachedAt: string }> {
+  if (!forceRefresh) {
+    const cached = await getSettingWithUpdatedAt(cacheKey);
+    if (cached && Date.now() - new Date(cached.updatedAt).getTime() < CACHE_TTL_MS) {
+      return { value: JSON.parse(cached.value) as T, cachedAt: cached.updatedAt };
+    }
+  }
+  const value = await fetcher();
+  await setSetting(cacheKey, JSON.stringify(value));
+  return { value, cachedAt: new Date().toISOString() };
+}
+
+export interface YandexMetrikaDashboard {
+  totals: YandexVisitsTotals;
+  daily: YandexDailyPoint[];
+  trafficSources: YandexBreakdownItem[];
+  devices: YandexBreakdownItem[];
+  topPages: YandexTopPage[];
+  geography: YandexGeoItem[];
+  /** Ko'rsatilgan ma'lumotlar ichida ENG ESKI qismi qachon olib kelingani —
+   * admin UI "so'nggi yangilangan: N daqiqa oldin" ko'rsatishi uchun. */
+  cachedAt: string;
+}
+
+/** Admin `/admin/analitika` sahifasi shu FUNKSIYANI chaqiradi — barcha 5 ta
+ * so'rov turini (kerak bo'lsa) keshdan, aks holda Yandex'dan olib, bittalikda
+ * qaytaradi. `forceRefresh` — "Yangilash" tugmasi bosilganda keshni chetlab
+ * o'tadi, lekin o'zi daqiqada 1 marta bilan cheklangan (barcha so'rov
+ * turlari uchun UMUMIY cooldown — bittasi ham bo'lsa, "Yangilash"ning o'zi
+ * kamdan-kam bosiladigan amal). */
+export async function getYandexMetrikaDashboard(days: number, forceRefresh: boolean): Promise<YandexMetrikaDashboard> {
+  if (forceRefresh) {
+    const last = await getSettingWithUpdatedAt(FORCE_REFRESH_KEY);
+    if (last) {
+      const ageMs = Date.now() - new Date(last.updatedAt).getTime();
+      if (ageMs < FORCE_REFRESH_COOLDOWN_MS) {
+        const waitSec = Math.ceil((FORCE_REFRESH_COOLDOWN_MS - ageMs) / 1000);
+        throw new ApiError(429, `Juda tez-tez yangilanmoqda — yana ${waitSec} soniyadan keyin urinib ko'ring`);
+      }
+    }
+    await setSetting(FORCE_REFRESH_KEY, "1");
+  }
+
+  const dateFrom = isoDateNDaysAgo(days);
+  const dateTo = isoDateNDaysAgo(0);
+
+  const [summary, trafficSources, devices, topPages, geography] = await Promise.all([
+    getCachedOrFetch(`yandex_cache_summary_${days}`, forceRefresh, () => getVisitsSummary(dateFrom, dateTo)),
+    getCachedOrFetch(`yandex_cache_traffic_${days}`, forceRefresh, () => getTrafficSources(dateFrom, dateTo)),
+    getCachedOrFetch(`yandex_cache_devices_${days}`, forceRefresh, () => getDeviceBreakdown(dateFrom, dateTo)),
+    getCachedOrFetch(`yandex_cache_pages_${days}`, forceRefresh, () => getTopPages(dateFrom, dateTo)),
+    getCachedOrFetch(`yandex_cache_geo_${days}`, forceRefresh, () => getGeography(dateFrom, dateTo)),
+  ]);
+
+  const cachedAt = [summary, trafficSources, devices, topPages, geography].map((r) => r.cachedAt).sort()[0];
+
+  return {
+    totals: summary.value.totals,
+    daily: summary.value.daily,
+    trafficSources: trafficSources.value,
+    devices: devices.value,
+    topPages: topPages.value,
+    geography: geography.value,
+    cachedAt,
+  };
 }
