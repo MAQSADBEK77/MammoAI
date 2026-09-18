@@ -538,6 +538,8 @@ const en: Dictionary = {
 
   checklist: {
     title: "Checkup checklist",
+    emptyTitle: "No checkups yet",
+    emptyMessage: "That's normal — recommendations for your profile may appear later.",
     statusPending: "Pending",
     statusDone: "Done",
     statusOverdue: "Overdue",

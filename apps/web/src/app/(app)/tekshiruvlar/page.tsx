@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import type { ChecklistCategory, ChecklistItem, ChecklistResponse } from "@mammoai/shared";
@@ -9,7 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
+import { Badge, Button, Card, LoadingSpinner, ErrorState, EmptyState, ScreenHeader, StatTile } from "@/components/ui";
 import { CheckCircleOutlined, AccessTimeOutlined, ErrorOutlineOutlined } from "@mui/icons-material";
 import { Reveal } from "@/components/motion-primitives";
 
@@ -50,11 +50,23 @@ export default function ChecklistPage() {
   // MOTION-APP-03: "bajarildi" bosilganda holat-belgisining qisqa "pop"i —
   // mikro-tasdiq (Jamiyat'dagi layk-pop bilan bir xil umumiy klass).
   const [justCompletedId, setJustCompletedId] = useState<string | null>(null);
+  // UX-01: ilgari api.checklist.list() muvaffaqiyatsiz bo'lsa `data` HECH
+  // QACHON to'lmasdi — ekran CHEKSIZ "yuklanmoqda" holatida qolib ketardi.
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    api.checklist.list().then(setData);
+  const load = useCallback(() => {
+    setLoadError(false);
+    api.checklist.list().then(setData).catch(() => setLoadError(true));
   }, []);
 
+  useEffect(() => {
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
+
+  if (loadError) {
+    return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: load }} />;
+  }
   if (!data) return <LoadingSpinner label={dict.common.loading} />;
   const { readOnly, emptyReason, partnerName } = data;
   // FIX-UX-03: yangi UNIQUE indeks (db.ts) va ON CONFLICT (repo.ts) endi
@@ -148,7 +160,7 @@ export default function ChecklistPage() {
         </button>
       )}
 
-      {!readOnly && items.length === 0 && <p className="text-text-secondary">—</p>}
+      {!readOnly && items.length === 0 && <EmptyState title={dict.checklist.emptyTitle} message={dict.checklist.emptyMessage} />}
 
       {groupedItems.map(({ category, items: groupItems }) => (
         <div key={category} className="space-y-2">

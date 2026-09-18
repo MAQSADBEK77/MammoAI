@@ -536,6 +536,8 @@ const ru: Dictionary = {
 
   checklist: {
     title: "Список обследований",
+    emptyTitle: "Пока нет обследований",
+    emptyMessage: "Это нормально — рекомендации для вашего профиля могут появиться позже.",
     statusPending: "Ожидается",
     statusDone: "Выполнено",
     statusOverdue: "Просрочено",

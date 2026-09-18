@@ -588,6 +588,9 @@ const uz = {
 
   checklist: {
     title: "Tekshiruv ro'yxati",
+    // UX-01: ilgari bu holat shunchaki "—" belgisi bilan ko'rsatilardi.
+    emptyTitle: "Hozircha tekshiruv yo'q",
+    emptyMessage: "Bu odatiy holat — profilingizga mos tavsiyalar keyinroq paydo bo'lishi mumkin.",
     statusPending: "Kutilmoqda",
     statusDone: "Bajarildi",
     statusOverdue: "Muddati o'tgan",
