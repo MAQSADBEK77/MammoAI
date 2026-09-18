@@ -108,8 +108,33 @@ tekshirishda MUSTAQIL bug topildi: `/klinikalar` marshruti aslida
 segment). Playwright orqali real AI chaqiruvi bilan to'liq
 tekshirildi, test ma'lumotlari tozalandi.
 
-Battareya: 65% → 64%. Hali ~18 daqiqa oldin deploy qilingani uchun,
-keyingi 1-2 kichik tuzatish bilan birga deploy qilinadi.
+Battareya: 65% → 64%.
+
+## Tsikl 4 — 00:58
+
+Obuna (Premium) sahifasining grant/revoke mantig'ini kod orqali
+tekshirdim — `expiresAt` hisob-kitobi TO'G'RI (aniq millisekund-
+asosida, kalendar-sana emas, shuning uchun DATA-ACCURACY sinfidagi
+xatoga tayanmaydi). Tirik grant/revoke sinovini test-hisob bilan
+to'liq bajarolmadim (qidiruv ATAYLAB `is_test_account=FALSE`ni talab
+qiladi — bu TO'G'RI, xatolik emas), lekin kod matematik jihatdan
+to'g'ri ekani tasdiqlandi.
+
+**OVERNIGHT-07**: `getAiUsageRecent`da topilgan `generate_series` SQL
+xatosi sinfini butun `repo.ts` bo'ylab qidirdim — `getAnalyticsSummary`
+(Analitika sahifasining kunlik grafigi)da xuddi shu (lekin ALOHIDA,
+DATA-ACCURACY-05'da tekshirilmagan) UTC/Toshkent xatosi topildi va
+tuzatildi. Tirik tekshirish AYNAN hozirgi haqiqiy yarim tun
+chegarasida (soat 01:00dan keyin, Toshkent) o'tkazildi — "2026-09-19"
+to'g'ri, alohida ustun sifatida ko'rindi. Butun `apps/web/src`da
+boshqa hech qanday shu sinfdagi qolgan holat yo'qligi tasdiqlandi
+(retention kohort so'rovlaridagi qolganlari DATA-ACCURACY-05'da
+allaqachon ko'rib chiqilgan va texnik jihatdan qabul qilinadigan deb
+topilgan — qayta ko'rib chiqilmadi).
+
+Deploy qilindi + smoke-check o'tdi.
+
+Battareya: 64% → 63%.
 
 **⚠️ MUHIM TOPILMA (kod xatosi EMAS, AI modelining o'zi — ERTALAB
 KO'RIB CHIQISH KERAK)**: RU tiliga o'rnatilgan hisobda ruscha xabar
