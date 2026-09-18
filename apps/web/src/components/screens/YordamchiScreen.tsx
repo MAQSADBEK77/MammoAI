@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined, WorkspacePremiumRounded } from "@mui/icons-material";
@@ -10,7 +10,7 @@ import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { ScreenHeader, LoadingSpinner, Card, Button } from "@/components/ui";
+import { ScreenHeader, LoadingSpinner, ErrorState, Card, Button } from "@/components/ui";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
 import { Emoji } from "@/components/Emoji";
 import { DURATION, EASE_BRAND } from "@/lib/motion";
@@ -63,14 +63,26 @@ export function YordamchiScreen() {
 
   const [feedbackPromptDismissed, setFeedbackPromptDismissed] = useState(false);
   const [feedbackAnswered, setFeedbackAnswered] = useState(false);
+  // UX-02: ilgari xato ("chat tarixini yuklab bo'lmadi") va HAQIQIY bo'sh
+  // suhbat ("hali hech qanday xabar yo'q") FARQLANMASDI — ikkalasi ham
+  // xuddi shu "bo'sh chat" holatiga tenglashtirilardi. Bu qaytib kelgan,
+  // haqiqiy tarixi bor foydalanuvchiga "suhbatingiz o'chib ketdi" degan
+  // noto'g'ri taassurot berishi mumkin edi. Endi alohida.
+  const [chatLoadError, setChatLoadError] = useState(false);
 
-  useEffect(() => {
+  const loadMessages = useCallback(() => {
     if (!hasPremium) return;
+    setChatLoadError(false);
     api.chat
       .list()
       .then((res) => setMessages(res.messages))
-      .catch(() => setMessages([]));
+      .catch(() => setChatLoadError(true));
   }, [hasPremium]);
+
+  useEffect(() => {
+    const timeout = setTimeout(loadMessages, 0);
+    return () => clearTimeout(timeout);
+  }, [loadMessages]);
 
   useEffect(() => {
     if (!hasPremium || tab !== "stats" || insights) return;
@@ -205,8 +217,10 @@ export function YordamchiScreen() {
       ) : (
         <>
           <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-            {messages === null ? (
-              <LoadingSpinner label={dict.common.loading} />
+            {chatLoadError ? (
+              <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: loadMessages }} />
+            ) : messages === null ? (
+              <LoadingSpinner label={dict.common.loading} inline />
             ) : messages.length === 0 ? (
               <ChatBubbleEnter className="flex justify-start">
                 <div className="max-w-[85%] rounded-2xl rounded-bl-sm bg-surface-muted px-4 py-2.5 text-sm leading-relaxed text-text-primary">
