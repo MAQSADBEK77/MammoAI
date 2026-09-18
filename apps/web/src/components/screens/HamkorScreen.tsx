@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Dialog, DialogTitle, DialogContent, Switch, Avatar } from "@mui/material";
 import {
   BarChartOutlined,
@@ -13,7 +13,7 @@ import type { PartnerShareSettings, PartnerStatusResponse } from "@mammoai/share
 import { MOOD_EMOJI, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Button, Card, LoadingSpinner, ScreenHeader, Badge } from "@/components/ui";
+import { Button, Card, LoadingSpinner, ErrorState, ScreenHeader, Badge } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { PartnerChatDialog } from "./PartnerChatDialog";
 
@@ -34,11 +34,23 @@ export function HamkorScreen() {
   const [flash, setFlash] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  // UX-02: ilgari api.partner.status() muvaffaqiyatsiz bo'lsa `status` HECH
+  // QACHON to'lmasdi — ekran CHEKSIZ "yuklanmoqda" holatida qolib ketardi.
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    api.partner.status().then(setStatus);
+  const loadStatus = useCallback(() => {
+    setLoadError(false);
+    api.partner.status().then(setStatus).catch(() => setLoadError(true));
   }, []);
 
+  useEffect(() => {
+    const timeout = setTimeout(loadStatus, 0);
+    return () => clearTimeout(timeout);
+  }, [loadStatus]);
+
+  if (loadError) {
+    return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: loadStatus }} />;
+  }
   if (!status) return <LoadingSpinner label={dict.common.loading} />;
 
   function flashMessage(text: string) {
@@ -76,6 +88,11 @@ export function HamkorScreen() {
     try {
       const next = { ...status!.mySharing, [key]: !status!.mySharing[key] };
       setStatus(await api.partner.updateSettings(next));
+    } catch {
+      // UX-02: ilgari catch YO'Q edi — so'rov muvaffaqiyatsiz bo'lsa
+      // Switch ko'rinishda o'zgarmagandek qolardi (chunki state yangilanmadi),
+      // lekin foydalanuvchiga NIMA uchun hech narsa saqlanmagani aytilmasdi.
+      flashMessage(dict.common.errorGeneric);
     } finally {
       setSaving(false);
     }
