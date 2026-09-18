@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { adminApi, type AdminAccountSummary, type AdminAuditEntry } from "@/lib/admin-api";
-import { Card, Button } from "@/components/ui";
+import { Card, Button, ErrorState } from "@/components/ui";
 
 const ACTION_LABELS: Record<string, string> = {
   login: "Kirdi",
@@ -34,6 +34,11 @@ export default function AdminAccountsPage() {
   const [admins, setAdmins] = useState<AdminAccountSummary[] | null>(null);
   const [entries, setEntries] = useState<AdminAuditEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // OVERNIGHT-08: `loadAdmins`/audit-jurnal so'rovlarida `.catch()` UMUMAN
+  // yo'q edi — muvaffaqiyatsizlikda `admins`/`entries` abadiy `null` qolib,
+  // "Yuklanmoqda…" holati qayta urinish imkoniyatisiz qotib qolardi.
+  const [adminsLoadError, setAdminsLoadError] = useState<string | null>(null);
+  const [entriesLoadError, setEntriesLoadError] = useState<string | null>(null);
 
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
@@ -43,13 +48,28 @@ export default function AdminAccountsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadAdmins = useCallback(() => {
-    adminApi.admins.list().then((res) => setAdmins(res.admins));
+    setAdminsLoadError(null);
+    adminApi.admins
+      .list()
+      .then((res) => setAdmins(res.admins))
+      .catch((err) => setAdminsLoadError(err instanceof Error ? err.message : "Yuklashda xatolik"));
+  }, []);
+
+  const loadAuditLog = useCallback(() => {
+    setEntriesLoadError(null);
+    adminApi.auditLog
+      .list()
+      .then((res) => setEntries(res.entries))
+      .catch((err) => setEntriesLoadError(err instanceof Error ? err.message : "Yuklashda xatolik"));
   }, []);
 
   useEffect(() => {
-    loadAdmins();
-    adminApi.auditLog.list().then((res) => setEntries(res.entries));
-  }, [loadAdmins]);
+    const timeout = setTimeout(() => {
+      loadAdmins();
+      loadAuditLog();
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [loadAdmins, loadAuditLog]);
 
   async function createAdmin() {
     setError(null);
@@ -136,7 +156,9 @@ export default function AdminAccountsPage() {
           </div>
         )}
 
-        {!admins ? (
+        {adminsLoadError ? (
+          <ErrorState message={adminsLoadError} retry={{ label: "Qayta urinish", onClick: loadAdmins }} bare />
+        ) : !admins ? (
           <p className="text-sm text-text-muted">Yuklanmoqda…</p>
         ) : admins.length === 0 ? (
           <p className="text-sm text-text-muted">Hali alohida admin hisobi yo&apos;q — hozircha umumiy parol ishlatilmoqda</p>
@@ -164,7 +186,9 @@ export default function AdminAccountsPage() {
 
       <Card className="flex flex-col gap-3">
         <p className="font-semibold text-text-primary">Audit-jurnal (so&apos;nggi 100 ta amal)</p>
-        {!entries ? (
+        {entriesLoadError ? (
+          <ErrorState message={entriesLoadError} retry={{ label: "Qayta urinish", onClick: loadAuditLog }} bare />
+        ) : !entries ? (
           <p className="text-sm text-text-muted">Yuklanmoqda…</p>
         ) : entries.length === 0 ? (
           <p className="text-sm text-text-muted">Hali hech qanday yozuv yo&apos;q</p>

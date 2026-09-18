@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { adminApi, type AdminFeedbackEntry } from "@/lib/admin-api";
-import { Card, Button, Badge } from "@/components/ui";
+import { Card, Button, Badge, ErrorState } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 
 const PAGE_SIZE = 20;
@@ -30,17 +30,26 @@ export default function AdminFeedbackPage() {
   const [total, setTotal] = useState(0);
   const [averageRating, setAverageRating] = useState<number | null>(null);
   const [offset, setOffset] = useState(0);
+  // OVERNIGHT-08: bu yerda HECH QANDAY xato-holati (error state, `.catch()`)
+  // umuman yo'q edi — so'rov muvaffaqiyatsiz bo'lsa sahifa "Yuklanmoqda…"
+  // holatida abadiy qotib qolardi.
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback((currentOffset: number) => {
-    adminApi.feedback.list({ limit: PAGE_SIZE, offset: currentOffset }).then((res) => {
-      setEntries(res.responses);
-      setTotal(res.total);
-      setAverageRating(res.averageRating);
-    });
+    setLoadError(null);
+    adminApi.feedback
+      .list({ limit: PAGE_SIZE, offset: currentOffset })
+      .then((res) => {
+        setEntries(res.responses);
+        setTotal(res.total);
+        setAverageRating(res.averageRating);
+      })
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Yuklashda xatolik"));
   }, []);
 
   useEffect(() => {
-    load(0);
+    const timeout = setTimeout(() => load(0), 0);
+    return () => clearTimeout(timeout);
   }, [load]);
 
   const page = Math.floor(offset / PAGE_SIZE) + 1;
@@ -59,7 +68,9 @@ export default function AdminFeedbackPage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        {entries === null ? (
+        {loadError ? (
+          <ErrorState message={loadError} retry={{ label: "Qayta urinish", onClick: () => load(offset) }} />
+        ) : entries === null ? (
           <Card className="py-10 text-center text-sm text-text-muted">Yuklanmoqda…</Card>
         ) : entries.length === 0 ? (
           <Card className="py-10 text-center text-sm text-text-muted">Hali fikr-mulohaza yo&apos;q</Card>

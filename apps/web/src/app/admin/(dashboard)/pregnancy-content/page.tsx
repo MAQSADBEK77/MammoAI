@@ -3,10 +3,10 @@
 // CONTENT-001: homiladorlikning har bir haftasi uchun matnni ilova relizisiz
 // yangilash — Maqolalar/Klinikalar admin ekranlari bilan bir xil naqsh.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "@/lib/admin-api";
 import type { PregnancyWeekContent } from "@mammoai/shared";
-import { Card, Button } from "@/components/ui";
+import { Card, Button, ErrorState } from "@/components/ui";
 
 const ALL_WEEKS = Array.from({ length: 42 }, (_, i) => i + 1);
 
@@ -23,10 +23,24 @@ export default function AdminPregnancyContentPage() {
   const [initialDraft, setInitialDraft] = useState(draft);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // OVERNIGHT-08: bu yerda `.catch()` UMUMAN yo'q edi — so'rov muvaffaqiyatsiz
+  // bo'lsa `weeks` abadiy `null` qolib, sahifa "Yuklanmoqda…" holatida
+  // qayta urinish imkoniyatisiz qotib qolardi (bugun kechqurun boshqa
+  // joylarda — AI Yordamchi sozlamalari — ham topilgan xato sinfi).
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoadError(null);
+    adminApi.pregnancyContent
+      .list()
+      .then((res) => setWeeks(new Map(res.weeks.map((w) => [w.week, w]))))
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Yuklashda xatolik"));
+  }, []);
 
   useEffect(() => {
-    adminApi.pregnancyContent.list().then((res) => setWeeks(new Map(res.weeks.map((w) => [w.week, w]))));
-  }, []);
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   function openWeekEditor(week: number) {
     const existing = weeks?.get(week);
@@ -75,7 +89,9 @@ export default function AdminPregnancyContentPage() {
         </p>
       </div>
 
-      {!weeks ? (
+      {loadError ? (
+        <ErrorState message={loadError} retry={{ label: "Qayta urinish", onClick: load }} />
+      ) : !weeks ? (
         <Card className="py-10 text-center text-sm text-text-muted">Yuklanmoqda…</Card>
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
