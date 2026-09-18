@@ -44,3 +44,19 @@ partiyani kutmasdan, OVERNIGHT-03 haqiqiy buzuq production xususiyat
 bo'lgani uchun).
 
 Battareya: 69% → 67% (Tsikl 1 oxirida).
+
+## Tsikl 2 — 00:15
+
+**OVERNIGHT-04**: LAYOUT-01'ni skeptik qayta tekshirganda (Playwright,
+turli balandliklarda o'lchash) 400px'da (klaviatura ochiq kichik
+qurilma stsenariysi, masalan iPhone SE) hali 42px overlap borligi
+topildi. Strukturaviy tuzatildi (sarlavha+xabarlar bitta `sticky`
+hududga birlashtirildi) — endi 844px'dan 250px'gacha BARCHA balandlikda
+`overlap: false` matematik jihatdan kafolatlangan (flexbox
+invariant), taxminga emas. Deploy qilindi + smoke-check o'tdi.
+
+Battareya: 67% → 66%.
+
+**Keyingi qadam**: asosiy ekranlarni (Asosiy, Jamiyat, Tekshiruvlar,
+Hamkor, Profil) tezkor vizual skanerlash (light/dark, 390px), keyin
+vaqt qolsa AI function-calling (4a-band).
