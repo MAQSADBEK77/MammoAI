@@ -2165,13 +2165,23 @@ export async function getAnalyticsSummary(days: number): Promise<AnalyticsSummar
         GROUP BY session_id
       ) t
     `,
+    // OVERNIGHT-07: DATA-ACCURACY-05'da `getAdminStats`ning 30-kunlik
+    // grafigida tuzatilgan bilan bir xil sinf xato bu yerda (Analitika
+    // sahifasining kunlik grafigi) hali qolgan edi — `now()::date`/
+    // `created_at::date` SESSIYANING standart (odatda UTC) vaqt zonasida
+    // guruhlardi, Toshkent yarim tunidan keyingi tashriflar bir kun OLDINGI
+    // ustunga tushib qolardi.
     sql`
       SELECT to_char(d.day, 'YYYY-MM-DD') as day,
         count(DISTINCT e.session_id)::int as sessions,
         count(*) FILTER (WHERE e.type = 'pageview')::int as pageviews,
         count(*) FILTER (WHERE e.type = 'click')::int as clicks
-      FROM generate_series(now()::date - ${seriesStartInterval}::interval, now()::date, interval '1 day') as d(day)
-      LEFT JOIN analytics_events e ON (e.created_at)::timestamptz::date = d.day
+      FROM generate_series(
+        (now() AT TIME ZONE 'Asia/Tashkent')::date - ${seriesStartInterval}::interval,
+        (now() AT TIME ZONE 'Asia/Tashkent')::date,
+        interval '1 day'
+      ) as d(day)
+      LEFT JOIN analytics_events e ON ((e.created_at)::timestamptz AT TIME ZONE 'Asia/Tashkent')::date = d.day
       GROUP BY d.day ORDER BY d.day ASC
     `,
     sql`
