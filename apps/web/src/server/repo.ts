@@ -1795,8 +1795,29 @@ export async function getAdminStats(): Promise<AdminStats> {
     signupsByDayRows,
   ] = (await Promise.all([
     sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE`,
-    sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz >= now() - interval '1 day'`,
-    sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE AND (created_at)::timestamptz >= now() - interval '7 days'`,
+    // DATA-ACCURACY-05: "Bugun ro'yxatdan o'tdi" UI'da KALENDAR kuni
+    // ma'nosini beradi (Toshkent bo'yicha bugungi 00:00'dan boshlab), lekin
+    // avvalgi so'rov `now() - interval '1 day'` — ya'ni SO'NGGI 24 SOAT
+    // (aylanuvchi oyna) edi. Bu ikkalasi FAQAT roppa-rosa yarim tunda bir
+    // xil — kuningizning istalgan boshqa vaqtida "bugun" soni kechagi
+    // kunning tegishli qismini ham qo'shib, doimo XATO (haqiqatdan katta)
+    // ko'rsatilardi. Endi Toshkent mahalliy yarim tunidan hisoblanadi.
+    sql`
+      SELECT count(*)::int as count FROM users
+      WHERE is_test_account = FALSE
+        AND (created_at)::timestamptz >= date_trunc('day', now() AT TIME ZONE 'Asia/Tashkent') AT TIME ZONE 'Asia/Tashkent'
+    `,
+    // DATA-ACCURACY-05: xuddi shu muammo "Shu hafta ro'yxatdan o'tdi"da —
+    // "shu hafta" KALENDAR haftasini (dushanbadan boshlab) anglatadi,
+    // `now() - interval '7 days'` esa aylanuvchi oyna edi. `Faol (7 kun)`
+    // ko'rsatkichi ATAYLAB o'zgartirilmagan — uning o'z yorlig'ida aniq
+    // "(7 kun)" deb yozilgan, ya'ni aylanuvchi oyna sifatida TO'G'RI
+    // nomlangan (kalendar haftasi degan da'vo yo'q).
+    sql`
+      SELECT count(*)::int as count FROM users
+      WHERE is_test_account = FALSE
+        AND (created_at)::timestamptz >= date_trunc('week', now() AT TIME ZONE 'Asia/Tashkent') AT TIME ZONE 'Asia/Tashkent'
+    `,
     // WEB3-06: ilgari faqat cycle_logs/pregnancy_vitals/checklist_items
     // hisobga olinardi — wellness_logs (suv/kaloriya), pregnancy_kicks
     // (tepish hisoblagichi), chat_messages (AI Yordamchi), community_posts/
@@ -1841,10 +1862,19 @@ export async function getAdminStats(): Promise<AdminStats> {
     sql`SELECT count(*)::int as count FROM referral_events`,
     sql`SELECT count(*)::int as count FROM clinics`,
     sql`SELECT count(*)::int as count FROM articles`,
+    // DATA-ACCURACY-05: kunlik ustunlar avval `now()::date`/`created_at::date`
+    // orqali SESSIYANING standart vaqt zonasida (odatda UTC) guruhlanardi —
+    // Toshkent yarim tunidan keyingi (UTC bo'yicha hali "kecha") ro'yxatdan
+    // o'tishlar bir kun OLDINGI ustunga tushib qolardi. Endi ikkalasi ham
+    // Toshkent mahalliy sanasiga aylantirilgan.
     sql`
       SELECT to_char(d.day, 'YYYY-MM-DD') as day, count(u.id)::int as count
-      FROM generate_series(now()::date - interval '29 days', now()::date, interval '1 day') as d(day)
-      LEFT JOIN users u ON (u.created_at)::timestamptz::date = d.day AND u.is_test_account = FALSE
+      FROM generate_series(
+        (now() AT TIME ZONE 'Asia/Tashkent')::date - interval '29 days',
+        (now() AT TIME ZONE 'Asia/Tashkent')::date,
+        interval '1 day'
+      ) as d(day)
+      LEFT JOIN users u ON ((u.created_at)::timestamptz AT TIME ZONE 'Asia/Tashkent')::date = d.day AND u.is_test_account = FALSE
       GROUP BY d.day ORDER BY d.day ASC
     `,
   ])) as unknown as [

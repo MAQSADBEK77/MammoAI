@@ -436,6 +436,16 @@ async function main() {
   await sql`DELETE FROM chat_daily_usage WHERE user_id = ${wellnessUser}`;
   await sql`DELETE FROM users WHERE id = ${wellnessUser}`;
 
+  // --- DATA-ACCURACY-05: getAdminStats'dagi "Bugun"/"Shu hafta" endi KALENDAR
+  // chegarasidan (Toshkent), aylanuvchi 24soat/7kun oynasidan emas hisoblanadi.
+  // Hafta boshlanishi ISO bo'yicha DUSHANBA bo'lishi shart (o'zbek/mintaqaviy
+  // "hafta" tushunchasi bilan mos) — bu invariant vaqtdan qat'iy nazar doim
+  // to'g'ri bo'lishi kerak. ---
+  const [{ week_start_dow: weekStartDow }] = (await sql`
+    SELECT extract(isodow FROM date_trunc('week', now() AT TIME ZONE 'Asia/Tashkent'))::int as week_start_dow
+  `) as unknown as { week_start_dow: number }[];
+  assert(weekStartDow === 1, "DATA-ACCURACY-05: kalendar hafta chegarasi DUSHANBADAN boshlanadi (ISO hafta kuni 1)");
+
   console.log(`\n${checks - failures}/${checks} tekshiruv o'tdi.`);
   if (failures > 0) {
     console.error(`${failures} ta tekshiruv MUVAFFAQIYATSIZ.`);
