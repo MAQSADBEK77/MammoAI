@@ -12,11 +12,11 @@
 // qiladi, brauzer cookie orqali avtomatik autentifikatsiyadan o'tadi (web
 // sessiyasi httpOnly cookie).
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PregnancyAlbumPhoto } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Card, Button } from "@/components/ui";
+import { Card, Button, LoadingSpinner, ErrorState } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 
 export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
@@ -27,10 +27,21 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [note, setNote] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // UX-02: ilgari `.catch()` yo'q edi — muvaffaqiyatsiz bo'lsa `photos`
+  // HECH QACHON to'lmasdi va `photos === null ? null : ...` sharti
+  // sababli HECH NARSA ko'rsatilmasdi (hatto spinner ham) — bu ekranning
+  // eng "sokin" (bildirishnomasiz) xato holati edi.
+  const [loadError, setLoadError] = useState(false);
+
+  const loadPhotos = useCallback(() => {
+    setLoadError(false);
+    api.pregnancy.album.list().then((res) => setPhotos(res.photos)).catch(() => setLoadError(true));
+  }, []);
 
   useEffect(() => {
-    api.pregnancy.album.list().then((res) => setPhotos(res.photos));
-  }, []);
+    const timeout = setTimeout(loadPhotos, 0);
+    return () => clearTimeout(timeout);
+  }, [loadPhotos]);
 
   function pickFile() {
     fileInputRef.current?.click();
@@ -119,7 +130,11 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
 
       {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
-      {photos === null ? null : photos.length === 0 ? (
+      {loadError ? (
+        <ErrorState bare message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: loadPhotos }} />
+      ) : photos === null ? (
+        <LoadingSpinner label={dict.common.loading} inline />
+      ) : photos.length === 0 ? (
         <p className="py-2 text-center text-sm text-text-muted">{dict.pregnancy.albumEmpty}</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
