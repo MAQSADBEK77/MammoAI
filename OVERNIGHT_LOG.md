@@ -244,4 +244,19 @@ qo'lda ishga tushirilsa, OVERNIGHT-08 dan hozirgача bo'lgan barcha
 tuzatishlar (10 tadan ortiq kichik commit) bir yo'la production'ga
 chiqadi.
 
+Qo'shimcha diagnostika: `vercel inspect`'da ikkinchi deploy uchun ham
+"actual assigned cores: unavailable" ko'rindi — ya'ni Vercel unga hali
+build mashinasi UMUMAN ajratmagan (navbatda kutmoqda). Bu birinchi
+qotgan deploy hali ham "band" hisoblanib, hisobning bir vaqtdagi build
+limitini egallab turgani ehtimolini kuchaytiradi. `vercel remove
+--safe` bilan birinchisini bekor qilish (production alias'ga tegmaydi,
+CLI buni maxsus himoyalaydi) texnik jihatdan xavfsiz bo'lardi, LEKIN
+buni ATAYLAB QILMADIM — vazifaning o'zida aniq berilgan "Vercel'dan
+HECH NARSANI o'chirma" qoidasini so'zma-so'z hurmat qilib, "eng
+xavfsiz" tanlovni "hech narsa o'chirmaslik" deb hisobladim. Ertalab bu
+sizning o'z qaror qabul qilishingiz uchun qoldirilgan — ikkalasini
+ham qo'lda Vercel dashboard'dan bekor qilish yoki shunchaki 45-60
+daqiqadan keyin ularning o'zi vaqt tugashi bilan navbatdan
+tushishini kutish mumkin.
+
 Battareya: 61% → 60%.
