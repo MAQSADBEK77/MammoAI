@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -31,6 +32,30 @@ export function BottomNav() {
   // "Hamkorimni kuzataman" (partner_tracking) foydalanuvchisida shaxsiy
   // sikl/homiladorlik ma'lumoti yo'q — Jamiyat (hayz/homiladorlik mavzusidagi
   // muhokamalar) ular uchun aloqador emas, shuning uchun ko'rsatilmaydi.
+  // Chat kabi "butun ekran balandligini o'zi hisoblaydigan" ekranlar
+  // (YordamchiScreen) ilgari BU NAVning balandligini QO'LDA taxmin qilingan
+  // "rem" son bilan hisobga olardi — turli qurilma/brauzer/WebView (Median,
+  // Telegram Mini App)da haqiqiy balandlik farq qilishi mumkin, va taxmin
+  // xato bo'lsa chat input aynan shu nav ORQASIGA yashiringan holda
+  // ko'rinardi. Endi HAQIQIY o'lchangan balandlik (safe-area bilan birga)
+  // `--bottom-nav-height` CSS o'zgaruvchisiga yozib qo'yiladi — istalgan
+  // component `calc(100dvh - var(--bottom-nav-height))` kabi ANIQ hisoblay
+  // oladi, taxmin qilish shart emas.
+  const navRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const update = () => document.documentElement.style.setProperty("--bottom-nav-height", `${el.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   const isPartnerTracking = onboardingProfile?.primaryGoal === "partner_tracking";
   const items = [
     { href: "/asosiy", label: dict.nav.home, Icon: Home, IconOutline: HomeOutlined },
@@ -42,6 +67,7 @@ export function BottomNav() {
 
   return (
     <nav
+      ref={navRef}
       className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-4"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + var(--tg-safe-area-bottom) + 12px)" }}
     >

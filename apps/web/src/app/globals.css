@@ -52,6 +52,10 @@
      Oddiy brauzerda 0px bo'lib qoladi. */
   --tg-safe-area-top: 0px;
   --tg-safe-area-bottom: 0px;
+  /* BottomNav.tsx tomonidan HAQIQIY o'lchangan qiymat bilan yoziladi (JS
+     ishga tushgandan keyin) — bu shunchaki JS hali ishlamagan birinchi
+     render uchun oqilona standart (taxminiy pill balandligi + bo'sh joy). */
+  --bottom-nav-height: 88px;
 
   /* MOTION-01: butun Landing sahifasi uchun YAGONA harakat tizimi (motion
      design tokens) — bitta maxsus easing egri chizig'i ("ease-out-expo"

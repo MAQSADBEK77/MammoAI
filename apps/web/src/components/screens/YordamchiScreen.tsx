@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined, WorkspacePremiumRounded } from "@mui/icons-material";
@@ -58,6 +58,41 @@ export function YordamchiScreen() {
   const [error, setError] = useState<string | null>(null);
   const [patterns, setPatterns] = useState<SymptomPattern[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Bu ekran ustidan (AppDrawer va uning bo'sh joylari) va ostidan
+  // (BottomNav) qancha joy egallanganini ILGARI qo'lda taxmin qilingan
+  // "rem" son bilan hisoblardi — taxmin xato bo'lsa (qurilma/brauzer/
+  // WebView'da haqiqiy balandlik farq qilganda) chat kirish maydoni
+  // pastki menyu ORQASIGA yashiringan holda ko'rinardi. Endi buning
+  // o'rniga: (a) bu componentning O'ZI ekranda QAYERDAN boshlanishini
+  // (`getBoundingClientRect().top`) to'g'ridan-to'g'ri o'lchaymiz — bu
+  // ustidagi HAR QANDAY elementning (AppDrawer, banner va h.k.)
+  // balandligini bilish shart qilmaydi; (b) pastdan BottomNav.tsx yozib
+  // qo'ygan HAQIQIY `--bottom-nav-height`dan foydalanamiz. Ikkalasi ham
+  // taxmin emas, o'lchov.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [rootTop, setRootTop] = useState(0);
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const update = () => setRootTop(el.getBoundingClientRect().top);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(document.body);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+  // "Takrorlanuvchi pattern" banneri paydo bo'lganda/yo'qolganda ham
+  // (bu ustidagi elementlarning balandligini o'zgartiradi) darhol qayta
+  // o'lchaymiz — ResizeObserver body darajasida bu holatni har doim ham
+  // ushlab qolavermasligi mumkin (masalan boshqa joyda muvozanatlovchi
+  // o'zgarish bo'lsa).
+  useLayoutEffect(() => {
+    if (rootRef.current) setRootTop(rootRef.current.getBoundingClientRect().top);
+  }, [tab, patterns.length]);
 
   const [insights, setInsights] = useState<{ summary: InsightsSummary; patterns: SymptomPattern[]; aiInsight: string | null } | null>(null);
 
@@ -172,11 +207,13 @@ export function YordamchiScreen() {
   }
 
   return (
-    // Butun ekran o'lchami aniq belgilanadi (AppDrawer+padding yuqorida ~4.5rem,
-    // BottomNav+safe-area pastda ~7.5rem) — shu orqali xabar ro'yxati `flex-1`
-    // sifatida qolgan joyni oladi va input qatori HAR DOIM to'liq ko'rinadi,
-    // banner/segment mavjudligidan qat'iy nazar (Playwright bilan tekshirilgan).
-    <div className="flex flex-col gap-4" style={{ height: "calc(100dvh - 12rem - env(safe-area-inset-bottom, 0px))" }}>
+    // Butun ekran balandligi endi HAQIQIY o'lchangan qiymatlardan hisoblanadi
+    // (rootTop — shu componentning ekrandagi boshlanish nuqtasi,
+    // --bottom-nav-height — BottomNav.tsx) — taxminiy "rem" son emas.
+    // `rootTop` hali o'lchanmagan (0) bo'lsa ham layout buzilmaydi —
+    // birinchi render'da bir zumga to'liqroq ko'rinib, o'lchov kelgach
+    // to'g'ri balandlikka tushadi.
+    <div ref={rootRef} className="flex flex-col gap-4" style={{ height: `calc(100dvh - ${rootTop}px - var(--bottom-nav-height))` }}>
       <div className="flex shrink-0 flex-col gap-4">
         <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
         <p className="-mt-2 text-xs text-text-muted">{dict.chat.disclaimer}</p>
