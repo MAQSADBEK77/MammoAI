@@ -60,3 +60,70 @@ Battareya: 67% → 66%.
 **Keyingi qadam**: asosiy ekranlarni (Asosiy, Jamiyat, Tekshiruvlar,
 Hamkor, Profil) tezkor vizual skanerlash (light/dark, 390px), keyin
 vaqt qolsa AI function-calling (4a-band).
+
+**OVERNIGHT-05 (katta topilma)**: Profil sahifasini skanerlashda 4 ta
+haqiqiy 404 topildi — sabab: `Emoji.tsx` fallback'siz oddiy `<img>`,
+va 87 fayllik mahalliy Twemoji to'plamida ko'plab ishlatilayotgan
+belgi yo'q edi. Butun kodni sistematik tekshirib (barcha .ts/.tsx
+fayldagi emoji + Playwright orqali jonli 404-monitoring bilan
+yolg'on-musbatlarni filtrlab), 27 ta HAQIQIY buzuq joy topildi va
+tuzatildi: gamification nishonlari (💯🏆👑), profil bloklangan-
+foydalanuvchilar, admin yon paneli (3 ta), Traction sahifasi (12 ta),
+Analitika sahifasi (5 ta), Homiladorlik albomi, Sog'liq kartochkasi,
+CycleScreen perimenopauza kartasi. Tirik tasdiqlandi: TUZATISHDAN
+OLDIN 7 jonli 404 (barcha admin+asosiy sahifalar bo'ylab), KEYIN 0.
+Deploy qilindi + smoke-check o'tdi.
+
+Battareya: 66% → 65%.
+
+## Tsikl 3 — 00:33
+
+Asosiy ekranlar (Asosiy, Jamiyat, Tekshiruvlar, Hamkor, Profil) va
+qolgan barcha admin sahifalarini (Foydalanuvchilar, Klinikalar,
+Fikr-mulohazalar, Hamjamiyat + Shikoyatlar navbati) vizual skanerladim
+— barchasi to'g'ri, xatosiz ko'rinadi (OVERNIGHT-05'dan keyingi
+belgilar to'g'ri render bo'lishi ham tasdiqlandi).
+
+Onboarding'ni jonli qadamlab sinadim (yangi test hisob bilan): xush
+kelibsiz ekrani, til tanlash (bayroqlar to'g'ri ko'rinadi), telefon
+kiritish qadamigacha xatosiz o'tdi — undan keyingisi haqiqiy Telegram
+tasdiqlash talab qiladi (avtomatlashtirib bo'lmaydi, texnik chegara).
+
+**4(a)-band (AI function calling) haqida QAROR: BU TUNGA KIRITILMADI.**
+Sabab — xavfsizlik: bu funksiya AI'ning O'ZI cycle_logs'ga avtomatik
+yozishini talab qiladi, ikkala provayder (Gemini/Huawei MaaS)ning
+tool-calling xatti-harakatini HAQIQIY chaqiruv bilan tirik sinamasdan
+ishonchli tekshirib bo'lmaydi, va xato bo'lsa HAQIQIY foydalanuvchi
+sog'liq ma'lumotiga NOTO'G'RI yozuv qo'shilishi mumkin — bu esa
+"ENG XAVFSIZ, ENG KICHIK o'zgarish" ko'rsatmasiga zid. Buning o'rniga
+4(b)-band (past xavfli, deterministik, hech narsa yozmaydigan)
+amalga oshirildi.
+
+**OVERNIGHT-06**: AI chatida `detectsMedicalConcern()` (jamiyatda
+allaqachon ishlatilayotgan) ulandi — shoshilinch xabar yozilganda
+"Klinikalar ro'yxatini ko'rish" taklif-kartasi ko'rinadi. Tirik
+tekshirishda MUSTAQIL bug topildi: `/klinikalar` marshruti aslida
+`/asosiy`ga qaytaruvchi ESKI bekor qilingan sahifa ekan — to'g'ri
+`/asosiy`ga tuzatildi (Klinikalar bo'limi shu yerdagi ochiladigan
+segment). Playwright orqali real AI chaqiruvi bilan to'liq
+tekshirildi, test ma'lumotlari tozalandi.
+
+Battareya: 65% → 64%. Hali ~18 daqiqa oldin deploy qilingani uchun,
+keyingi 1-2 kichik tuzatish bilan birga deploy qilinadi.
+
+**⚠️ MUHIM TOPILMA (kod xatosi EMAS, AI modelining o'zi — ERTALAB
+KO'RIB CHIQISH KERAK)**: RU tiliga o'rnatilgan hisobda ruscha xabar
+("Скорая помощь нужна, сильная боль") yozilganda, AI (joriy faol
+provayder: **Huawei MaaS, model glm-5.2**) juda to'g'ri va kuchli
+shoshilinch-yordam javobini ("103'ga qo'ng'iroq qiling!") berdi —
+LEKIN bu javob O'ZBEK tilida chiqdi, ruscha EMAS, garchi tizim
+ko'rsatmasi ("Foydalanuvchi bilan RUSCHA gaplashing") aniq berilgan
+bo'lsa ham. Bu ehtimol GLM-5.2'ning shoshilinch-holat javoblari uchun
+qattiq/oldindan o'rgatilgan namunaga tayanishi va til-ko'rsatmasini
+e'tiborsiz qoldirishi bilan bog'liq. **Bu MENING bugungi
+o'zgarishlarimga (OVERNIGHT-06) aloqasi yo'q** — sof AI xatti-harakati,
+`ai-chat.ts`ga tegmadim. Tavsiya: ertalab Gemini provayderiga
+almashtirib xuddi shu stsenariyni qayta sinab ko'ring — agar Gemini'da
+bunday bo'lmasa, bu GLM-5.2'ga xos muammo. Real foydalanuvchi uchun
+xavfli-noaniqlik (shoshilinch payt noto'g'ri tilda javob) bo'lgani
+uchun buni ERTAGA ALBATTA hal qilish tavsiya etiladi.
