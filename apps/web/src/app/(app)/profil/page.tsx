@@ -8,7 +8,7 @@ import { BLOOD_TYPES, getModeAccentColors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card } from "@/components/ui";
+import { Card, ErrorState } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { AchievementsCard } from "@/components/AchievementsCard";
 import { Switch, Select, MenuItem, Dialog, DialogTitle, DialogContent } from "@mui/material";
@@ -135,6 +135,11 @@ export default function ProfilePage() {
       await refresh();
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 1500);
+    } catch {
+      // UX-03: ilgari catch YO'Q edi — masalan tema/til/shrift o'zgartirilganda
+      // so'rov muvaffaqiyatsiz bo'lsa, foydalanuvchi HECH NARSA ko'rmasdi
+      // (na "saqlandi", na xato) — tugma "o'lik" his qilinardi.
+      flash(dict.common.errorGeneric);
     } finally {
       setSaving(false);
     }
@@ -167,6 +172,10 @@ export default function ProfilePage() {
     try {
       await api.onboarding.update({ primaryGoal: goal, isPregnant: goal === "pregnancy" });
       await refresh();
+    } catch {
+      // UX-03: ilgari catch yo'q edi — muvaffaqiyatsiz bo'lsa rejim
+      // o'zgarmasdan qolardi, lekin foydalanuvchiga sababi aytilmasdi.
+      flash(dict.common.errorGeneric);
     } finally {
       setSaving(false);
     }
@@ -184,6 +193,10 @@ export default function ProfilePage() {
       });
       await refresh();
       setEditingInfo(false);
+    } catch {
+      // UX-03: ilgari catch yo'q edi — muvaffaqiyatsiz bo'lsa tahrirlash
+      // rejimi ochiq qolardi-yu, lekin nima xato bo'lgani aytilmasdi.
+      flash(dict.common.errorGeneric);
     } finally {
       setSaving(false);
     }
@@ -661,10 +674,7 @@ export default function ProfilePage() {
         <DialogTitle>{dict.community.blockedUsersTitle}</DialogTitle>
         <DialogContent className="flex flex-col gap-2 pb-5!">
           {blockedError ? (
-            <div className="flex flex-col items-center gap-2 py-4 text-center text-sm text-text-muted">
-              <p>{dict.common.errorGeneric}</p>
-              <Button onClick={openBlockedList}>{dict.common.retryButton}</Button>
-            </div>
+            <ErrorState bare message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: openBlockedList }} />
           ) : !blockedList ? (
             <p className="py-4 text-center text-sm text-text-muted">{dict.common.loading}</p>
           ) : blockedList.length === 0 ? (
