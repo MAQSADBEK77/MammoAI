@@ -44,6 +44,46 @@ describe("computeStreaks", () => {
     const dates = ["2026-09-11", "2026-09-09", "2026-09-10"];
     expect(computeStreaks(dates, "2026-09-11").currentStreakDays).toBe(3);
   });
+
+  // DATA-ACCURACY-03: yil chegarasi (31-dekabr -> 1-yanvar) alohida
+  // qo'lda tekshirildi — epoch-millisekund asosidagi `daysBetween`
+  // buni tabiiy ravishda to'g'ri hisoblaydi (kalendar-maydon arifmetikasi
+  // ishlatilmaydi), lekin bu aynan shu holat uchun aniq tasdiqlanishi kerak.
+  it("yil chegarasidan (31-dekabr->1-yanvar) o'tgan streak uzilmaydi", () => {
+    const dates = ["2025-12-30", "2025-12-31", "2026-01-01", "2026-01-02"];
+    expect(computeStreaks(dates, "2026-01-02")).toEqual({
+      currentStreakDays: 4,
+      longestStreakDays: 4,
+      totalLogsCount: 4,
+    });
+  });
+
+  // Kabisa yili: 2024 fevral 29-kunga ega, 2025 emas — daysBetween buni
+  // to'g'ri (Feb28->Feb29 = 1 kun) hisoblashi kerak.
+  it("kabisa yilidagi 29-fevral orqali o'tgan streak to'g'ri hisoblanadi", () => {
+    const dates = ["2024-02-27", "2024-02-28", "2024-02-29", "2024-03-01"];
+    expect(computeStreaks(dates, "2024-03-01")).toEqual({
+      currentStreakDays: 4,
+      longestStreakDays: 4,
+      totalLogsCount: 4,
+    });
+  });
+
+  it("kabisa YILI EMAS yilda 28-fevraldan keyin to'g'ridan-to'g'ri 1-mart keladi (streak baribir uzilmaydi)", () => {
+    const dates = ["2025-02-27", "2025-02-28", "2025-03-01"];
+    expect(computeStreaks(dates, "2025-03-01").currentStreakDays).toBe(3);
+  });
+
+  // Himoya: `lastDate` "bugun"dan KEYINGI (kelajak) sana bo'lib qolsa —
+  // server hech qachon shunday yubormasligi kerak, lekin funksiyaning o'zi
+  // buni "streak uzilmagan" deb noto'g'ri qabul qilmasligi kerak (manfiy
+  // gapFromToday `<= 1` shartini ham qanoatlantirar edi).
+  it("kelajakdagi (bugundan keyingi) sanani 'joriy streak' sifatida noto'g'ri qabul qilmaydi", () => {
+    const dates = ["2026-09-20"]; // "bugun" (2026-09-18)dan 2 kun keyin
+    const stats = computeStreaks(dates, "2026-09-18");
+    expect(stats.currentStreakDays).toBe(0);
+    expect(stats.longestStreakDays).toBe(1); // tarixiy uzunlik hisobiga ta'sir qilmaydi
+  });
 });
 
 describe("computeEarnedBadges", () => {

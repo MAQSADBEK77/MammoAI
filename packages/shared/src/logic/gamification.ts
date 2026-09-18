@@ -12,6 +12,12 @@
 // bir xil bo'ladi. Bitta streak uzilib qolsa ham, ilgari qo'lga kiritilgan
 // nishon YO'QOLMAYDI (currentStreak emas, longestStreak'ga bog'liq).
 
+// DATA-ACCURACY-03: bu yerda mustaqil qayta yozilgan (uchinchi nusxa) sana-
+// ayirish formulasi olib tashlandi — `./cycle.ts`dagi yagona, allaqachon
+// eksport qilingan versiyadan foydalaniladi (ikki mustaqil nusxa kelajakda
+// biri tuzatilib, ikkinchisi unutilib qolish xavfini tug'diradi).
+import { daysBetween } from "./cycle";
+
 export interface StreakStats {
   currentStreakDays: number;
   longestStreakDays: number;
@@ -35,10 +41,6 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: "month_streak", icon: "🏆", metric: "longestStreakDays", threshold: 30 },
   { id: "loyal_90", icon: "👑", metric: "longestStreakDays", threshold: 90 },
 ];
-
-function daysBetween(a: string, b: string): number {
-  return Math.round((new Date(`${b}T00:00:00Z`).getTime() - new Date(`${a}T00:00:00Z`).getTime()) / 86400000);
-}
 
 /**
  * @param logDates cycle_logs'dagi barcha (takrorlanmagan) sanalar, tartib shart emas.
@@ -66,7 +68,13 @@ export function computeStreaks(logDates: string[], today: string): StreakStats {
   const lastDate = unique[unique.length - 1];
   const gapFromToday = daysBetween(lastDate, today);
   let currentStreakDays = 0;
-  if (gapFromToday <= 1) {
+  // DATA-ACCURACY-03: `gapFromToday` MANFIY bo'lishi mumkin (`lastDate`
+  // "bugun"dan KEYINGI kelajak sana bo'lsa — server hech qachon shunday
+  // yubormaydi, lekin bu funksiya kelajakda boshqa chaqiruvchidan yoki
+  // noto'g'ri sozlangan soatli klientdan ham chaqirilishi mumkin). Avvalgi
+  // `<= 1` sharti manfiy qiymatlarni ham "streak uzilmagan" deb noto'g'ri
+  // qabul qilardi — endi `>= 0` bilan aniq cheklangan.
+  if (gapFromToday >= 0 && gapFromToday <= 1) {
     currentStreakDays = 1;
     for (let i = unique.length - 1; i > 0; i--) {
       if (daysBetween(unique[i - 1], unique[i]) === 1) currentStreakDays++;
