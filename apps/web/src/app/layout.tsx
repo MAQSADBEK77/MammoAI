@@ -33,6 +33,11 @@ export const metadata: Metadata = {
   // WEB3-20: apple-touch-icon yo'q edi — iOS'da "Bosh ekranga qo'shish"
   // qilinganda Apple standart (bo'sh/skrinshot) belgi qo'yardi.
   icons: { icon: "/favicon.png", apple: "/apple-touch-icon.png" },
+  // PWA manifest — PWABuilder/Bubblewrap orqali Android ilovasini (Trusted
+  // Web Activity) BEPUL, package name'ni to'liq o'zi belgilab tayyorlash
+  // uchun kerak (Median.co'ning bepul rejasida package name o'zgartirib
+  // bo'lmasligi sababli ishlatilgan muqobil yo'l).
+  manifest: "/manifest.json",
   openGraph: {
     type: "website",
     locale: "uz_UZ",
