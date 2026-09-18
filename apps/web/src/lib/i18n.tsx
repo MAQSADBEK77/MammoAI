@@ -26,7 +26,18 @@ function readStoredLanguage(): Language {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => readStoredLanguage());
+  // Boshlang'ich holat har doim serverdagi ("uz") bilan bir xil bo'lishi
+  // SHART — aks holda localStorage'da ru/en saqlangan foydalanuvchilarda
+  // har bir sahifa yuklanishida hidratsiya nomuvofiqligi (server "uz" matn
+  // chiqaradi, klient darhol "ru"/"en"ga o'tadi) yuzaga kelib, React BUTUN
+  // daraxtni qayta generatsiya qilishga majbur bo'lardi. localStorage'dagi
+  // haqiqiy til faqat mount'dan KEYIN (effektda) o'qiladi.
+  const [language, setLanguageState] = useState<Language>("uz");
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setLanguageState(readStoredLanguage()), 0);
+    return () => clearTimeout(timeout);
+  }, []);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
