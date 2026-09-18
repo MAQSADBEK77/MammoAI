@@ -1,9 +1,10 @@
 "use client";
 
-// MOTION-01: butun Landing sahifasi bo'ylab qayta ishlatiladigan, `prefers-
+// MOTION-01 (dastlab Landing uchun, MOTION-APP-02'dan boshlab BUTUN ilova
+// bo'ylab qayta ishlatiladi — masalan Jamiyat post-ro'yxati) — `prefers-
 // reduced-motion`ni HURMAT QILADIGAN scroll-reveal "qurilich bloklari".
-// Har bir pastki bo'lim komponenti (bento, hayot-bosqichi kartalari, ishonch
-// va h.k.) shu ikkitasidan foydalanadi — har birida qaytadan yozilmaydi.
+// Har bir ro'yxat/bo'lim komponenti shu ikkitasidan foydalanadi — har birida
+// qaytadan yozilmaydi.
 
 import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
 import { fadeUpVariants, popVariants, VIEWPORT_ONCE } from "@/lib/motion";

@@ -172,6 +172,42 @@ body {
   animation: fade-in-up 0.5s ease-out both;
 }
 
+/* MOTION-APP-02: "like" tugmasi bosilganda yurak belgisining qoniqarli
+   "pop" sakrashi (Instagram/Twitter'dagi kabi tanish naqsh) — bevosita
+   foydalanuvchining o'z bosishiga JAVOB, shuning uchun (tap-target scale
+   kabi) reduced-motion'da ham o'chirilmaydi: bu ambient dekorativ
+   animatsiya emas, bitta qisqa sabab-natija fidbek. */
+@keyframes like-pop {
+  0% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.35;
+  }
+  100% {
+    scale: 1;
+  }
+}
+.animate-like-pop {
+  animation: like-pop 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* MOTION-APP-02: yangi post yuborilgach, ro'yxat boshidagi kartani BIR
+   MARTA yumshoq halqa bilan ajratib ko'rsatish — "muvaffaqiyatli
+   yuborildi" degan mikro-tasdiq (App.pdf: "checkmark pop" so'ralgan
+   g'oyaning karta-darajasidagi versiyasi). */
+@keyframes publish-highlight {
+  0% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+.animate-publish-highlight {
+  animation: publish-highlight 1.6s ease-out;
+}
+
 /* Onboarding "welcome" hero — App.pdf §1: "birinchi kirishdagi animatsiya logo bilan". */
 @keyframes badge-pop {
   0% {

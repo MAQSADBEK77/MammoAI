@@ -20,6 +20,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Reveal } from "@/components/motion-primitives";
 
 const REPORT_REASONS: CommunityReportReason[] = ["spam", "harassment", "misinformation", "medical_emergency", "other"];
 
@@ -80,6 +81,12 @@ export default function CommunityPage() {
 
   const [openComments, setOpenComments] = useState<Record<string, CommunityComment[] | undefined>>({});
   const [commentDraft, setCommentDraft] = useState<Record<string, string>>({});
+
+  // MOTION-APP-02: qisqa mikro-animatsiyalarni ishga tushirish uchun —
+  // "layk" bosilganda yurak "pop"i, yangi post yuborilganda karta atrofida
+  // bir martalik halqa. Ikkalasi ham vaqtinchalik (timeout bilan tozalanadi).
+  const [justLikedId, setJustLikedId] = useState<string | null>(null);
+  const [justPublishedId, setJustPublishedId] = useState<string | null>(null);
 
   // COMM-001 — moderatsiya: "..." menyusi (shikoyat/bloklash), shikoyat dialogi.
   const [menuTarget, setMenuTarget] = useState<{ el: HTMLElement; postId: string; commentId: string | null } | null>(null);
@@ -181,6 +188,10 @@ export default function CommunityPage() {
       setComposerBody("");
       setComposerAnonymous(false);
       setComposerOpen(false);
+      // MOTION-APP-02: "muvaffaqiyatli yuborildi" mikro-tasdiq — yangi karta
+      // atrofida bir martalik halqa (1.6s'dan keyin o'zi tozalanadi).
+      setJustPublishedId(post.id);
+      window.setTimeout(() => setJustPublishedId((cur) => (cur === post.id ? null : cur)), 1600);
     } catch (err) {
       // FIX2-20: server xato KALITI qaytaradi (masalan "invalid_tag") —
       // xom o'zbekcha matn o'rniga joriy tilga tarjima qilib ko'rsatamiz.
@@ -191,11 +202,18 @@ export default function CommunityPage() {
   }
 
   async function toggleLike(post: CommunityPost) {
+    const willLike = !post.viewerLiked;
     setPosts((prev) =>
       prev
         ? prev.map((p) => (p.id === post.id ? { ...p, viewerLiked: !p.viewerLiked, likesCount: p.likesCount + (p.viewerLiked ? -1 : 1) } : p))
         : prev
     );
+    if (willLike) {
+      // MOTION-APP-02: yurak "pop"i — faqat YOQTIRISHDA (yoqtirishni bekor
+      // qilishda emas, u passiv amal).
+      setJustLikedId(post.id);
+      window.setTimeout(() => setJustLikedId((cur) => (cur === post.id ? null : cur)), 400);
+    }
     try {
       const res = await api.community.toggleLike(post.id);
       setPosts((prev) => (prev ? prev.map((p) => (p.id === post.id ? { ...p, viewerLiked: res.liked, likesCount: res.likesCount } : p)) : prev));
@@ -443,10 +461,14 @@ export default function CommunityPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {posts.map((post) => {
+          {posts.map((post, index) => {
             const comments = openComments[post.id];
             return (
-              <Card key={post.id} className="animate-fade-in-up space-y-3">
+              // MOTION-APP-02: ro'yxat ekranga kirganda yengil "to'lqin"
+              // (stagger) bilan paydo bo'lishi — index asosida (post soniga
+              // bog'liq, matn uzunligiga emas).
+              <Reveal key={post.id} index={index}>
+              <Card className={clsx("space-y-3", justPublishedId === post.id && "animate-publish-highlight")}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <span
@@ -502,7 +524,12 @@ export default function CommunityPage() {
                       post.viewerLiked ? "text-danger" : "text-text-secondary hover:bg-surface-muted"
                     )}
                   >
-                    {post.viewerLiked ? <Favorite sx={{ fontSize: 16 }} /> : <FavoriteBorderOutlined sx={{ fontSize: 16 }} />} {post.likesCount}
+                    {post.viewerLiked ? (
+                      <Favorite sx={{ fontSize: 16 }} className={justLikedId === post.id ? "animate-like-pop" : undefined} />
+                    ) : (
+                      <FavoriteBorderOutlined sx={{ fontSize: 16 }} />
+                    )}{" "}
+                    {post.likesCount}
                   </button>
                   <button
                     onClick={() => toggleComments(post)}
@@ -584,6 +611,7 @@ export default function CommunityPage() {
                   </div>
                 )}
               </Card>
+              </Reveal>
             );
           })}
 

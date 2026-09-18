@@ -21,7 +21,7 @@ import { useI18n } from "@/lib/i18n";
 import { useIllustrations } from "@/lib/illustrations";
 import { Button, Card } from "@/components/ui";
 import { PublicCalculators } from "@/components/landing/PublicCalculators";
-import { Reveal, PopIn } from "@/components/landing/motion-primitives";
+import { Reveal, PopIn } from "@/components/motion-primitives";
 
 const LIFE_STAGE_KEYS = ["cycle", "pregnancy", "checkups"] as const;
 const LIFE_STAGE_ILLUSTRATIONS = ["/illustrations/calendar.svg", "/illustrations/expecting.svg", "/illustrations/library/all-checked_d3u6.svg"];
