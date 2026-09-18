@@ -890,6 +890,7 @@ const en: Dictionary = {
     regularityTrendStable: "Stable",
     regularityTrendLengthening: "Your recent cycles are getting longer",
     regularityTrendShortening: "Your recent cycles are getting shorter",
+    regularityLowDataHint: "Still limited data — this number gets more accurate as you log more cycles.",
     symptomPhaseChartTitle: "When symptoms show up",
     symptomPhasePeriodLabel: "During period days",
     symptomPhaseOtherLabel: "Other days",
@@ -898,6 +899,7 @@ const en: Dictionary = {
     predictionAccuracySummary: (avgError: number, within2Pct: number) =>
       `${avgError}-day average error · ${within2Pct}% of the time within ±2 days`,
     predictionAccuracyHint: "Calculated by testing past cycles retroactively — a real number, not a marketing claim.",
+    predictionAccuracyLowDataHint: "Tested on very few cycles so far — this number becomes more reliable over time.",
     aiInsightTitle: "AI analysis",
   },
 

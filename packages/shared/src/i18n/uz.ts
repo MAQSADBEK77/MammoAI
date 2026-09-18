@@ -958,6 +958,12 @@ const uz = {
     regularityTrendStable: "Barqaror",
     regularityTrendLengthening: "So'nggi sikllar uzayib bormoqda",
     regularityTrendShortening: "So'nggi sikllar qisqarib bormoqda",
+    // DATA-ACCURACY-07: 1-2 ta aniqlangan sikldan hisoblangan "±0 kun farq"
+    // matematik jihatdan to'g'ri, lekin "juda barqaror" degan noto'g'ri
+    // taassurot qoldiradi — aslida shunchaki hali taqqoslash uchun yetarli
+    // ma'lumot yo'q. cycle.ts'dagi PredictionConfidence'ning "past ishonch"
+    // chegarasi (3 sikl) bilan bir xil chegara.
+    regularityLowDataHint: "Hali kam ma'lumot — ko'proq sikl qayd etilgach, bu raqam aniqroq bo'ladi.",
     symptomPhaseChartTitle: "Simptomlar qachon kuzatiladi",
     symptomPhasePeriodLabel: "Hayz kunlarida",
     symptomPhaseOtherLabel: "Boshqa kunlarda",
@@ -966,6 +972,10 @@ const uz = {
     predictionAccuracySummary: (avgError: number, within2Pct: number) =>
       `O'rtacha ${avgError} kun xato · ${within2Pct}% holatda ±2 kun ichida to'g'ri chiqqan`,
     predictionAccuracyHint: `So'nggi sikllarni orqaga qarab tekshirib hisoblangan — reklama emas, haqiqiy raqam.`,
+    // DATA-ACCURACY-07: `cyclesEvaluated` juda kam (1-2) bo'lsa, foiz
+    // ko'rinishidagi "aniqlik" (masalan "100%") aslida faqat 1 ta sinovga
+    // asoslangan bo'lishi mumkin — bu haqiqiy statistik ishonchni emas.
+    predictionAccuracyLowDataHint: "Hali kam sikl bilan tekshirilgan — bu raqam ko'proq ma'lumot bilan barqarorlashadi.",
     aiInsightTitle: "AI tahlili",
   },
 

@@ -888,6 +888,7 @@ const ru: Dictionary = {
     regularityTrendStable: "Стабильно",
     regularityTrendLengthening: "Последние циклы удлиняются",
     regularityTrendShortening: "Последние циклы укорачиваются",
+    regularityLowDataHint: "Пока мало данных — после нескольких циклов это число станет точнее.",
     symptomPhaseChartTitle: "Когда проявляются симптомы",
     symptomPhasePeriodLabel: "В дни менструации",
     symptomPhaseOtherLabel: "В другие дни",
@@ -896,6 +897,7 @@ const ru: Dictionary = {
     predictionAccuracySummary: (avgError: number, within2Pct: number) =>
       `В среднем ошибка ${avgError} дн. · ${within2Pct}% случаев точно в пределах ±2 дн.`,
     predictionAccuracyHint: "Рассчитано ретроспективно по прошлым циклам — реальная цифра, не реклама.",
+    predictionAccuracyLowDataHint: "Проверено пока на малом числе циклов — это число станет надёжнее со временем.",
     aiInsightTitle: "Анализ ИИ",
   },
 

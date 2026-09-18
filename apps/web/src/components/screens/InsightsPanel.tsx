@@ -149,13 +149,21 @@ export function InsightsPanel({
           <p className="text-2xl font-extrabold text-text-primary">
             {dict.chat.regularitySummary(summary.regularity.averageCycleLength, summary.regularity.variabilityDays)}
           </p>
-          <p className="text-xs text-text-muted">
-            {summary.regularity.trend === "lengthening"
-              ? dict.chat.regularityTrendLengthening
-              : summary.regularity.trend === "shortening"
-                ? dict.chat.regularityTrendShortening
-                : dict.chat.regularityTrendStable}
-          </p>
+          {/* DATA-ACCURACY-07: 1-2 ta aniqlangan sikldan "±0 kun farq" chiqishi
+              mumkin — matematik jihatdan to'g'ri, lekin "juda barqaror" degan
+              noto'g'ri taassurot qoldiradi. cycle.ts'dagi getPredictionConfidence
+              bilan bir xil "past ishonch" chegarasi (3 sikl). */}
+          {summary.regularity.cyclesAnalyzed < 3 ? (
+            <p className="text-xs text-text-muted">{dict.chat.regularityLowDataHint}</p>
+          ) : (
+            <p className="text-xs text-text-muted">
+              {summary.regularity.trend === "lengthening"
+                ? dict.chat.regularityTrendLengthening
+                : summary.regularity.trend === "shortening"
+                  ? dict.chat.regularityTrendShortening
+                  : dict.chat.regularityTrendStable}
+            </p>
+          )}
         </Card>
       )}
 
@@ -165,7 +173,11 @@ export function InsightsPanel({
           <p className="text-2xl font-extrabold text-text-primary">
             {dict.chat.predictionAccuracySummary(summary.predictionAccuracy.avgErrorDays, summary.predictionAccuracy.within2DaysPct)}
           </p>
-          <p className="text-xs text-text-muted">{dict.chat.predictionAccuracyHint}</p>
+          {/* DATA-ACCURACY-07: `cyclesEvaluated` juda kam bo'lsa (masalan 1-2),
+              foiz ko'rinishidagi "aniqlik" haqiqiy statistik ishonchni bermaydi. */}
+          <p className="text-xs text-text-muted">
+            {summary.predictionAccuracy.cyclesEvaluated < 3 ? dict.chat.predictionAccuracyLowDataHint : dict.chat.predictionAccuracyHint}
+          </p>
         </Card>
       )}
 
