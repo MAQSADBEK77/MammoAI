@@ -72,9 +72,17 @@ export interface AdminFeedbackEntry {
   userPhone: string | null;
 }
 
+export type AiProvider = "gemini" | "huawei_maas";
+
 export interface AiSettings {
+  provider: AiProvider;
   hasKey: boolean;
   maskedKey: string | null;
+  hasGeminiKey: boolean;
+  maskedGeminiKey: string | null;
+  hasHuaweiKey: boolean;
+  maskedHuaweiKey: string | null;
+  huaweiModel: string;
 }
 
 export interface YandexMetrikaSettings {
@@ -263,7 +271,8 @@ export const adminApi = {
   },
   aiSettings: {
     get: () => request<AiSettings>("/ai-settings"),
-    update: (patch: { apiKey: string }) => request<{ ok: true }>("/ai-settings", { method: "PATCH", body: JSON.stringify(patch) }),
+    update: (patch: { provider?: AiProvider; geminiApiKey?: string; huaweiApiKey?: string; huaweiModel?: string }) =>
+      request<{ ok: true }>("/ai-settings", { method: "PATCH", body: JSON.stringify(patch) }),
   },
   yandexMetrika: {
     get: () => request<YandexMetrikaSettings>("/yandex-metrika"),

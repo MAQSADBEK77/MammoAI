@@ -11,7 +11,7 @@
 // yo'q, (b) yangi log qo'shilgan (logsCount o'zgargan), yoki (c) 7 kundan
 // ko'p vaqt o'tgan bo'lsa qayta chaqiriladi.
 
-import { callGemini } from "./ai-chat";
+import { callActiveAiProvider } from "./ai-chat";
 import { getInsightsSummary } from "./insights";
 import { countCycleLogs, getActiveInsight, getMaxCycleLogUpdatedAt, saveActiveInsight } from "./repo";
 import { dictionaries } from "@mammoai/shared";
@@ -99,7 +99,7 @@ export async function getOrGenerateActiveInsight(
   try {
     const systemPrompt = SYSTEM_PROMPT_BY_LANGUAGE[language];
     const dataText = formatSummaryForPrompt(summary, patterns, language);
-    const content = await callGemini(systemPrompt, [{ role: "user", content: dataText }]);
+    const content = await callActiveAiProvider(systemPrompt, [{ role: "user", content: dataText }]);
     await saveActiveInsight(userId, { content, logsCountAtGeneration: logsCount, logsUpdatedAtAtGeneration: logsUpdatedAt });
     return content;
   } catch {

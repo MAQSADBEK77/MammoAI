@@ -7,13 +7,20 @@
 // ichida kontekst sifatida beradi. Shu tufayli AI "eslab qoladi": foydalanuvchi
 // oldin nima yozgan bo'lsa (cycle_logs orqali), keyingi suhbatda ham ko'rinadi.
 //
-// Model: Google Gemini (bepul reja — foydalanuvchi so'rovi: Anthropic hisobida
-// kredit tugagach, pullik emas, bepul limitli providerga o'tildi). Gemini'ning
-// OpenAI-mos ("OpenAI compatibility") REST qatlami ishlatiladi
-// (https://ai.google.dev/gemini-api/docs/openai) — shu tufayli so'rov/javob
-// shakli standart OpenAI chat-completions bilan bir xil, providerni yana
-// almashtirish kerak bo'lsa ham minimal o'zgarish bilan bo'ladi. Kalitni
-// https://aistudio.google.com/apikey'dan bepul olish mumkin.
+// Model: bir nechta provayder qo'llab-quvvatlanadi (admin panelda tanlanadi,
+// `ai_provider` sozlamasi — "gemini" | "huawei_maas"). Ikkalasi ham OpenAI-mos
+// ("OpenAI compatibility") REST qatlamini ishlatadi — shu tufayli so'rov/javob
+// shakli standart OpenAI chat-completions bilan bir xil, boshqa provayderga
+// o'tish ham shu naqshga qo'shimcha funksiya yozish bilan cheklanadi.
+// - Gemini (https://ai.google.dev/gemini-api/docs/openai) — kalit bepul,
+//   https://aistudio.google.com/apikey'dan.
+// - Huawei Cloud MaaS (ModelArts Studio, https://api-ap-southeast-1.
+//   modelarts-maas.com/openai/v1) — GLM/DeepSeek kabi modellarni beradi.
+//   GLM modellari standart holda uzoq "ichki fikrlash" (reasoning_content)
+//   qiladi — oddiy chat javobi uchun keraksiz token/vaqt sarflaydi, shuning
+//   uchun so'rovga `thinking: {type: "disabled"}` qo'shiladi (sinovda:
+//   buni yoqib-o'chirib solishtirilgan, o'chirilganda javob sifati bir xil,
+//   token sarfi ~5x kam).
 
 import { ApiError } from "./api-utils";
 import {
@@ -29,6 +36,12 @@ import type { ChatMessage, Language, Symptom, SymptomPattern, User } from "@mamm
 
 const SETTING_KEY = "gemini_api_key";
 const GEMINI_MODEL = "gemini-2.5-flash";
+export type AiProvider = "gemini" | "huawei_maas";
+const PROVIDER_SETTING_KEY = "ai_provider";
+const HUAWEI_KEY_SETTING = "huawei_maas_api_key";
+const HUAWEI_MODEL_SETTING = "huawei_maas_model";
+const HUAWEI_DEFAULT_MODEL = "glm-5.2";
+const HUAWEI_BASE_URL = "https://api-ap-southeast-1.modelarts-maas.com/openai/v1/chat/completions";
 const CONTEXT_LOG_LIMIT = 6; // oxirgi N ta kunlik yozuv — system promptga to'liq tafsilot bilan
 const PATTERN_WINDOW_DAYS = 90;
 const PATTERN_MIN_OCCURRENCES = 3;
@@ -39,6 +52,31 @@ export async function getGeminiApiKey(): Promise<string | null> {
 
 export async function setGeminiApiKey(key: string): Promise<void> {
   await setSetting(SETTING_KEY, key);
+}
+
+export async function getAiProvider(): Promise<AiProvider> {
+  const value = await getSetting(PROVIDER_SETTING_KEY);
+  return value === "huawei_maas" ? "huawei_maas" : "gemini"; // standart — ORQAGA MOSLIK: eski o'rnatishlarda bu sozlama umuman yo'q
+}
+
+export async function setAiProvider(provider: AiProvider): Promise<void> {
+  await setSetting(PROVIDER_SETTING_KEY, provider);
+}
+
+export async function getHuaweiMaasApiKey(): Promise<string | null> {
+  return getSetting(HUAWEI_KEY_SETTING);
+}
+
+export async function setHuaweiMaasApiKey(key: string): Promise<void> {
+  await setSetting(HUAWEI_KEY_SETTING, key);
+}
+
+export async function getHuaweiMaasModel(): Promise<string> {
+  return (await getSetting(HUAWEI_MODEL_SETTING)) || HUAWEI_DEFAULT_MODEL;
+}
+
+export async function setHuaweiMaasModel(model: string): Promise<void> {
+  await setSetting(HUAWEI_MODEL_SETTING, model);
 }
 
 /** Oxirgi ~90 kunlik cycle_logs'dan har bir simptom nechta alohida kunda
@@ -189,8 +227,54 @@ export async function callGemini(systemPrompt: string, history: { role: "user" |
   return text;
 }
 
+/** Huawei Cloud MaaS (ModelArts Studio) — OpenAI-mos endpoint, xuddi
+ * `callGemini` bilan bir xil so'rov/javob shakli. Javobda GLM modellarida
+ * qo'shimcha `reasoning_content` maydoni bo'lishi mumkin — shuning uchun
+ * ANIQ `content`ni o'qiymiz, `reasoning_content`ni emas. */
+export async function callHuaweiMaas(systemPrompt: string, history: { role: "user" | "assistant"; content: string }[]): Promise<string> {
+  const apiKey = await getHuaweiMaasApiKey();
+  if (!apiKey) throw new ApiError(500, "AI yordamchi hali sozlanmagan — admin panelda Huawei MaaS API kalitini qo'shing");
+  const model = await getHuaweiMaasModel();
+
+  const res = await fetch(HUAWEI_BASE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1024,
+      // GLM modellari standart holda uzoq ichki fikrlash qiladi — chat
+      // javobi uchun keraksiz, o'chiramiz (boshqa provayderlar bu maydonni
+      // e'tiborsiz qoldiradi, xato bermaydi).
+      thinking: { type: "disabled" },
+      messages: [{ role: "system", content: systemPrompt }, ...history],
+    }),
+  });
+
+  const json = (await res.json().catch(() => null)) as (GeminiChatResponse & { error?: { message?: string } }) | null;
+  if (!res.ok || !json) {
+    throw new ApiError(502, json?.error?.message ?? "AI yordamchidan javob olishda xatolik yuz berdi");
+  }
+  const text = json.choices?.[0]?.message?.content;
+  if (!text) throw new ApiError(502, "AI yordamchidan bo'sh javob keldi");
+  return text;
+}
+
+/** Joriy tanlangan provayder (admin panelda sozlanadi) orqali chaqiradi —
+ * `generateAssistantReply` VA `active-insights.ts` ikkalasi ham shu orqali
+ * ishlaydi, provayder almashtirilganda ikkalasi ham birga o'zgaradi. */
+export async function callActiveAiProvider(
+  systemPrompt: string,
+  history: { role: "user" | "assistant"; content: string }[]
+): Promise<string> {
+  const provider = await getAiProvider();
+  return provider === "huawei_maas" ? callHuaweiMaas(systemPrompt, history) : callGemini(systemPrompt, history);
+}
+
 /** Foydalanuvchi xabariga AI javobini tayyorlaydi: kontekst+pattern quradi,
- * Gemini'ni chaqiradi. Chaqiruvchi (route) xabarlarni saqlash bilan
+ * joriy provayderni chaqiradi. Chaqiruvchi (route) xabarlarni saqlash bilan
  * shug'ullanadi — bu funksiya sof "javob hisoblash" qatlami. */
 export async function generateAssistantReply(
   user: User,
@@ -201,7 +285,7 @@ export async function generateAssistantReply(
     detectSymptomPatterns(user.id),
   ]);
   const systemPrompt = await getSystemPrompt(user, context, patterns);
-  const reply = await callGemini(
+  const reply = await callActiveAiProvider(
     systemPrompt,
     history.map((m) => ({ role: m.role, content: m.content }))
   );
