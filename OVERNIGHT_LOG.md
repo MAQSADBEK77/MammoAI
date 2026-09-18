@@ -259,4 +259,26 @@ ham qo'lda Vercel dashboard'dan bekor qilish yoki shunchaki 45-60
 daqiqadan keyin ularning o'zi vaqt tugashi bilan navbatdan
 tushishini kutish mumkin.
 
-Battareya: 61% → 60%.
+**Yangilanish**: taxminim TASDIQLANDI — birinchi deploy
+(`mammoai-fv5akezss...`) taxminan 30 daqiqadan keyin o'zi "Ready"
+holatiga o'tdi (build'ning o'zi atigi 27 soniya davom etdi, ya'ni u
+qurilish MASHINASI ajratilishini kutib navbatda turgan, qurilishning
+o'zi buzilmagan edi). Bu ATAYLAB unga alias BERMADIM, chunki u
+OVERNIGHT-10/11'dan OLDIN yig'ilgan — hozir 8srcqemo8 (hammasini
+o'z ichiga oladi) tugashini kutmoqdaman, aks holda ikki marta alias
+almashtirish kerak bo'lardi.
+
+**Tirik dizayn-tekshiruvi (skrinshot, KOD O'QISH EMAS)**: real test
+hisobiga (`+998900000000`, `is_test_account=TRUE`) vaqtinchalik
+Premium berib (`granted_by='overnight-test'`, keyin DARHOL bekor
+qilindi), Playwright orqali 390px'da, YORUG' VA QORONG'I ikkalasida:
+(1) Tsikl ekrani — MOTION/dizayn to'g'ri, hech qanday muammo yo'q;
+(2) Yordamchi chatida haqiqiy xabar yuborib ("qattiq og'riq... qon
+ketmoqda") OVERNIGHT-06'ning tibbiy-ogohlantirish bannerini JONLI
+ishga tushirdim — ikkala rejimda ham to'g'ri kontrast, to'g'ri
+joylashuv, LAYOUT-01'ning "kirish qatori pastki navigatsiya orqasiga
+surilmaydi" tuzatishi ham tasdiqlandi. Test uchun yuborilgan 4 ta chat
+xabari (haqiqiy AI javobi bilan) va vaqtinchalik Premium — barchasi
+darhol tozalandi/bekor qilindi.
+
+Battareya: 61% → 59%.
