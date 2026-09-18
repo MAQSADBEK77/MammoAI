@@ -305,17 +305,29 @@ export interface AiUsageDay {
  * "bugun 0 token" deb aniq ko'rsatsin, kunni umuman o'tkazib yubormasin). */
 export async function getAiUsageRecent(provider: string, days: number): Promise<AiUsageDay[]> {
   await ensureSchema();
+  // OVERNIGHT-03: `generate_series(date, date, interval)` DEGAN OVERLOAD
+  // POSTGRES'DA UMUMAN MAVJUD EMAS (faqat timestamp/timestamptz+interval yoki
+  // int/bigint/numeric+qadam qabul qilinadi) — avvalgi kod `date - ${days-1}`
+  // (butun son ayirish) ishlatgani uchun bu funksiya HAR CHAQIRUVDA
+  // "function generate_series(integer, date, interval) does not exist" xatosi
+  // bilan qulardi (production'da tasdiqlangan: /api/admin/ai-settings har
+  // doim 500 qaytarardi). `make_interval(days => ...)` orqali natija
+  // `timestamp`ga aylantiriladi — bu ALLAQACHON to'g'ri ishlaydigan
+  // getAdminStats'dagi 30-kunlik grafik bilan bir xil naqsh. Natijadagi
+  // `day` maydoni ENDI `::date::text` bilan aniq qisqartiriladi — aks holda
+  // vaqt qismi ham qo'shilib ("2026-09-12 00:00:00"), UI'ning
+  // `d.day.slice(5)` formatlashini buzardi.
   const rows = (await sql`
     SELECT
-      d.day::text as day,
+      d.day::date::text as day,
       COALESCE(u.total_tokens, 0)::int as total_tokens,
       COALESCE(u.request_count, 0)::int as request_count
     FROM generate_series(
-      (now() AT TIME ZONE 'Asia/Tashkent')::date - ${days - 1},
+      (now() AT TIME ZONE 'Asia/Tashkent')::date - make_interval(days => (${days}::int - 1)),
       (now() AT TIME ZONE 'Asia/Tashkent')::date,
       interval '1 day'
     ) as d(day)
-    LEFT JOIN ai_usage_daily u ON u.day = d.day AND u.provider = ${provider}
+    LEFT JOIN ai_usage_daily u ON u.day = d.day::date AND u.provider = ${provider}
     ORDER BY d.day ASC
   `) as unknown as { day: string; total_tokens: number; request_count: number }[];
   return rows.map((r) => ({ day: r.day, totalTokens: r.total_tokens, requestCount: r.request_count }));
