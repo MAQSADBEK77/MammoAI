@@ -206,6 +206,39 @@ export function YordamchiScreen() {
     );
   }
 
+  // "Suhbat"/"Statistika" bo'limlariga ham, sarlavha ostidagi
+  // yopishtirilgan (sticky) hududga ham bir xil kerak — ikki marta
+  // yozmaslik uchun bitta joyda tuziladi.
+  const headerBlock = (
+    <>
+      <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
+      <p className="-mt-2 text-xs text-text-muted">{dict.chat.disclaimer}</p>
+
+      <div className="flex gap-2">
+        {(["chat", "stats"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={clsx(
+              "tap-target flex-1 rounded-full px-4 py-2 text-sm font-semibold transition",
+              tab === t ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
+            )}
+          >
+            {t === "chat" ? dict.chat.chatTab : dict.chat.statisticsTab}
+          </button>
+        ))}
+      </div>
+
+      {tab === "chat" && patterns.length > 0 && (
+        <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
+          <p className="text-sm font-bold text-warning">{dict.chat.patternBannerTitle}</p>
+          <p className="mt-1 text-sm text-text-secondary">{dict.chat.patternBannerBody}</p>
+        </div>
+      )}
+    </>
+  );
+
   return (
     // Butun ekran balandligi endi HAQIQIY o'lchangan qiymatlardan hisoblanadi
     // (rootTop — shu componentning ekrandagi boshlanish nuqtasi,
@@ -214,46 +247,36 @@ export function YordamchiScreen() {
     // birinchi render'da bir zumga to'liqroq ko'rinib, o'lchov kelgach
     // to'g'ri balandlikka tushadi.
     <div ref={rootRef} className="flex flex-col gap-4" style={{ height: `calc(100dvh - ${rootTop}px - var(--bottom-nav-height))` }}>
-      <div className="flex shrink-0 flex-col gap-4">
-        <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
-        <p className="-mt-2 text-xs text-text-muted">{dict.chat.disclaimer}</p>
-
-        <div className="flex gap-2">
-          {(["chat", "stats"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={clsx(
-                "tap-target flex-1 rounded-full px-4 py-2 text-sm font-semibold transition",
-                tab === t ? "bg-primary text-white" : "bg-surface-muted text-text-secondary"
-              )}
-            >
-              {t === "chat" ? dict.chat.chatTab : dict.chat.statisticsTab}
-            </button>
-          ))}
-        </div>
-
-        {tab === "chat" && patterns.length > 0 && (
-          <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
-            <p className="text-sm font-bold text-warning">{dict.chat.patternBannerTitle}</p>
-            <p className="mt-1 text-sm text-text-secondary">{dict.chat.patternBannerBody}</p>
-          </div>
-        )}
-      </div>
-
       {tab === "stats" ? (
-        insights ? (
-          <InsightsPanel summary={insights.summary} patterns={insights.patterns} aiInsight={insights.aiInsight} />
-        ) : (
-          // UX-00: ilgari bu <div> markazlashtirishga urinardi, lekin
-          // LoadingSpinner o'zi `position: fixed` Backdrop bo'lgani uchun
-          // hech qanday amaliy farq qilmasdi — endi haqiqiy `inline` variant.
-          <LoadingSpinner label={dict.common.loading} inline />
-        )
+        <>
+          <div className="flex shrink-0 flex-col gap-4">
+            {headerBlock}
+          </div>
+          {insights ? (
+            <InsightsPanel summary={insights.summary} patterns={insights.patterns} aiInsight={insights.aiInsight} />
+          ) : (
+            // UX-00: ilgari bu <div> markazlashtirishga urinardi, lekin
+            // LoadingSpinner o'zi `position: fixed` Backdrop bo'lgani uchun
+            // hech qanday amaliy farq qilmasdi — endi haqiqiy `inline` variant.
+            <LoadingSpinner label={dict.common.loading} inline />
+          )}
+        </>
       ) : (
         <>
-          <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+          {/* OVERNIGHT-04: sarlavha+yorliq+banner endi xabarlar bilan BIR
+              XIL aylantiriladigan hudud ichida (`sticky` bilan tepada
+              yopishtirilgan) — ilgari alohida `shrink-0` bo'lgani uchun,
+              juda past balandlikda (masalan klaviatura ochiq kichik
+              qurilmada, 390x400px'da tasdiqlandi) sarlavha+banner+kirish
+              qatorining yig'indisi ajratilgan balandlikdan oshib, kirish
+              maydonini pastki navigatsiya orqasiga surib yuborardi. Endi
+              qancha kontent bo'lishidan qat'iy nazar, kirish qatori HAR
+              DOIM shu konteynerning pastki chetida qoladi — ortiqcha
+              kontent esa (odatiy holatda deyarli hech qachon) shu ichki
+              hudud o'zi aylanadi, kirish maydonini bosib chiqarmaydi.*/}
+          <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+            <div className="sticky top-0 z-10 flex flex-col gap-4 bg-background pb-2">{headerBlock}</div>
+            <div className="flex flex-col gap-2">
             {chatLoadError ? (
               <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: loadMessages }} />
             ) : messages === null ? (
@@ -311,6 +334,7 @@ export function YordamchiScreen() {
                 </div>
               </ChatBubbleEnter>
             )}
+            </div>
           </div>
 
           {error && <p className="shrink-0 text-xs font-medium text-danger">{error}</p>}
