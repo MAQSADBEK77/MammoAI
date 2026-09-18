@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Avatar, Dialog, DialogTitle, DialogContent } from "@mui/material";
@@ -20,7 +20,7 @@ import { formatDateDisplay, getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPON
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card, LoadingSpinner, IconChip, Badge, DateWheelPicker } from "@/components/ui";
+import { Button, Card, LoadingSpinner, ErrorState, EmptyState, IconChip, Badge, DateWheelPicker } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { useAppDrawer } from "@/components/AppDrawer";
 import { PhaseCard } from "@/components/PhaseCard";
@@ -105,6 +105,11 @@ export function CycleScreen() {
   // bosilganda ochiladi (ekranni yengillashtirish, foydalanuvchi so'rovi).
   const [showCheckin, setShowCheckin] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  // UX-01: ilgari api.cycle.get() muvaffaqiyatsiz bo'lsa `data` HECH QACHON
+  // to'lmas edi — ekran CHEKSIZ "yuklanmoqda" holatida qolib ketardi (hech
+  // qanday xato/qayta urinish imkoniyatisiz). Endi PregnancyScreen'dagi
+  // bilan bir xil naqsh.
+  const [loadError, setLoadError] = useState(false);
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
@@ -114,14 +119,24 @@ export function CycleScreen() {
   const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
   const isWellbeing = onboardingProfile?.primaryGoal === "wellbeing";
 
+  const loadCycle = useCallback(() => {
+    setLoadError(false);
+    api.cycle.get().then(setData).catch(() => setLoadError(true));
+  }, []);
+
   useEffect(() => {
-    api.cycle.get().then(setData);
+    const timeout = setTimeout(loadCycle, 0);
     // Gamifikatsiya (roadmap) — muvaffaqiyatsiz bo'lsa ham asosiy ekran ishlayveradi.
     api.gamification
       .get()
       .then((g) => setStreakDays(g.currentStreakDays))
       .catch(() => {});
-  }, []);
+    return () => clearTimeout(timeout);
+  }, [loadCycle]);
+
+  if (loadError) {
+    return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: loadCycle }} />;
+  }
 
   if (!data) {
     return <LoadingSpinner label={dict.common.loading} />;
@@ -659,7 +674,10 @@ export function CycleScreen() {
         </div>
 
         {data.logs.length === 0 ? (
-          <p className="text-sm text-text-muted">{dict.cycle.noLogsYet}</p>
+          <EmptyState
+            message={dict.cycle.noLogsYet}
+            action={{ label: dict.cycle.addLogButton, onClick: () => openLogging(today, todayLog) }}
+          />
         ) : (
           <div className="space-y-2">
             {(showAllLogs ? data.logs : data.logs.slice(0, 3)).map((log) => {
@@ -692,9 +710,14 @@ export function CycleScreen() {
           </div>
         )}
 
-        <Button className="w-full" onClick={() => openLogging(today, todayLog)}>
-          {dict.cycle.addLogButton}
-        </Button>
+        {/* Bo'sh holatda EmptyState O'ZI xuddi shu amalni allaqachon taklif
+            qiladi — ikkinchi, ortiqcha "+ Yozuv qo'shish" tugmasini
+            ko'rsatmaslik uchun faqat yozuvlar mavjud bo'lgandagina. */}
+        {data.logs.length > 0 && (
+          <Button className="w-full" onClick={() => openLogging(today, todayLog)}>
+            {dict.cycle.addLogButton}
+          </Button>
+        )}
       </div>
 
       {/* Oxirgi hayz sanasini to'g'ridan-to'g'ri tuzatish — kalendar tepasidagi
