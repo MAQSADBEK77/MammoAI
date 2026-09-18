@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import type { Article } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, LoadingSpinner } from "@/components/ui";
+import { Badge, Card, LoadingSpinner, ErrorState } from "@/components/ui";
 
 export default function ArticleDetailPage() {
   const { dict } = useI18n();
@@ -32,12 +32,7 @@ export default function ArticleDetailPage() {
   }, [load]);
 
   if (loadError) {
-    return (
-      <Card className="flex flex-col items-center gap-3 py-8 text-center text-sm text-text-secondary">
-        <p>{dict.common.errorGeneric}</p>
-        <Button onClick={load}>{dict.common.retryButton}</Button>
-      </Card>
-    );
+    return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: load }} />;
   }
   if (!article) return <LoadingSpinner label={dict.common.loading} />;
 

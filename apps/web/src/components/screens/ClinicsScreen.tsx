@@ -15,7 +15,7 @@ import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
 import { getClinicRating, getClinicHours, isTopClinic } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, LinkButton, LoadingSpinner, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
+import { Badge, Card, LinkButton, LoadingSpinner, ErrorState, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import clsx from "clsx";
 
@@ -76,12 +76,7 @@ export function ClinicsScreen() {
   }, [clinics, filter, search]);
 
   if (loadError) {
-    return (
-      <Card className="flex flex-col items-center gap-3 py-8 text-center text-sm text-text-secondary">
-        <p>{dict.common.errorGeneric}</p>
-        <Button onClick={load}>{dict.common.retryButton}</Button>
-      </Card>
-    );
+    return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: load }} />;
   }
   if (!clinics) return <LoadingSpinner label={dict.common.loading} />;
 

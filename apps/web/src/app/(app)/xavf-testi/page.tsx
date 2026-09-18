@@ -6,7 +6,7 @@ import { RISK_QUIZ_QUESTIONS } from "@mammoai/shared";
 import type { RiskQuizAnswers, RiskQuizResult } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, LoadingSpinner, ProgressBar, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, LoadingSpinner, ErrorState, ProgressBar, ScreenHeader } from "@/components/ui";
 
 export default function RiskQuizPage() {
   const { dict } = useI18n();
@@ -18,6 +18,10 @@ export default function RiskQuizPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [result, setResult] = useState<RiskQuizResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // UX-03: ilgari catch yo'q edi — oxirgi savolga javob berilgach so'rov
+  // muvaffaqiyatsiz bo'lsa, tugma qayta yoqilardi-yu, lekin natija ham
+  // ko'rinmasdi, xato ham aytilmasdi (eng qiyin lahzada jim qolish).
+  const [submitError, setSubmitError] = useState(false);
   // WEB3-10: ClinicsScreen'dagi FIX-UX-08 bilan bir xil naqsh — .catch()
   // yo'q edi, so'rov muvaffaqiyatsiz bo'lsa (masalan vaqtinchalik tarmoq
   // uzilishi) `existingResult` hech qachon yangilanmay, ekran ABADIY
@@ -49,9 +53,12 @@ export default function RiskQuizPage() {
       return;
     }
     setSubmitting(true);
+    setSubmitError(false);
     try {
       const res = await api.riskQuiz.submit(next as RiskQuizAnswers);
       setResult(res);
+    } catch {
+      setSubmitError(true);
     } finally {
       setSubmitting(false);
     }
@@ -60,12 +67,7 @@ export default function RiskQuizPage() {
   const shown = result ?? (existingResult && !started ? existingResult : null);
 
   if (loadError) {
-    return (
-      <Card className="flex flex-col items-center gap-3 py-8 text-center text-sm text-text-secondary">
-        <p>{dict.common.errorGeneric}</p>
-        <Button onClick={load}>{dict.common.retryButton}</Button>
-      </Card>
-    );
+    return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: load }} />;
   }
   if (existingResult === undefined) {
     return <LoadingSpinner label={dict.common.loading} />;
@@ -118,6 +120,7 @@ export default function RiskQuizPage() {
               {dict.common.no}
             </Button>
           </div>
+          {submitError && <p className="text-center text-xs font-medium text-danger">{dict.common.errorGeneric}</p>}
         </Card>
       )}
     </div>
