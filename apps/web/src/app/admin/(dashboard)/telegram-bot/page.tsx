@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { adminApi, type TelegramBotSettings } from "@/lib/admin-api";
-import { Card, Button, Badge } from "@/components/ui";
+import { Card, Button, Badge, ErrorState } from "@/components/ui";
 
 function inputClass() {
   return "tap-target w-full rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
@@ -26,7 +26,14 @@ export default function AdminTelegramBotPage() {
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState<{ total: number; sent: number; failed: number } | null>(null);
 
-  function load() {
+  // OVERNIGHT-11: `error` faqat saqlash-amali uchun ishlatilardi, lekin
+  // pastdagi `if (!settings) return <Yuklanmoqda>` tekshiruvi HAR DOIM
+  // birinchi ishga tushgani uchun, boshlang'ich yuklash xatosi hech qachon
+  // ko'rinmasdi — sahifa abadiy "Yuklanmoqda…" holatida qotib qolardi.
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoadError(null);
     adminApi.telegramBot
       .get()
       .then((res) => {
@@ -35,18 +42,17 @@ export default function AdminTelegramBotPage() {
         setShortDescription(res.shortDescription ?? "");
         setDescription(res.description ?? "");
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"));
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Yuklashda xatolik"));
     adminApi.telegramBot
       .broadcastRecipients()
       .then((res) => setBroadcastRecipients(res.recipients))
       .catch(() => setBroadcastRecipients(null));
-  }
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(load, 0);
     return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [load]);
 
   async function saveToken() {
     if (!tokenInput.trim()) return;
@@ -105,6 +111,15 @@ export default function AdminTelegramBotPage() {
     } finally {
       setSavingProfile(false);
     }
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-bold text-text-primary">Telegram bot</h1>
+        <ErrorState message={loadError} retry={{ label: "Qayta urinish", onClick: load }} />
+      </div>
+    );
   }
 
   if (!settings) {

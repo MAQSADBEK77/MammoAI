@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { adminApi, type YandexMetrikaSettings } from "@/lib/admin-api";
-import { Card, Button, Badge } from "@/components/ui";
+import { Card, Button, Badge, ErrorState } from "@/components/ui";
 
 function inputClass() {
   return "tap-target w-full rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
@@ -25,21 +25,27 @@ export default function AdminYandexMetrikaPage() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
-  function load() {
+  // OVERNIGHT-11: `error` faqat saqlash-amali uchun ishlatilardi, lekin
+  // pastdagi `if (!settings) return <Yuklanmoqda>` tekshiruvi HAR DOIM
+  // birinchi ishga tushgani uchun, boshlang'ich yuklash xatosi hech qachon
+  // ko'rinmasdi — sahifa abadiy "Yuklanmoqda…" holatida qotib qolardi.
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoadError(null);
     adminApi.yandexMetrika
       .get()
       .then((res) => {
         setSettings(res);
         setCounterIdInput(res.counterId ?? "");
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"));
-  }
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Yuklashda xatolik"));
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(load, 0);
     return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [load]);
 
   async function save() {
     const patch: { token?: string; counterId?: string } = {};
@@ -76,6 +82,15 @@ export default function AdminYandexMetrikaPage() {
     } finally {
       setTesting(false);
     }
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-bold text-text-primary">Yandex Metrika</h1>
+        <ErrorState message={loadError} retry={{ label: "Qayta urinish", onClick: load }} />
+      </div>
+    );
   }
 
   if (!settings) {
