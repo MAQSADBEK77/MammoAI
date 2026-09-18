@@ -1,6 +1,8 @@
 import type { OnboardingProfile } from "@mammoai/shared";
 import {
+  addDays,
   computeCycleLengths,
+  daysBetween,
   generateChecklist,
   getPregnancyStatus,
   isCycleIrregular,
@@ -9,17 +11,6 @@ import {
   tashkentDateStr,
 } from "@mammoai/shared";
 import { ensureChecklistItem, getOnboardingProfile, getPregnancyProfile, listCycleLogs } from "./repo";
-
-const addDays = (dateStr: string, days: number) => {
-  const d = new Date(dateStr + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-};
-
-const daysBetween = (a: string, b: string) => {
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.round((new Date(b + "T00:00:00Z").getTime() - new Date(a + "T00:00:00Z").getTime()) / msPerDay);
-};
 
 // FIX-CHECKUPS: tug'ruqdan keyingi standart kuzatuv oynasi.
 const POSTPARTUM_WINDOW_DAYS = 42;

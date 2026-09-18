@@ -32,7 +32,7 @@ import {
   recordAiUsage,
   setSetting,
 } from "./repo";
-import { dictionaries, getPregnancyStatus } from "@mammoai/shared";
+import { addDays, dictionaries, getPregnancyStatus, tashkentDateStr } from "@mammoai/shared";
 import type { ChatMessage, Language, Symptom, SymptomPattern, User } from "@mammoai/shared";
 
 const SETTING_KEY = "gemini_api_key";
@@ -85,9 +85,12 @@ export async function setHuaweiMaasModel(model: string): Promise<void> {
  * sifatida qaytariladi. Sof agregatsiya, ML yo'q — tashxis emas, faqat signal. */
 export async function detectSymptomPatterns(userId: string): Promise<SymptomPattern[]> {
   const logs = await listCycleLogs(userId, 180);
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - PATTERN_WINDOW_DAYS);
-  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  // OVERNIGHT-01: avval `new Date(); ...toISOString()` — server UTC vaqtidan
+  // kesim sanasini olardi (FIX2-23/DATA-ACCURACY-01 bilan bir xil sinf xato,
+  // shu faylda hali topilmagan edi). Toshkent mahalliy 00:00-04:59 oralig'ida
+  // kesim sanasi bir kun oldinga siljib, chegaradagi simptom yozuvlarini
+  // pattern hisobidan tashlab yuborishi mumkin edi.
+  const cutoffStr = addDays(tashkentDateStr(), -PATTERN_WINDOW_DAYS);
 
   const counts = new Map<Symptom, number>();
   for (const log of logs) {

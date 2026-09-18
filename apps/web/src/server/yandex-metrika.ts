@@ -9,6 +9,7 @@
 
 import { getSetting, getSettingWithUpdatedAt, setSetting } from "./repo";
 import { ApiError } from "./api-utils";
+import { addDays, tashkentDateStr } from "@mammoai/shared";
 import {
   formatYandexBreakdown,
   formatYandexDailySeries,
@@ -84,10 +85,11 @@ export async function callYandexMetrikaApi(
   return json;
 }
 
+// OVERNIGHT-01: avval server UTC vaqtidan hisoblanardi (FIX2-23/
+// DATA-ACCURACY sinfidagi xato) — Toshkent mahalliy 00:00-04:59 oralig'ida
+// Yandex'dan so'ralayotgan sana oralig'i bir kunga siljib ketardi.
 function isoDateNDaysAgo(n: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - n);
-  return d.toISOString().slice(0, 10);
+  return addDays(tashkentDateStr(), -n);
 }
 
 /** Admin panel "Ulanishni tekshirish" tugmasi uchun — kichik, arzon so'rov

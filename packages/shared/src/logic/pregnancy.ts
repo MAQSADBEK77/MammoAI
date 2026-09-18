@@ -3,21 +3,9 @@
 
 import type { PregnancyProfile, VitalType } from "../types";
 import { tashkentDateStr } from "../date";
+import { addDays, daysBetween } from "./cycle";
 
 const PREGNANCY_DAYS = 280;
-
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function daysBetween(a: string, b: string): number {
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.round(
-    (new Date(b + "T00:00:00Z").getTime() - new Date(a + "T00:00:00Z").getTime()) / msPerDay
-  );
-}
 
 export function dueDateFromLmp(lastMenstrualPeriod: string): string {
   return addDays(lastMenstrualPeriod, PREGNANCY_DAYS);
