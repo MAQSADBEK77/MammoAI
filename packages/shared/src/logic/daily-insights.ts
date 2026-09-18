@@ -20,6 +20,10 @@ export type DailyInsightId =
   | "self_care"
   | "ai_assistant";
 
+// FIX 2026-09-18: "🥗"/"🧘" uchun Twemoji SVG apps/web/public/emoji'da mavjud
+// emas edi (83 ta boshlang'ich to'plamga kiritilmagan, tarmoqqa ulanmasdan
+// yangi fayl qo'shib bo'lmaydi) — brauzerda buzilgan rasm ko'rsatib turardi.
+// Mavjud to'plamdagi eng yaqin ma'noli emojiga almashtirildi.
 export const DAILY_INSIGHT_EMOJI: Record<DailyInsightId, string> = {
   phase_menstrual: "🩸",
   phase_follicular: "🌱",
@@ -27,8 +31,8 @@ export const DAILY_INSIGHT_EMOJI: Record<DailyInsightId, string> = {
   phase_luteal: "🌙",
   hydration: "💧",
   sleep: "😴",
-  nutrition: "🥗",
-  self_care: "🧘",
+  nutrition: "🫐",
+  self_care: "⭐",
   ai_assistant: "✨",
 };
 

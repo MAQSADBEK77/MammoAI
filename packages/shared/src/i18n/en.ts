@@ -264,6 +264,8 @@ const en: Dictionary = {
     moodCardLabel: "Mood",
     flowCardLabel: "Flow",
     symptomsCardLabel: "Symptoms",
+    logFlowButton: "Log cycle",
+    checkinButton: "Check-in",
     periodDayBadge: (day: number) => `Day ${day} of period`,
     flowLabel: "Flow intensity",
     moodLabel: "Mood",
@@ -320,15 +322,42 @@ const en: Dictionary = {
     moodCheckinTitle: "How are you feeling today?",
     dailyInsightsTitle: "Daily insights",
     dailyInsights: {
-      phase_menstrual: { title: "Period days", body: "Let your body rest — warm drinks and light movement help." },
-      phase_follicular: { title: "Follicular phase", body: "Your energy is rising — a good time to be active." },
-      phase_ovulation: { title: "Ovulation days", body: "Fertility is at its highest point." },
-      phase_luteal: { title: "Luteal phase", body: "PMS symptoms may start — be gentle with yourself." },
-      hydration: { title: "Stay hydrated", body: "At least 8 glasses of water a day matters for your health." },
-      sleep: { title: "Quality sleep", body: "Enough sleep supports hormonal balance." },
-      nutrition: { title: "Balanced nutrition", body: "Iron- and magnesium-rich food reduces fatigue." },
-      self_care: { title: "Make time for yourself", body: "Even a short break can lift your mood." },
-      ai_assistant: { title: "Have a question?", body: "Ask the AI Assistant — it remembers your history." },
+      phase_menstrual: {
+        title: "Your period days",
+        body: "It's normal to feel more tired today — give your body some rest, sip something warm, and don't rush.",
+      },
+      phase_follicular: {
+        title: "Your energy is building",
+        body: "You're likely feeling more energized — a good day to tackle something you've been putting off.",
+      },
+      phase_ovulation: {
+        title: "Your most energized days",
+        body: "Your body is at its most active right now — listen to yourself, many feel especially good these days.",
+      },
+      phase_luteal: {
+        title: "Be gentle with yourself",
+        body: "Your mood might shift a bit — that's normal, just try to be a little kinder to yourself today.",
+      },
+      hydration: {
+        title: "Had some water yet?",
+        body: "Staying hydrated helps you feel lighter and more alert — just a friendly nudge.",
+      },
+      sleep: {
+        title: "Try turning in a little earlier",
+        body: "Good sleep supports both your hormones and your mood — your body will thank you.",
+      },
+      nutrition: {
+        title: "Give your body some fuel",
+        body: "Iron- and magnesium-rich foods help with fatigue — maybe add some spinach or nuts today.",
+      },
+      self_care: {
+        title: "Take a moment for yourself",
+        body: "Even a short break can make a real difference — do something today just for you.",
+      },
+      ai_assistant: {
+        title: "Got a question? I'm here",
+        body: "The AI Assistant remembers your history and explains things simply — ask anytime.",
+      },
     },
     detailedLogButton: "Detailed entry",
     deleteLogButton: "Delete this entry",

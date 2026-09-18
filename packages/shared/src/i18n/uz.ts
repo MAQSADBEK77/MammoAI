@@ -273,6 +273,11 @@ const uz = {
     moodCardLabel: "Kayfiyat",
     flowCardLabel: "Oqim",
     symptomsCardLabel: "Simptomlar",
+    // 2026-09-18 UX qayta qurish: bosh ekrandagi 3 ta tezkor amal tugmasi
+    // uchun — "Batafsil kiritish" bo'limining flowCardLabel/symptomsCardLabel'idan
+    // farqli, qisqaroq tugma matnlari.
+    logFlowButton: "Sikl belgilash",
+    checkinButton: "Check-in",
     periodDayBadge: (day: number) => `Hayzning ${day}-kuni`,
     flowLabel: "Oqim intensivligi",
     moodLabel: "Kayfiyat",
@@ -347,16 +352,47 @@ const uz = {
     noLogsYet: "Hozircha yozuv yo'q — birinchi kunlik yozuvingizni qo'shing",
     moodCheckinTitle: "Bugun o'zingizni qanday his qilyapsiz?",
     dailyInsightsTitle: "Kunlik maslahatlar",
+    // 2026-09-18: "yozib berilgan shaxsiy maslahat" ohangiga o'zgartirildi
+    // (foydalanuvchi so'rovi: "yaqin do'st/hamshira yozganday" — lekin
+    // mazmun/aniqlik o'zgarmaydi, faqat ohang, hech qachon "chiroyli yolg'on"ga
+    // aylanmasin).
     dailyInsights: {
-      phase_menstrual: { title: "Hayz davri", body: "Tanangizga dam bering — issiq ichimlik va yengil harakat foydali." },
-      phase_follicular: { title: "Follikulyar faza", body: "Energiyangiz oshib bormoqda — faollik uchun yaxshi vaqt." },
-      phase_ovulation: { title: "Ovulyatsiya kunlari", body: "Unumdorlik darajasi eng yuqori nuqtada." },
-      phase_luteal: { title: "Luteal faza", body: "PMS belgilari boshlanishi mumkin — o'zingizga g'amxo'rlik qiling." },
-      hydration: { title: "Suv ichishni unutmang", body: "Kuniga kamida 8 stakan suv sog'lig'ingiz uchun muhim." },
-      sleep: { title: "Sifatli uyqu", body: "Yetarli uyqu gormonal balansga yordam beradi." },
-      nutrition: { title: "Muvozanatli ovqatlanish", body: "Temir va magniyga boy ovqatlar charchoqni kamaytiradi." },
-      self_care: { title: "O'zingizga vaqt ajrating", body: "Kichik dam olish ham kayfiyatga ijobiy ta'sir qiladi." },
-      ai_assistant: { title: "Savolingiz bormi?", body: "AI Yordamchidan so'rang — tarixingizni eslab qoladi." },
+      phase_menstrual: {
+        title: "Hayz kunlaringiz",
+        body: "Bugun o'zingizni charchoqroq his qilishingiz tabiiy — tanangizga dam bering, issiq narsa iching va shoshilmang.",
+      },
+      phase_follicular: {
+        title: "Kuch-quvvat oshmoqda",
+        body: "Energiyangiz asta-sekin ko'tarilyapti — bugun rejalaringizni amalga oshirish uchun ajoyib payt.",
+      },
+      phase_ovulation: {
+        title: "Eng faol kunlaringiz",
+        body: "Hozir tanangiz eng faol holatda — o'zingizni tinglang, bu davr ko'pchilikda yaxshi kayfiyat bilan kechadi.",
+      },
+      phase_luteal: {
+        title: "O'zingizga yumshoqroq bo'ling",
+        body: "Kayfiyat biroz o'zgarishi mumkin — bu me'yorda, shunchaki bugun o'zingizga nisbatan mehribonroq bo'ling.",
+      },
+      hydration: {
+        title: "Bir stakan suv ichdingizmi?",
+        body: "Kuniga yetarlicha suv ichish o'zingizni yengil va tetik his qilishga yordam beradi — hozir eslatib qo'yaylik dedik.",
+      },
+      sleep: {
+        title: "Bugun erta yotishga harakat qiling",
+        body: "Sifatli uyqu gormonlaringizga ham, kayfiyatingizga ham yaxshi ta'sir qiladi — tanangiz buni his qiladi.",
+      },
+      nutrition: {
+        title: "Tanangizni quvvatlantiring",
+        body: "Temir va magniyga boy ovqatlar charchoqni kamaytirishga yordam beradi — bugun bir hovuch yong'oq yoki ismaloq qo'shib ko'ring.",
+      },
+      self_care: {
+        title: "O'zingiz uchun bir daqiqa ajrating",
+        body: "Kichkina tanaffus ham katta farq qiladi — bugun o'zingiz uchun yoqimli biror narsa qiling.",
+      },
+      ai_assistant: {
+        title: "Savolingiz bo'lsa, shu yerdaman",
+        body: "AI Yordamchi tarixingizni eslab qoladi va tushunarli tilda javob beradi — istalgan payt so'rang.",
+      },
     },
     detailedLogButton: "Batafsil kiritish",
     /** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish tugmasi. */

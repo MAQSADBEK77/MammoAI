@@ -34,7 +34,13 @@ export function DailyInsightsCarousel({ phase }: { phase: CyclePhase | null }) {
               onClick={clickable ? () => router.push("/yordamchi") : undefined}
               className={`w-40 shrink-0 rounded-2xl p-4 text-left ${TINTS[i % TINTS.length]} ${clickable ? "active:scale-[0.98]" : ""}`}
             >
-              <Emoji e={DAILY_INSIGHT_EMOJI[id]} size={22} />
+              <div className="flex items-start justify-between">
+                <Emoji e={DAILY_INSIGHT_EMOJI[id]} size={22} />
+                {/* "Sizga atalgan" tuyg'usi uchun kichik, iliq belgi — ataylab
+                    robot/tizim ikonkasi emas (foydalanuvchi so'rovi: bu matn
+                    "yaqin odam yozganday" his qilinsin). */}
+                <Emoji e="💗" size={12} className="opacity-50" />
+              </div>
               <p className="mt-2 text-sm font-bold text-text-primary">{content.title}</p>
               <p className="mt-1 text-xs leading-snug text-text-secondary">{content.body}</p>
             </button>

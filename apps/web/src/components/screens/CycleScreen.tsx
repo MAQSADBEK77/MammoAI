@@ -3,23 +3,26 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Dialog, DialogTitle, DialogContent } from "@mui/material";
+import { Avatar, Dialog, DialogTitle, DialogContent } from "@mui/material";
 import {
   WaterDropOutlined,
   MedicalServicesOutlined,
+  SentimentSatisfiedAltOutlined,
+  CalendarMonthOutlined,
   GppMaybeOutlined,
   MenuBookOutlined,
   ChevronRight,
   EditOutlined,
+  Close,
 } from "@mui/icons-material";
 import type { CycleResponse, CycleLog, Dictionary, FlowLevel, Mood, PredictionConfidence, PredictionExplanationReason, Symptom } from "@mammoai/shared";
 import { formatDateDisplay, getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Button, Card, LoadingSpinner, ScreenHeader, IconChip, Badge, DateWheelPicker } from "@/components/ui";
+import { Button, Card, LoadingSpinner, IconChip, Badge, DateWheelPicker } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
-import { CycleRing } from "@/components/CycleRing";
+import { useAppDrawer } from "@/components/AppDrawer";
 import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { WellnessCard } from "@/components/WellnessCard";
@@ -78,7 +81,8 @@ const SYMPTOMS: Symptom[] = [
  * sahifasi edi, endi rejimga qarab Asosiy ichida ko'rsatiladi. */
 export function CycleScreen() {
   const { dict } = useI18n();
-  const { onboardingProfile } = useSession();
+  const { onboardingProfile, user } = useSession();
+  const { openDrawer } = useAppDrawer();
   const router = useRouter();
   const [data, setData] = useState<CycleResponse | null>(null);
   const [streakDays, setStreakDays] = useState<number | null>(null);
@@ -96,6 +100,11 @@ export function CycleScreen() {
   const [editingLastPeriod, setEditingLastPeriod] = useState(false);
   const [lastPeriodDraft, setLastPeriodDraft] = useState<string>(() => localDateStr());
   const [savingLastPeriod, setSavingLastPeriod] = useState(false);
+  // 2026-09-18 UX qayta qurish: kayfiyat-tekshiruvi va to'liq oy-kalendari
+  // endi bosh ekranda DOIM ko'rinib turmaydi — faqat tegishli tugma/ikonka
+  // bosilganda ochiladi (ekranni yengillashtirish, foydalanuvchi so'rovi).
+  const [showCheckin, setShowCheckin] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
@@ -168,11 +177,33 @@ export function CycleScreen() {
 
   const todayLog = data.logs.find((l) => l.date === today);
   const selectedPhase = phaseForDate(selectedDate);
-  const greeting = (
-    <>
-      {dict.common.greeting(onboardingProfile?.name ?? null, new Date().getHours())} <Emoji e="👋" size={20} />
-    </>
-  );
+
+  // 2026-09-18 UX qayta qurish — yangi yuqori qator: "26-avgust" formatidagi
+  // oddiy sana (avvalgi greeting o'rniga — mumkin qadar kam matn, App qayta
+  // qurish so'rovi: "bitta aniq raqam... ortiqcha tafsilotlar faqat so'ralganda").
+  const todayDateObj = new Date(today + "T00:00:00");
+  const todayLabel = `${todayDateObj.getDate()}-${dict.common.months[todayDateObj.getMonth()]}`;
+  const initials = onboardingProfile?.name?.trim()?.[0]?.toUpperCase() ?? null;
+
+  // 7 kunlik chiziq — doim BUGUNgi kunni ko'rsatib boshlanishi uchun kalendar
+  // haftasiga bog'lanmaydi, aksincha bugunni markazga olgan aylanma oyna
+  // (3 kun oldin...bugun...3 kun keyin), shu bilan skroll shart bo'lmaydi.
+  const weekStrip = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today + "T00:00:00");
+    d.setDate(d.getDate() + (i - 3));
+    return { date: localDateStr(d), dateObj: d };
+  });
+
+  // Bosh ekrandagi "hero" matni — CycleRing'ning eski sublabel mantig'i bilan
+  // AYNAN bir xil (yangi hisoblash yozilmagan, faqat markaziy o'ringa
+  // ko'chirilgan va katta shriftda ko'rsatiladi).
+  const heroHeadline = data.prediction?.isStale
+    ? dict.cycle.staleDataLabel
+    : !data.prediction
+      ? dict.cycle.ringEmptyLabel
+      : data.isIrregular
+        ? dict.cycle.irregularRingLabel
+        : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod);
 
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
@@ -260,19 +291,85 @@ export function CycleScreen() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-3">
-        <ScreenHeader title={greeting} subtitle={dict.cycle.title} />
-        {/* Gamifikatsiya — kalendar/asosiy oqimga halaqit qilmaydigan joyda,
-            faqat streak 1+ bo'lganda ko'rinadi (yangi userga bo'sh "0 kun"
-            ko'rsatib chalg'itmaslik uchun). */}
-        {!!streakDays && (
+      {/* 1. Yuqori qator — chapda profil-avatar (mavjud AppDrawer'ni ochadi,
+          yangi navigatsiya emas), o'rtada bugungi sana, o'ngda faqat bosilganda
+          to'liq oy-kalendarini ochadigan ikonka (foydalanuvchi so'rovi: bosh
+          ekran yengil bo'lsin, to'liq kalendar doim ko'rinib turmasin). */}
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={openDrawer}
+          aria-label={dict.common.openMenu}
+          className="tap-target shrink-0 rounded-full active:scale-95"
+        >
+          <Avatar
+            src={user?.avatarUrl ?? undefined}
+            sx={{ width: 40, height: 40, bgcolor: "var(--color-primary-light)", color: "var(--color-primary-dark)", fontWeight: 700 }}
+          >
+            {!user?.avatarUrl && (initials ?? <Emoji e="👋" size={18} />)}
+          </Avatar>
+        </button>
+        <p className="text-sm font-semibold text-text-secondary">{todayLabel}</p>
+        <button
+          type="button"
+          onClick={() => setShowCalendarModal(true)}
+          aria-label={dict.cycle.calendarTitle}
+          className="tap-target flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-text-secondary active:scale-95"
+        >
+          <CalendarMonthOutlined sx={{ fontSize: 20 }} />
+        </button>
+      </div>
+
+      {/* Gamifikatsiya — yuqori qatorga sig'maydi, shuning uchun shu ostida,
+          faqat streak 1+ bo'lganda (yangi userga bo'sh "0 kun" ko'rsatib
+          chalg'itmaslik uchun). */}
+      {!!streakDays && (
+        <div className="flex justify-end">
           <button
             onClick={() => router.push("/profil")}
             className="tap-target shrink-0 rounded-full bg-warning/15 px-3 py-1.5 text-xs font-bold text-warning"
           >
             {dict.gamification.cycleScreenStreakPill(streakDays)}
           </button>
-        )}
+        </div>
+      )}
+
+      {/* 2. 7 kunlik chiziq — doim bugunni ko'rsatib boshlanadi, o'tgan
+          kunlardagi yozuvlar mavjud DayMarker mantig'idan (markers) nuqta
+          bilan ko'rsatiladi. */}
+      <div className="grid grid-cols-7 gap-1">
+        {weekStrip.map(({ date, dateObj }) => {
+          const marker = markers[date];
+          const isToday = date === today;
+          return (
+            <button
+              key={date}
+              type="button"
+              onClick={() => {
+                setSelectedDate(date);
+                setCalendarMonth(dateObj);
+                setShowCalendarModal(true);
+              }}
+              className="tap-target flex flex-col items-center gap-1 rounded-2xl py-1.5"
+            >
+              <span className="text-[10px] font-semibold uppercase text-text-muted">{dict.common.weekdaysShort[dateObj.getDay()]}</span>
+              <span
+                className={clsx(
+                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition",
+                  isToday ? "bg-primary text-white" : "text-text-primary"
+                )}
+              >
+                {dateObj.getDate()}
+              </span>
+              <span
+                className={clsx(
+                  "h-1.5 w-1.5 rounded-full",
+                  marker && !isToday ? (marker === "period" ? "bg-primary" : "bg-primary-light") : "bg-transparent"
+                )}
+              />
+            </button>
+          );
+        })}
       </div>
 
       {isPerimenopause ? (
@@ -303,62 +400,60 @@ export function CycleScreen() {
             </Card>
           )}
 
-          <Card variant="glass" className="animate-fade-in-up flex flex-col items-center">
-            <button onClick={() => !dayInCycle && openLogging(today, todayLog)} className="w-full">
-              <CycleRing
-                dayInCycle={dayInCycle ?? 1}
-                cycleLength={data.settings.averageCycleLength}
-                label={dict.cycle.title}
-                sublabel={
-                  data.prediction?.isStale
-                    ? dict.cycle.staleDataLabel
-                    : !data.prediction
-                      ? dict.cycle.ringEmptyLabel
-                      : // CYCLE-ALGO-11: tartibsiz foydalanuvchiga aniq kun-hisobi
-                        // o'rniga naqsh-kuzatuv xabari — "3+ oy tartibsiz" banneri
-                        // bilan ziddiyatli signal bermasligi uchun.
-                        data.isIrregular
-                        ? dict.cycle.irregularRingLabel
-                        : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod)
-                }
-              />
-            </button>
-            {periodDay && (
-              <div className="mt-4 flex justify-center">
-                <Badge tone="primary">
-                  {isMinor && (
-                    <>
-                      <Emoji e="🐰" size={14} />{" "}
-                    </>
-                  )}
-                  {dict.cycle.periodDayBadge(periodDay)}
-                </Badge>
-              </div>
-            )}
+          {/* 3. Markaziy "hero" bloki — bitta katta matn ustunlik qiladi,
+              CycleRing'ning to'liq halqa diagrammasi o'rniga yumshoq,
+              sekin-asta "nafas oluvchi" blob-fon (LandingPage'dagi BlobArt
+              texnikasi bilan bir xil — motion-breathe, faqat scale
+              animatsiya qiladi, prefers-reduced-motion'da to'xtaydi lekin
+              yo'qolmaydi). */}
+          <button
+            type="button"
+            onClick={() => !dayInCycle && openLogging(today, todayLog)}
+            disabled={!!dayInCycle}
+            className="relative block w-full overflow-hidden rounded-[32px] py-10 text-center disabled:cursor-default"
+          >
+            <HeroBlob className="left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 bg-primary-light/40" />
+            <HeroBlob className="left-1/2 top-1/2 h-40 w-40 -translate-x-[70%] -translate-y-[30%] rotate-45 bg-accent-light/25" breatheDelay="-3.5s" />
+            <div className="relative z-10 px-4">
+              <p className="text-2xl leading-snug font-extrabold text-text-primary sm:text-3xl">{heroHeadline}</p>
 
-            {data.prediction && (
-              <div className="mt-3 flex flex-col items-center gap-1.5">
-                <p className="text-center text-xs text-text-muted">{explainPredictionText(data.prediction.explanationReason, dict)}</p>
-                {/* CYCLE-002: aniq sanani tibbiy haqiqat emas, turli aniqlikdagi
-                    taxmin sifatida ko'rsatish — foydalanuvchi ishonch darajasini
-                    ko'rib, mos ravishda kutishlarini moslashtira oladi. */}
-                <Badge tone={CONFIDENCE_TONE[data.prediction.confidence]}>
-                  {dict.cycle.confidenceLabel[data.prediction.confidence]}
-                </Badge>
-                {/* CYCLE-ALGO-07: "yuqori" ishonchda aniq sana yetarli (diapazon
-                    deyarli nuqtaga teng) — faqat past/o'rta ishonchda haqiqiy
-                    diapazonni ko'rsatib, soxta aniqlik taassurotini oldini olamiz. */}
-                {data.prediction.confidence !== "high" && !data.prediction.isStale && data.prediction.daysUntilNextPeriod >= 0 && (
-                  <p className="text-center text-xs text-text-muted">
-                    {dict.cycle.nextPeriodRangeLabel(
-                      formatDateDisplay(data.prediction.nextPeriodStartEarliest),
-                      formatDateDisplay(data.prediction.nextPeriodStartLatest)
+              {periodDay && (
+                <div className="mt-3 flex justify-center">
+                  <Badge tone="primary">
+                    {isMinor && (
+                      <>
+                        <Emoji e="🐰" size={14} />{" "}
+                      </>
                     )}
-                  </p>
-                )}
-              </div>
-            )}
-          </Card>
+                    {dict.cycle.periodDayBadge(periodDay)}
+                  </Badge>
+                </div>
+              )}
+
+              {data.prediction && (
+                <div className="mt-3 flex flex-col items-center gap-1.5">
+                  <p className="max-w-xs text-center text-xs text-text-muted">{explainPredictionText(data.prediction.explanationReason, dict)}</p>
+                  {/* CYCLE-002: aniq sanani tibbiy haqiqat emas, turli aniqlikdagi
+                      taxmin sifatida ko'rsatish — foydalanuvchi ishonch darajasini
+                      ko'rib, mos ravishda kutishlarini moslashtira oladi. */}
+                  <Badge tone={CONFIDENCE_TONE[data.prediction.confidence]}>
+                    {dict.cycle.confidenceLabel[data.prediction.confidence]}
+                  </Badge>
+                  {/* CYCLE-ALGO-07: "yuqori" ishonchda aniq sana yetarli (diapazon
+                      deyarli nuqtaga teng) — faqat past/o'rta ishonchda haqiqiy
+                      diapazonni ko'rsatib, soxta aniqlik taassurotini oldini olamiz. */}
+                  {data.prediction.confidence !== "high" && !data.prediction.isStale && data.prediction.daysUntilNextPeriod >= 0 && (
+                    <p className="text-center text-xs text-text-muted">
+                      {dict.cycle.nextPeriodRangeLabel(
+                        formatDateDisplay(data.prediction.nextPeriodStartEarliest),
+                        formatDateDisplay(data.prediction.nextPeriodStartLatest)
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </button>
 
           {/* CYCLE-ALGO-12: bashorat qilingan unumdor oyna atrofida — foydalanuvchiga
               ovulyatsiya signalini qayd etishni taklif qiladi (mavjud "add log"
@@ -381,108 +476,63 @@ export function CycleScreen() {
         </>
       )}
 
-      {/* Kunlik kayfiyat so'rovi — Figma referens: kalendar tepasida, faqat
-          "o'zini qanday his qilyapti" so'raladi, bosilgan zahoti saqlanadi va
-          kontekstual javob ko'rsatiladi. */}
-      <div className="space-y-3">
-        <p className="text-base font-bold text-text-primary">{dict.cycle.moodCheckinTitle}</p>
-        <div className="grid grid-cols-6 gap-2">
-          {MOODS.map((m) => (
-            <button
-              key={m}
-              onClick={() => pickMood(m)}
-              disabled={moodSaving}
-              className={clsx(
-                "tap-target flex aspect-square flex-col items-center justify-center rounded-2xl border-2 text-2xl transition active:scale-95 disabled:opacity-60",
-                todayLog?.mood === m ? "border-primary bg-primary-light/40" : "border-transparent bg-surface-muted hover:border-border"
-              )}
-            >
-              <Emoji e={MOOD_EMOJI[m]} size={26} />
-            </button>
-          ))}
-        </div>
-        {todayLog?.mood && (
-          <p className="flex items-center justify-center gap-1 text-center text-sm font-semibold text-primary-dark">
-            {dict.cycle.moodResponses[todayLog.mood]} <Emoji e={MOOD_RESPONSE_EMOJI[todayLog.mood]} size={16} />
-          </p>
-        )}
+      {/* 4. Tezkor amallar — mavjud sikl/simptom/kayfiyat oqimlarining TASHQI
+          ko'rinishi shu 3 tugmaga birlashtirildi (hech qanday yangi
+          backend/holat mantig'i yozilmagan — ikkinchisi ham birinchisi ham
+          allaqachon bir xil openLogging()ni chaqirar edi). */}
+      <div className="grid grid-cols-3 gap-2.5">
+        <QuickActionButton
+          icon={<WaterDropOutlined sx={{ fontSize: 22 }} />}
+          label={dict.cycle.logFlowButton}
+          onClick={() => openLogging(today, todayLog)}
+        />
+        <QuickActionButton
+          icon={<MedicalServicesOutlined sx={{ fontSize: 22 }} />}
+          label={dict.cycle.symptomsCardLabel}
+          onClick={() => openLogging(today, todayLog)}
+        />
+        <QuickActionButton
+          icon={<SentimentSatisfiedAltOutlined sx={{ fontSize: 22 }} />}
+          label={dict.cycle.checkinButton}
+          active={showCheckin}
+          onClick={() => setShowCheckin((v) => !v)}
+        />
       </div>
+
+      {/* Kunlik kayfiyat so'rovi — endi faqat "Check-in" tugmasi bosilganda
+          ko'rinadi (mantiq o'zgarmagan: bosilgan zahoti saqlanadi va
+          kontekstual javob ko'rsatiladi). */}
+      {showCheckin && (
+        <div className="animate-fade-in-up space-y-3">
+          <p className="text-base font-bold text-text-primary">{dict.cycle.moodCheckinTitle}</p>
+          <div className="grid grid-cols-6 gap-2">
+            {MOODS.map((m) => (
+              <button
+                key={m}
+                onClick={() => pickMood(m)}
+                disabled={moodSaving}
+                className={clsx(
+                  "tap-target flex aspect-square flex-col items-center justify-center rounded-2xl border-2 text-2xl transition active:scale-95 disabled:opacity-60",
+                  todayLog?.mood === m ? "border-primary bg-primary-light/40" : "border-transparent bg-surface-muted hover:border-border"
+                )}
+              >
+                <Emoji e={MOOD_EMOJI[m]} size={26} />
+              </button>
+            ))}
+          </div>
+          {todayLog?.mood && (
+            <p className="flex items-center justify-center gap-1 text-center text-sm font-semibold text-primary-dark">
+              {dict.cycle.moodResponses[todayLog.mood]} <Emoji e={MOOD_RESPONSE_EMOJI[todayLog.mood]} size={16} />
+            </p>
+          )}
+        </div>
+      )}
 
       {isWellbeing && <WellnessCard />}
 
-      <div>
-        <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.detailedLogButton}</p>
-        <div className="grid grid-cols-2 gap-2.5">
-          <QuickCard
-            icon={<WaterDropOutlined sx={{ fontSize: 20 }} />}
-            tone="primary"
-            label={dict.cycle.flowCardLabel}
-            value={
-              todayLog?.flow ? (
-                <>
-                  <Emoji e={FLOW_EMOJI[todayLog.flow]} size={14} /> {dict.cycle.flowLevels[todayLog.flow]}
-                </>
-              ) : undefined
-            }
-            onClick={() => openLogging(today, todayLog)}
-          />
-          <QuickCard
-            icon={<MedicalServicesOutlined sx={{ fontSize: 20 }} />}
-            tone="accent"
-            label={dict.cycle.symptomsCardLabel}
-            value={todayLog?.symptoms.length ? String(todayLog.symptoms.length) : undefined}
-            onClick={() => openLogging(today, todayLog)}
-          />
-        </div>
-      </div>
-
-      {/* FIX-UX-01: ilgari kayfiyat tanlagichidan DARHOL keyin edi — birinchi
-          ochilishda, hali skroll qilinmasdan, pastki suzuvchi menyu shu
-          bo'limning pastki qismini yopib qo'yardi (hech qanday skroll
-          ishorasisiz). "Batafsil kiritish" bo'limidan keyinga ko'chirildi —
-          bu yerda allaqachon sahifa uzunroq, "fold ostida" qolib ketmaydi. */}
+      {/* 5. Kunlik maslahat kartasi — iliq, "sizga atalgan" ohangdagi matn
+          (dict.cycle.dailyInsights, mazmuni o'zgarmagan, faqat ohang). */}
       <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
-
-      {/* Kalendar tepasida, uning ichidagi oy-o'tish o'qlariga xalaqit
-          bermaydigan alohida qatorda — "Batafsil kiritish" yorlig'i bilan
-          bir xil uslub (foydalanuvchi so'rovi: oxirgi hayz sanasini
-          tuzatib bo'lish kerak, masalan noto'g'ri kiritilgan/unutilgan
-          bo'lsa). */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-text-secondary">{dict.cycle.calendarTitle}</p>
-        <button
-          type="button"
-          onClick={openEditLastPeriod}
-          title={dict.cycle.editLastPeriodLabel}
-          aria-label={dict.cycle.editLastPeriodLabel}
-          className="tap-target flex h-8 w-8 items-center justify-center rounded-full bg-surface-muted text-text-secondary active:scale-95"
-        >
-          <EditOutlined sx={{ fontSize: 16 }} />
-        </button>
-      </div>
-
-      <Card className="rounded-[20px]!">
-        <MonthCalendar
-          monthDate={calendarMonth}
-          markers={markers}
-          phaseMarkers={phaseMarkers}
-          ovulationDate={data.prediction?.ovulationDay ?? null}
-          today={today}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-          onPrevMonth={() => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
-          onNextMonth={() => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
-        />
-      </Card>
-
-      {/* Tanlangan kun uchun faza/prognoz — App.pdf/Figma referens: "kalendar
-          pastida ma'lumot bersin, tanlov qilishiga qarab". */}
-      {selectedPhase && (
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-text-secondary">{formatDateLabel(selectedDate)}</p>
-          <PhaseCard phase={selectedPhase} />
-        </div>
-      )}
 
       {logging && (
         <Card className="space-y-4">
@@ -649,33 +699,105 @@ export function CycleScreen() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* To'liq oy-kalendari — endi doim ko'rinib turmaydi, faqat yuqori
+          qatordagi kalendar-ikonkasi yoki 7 kunlik chiziqdagi biror kun
+          bosilganda bottom-sheet sifatida ochiladi (foydalanuvchi so'rovi).
+          MonthCalendar'ning o'zi o'zgartirilmagan. */}
+      <Dialog
+        open={showCalendarModal}
+        onClose={() => setShowCalendarModal(false)}
+        fullWidth
+        maxWidth="xs"
+        slotProps={{ paper: { sx: { borderRadius: "28px" } } }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontWeight: 700 }}>
+          {dict.cycle.calendarTitle}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={openEditLastPeriod}
+              title={dict.cycle.editLastPeriodLabel}
+              aria-label={dict.cycle.editLastPeriodLabel}
+              className="tap-target flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted text-text-secondary active:scale-95"
+            >
+              <EditOutlined sx={{ fontSize: 16 }} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCalendarModal(false)}
+              aria-label={dict.common.close}
+              className="tap-target flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted text-text-secondary active:scale-95"
+            >
+              <Close sx={{ fontSize: 18 }} />
+            </button>
+          </div>
+        </DialogTitle>
+        <DialogContent className="space-y-4 pb-4!">
+          <MonthCalendar
+            monthDate={calendarMonth}
+            markers={markers}
+            phaseMarkers={phaseMarkers}
+            ovulationDate={data.prediction?.ovulationDay ?? null}
+            today={today}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            onPrevMonth={() => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
+            onNextMonth={() => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
+          />
+          {/* Tanlangan kun uchun faza/prognoz — App.pdf/Figma referens: "kalendar
+              pastida ma'lumot bersin, tanlov qilishiga qarab". */}
+          {selectedPhase && (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-text-secondary">{formatDateLabel(selectedDate)}</p>
+              <PhaseCard phase={selectedPhase} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function QuickCard({
+/** Bosh ekrandagi "hero" raqami ortidagi yumshoq, sekin-asta "nafas oluvchi"
+ * blob-fon — LandingPage'dagi BlobArt bilan AYNAN bir xil texnika (blur +
+ * organik border-radius + `motion-breathe` klassi), faqat bu yerga moslab
+ * qayta yozilgan (alohida umumiy komponent qilinmagan — ikkalasi bir-biridan
+ * mustaqil, ekranga xos fon bezagi). */
+function HeroBlob({ className, breatheDelay }: { className: string; breatheDelay?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={clsx("motion-breathe pointer-events-none absolute -z-10 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] blur-2xl", className)}
+      style={breatheDelay ? { animationDelay: breatheDelay } : undefined}
+    />
+  );
+}
+
+/** Tezkor amal tugmasi — sikl/simptom/check-in oqimlarining bosh ekrandagi
+ * yangi, birlashtirilgan tashqi ko'rinishi (foydalanuvchi so'rovi: "3-4 ta
+ * teng o'lchamli tugma"). */
+function QuickActionButton({
   icon,
   label,
-  value,
-  tone,
+  active,
   onClick,
 }: {
   icon: React.ReactNode;
   label: string;
-  value?: React.ReactNode;
-  tone: "primary" | "secondary" | "accent";
+  active?: boolean;
   onClick: () => void;
 }) {
-  const filled = !!value;
-  const toneBg = tone === "primary" ? "bg-primary" : tone === "secondary" ? "bg-secondary" : "bg-accent";
   return (
-    <button onClick={onClick} className="text-left">
-      <Card interactive className={clsx("flex h-full flex-col items-center justify-center gap-2 py-4 text-center", filled && `${toneBg} text-white`)}>
-        <span className={clsx("flex h-10 w-10 items-center justify-center rounded-2xl", filled ? "bg-white/20" : "bg-surface-muted text-text-secondary")}>
+    <button type="button" onClick={onClick} className="text-left">
+      <Card
+        interactive
+        className={clsx("flex h-full flex-col items-center justify-center gap-2 py-4 text-center", active && "bg-primary text-white")}
+      >
+        <span className={clsx("flex h-10 w-10 items-center justify-center rounded-2xl", active ? "bg-white/20" : "bg-surface-muted text-text-secondary")}>
           {icon}
         </span>
-        <span className={clsx("text-xs font-semibold", filled ? "text-white" : "text-text-secondary")}>{label}</span>
-        <span className={clsx("truncate text-xs", filled ? "text-white/80" : "text-text-muted")}>{value ?? "—"}</span>
+        <span className={clsx("text-xs font-semibold", active ? "text-white" : "text-text-secondary")}>{label}</span>
       </Card>
     </button>
   );
