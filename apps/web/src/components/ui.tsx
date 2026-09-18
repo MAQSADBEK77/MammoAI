@@ -448,7 +448,24 @@ export function IconChip({
 // `sr-only` bilan vizual jihatdan yashirilgan, lekin DOM'da bor va
 // `role="status"`/`aria-live="polite"` orqali skrin-rider'ga baribir
 // o'qib beriladi.
-export function LoadingSpinner({ label }: { label?: string }) {
+// UX-00: `inline` — bir bo'lim (masalan tab ichidagi Statistika panel)
+// o'zining ma'lumotini kutayotganda butun ekranni fixed Backdrop bilan
+// bosib qo'ymasin (avval YordamchiScreen buni markazlashtiruvchi <div>ga
+// o'rab qo'ygan edi, lekin Backdrop `position: fixed` bo'lgani uchun bu
+// hech qanday amaliy farq qilmasdi). `inline` bo'lsa oddiy, joyida turuvchi
+// spinner — hali ham bir xil `.loader` uslubi, faqat orqa fon/blursiz.
+export function LoadingSpinner({ label, inline = false }: { label?: string; inline?: boolean }) {
+  const spinner = (
+    <div role="status" aria-live="polite" className="flex flex-col items-center gap-3">
+      <span className="loader" />
+      {label && <span className="sr-only">{label}</span>}
+    </div>
+  );
+
+  if (inline) {
+    return <div className="flex flex-1 items-center justify-center py-10">{spinner}</div>;
+  }
+
   return (
     <Backdrop
       open
@@ -466,12 +483,81 @@ export function LoadingSpinner({ label }: { label?: string }) {
         backdropFilter: "blur(12px)",
       }}
     >
-      <div role="status" aria-live="polite" className="flex flex-col items-center gap-3">
-        <span className="loader" />
-        {label && <span className="sr-only">{label}</span>}
-      </div>
+      {spinner}
     </Backdrop>
   );
+}
+
+/**
+ * UX-00: "yuklab bo'lmadi" holati — ilgari FIX-UX-08/WEB3-10/11/12'da
+ * bir nechta ekranda ALOHIDA-ALOHIDA qo'lda yozilgan bir xil
+ * Card+matn+"Qayta urinish"-tugma naqshini BIR JOYGA birlashtiradi.
+ * Matn/tugma nomi chaqiruvchidan keladi — bu fayl i18n'dan mustaqil
+ * qoladi (`LoadingSpinner`ning `label` propi bilan bir xil naqsh);
+ * odatda `dict.common.errorGeneric`/`dict.common.retryButton` ishlatiladi,
+ * lekin ekran o'ziga xos, iliqroq xabar ham berishi mumkin.
+ */
+export function ErrorState({
+  message,
+  icon,
+  retry,
+  /** Dialog/DialogContent kabi allaqachon o'z konteyneriga ega joyda —
+   * qo'shimcha Card bilan o'rab qo'ymaslik uchun. */
+  bare = false,
+}: {
+  message: string;
+  icon?: ReactNode;
+  retry?: { label: string; onClick: () => void };
+  bare?: boolean;
+}) {
+  const body = (
+    <div className={clsx("flex flex-col items-center gap-3 text-center", bare ? "py-4" : "py-8")}>
+      {icon && <span className="flex h-12 w-12 items-center justify-center rounded-full bg-danger/10 text-danger">{icon}</span>}
+      <p className="text-sm text-text-secondary">{message}</p>
+      {retry && <Button onClick={retry.onClick}>{retry.label}</Button>}
+    </div>
+  );
+  return bare ? body : <Card className="text-center">{body}</Card>;
+}
+
+/**
+ * UX-00: "hali hech narsa yo'q" holati — Jamiyat lentasining bo'sh-holati
+ * (matn + ixtiyoriy amal-tugmasi) BUTUN ilova bo'ylab qayta ishlatiladigan
+ * yagona naqshga aylantirildi (ilgari faqat shu bitta ekranda bor edi,
+ * qolganlari oddiy xira matn bilan cheklangan edi). `illustrationSrc` —
+ * ekran allaqachon `useIllustrations().resolve(...)` orqali olgan
+ * rasmni shu yerga uzatishi mumkin (yangi illyustratsiya-slot turi
+ * qo'shilmadi — mavjud ekran-darajasidagi rasm qayta ishlatiladi).
+ */
+export function EmptyState({
+  title,
+  message,
+  illustrationSrc,
+  action,
+  bare = false,
+}: {
+  title?: string;
+  message: string;
+  illustrationSrc?: string;
+  action?: { label: string; onClick: () => void };
+  bare?: boolean;
+}) {
+  const body = (
+    <div className={clsx("flex flex-col items-center gap-3 text-center", bare ? "py-4" : "py-8")}>
+      {illustrationSrc && (
+        // eslint-disable-next-line @next/next/no-img-element -- kichik statik SVG, next/image shart emas
+        <img src={illustrationSrc} alt="" className="h-24 w-auto" />
+      )}
+      {title && <p className="font-semibold text-text-primary">{title}</p>}
+      <p className="text-sm text-text-secondary">{message}</p>
+      {action && (
+        <Button variant="secondary" onClick={action.onClick}>
+          {action.label}
+        </Button>
+      )}
+    </div>
+  );
+  return bare ? body : <Card className="text-center">{body}</Card>;
 }
 
 // iOS'dagi "wheel" pastga-tepaga varaqlanadigan tanlagichga o'xshab, scroll-snap

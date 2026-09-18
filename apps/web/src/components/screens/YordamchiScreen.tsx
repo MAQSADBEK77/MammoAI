@@ -197,9 +197,10 @@ export function YordamchiScreen() {
         insights ? (
           <InsightsPanel summary={insights.summary} patterns={insights.patterns} aiInsight={insights.aiInsight} />
         ) : (
-          <div className="flex flex-1 items-center justify-center">
-            <LoadingSpinner label={dict.common.loading} />
-          </div>
+          // UX-00: ilgari bu <div> markazlashtirishga urinardi, lekin
+          // LoadingSpinner o'zi `position: fixed` Backdrop bo'lgani uchun
+          // hech qanday amaliy farq qilmasdi — endi haqiqiy `inline` variant.
+          <LoadingSpinner label={dict.common.loading} inline />
         )
       ) : (
         <>
