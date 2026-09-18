@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import clsx from "clsx";
 import { Dialog } from "@mui/material";
 import { Close } from "@mui/icons-material";
@@ -15,7 +15,7 @@ import {
   type IllustrationCategory,
 } from "@mammoai/shared";
 import { adminApi } from "@/lib/admin-api";
-import { Card, LoadingSpinner } from "@/components/ui";
+import { Card, LoadingSpinner, ErrorState } from "@/components/ui";
 
 const SECTIONS = Object.keys(SLOT_SECTION_LABEL) as (keyof typeof SLOT_SECTION_LABEL)[];
 const CATEGORIES = Array.from(new Set(ILLUSTRATION_LIBRARY.map((i) => i.category))) as IllustrationCategory[];
@@ -33,17 +33,26 @@ export default function AdminIllustrationsPage() {
   const [categoryFilter, setCategoryFilter] = useState<IllustrationCategory | "all">("all");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // OVERNIGHT-08: `load()` xatoni TO'G'RI ushlardi, lekin pastdagi
+  // `if (!slots) return <LoadingSpinner>` tekshiruvi HAR DOIM birinchi
+  // ishga tushgani uchun, `error` state hech qachon ko'rinmasdi — sahifa
+  // abadiy "Yuklanmoqda…" holatida qotib qolardi (ai-settings.tsx'da
+  // OVERNIGHT-02'da topilgan bilan bir xil "tekshiruv tartibi" xatosi).
+  // Saqlash-amali xatosi (`error`)dan mustaqil `loadError` bilan tuzatildi.
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  function load() {
+  const load = useCallback(() => {
+    setLoadError(null);
     adminApi.illustrations
       .list()
       .then((res) => setSlots(res.slots))
-      .catch((err) => setError(err instanceof Error ? err.message : "Yuklashda xatolik"));
-  }
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Yuklashda xatolik"));
+  }, []);
 
   useEffect(() => {
-    load();
-  }, []);
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   async function pick(slug: string) {
     if (!pickerSlot) return;
@@ -60,6 +69,7 @@ export default function AdminIllustrationsPage() {
     }
   }
 
+  if (loadError) return <ErrorState message={loadError} retry={{ label: "Qayta urinish", onClick: load }} />;
   if (!slots) return <LoadingSpinner label="Yuklanmoqda…" />;
 
   const filteredLibrary = categoryFilter === "all" ? ILLUSTRATION_LIBRARY : ILLUSTRATION_LIBRARY.filter((i) => i.category === categoryFilter);
