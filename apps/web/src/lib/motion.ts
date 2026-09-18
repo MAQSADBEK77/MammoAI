@@ -1,10 +1,11 @@
-// MOTION-01: butun Landing sahifasi uchun YAGONA harakat tizimi.
-// globals.css'dagi --motion-* CSS o'zgaruvchilari bilan QIYMAT jihatidan
-// ATAYLAB SINXRON — CSS animatsiyalar (masalan blob "nafas olishi", ticker,
-// gradient siljishi) o'sha CSS o'zgaruvchilaridan, `motion` komponentlari esa
-// shu yerdan bir xil sonlarni oladi. Ikkalasi alohida-alohida o'zgartirilsa,
-// sahifa bo'ylab "his qilish" (feel) izchilligi buziladi — shuning uchun bu
-// fayl yagona haqiqat manbai.
+// MOTION-01 (dastlab Landing uchun, MOTION-APP-01'dan boshlab BUTUN ilova
+// bo'ylab qayta ishlatiladi — masalan (app)/layout.tsx'dagi PageTransition):
+// YAGONA harakat tizimi. globals.css'dagi --motion-* CSS o'zgaruvchilari
+// bilan QIYMAT jihatidan ATAYLAB SINXRON — CSS animatsiyalar (masalan blob
+// "nafas olishi", ticker, gradient siljishi) o'sha CSS o'zgaruvchilaridan,
+// `motion` komponentlari esa shu yerdan bir xil sonlarni oladi. Ikkalasi
+// alohida-alohida o'zgartirilsa, ilova bo'ylab "his qilish" (feel)
+// izchilligi buziladi — shuning uchun bu fayl yagona haqiqat manbai.
 
 /** "ease-out-expo" turidagi maxsus egri chiziq — yumshoq to'xtash,
  * MammoAI'ning "mehribon, sokin professional" ohangiga mos. */

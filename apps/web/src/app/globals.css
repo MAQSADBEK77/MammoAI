@@ -142,6 +142,21 @@ body {
   min-width: 48px;
 }
 
+/* MOTION-APP-01: bosilganda YENGIL kichrayish — HAR BIR `.tap-target`ga
+   BIRDANIGA, alohida-alohida `active:scale-*` qo'shmasdan (ko'p joyda bu
+   unutilgan, tugmalar "statik" his qilinardi). `:where()` bilan ATAYLAB
+   nol-specifichlik — biror joyda o'ziga xos `active:scale-*` (yoki boshqa)
+   klass allaqachon bo'lsa, o'sha DOIM ustunlik qiladi, bu faqat FONdagi
+   standart qiymat. Tailwind'ning O'ZI (translate/rotate/scale) mustaqil CSS
+   xususiyati bo'lgani uchun boshqa transform-utility'lar bilan ziddiyat
+   qilmaydi. */
+:where(.tap-target):active {
+  scale: 0.96;
+}
+:where(.tap-target) {
+  transition: scale 120ms ease-out;
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;

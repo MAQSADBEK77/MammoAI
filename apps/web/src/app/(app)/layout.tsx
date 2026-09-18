@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { BottomNav } from "@/components/BottomNav";
 import { AppDrawer, AppDrawerProvider } from "@/components/AppDrawer";
 import { LoadingSpinner } from "@/components/ui";
+import { PageTransition } from "@/components/PageTransition";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
@@ -54,7 +55,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           className="mx-auto max-w-2xl px-4 pt-2"
           style={!showGlobalDrawerBar ? { paddingTop: "calc(var(--tg-safe-area-top) + 1rem)" } : undefined}
         >
-          {children}
+          <PageTransition>{children}</PageTransition>
         </div>
         <BottomNav />
       </div>
