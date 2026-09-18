@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, jsonError, requireUser } from "@/server/api-utils";
 import { generateAssistantReply } from "@/server/ai-chat";
-import { incrementDailyChatUsage, hasPremiumAccess, listChatMessages, saveChatMessage } from "@/server/repo";
+import { incrementDailyChatUsage, decrementDailyChatUsage, hasPremiumAccess, listChatMessages, saveChatMessage } from "@/server/repo";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const DAILY_MESSAGE_LIMIT = 100;
@@ -34,12 +34,20 @@ export async function POST(request: NextRequest) {
       throw new ApiError(429, "Bugungi xabarlar limiti tugadi — ertaga davom eting", "daily_chat_limit_reached");
     }
 
-    await saveChatMessage(user.id, "user", content);
-    const history = await listChatMessages(user.id, HISTORY_LIMIT);
-    const { reply, patterns } = await generateAssistantReply(user, history);
-    const message = await saveChatMessage(user.id, "assistant", reply);
-
-    return NextResponse.json({ message, patterns });
+    try {
+      await saveChatMessage(user.id, "user", content);
+      const history = await listChatMessages(user.id, HISTORY_LIMIT);
+      const { reply, patterns } = await generateAssistantReply(user, history);
+      const message = await saveChatMessage(user.id, "assistant", reply);
+      return NextResponse.json({ message, patterns });
+    } catch (error) {
+      // DATA-ACCURACY-02: yuqoridagi hisoblagich (kunlik limit uchun) allaqachon
+      // oshirilgan edi, lekin foydalanuvchi HECH QANDAY javob olmadi (AI
+      // xatosi/tarmoq nosozligi) — kunlik limitni bunday muvaffaqiyatsiz
+      // urinish uchun sarflamaslik kerak.
+      await decrementDailyChatUsage(user.id);
+      throw error;
+    }
   } catch (error) {
     return jsonError(error);
   }

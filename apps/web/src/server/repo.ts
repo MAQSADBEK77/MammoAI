@@ -3682,6 +3682,22 @@ export async function incrementDailyChatUsage(userId: string): Promise<number> {
   return rows[0]?.message_count ?? 1;
 }
 
+/** DATA-ACCURACY-02: `incrementDailyChatUsage` limitni tekshirish uchun AI
+ * chaqiruvidan OLDIN oshiriladi (poyga holatidan himoya — FIX3-15), lekin
+ * agar shundan keyin AI javobi yoki xabarni saqlash muvaffaqiyatsiz tugasa,
+ * foydalanuvchi HECH QANDAY javob olmagan bo'ladi. Muvozanatlash uchun
+ * chaqiriladi — aks holda kunlik limit foydalanuvchiga hech qanday foyda
+ * bermagan urinishlar uchun jimgina kamayib, Gemini API vaqtinchalik
+ * ishlamay qolganda foydalanuvchini haqiqiy sabab-siz kunlik limitidan
+ * mahrum qilardi. */
+export async function decrementDailyChatUsage(userId: string): Promise<void> {
+  await ensureSchema();
+  await sql`
+    UPDATE chat_daily_usage SET message_count = GREATEST(message_count - 1, 0)
+    WHERE user_id = ${userId} AND usage_date = ${today()}
+  `;
+}
+
 // ---------------------------------------------------------------------------
 // Feedback loop — "Fikr bildirish" menyu bandi + AI Yordamchi ichidagi
 // yumshoq 👍/👎 so'rov.
