@@ -194,16 +194,31 @@ export function CycleScreen() {
     return { date: localDateStr(d), dateObj: d };
   });
 
+  // 2026-09-18 FIX: "yetarli ma'lumot yo'q" holati ilgari BIR VAQTDA to'rt
+  // xil shaklda aytilardi (headline + izoh + Badge + sana-diapazon) — endi
+  // shu holat aniqlanib, pastda hammasi BITTA qatorga birlashtiriladi.
+  // Confidence "insufficient" YOKI sabab turi hali chinakam sikl tarixi
+  // yo'qligini bildirsa (no_data/limited_data) — ikkalasi ham "hali ishonchli
+  // bashorat yo'q" degani, faqat turli darajada.
+  const isLowInfoPrediction =
+    !!data.prediction &&
+    (data.prediction.confidence === "insufficient" ||
+      data.prediction.explanationReason.type === "no_data" ||
+      data.prediction.explanationReason.type === "limited_data");
+
   // Bosh ekrandagi "hero" matni — CycleRing'ning eski sublabel mantig'i bilan
-  // AYNAN bir xil (yangi hisoblash yozilmagan, faqat markaziy o'ringa
-  // ko'chirilgan va katta shriftda ko'rsatiladi).
+  // asosan bir xil, lekin "kam ma'lumot" holatida endi PASSIV "ma'lumot yo'q"
+  // o'rniga FAOL, harakatga undovchi jumla ko'rsatiladi (pastdagi tugma
+  // allaqachon shu amalga — kunlik yozuv qo'shishga — olib boradi).
   const heroHeadline = data.prediction?.isStale
     ? dict.cycle.staleDataLabel
     : !data.prediction
       ? dict.cycle.ringEmptyLabel
-      : data.isIrregular
-        ? dict.cycle.irregularRingLabel
-        : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod);
+      : isLowInfoPrediction
+        ? dict.cycle.notEnoughDataHeroLabel
+        : data.isIrregular
+          ? dict.cycle.irregularRingLabel
+          : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod);
 
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
@@ -412,8 +427,13 @@ export function CycleScreen() {
             disabled={!!dayInCycle}
             className="relative block w-full overflow-hidden rounded-[32px] py-10 text-center disabled:cursor-default"
           >
-            <HeroBlob className="left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 bg-primary-light/40" />
-            <HeroBlob className="left-1/2 top-1/2 h-40 w-40 -translate-x-[70%] -translate-y-[30%] rotate-45 bg-accent-light/25" breatheDelay="-3.5s" />
+            {/* 2026-09-18 FIX: ilgari `-light` tokenlar (o'zi allaqachon
+                juda oч rang) baland opacity bilan ham och fonda deyarli
+                ko'rinmasdi. Endi TO'YINGAN asosiy ranglar (primary/accent)
+                PAST opacity bilan — bu blob-fon texnikasining odatiy
+                yechimi: rang o'zi to'yingan, shaffoflik uni yumshatadi. */}
+            <HeroBlob className="left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 bg-primary/25" />
+            <HeroBlob className="left-1/2 top-1/2 h-40 w-40 -translate-x-[70%] -translate-y-[30%] rotate-45 bg-accent/20" breatheDelay="-3.5s" />
             <div className="relative z-10 px-4">
               <p className="text-2xl leading-snug font-extrabold text-text-primary sm:text-3xl">{heroHeadline}</p>
 
@@ -430,7 +450,12 @@ export function CycleScreen() {
                 </div>
               )}
 
-              {data.prediction && (
+              {/* FIX: bu butun blok (izoh+Badge+sana-diapazon) faqat
+                  HAQIQIY (kam bo'lsa ham) bashorat mavjud bo'lganda
+                  ko'rsatiladi — "kam ma'lumot" holatida yuqoridagi
+                  heroHeadline'ning o'zi (notEnoughDataHeroLabel) yetarli,
+                  bularning barchasi bir xil fikrni takrorlardi. */}
+              {data.prediction && !isLowInfoPrediction && (
                 <div className="mt-3 flex flex-col items-center gap-1.5">
                   <p className="max-w-xs text-center text-xs text-text-muted">{explainPredictionText(data.prediction.explanationReason, dict)}</p>
                   {/* CYCLE-002: aniq sanani tibbiy haqiqat emas, turli aniqlikdagi
@@ -768,7 +793,7 @@ function HeroBlob({ className, breatheDelay }: { className: string; breatheDelay
   return (
     <div
       aria-hidden
-      className={clsx("motion-breathe pointer-events-none absolute -z-10 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] blur-2xl", className)}
+      className={clsx("motion-breathe pointer-events-none absolute z-0 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] blur-2xl", className)}
       style={breatheDelay ? { animationDelay: breatheDelay } : undefined}
     />
   );

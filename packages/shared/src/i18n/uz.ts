@@ -310,6 +310,11 @@ const uz = {
     perimenopauseCardTitle: "Perimenopauza kuzatuvi",
     perimenopauseCardBody: "Bu davrda tsikl tartibsizlashishi — tabiiy holat. Bashorat o'rniga belgilaringizni (issiqlik bosishi, uyqu, kayfiyat) kuzatib boring.",
     ringEmptyLabel: "Bashorat qilish uchun oxirgi hayz sanasini belgilang",
+    // 2026-09-18: "yetarli ma'lumot yo'q" holati ilgari 4 marta (headline +
+    // izoh + Badge + sana-diapazon) takrorlanardi — endi shu BITTA, FAOL
+    // undovchi jumla bilan almashtiriladi (CycleScreen'da confidence
+    // "insufficient" yoki no_data/limited_data bo'lganda).
+    notEnoughDataHeroLabel: "Bugungi holatingizni belgilang — bashorat shundan boshlanadi",
     staleDataLabel: "Ma'lumot eskirgan — oxirgi hayz sanasini yangilang",
     // CYCLE-ALGO-08: foydalanuvchiga "nega shunday bashorat qilindi" degan
     // qisqa, shaffof tushuntirish (`explainPrediction()`dagi 4 ta sabab
