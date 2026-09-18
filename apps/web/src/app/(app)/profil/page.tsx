@@ -581,7 +581,11 @@ export default function ProfilePage() {
 
       <Link href="/maxfiylik">
         <Card interactive className="space-y-1">
-          <SettingsRow icon="🔒" label={dict.profile.securityTitle} last>
+          {/* OVERNIGHT-12: ikkalasi ham 🔒 bo'lgani uchun pastdagi
+              "Bloklangan foydalanuvchilar" qatoridan farqlanmasdi —
+              🛡️ mavjud to'plamda bor va "xavfsizlik" ma'nosiga 🔒'dan
+              ham ko'ra mosroq. */}
+          <SettingsRow icon="🛡️" label={dict.profile.securityTitle} last>
             <span className="text-sm text-primary-dark">{dict.profile.privacyPolicyLink}</span>
           </SettingsRow>
         </Card>
