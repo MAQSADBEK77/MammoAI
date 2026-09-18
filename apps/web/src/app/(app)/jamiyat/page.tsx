@@ -19,7 +19,7 @@ import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, IconButton, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, IconButton, LoadingSpinner, ErrorState, ScreenHeader } from "@/components/ui";
 import { Reveal } from "@/components/motion-primitives";
 
 const REPORT_REASONS: CommunityReportReason[] = ["spam", "harassment", "misinformation", "medical_emergency", "other"];
@@ -103,26 +103,44 @@ export default function CommunityPage() {
   // ham topilib tuzatildi). So'nggi so'ralgan `tag` ref'da saqlanadi, javob
   // kelganda joriy tag bilan solishtirilib, mos kelmasa e'tiborsiz qoldiriladi.
   const latestTagRef = useRef<CommunityTag | "all">(tag);
+  // UX-02: ilgari `.catch()` yo'q edi — so'rov muvaffaqiyatsiz bo'lsa
+  // `posts` HECH QACHON to'lmasdi, lenta CHEKSIZ "yuklanmoqda" holatida
+  // qolib ketardi.
+  const [postsLoadError, setPostsLoadError] = useState(false);
 
   const loadPosts = useCallback((currentTag: CommunityTag | "all") => {
     latestTagRef.current = currentTag;
     setPosts(null);
-    api.community.listPosts({ tag: currentTag === "all" ? undefined : currentTag, limit: PAGE_SIZE, offset: 0 }).then((res) => {
-      if (latestTagRef.current !== currentTag) return;
-      setPosts(res.posts);
-      setTotal(res.total);
-    });
+    setPostsLoadError(false);
+    api.community
+      .listPosts({ tag: currentTag === "all" ? undefined : currentTag, limit: PAGE_SIZE, offset: 0 })
+      .then((res) => {
+        if (latestTagRef.current !== currentTag) return;
+        setPosts(res.posts);
+        setTotal(res.total);
+      })
+      .catch(() => {
+        if (latestTagRef.current !== currentTag) return;
+        setPostsLoadError(true);
+      });
   }, []);
 
   useEffect(() => {
-    api.community.stats().then(setStats);
+    // Ikkinchi darajali widget — muvaffaqiyatsiz bo'lsa ham asosiy lenta
+    // ishlayveradi (`{stats && (...)}` allaqachon shunga mo'ljallangan),
+    // lekin `.catch()` YO'Q edi — konsolda kuzatilmagan promise-rad etish
+    // qoldirmaslik uchun ANIQ jimgina e'tiborsiz qoldiriladi.
+    api.community.stats().then(setStats).catch(() => {});
   }, []);
 
   useEffect(() => {
-    api.notifications.list().then((res) => {
-      setNotifications(res.notifications);
-      setUnreadCount(res.unreadCount);
-    });
+    api.notifications
+      .list()
+      .then((res) => {
+        setNotifications(res.notifications);
+        setUnreadCount(res.unreadCount);
+      })
+      .catch(() => {});
   }, []);
 
   async function toggleNotifications() {
@@ -448,7 +466,9 @@ export default function CommunityPage() {
         ))}
       </div>
 
-      {!posts ? (
+      {postsLoadError ? (
+        <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: () => loadPosts(tag) }} />
+      ) : !posts ? (
         <LoadingSpinner label={dict.common.loading} />
       ) : posts.length === 0 ? (
         <Card className="space-y-3 text-center text-sm text-text-secondary">
