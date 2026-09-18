@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import clsx from "clsx";
 import type { ChecklistCategory, ChecklistItem, ChecklistResponse } from "@mammoai/shared";
 import { formatDateDisplay, CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -10,6 +11,7 @@ import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ScreenHeader, StatTile } from "@/components/ui";
 import { CheckCircleOutlined, AccessTimeOutlined, ErrorOutlineOutlined } from "@mui/icons-material";
+import { Reveal } from "@/components/motion-primitives";
 
 const STATUS_ICON = { pending: AccessTimeOutlined, done: CheckCircleOutlined, overdue: ErrorOutlineOutlined } as const;
 const STATUS_ICON_COLOR = { pending: "text-text-muted", done: "text-success", overdue: "text-danger" } as const;
@@ -45,6 +47,9 @@ export default function ChecklistPage() {
   const { resolve } = useIllustrations();
   const router = useRouter();
   const [data, setData] = useState<ChecklistResponse | null>(null);
+  // MOTION-APP-03: "bajarildi" bosilganda holat-belgisining qisqa "pop"i —
+  // mikro-tasdiq (Jamiyat'dagi layk-pop bilan bir xil umumiy klass).
+  const [justCompletedId, setJustCompletedId] = useState<string | null>(null);
 
   useEffect(() => {
     api.checklist.list().then(setData);
@@ -77,6 +82,8 @@ export default function ChecklistPage() {
     setData((prev) =>
       prev ? { ...prev, items: prev.items.map((item) => (item.id === id ? { ...item, status: "done", completedAt: new Date().toISOString() } : item)) } : prev
     );
+    setJustCompletedId(id);
+    window.setTimeout(() => setJustCompletedId((cur) => (cur === id ? null : cur)), 400);
     try {
       await api.checklist.complete(id);
     } catch {
@@ -99,6 +106,16 @@ export default function ChecklistPage() {
   const doneCount = items.filter((i) => i.status === "done").length;
   const pendingCount = items.filter((i) => i.status === "pending").length;
   const overdueCount = items.filter((i) => i.status === "overdue").length;
+
+  // MOTION-APP-03: ro'yxat bo'lim(kategoriya)larga guruhlangan bo'lsa ham,
+  // stagger butun sahifa bo'ylab UZLUKSIZ his qilinishi uchun — har bir
+  // band o'z GURUHIGA emas, BUTUN ro'yxatdagi o'rniga qarab kechikadi.
+  const groupedItems = groupByCategory(items);
+  const staggerIndexById = new Map<string, number>();
+  {
+    let i = 0;
+    for (const group of groupedItems) for (const item of group.items) staggerIndexById.set(item.id, i++);
+  }
 
   return (
     <div className="space-y-4 pb-6">
@@ -133,7 +150,7 @@ export default function ChecklistPage() {
 
       {!readOnly && items.length === 0 && <p className="text-text-secondary">—</p>}
 
-      {groupByCategory(items).map(({ category, items: groupItems }) => (
+      {groupedItems.map(({ category, items: groupItems }) => (
         <div key={category} className="space-y-2">
           <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{dict.checklist.categoryLabels[category]}</p>
           <div className="space-y-3">
@@ -156,10 +173,17 @@ export default function ChecklistPage() {
                 onboardingProfile.age >= officialTrack.minAge &&
                 onboardingProfile.age <= officialTrack.maxAge;
               return (
-                <Card key={item.id} className="space-y-2">
+                <Reveal key={item.id} index={staggerIndexById.get(item.id) ?? 0}>
+                <Card className="space-y-2">
                   <div className="flex items-start justify-between gap-3">
                     <p className="flex items-start gap-2.5 font-semibold text-text-primary">
-                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-current/10 ${STATUS_ICON_COLOR[item.status]}`}>
+                      <span
+                        className={clsx(
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-current/10",
+                          STATUS_ICON_COLOR[item.status],
+                          justCompletedId === item.id && "animate-pop-bounce"
+                        )}
+                      >
                         <StatusIcon sx={{ fontSize: 16 }} />
                       </span>
                       <span className="pt-1">{info.title}</span>
@@ -195,6 +219,7 @@ export default function ChecklistPage() {
                     </div>
                   )}
                 </Card>
+                </Reveal>
               );
             })}
           </div>

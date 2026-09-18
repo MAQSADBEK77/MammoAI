@@ -525,7 +525,7 @@ export default function CommunityPage() {
                     )}
                   >
                     {post.viewerLiked ? (
-                      <Favorite sx={{ fontSize: 16 }} className={justLikedId === post.id ? "animate-like-pop" : undefined} />
+                      <Favorite sx={{ fontSize: 16 }} className={justLikedId === post.id ? "animate-pop-bounce" : undefined} />
                     ) : (
                       <FavoriteBorderOutlined sx={{ fontSize: 16 }} />
                     )}{" "}

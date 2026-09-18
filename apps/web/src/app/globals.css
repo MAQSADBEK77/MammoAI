@@ -172,12 +172,14 @@ body {
   animation: fade-in-up 0.5s ease-out both;
 }
 
-/* MOTION-APP-02: "like" tugmasi bosilganda yurak belgisining qoniqarli
-   "pop" sakrashi (Instagram/Twitter'dagi kabi tanish naqsh) — bevosita
-   foydalanuvchining o'z bosishiga JAVOB, shuning uchun (tap-target scale
-   kabi) reduced-motion'da ham o'chirilmaydi: bu ambient dekorativ
-   animatsiya emas, bitta qisqa sabab-natija fidbek. */
-@keyframes like-pop {
+/* MOTION-APP-02/03: kichik belgi/ikonka "pop" sakrashi — "layk" yurak
+   belgisi, checklist bandi bajarilgani kabi BEVOSITA foydalanuvchi
+   amaliga JAVOB bo'lgan holatlar uchun umumiy (nomi shuning uchun
+   generik — bir nechta ekranda qayta ishlatiladi). Bevosita bosishga
+   javob bo'lgani uchun (tap-target scale kabi) reduced-motion'da ham
+   o'chirilmaydi: bu ambient dekorativ animatsiya emas, bitta qisqa
+   sabab-natija fidbek. */
+@keyframes pop-bounce {
   0% {
     scale: 1;
   }
@@ -188,8 +190,8 @@ body {
     scale: 1;
   }
 }
-.animate-like-pop {
-  animation: like-pop 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+.animate-pop-bounce {
+  animation: pop-bounce 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* MOTION-APP-02: yangi post yuborilgach, ro'yxat boshidagi kartani BIR
