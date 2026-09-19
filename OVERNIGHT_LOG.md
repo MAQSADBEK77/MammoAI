@@ -281,4 +281,41 @@ surilmaydi" tuzatishi ham tasdiqlandi. Test uchun yuborilgan 4 ta chat
 xabari (haqiqiy AI javobi bilan) va vaqtinchalik Premium — barchasi
 darhol tozalandi/bekor qilindi.
 
-Battareya: 61% → 59%.
+Yana skrinshot bilan tekshirilgan (ikkalasida ham muammo topilmadi):
+Tekshiruv ro'yxati, Jamiyat ekranlari (390px, yorug'+qorong'i).
+
+**OVERNIGHT-12**: Profil sahifasini to'liq skrinshot qilganimda,
+OVERNIGHT-05'ning o'zi yaratgan kichik nomuvofiqlik topildi —
+"Xavfsizlik va maxfiylik" va "Bloklangan foydalanuvchilar" qatorlari
+ikkalasi ham 🔒 ishlatgan ekan (bittasi asl, ikkinchisi OVERNIGHT-05'da
+🚫 o'rniga qo'yilgan). Birinchisini 🛡️ (qalqon, ham mahalliy
+to'plamda bor, ma'no jihatidan ham mosroq)ga o'zgartirdim. Skrinshot
+bilan tasdiqlandi.
+
+**✅ Deploy YAKUNLANDI**: `mammoai-8srcqemo8...` ~32 daqiqa navbatda
+turgandan keyin (bu safar HAQIQATAN HAM Vercel hisobning bir vaqtdagi
+build-limiti — birinchi qotgan deploy ozod bo'lgach, ikkinchisi ham
+32 daqiqadan keyin o'zi "Ready" bo'ldi, qurilishning o'zi atigi 59
+soniya davom etdi) `vercel alias set` bilan QO'LDA `mammo.uz` va
+`www.mammo.uz`'ga bog'ladim. Endi OVERNIGHT-08'dan 12'gacha BARCHA
+tuzatishlar production'da JONLI.
+
+Smoke-check (Playwright, `mammo.uz`ga haqiqiy tashrif): sarlavha
+to'g'ri ko'rindi, LEKIN birinchi tekshiruvda `/api/illustrations`'dan
+bitta 500 xato qayd etildi. Darhol qayta tekshirdim — bu YANGI
+deploy'ning birinchi so'rovlaridagi oddiy "sovuq boshlanish" (cold
+start) ekan: keyingi 5 marta ketma-ket `curl` va qayta Playwright
+tekshiruvi barchasi 200 qaytardi, hech qanday kod OVERNIGHT-08'dan
+12'gacha `illustrations` route'iga tegmagan. Xavfsiz deb hisoblayman,
+lekin ertalab bir marta qo'lda `/onboarding`ni ochib rasm to'g'ri
+yuklanishini ko'zdan kechiring — sof ehtiyot chorasi sifatida.
+
+Battareya: 61% → 58%.
+
+## Tsikl 7 — foydalanuvchi bilan qisqa aloqa (02:07)
+
+Foydalanuvchi "nima bo'ldi" deb yozdi — bu kutilmagan holat (vazifa
+"hech qachon savol berma, javob bo'lmaydi" deb belgilangan edi, lekin
+bu MENING savolim emas, FOYDALANUVCHINING o'zi yozgan xabari, shuning
+uchun albatta javob berdim). Qisqa holat-hisoboti berildi va avtonom
+ishlashni davom ettirish rejalashtirildi.
