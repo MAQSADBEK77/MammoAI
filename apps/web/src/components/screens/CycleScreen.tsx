@@ -140,6 +140,36 @@ export function CycleScreen() {
     return () => clearTimeout(timeout);
   }, [loadCycle]);
 
+  // OVERNIGHT-20: foydalanuvchi so'roviga ko'ra ("kirganda so'rasin srazu",
+  // Flo'ning proaktiv kunlik so'rovnomasi kabi) — bugun uchun hali hech
+  // narsa qayd etilmagan bo'lsa, ekran ochilishi bilan darhol (kutmasdan,
+  // qidirmasdan) belgilash oynasi o'zi ochiladi. Bir kunda BIR MARTA
+  // (sessionStorage) — sahifalar orasida bir necha marta o'tib-kelinganda
+  // zerikarli bo'lib qolmasligi uchun; ma'lumot allaqachon bo'lsa umuman
+  // ko'rsatilmaydi.
+  useEffect(() => {
+    if (!data) return;
+    if (data.logs.some((l) => l.date === today)) return;
+    try {
+      const key = `mammoai_checkin_prompted_${today}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      // Xususiy rejim va h.k. — baribir bir marta ko'rsatamiz.
+    }
+    // setState effekt ICHIDA sinxron chaqirilmaydi (fayldagi boshqa
+    // effektlar bilan bir xil naqsh — react-hooks/set-state-in-effect).
+    const timeout = setTimeout(() => {
+      setLogDate(today);
+      setFlow(null);
+      setMood(null);
+      setSymptoms([]);
+      setLogging(true);
+    }, 0);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
   if (loadError) {
     return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: loadCycle }} />;
   }
@@ -640,8 +670,28 @@ export function CycleScreen() {
           (dict.cycle.dailyInsights, mazmuni o'zgarmagan, faqat ohang). */}
       <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
 
-      {logging && (
-        <Card className="space-y-4">
+      {/* OVERNIGHT-20: bu forma ILGARI oddiy inline <Card> edi — sahifada
+          DailyInsightsCarousel'dan PASTDA render bo'lardi, ya'ni hero/tezkor
+          amal tugmalaridan birortasi bosilganda forma HAQIQATAN ochilardi,
+          lekin ekran pastida, hech qanday scroll/vizual signalsiz — real
+          foydalanuvchi "bosyapman, hech narsa bo'lmayapti" deb xabar berdi.
+          Endi haqiqiy Dialog (Flo'dagi kabi darhol paydo bo'ladigan modal) —
+          qaysi tugmadan chaqirilishidan qat'iy nazar (hero, "Sikl
+          belgilash"/"Simptomlar", kun-tafsilot kartasi, "+ Yozuv qo'shish")
+          DOIM zudlik bilan ko'rinadi. */}
+      <Dialog open={logging} onClose={() => setLogging(false)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: "28px" } } }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontWeight: 700 }}>
+          {dict.cycle.dailyCheckinTitle}
+          <button
+            type="button"
+            onClick={() => setLogging(false)}
+            aria-label={dict.common.close}
+            className="tap-target flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted text-text-secondary active:scale-95"
+          >
+            <Close sx={{ fontSize: 18 }} />
+          </button>
+        </DialogTitle>
+        <DialogContent className="space-y-4 pb-4!">
           <div>
             <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.flowLabel}</p>
             <div className="grid grid-cols-4 gap-2">
@@ -704,8 +754,8 @@ export function CycleScreen() {
               {dict.cycle.deleteLogButton}
             </Button>
           )}
-        </Card>
-      )}
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-2 gap-3">
         <button onClick={() => router.push("/xavf-testi")} className="text-left">
