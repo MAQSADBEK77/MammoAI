@@ -148,6 +148,11 @@ export interface CycleLog {
   mood: Mood | null;
   symptoms: Symptom[];
   createdAt: string;
+  /** CYCLE-ALGO-15: bazal tana harorati (BBT), Selsiy — masalan 36.50.
+   * Ixtiyoriy, "Ilg'or" bo'lim orqali kiritiladi. Mavjud bo'lsa, ovulyatsiya
+   * kunini simptom-signaldan ko'ra ANIQROQ aniqlash uchun ishlatiladi
+   * (cycle.ts#detectOvulationFromBbt). */
+  basalBodyTemp: number | null;
 }
 
 export interface CycleSettings {

@@ -16,6 +16,7 @@ import {
   computeWeightedAverage,
   daysBetween,
   deriveAdaptiveCycleSettings,
+  detectOvulationFromBbt,
   detectOvulationSignals,
   detectPeriodStarts,
   explainPrediction,
@@ -471,6 +472,42 @@ describe("detectOvulationSignals", () => {
   });
 });
 
+// CYCLE-ALGO-15: bazal tana harorati (BBT) — klassik "harorat sakrashi"
+// (temperature shift) usuli. Standart tavsiya: oxirgi 6 o'lchovning
+// o'rtachasidan keyingi 3 kun ketma-ket 0.2°C+ yuqori bo'lsa, o'sha 3
+// kunlik davrning BIRINCHI kuni ovulyatsiya kuni.
+describe("detectOvulationFromBbt", () => {
+  it("6 kunlik bazaviy o'rtachadan keyin 3 kun ketma-ket 0.2°C+ yuqori bo'lsa, sakrashning BIRINCHI kunini aniqlaydi", () => {
+    // Bazaviy 6 kun: 36.3/36.4/36.3/36.4/36.3/36.4 → o'rtacha 36.35.
+    // Keyingi 3 kun: 36.7/36.8/36.7 — barchasi >= 36.35+0.2=36.55 ✓.
+    const temps = [36.3, 36.4, 36.3, 36.4, 36.3, 36.4, 36.7, 36.8, 36.7];
+    const logs = temps.map((t, i) => ({ date: addDays("2026-01-01", i), basalBodyTemp: t }));
+    // 7-kun (indeks 6, 2026-01-07) — 3 kunlik ko'tarilishning BIRINCHI kuni.
+    expect(detectOvulationFromBbt(logs)).toContain("2026-01-07");
+  });
+
+  it("harorat sakrashi bo'lmasa (barqaror), bo'sh massiv qaytaradi", () => {
+    const temps = Array.from({ length: 12 }, () => 36.3);
+    const logs = temps.map((t, i) => ({ date: addDays("2026-01-01", i), basalBodyTemp: t }));
+    expect(detectOvulationFromBbt(logs)).toEqual([]);
+  });
+
+  it("yetarli o'lchov bo'lmasa (6 bazaviy + 3 tasdiqlovchidan kam), bo'sh massiv qaytaradi", () => {
+    const temps = [36.3, 36.4, 36.3, 36.7, 36.8]; // atigi 5 ta o'lchov
+    const logs = temps.map((t, i) => ({ date: addDays("2026-01-01", i), basalBodyTemp: t }));
+    expect(detectOvulationFromBbt(logs)).toEqual([]);
+  });
+
+  it("basalBodyTemp yo'q kunlarni e'tiborsiz qoldiradi (bo'shliqlarga chidamli)", () => {
+    const temps = [36.3, 36.4, 36.3, 36.4, 36.3, 36.4, 36.7, 36.8, 36.7];
+    const logs = temps.map((t, i) => ({ date: addDays("2026-01-01", i), basalBodyTemp: t }));
+    // Orasiga BBT'siz kunlar qo'shamiz (masalan simptom-yozuv) — bular
+    // indeks-asoslangan oynada shunchaki e'tiborsiz qoldirilishi kerak.
+    const withGaps = [...logs, { date: "2026-01-20", basalBodyTemp: null }, { date: "2026-01-21" }];
+    expect(detectOvulationFromBbt(withGaps)).toContain("2026-01-07");
+  });
+});
+
 // CYCLE-ALGO-05: to'liq integratsiya — ovulyatsiya belgisi bor tarixdan
 // personalLutealPhase to'g'ri chiqarilishi va predictCycle'ga to'g'ri
 // uzatilishini tasdiqlaydi.
@@ -518,6 +555,61 @@ describe("deriveAdaptiveCycleSettings + predictCycle (CYCLE-ALGO-05 ikki-fazali 
     const fallback = { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
     const adaptive = deriveAdaptiveCycleSettings(logs, fallback, "2026-01-30");
     expect(adaptive?.personalLutealPhase).toBeNull();
+  });
+
+  // CYCLE-ALGO-15: BBT signal ENG ISHONCHLI manba — mavjud bo'lsa, HAR BIR
+  // sikl uchun ALOHIDA simptomdan USTUN qo'yiladi. Ikkalasi ATAYLAB TURLI
+  // sanalarda joylashtirilgan (BBT: lyuteal=9 kun bo'ladigan sanada;
+  // simptom: lyuteal=14 kun bo'ladigan, ANIQ boshqa sanada) — natija 9
+  // bo'lsa, BBT ishlatilgani, 14 bo'lsa simptom ishlatilgani isbotlanadi.
+  it("BBT signali mavjud bo'lsa, simptomdan USTUN qo'yiladi (turli sanalarda aniq ko'rsatilgan)", () => {
+    const start = "2026-01-01";
+    const cycle1NextStart = "2026-01-29"; // 28 kunlik sikl
+    const cycle2NextStart = "2026-02-26"; // яна 28 kunlik sikl
+    const bbtRise1 = "2026-01-20"; // BBT'dan lyuteal = 9 kun
+    const bbtRise2 = "2026-02-17"; // BBT'dan lyuteal = 9 kun
+    const symptomDay1 = "2026-01-15"; // simptomdan bo'lganda lyuteal = 14 kun bo'lardi
+    const symptomDay2 = "2026-02-12"; // simptomdan bo'lganda lyuteal = 14 kun bo'lardi
+
+    const totalDays = daysBetween(start, cycle2NextStart) + 1;
+    type MergedLog = { date: string; flow: "medium" | null; symptoms?: Symptom[]; basalBodyTemp?: number | null };
+    const byDate = new Map<string, MergedLog>();
+    for (let i = 0; i < totalDays; i++) {
+      const date = addDays(start, i);
+      const elevated = (date >= bbtRise1 && date < cycle1NextStart) || (date >= bbtRise2 && date < cycle2NextStart);
+      byDate.set(date, { date, flow: null, basalBodyTemp: elevated ? 36.7 : 36.3 });
+    }
+    for (const d of [start, cycle1NextStart, cycle2NextStart]) {
+      byDate.set(d, { ...byDate.get(d)!, date: d, flow: "medium" });
+    }
+    for (const d of [symptomDay1, symptomDay2]) {
+      byDate.set(d, { ...byDate.get(d)!, date: d, symptoms: ["ovulation_pain"] });
+    }
+    const logs = [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+
+    const fallback = { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+    const adaptive = deriveAdaptiveCycleSettings(logs, fallback, "2026-02-27");
+    expect(adaptive?.personalLutealPhase).toBe(9); // 14 EMAS — BBT ishlatilgani isboti
+  });
+
+  it("faqat BBT (hech qanday simptom) bilan ham personalLutealPhase to'g'ri chiqadi", () => {
+    const start = "2026-01-01";
+    const cycle1NextStart = "2026-01-29";
+    const cycle2NextStart = "2026-02-26";
+    const bbtRise1 = "2026-01-20"; // lyuteal = 9
+    const bbtRise2 = "2026-02-17"; // lyuteal = 9
+    const periodStarts = new Set([start, cycle1NextStart, cycle2NextStart]);
+
+    const totalDays = daysBetween(start, cycle2NextStart) + 1;
+    const logs = Array.from({ length: totalDays }, (_, i) => {
+      const date = addDays(start, i);
+      const elevated = (date >= bbtRise1 && date < cycle1NextStart) || (date >= bbtRise2 && date < cycle2NextStart);
+      return { date, flow: periodStarts.has(date) ? ("medium" as const) : null, basalBodyTemp: elevated ? 36.7 : 36.3 };
+    });
+
+    const fallback = { lastPeriodStart: "2025-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+    const adaptive = deriveAdaptiveCycleSettings(logs, fallback, "2026-02-27");
+    expect(adaptive?.personalLutealPhase).toBe(9);
   });
 });
 

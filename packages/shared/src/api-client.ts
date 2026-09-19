@@ -244,7 +244,7 @@ export function createApiClient(config: ApiClientConfig) {
     },
     cycle: {
       get: () => request<CycleResponse>("/api/cycle"),
-      logDay: (log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms">) =>
+      logDay: (log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms"> & Partial<Pick<CycleLog, "basalBodyTemp">>) =>
         request<CycleResponse>("/api/cycle/logs", { method: "POST", body: JSON.stringify(log) }),
       updateSettings: (settings: Partial<Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength">>) =>
         request<CycleResponse>("/api/cycle/settings", { method: "PATCH", body: JSON.stringify(settings) }),

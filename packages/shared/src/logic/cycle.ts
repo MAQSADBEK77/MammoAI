@@ -268,6 +268,44 @@ export function detectOvulationSignals(logs: (Pick<CycleLog, "date"> & Partial<P
   return [...new Set(logs.filter((l) => l.symptoms?.some((s) => OVULATION_SIGNAL_SYMPTOMS.includes(s))).map((l) => l.date))].sort();
 }
 
+// CYCLE-ALGO-15: klassik "harorat sakrashi" (temperature shift/coverline)
+// usuli — tibbiy jihatdan simptomdan ANCHA ishonchli, chunki HIS-TUYG'UGA
+// emas, RAQAMGA asoslangan. Standart tavsiya: oxirgi 6 kunlik BBT
+// o'rtachasidan keyingi kamida 3 kun ketma-ket 0.2°C+ yuqori bo'lsa,
+// ovulyatsiya sodir bo'lgan (progesteron BBT'ni ko'taradi). Indeks-asoslangan
+// oyna (kalendar kun EMAS) ishlatiladi — real foydalanuvchi har kuni
+// o'lchamasligi mumkin, "oxirgi 6 ta O'LCHOV" degani "oxirgi 6 kalendar
+// kun" emas, mavjud bo'shliqlarga chidamli.
+const BBT_BASELINE_WINDOW = 6;
+const BBT_CONFIRM_DAYS = 3;
+const BBT_SHIFT_THRESHOLD_C = 0.2;
+
+/** CYCLE-ALGO-15: bazal tana harorati (BBT) o'lchovlaridan ovulyatsiya
+ * kunini aniqlaydi — `detectOvulationSignals`ning "yangi signal manbai"
+ * uchun oldindan tayyorlangan kengaytmasi (o'sha funksiyaning izohida
+ * aytilganidek). Qaytarilgan sana — 3 kunlik ko'tarilishning BIRINCHI
+ * kuni (aynan shu kun ovulyatsiya kuni deb belgilanadi — standart, keng
+ * tan olingan qoida). Bir nechta sikl uchun bir nechta sana qaytarishi
+ * mumkin (har bir haqiqiy sakrash — bitta natija); chaqiruvchi
+ * (`computePersonalLutealPhaseDays`) har bir sikl oynasida FAQAT birinchi
+ * mos sanani oladi, shuning uchun bitta sakrash atrofidagi qo'shimcha
+ * "tasdiqlovchi" kunlar (agar bo'lsa) zararsiz. */
+export function detectOvulationFromBbt(logs: (Pick<CycleLog, "date"> & Partial<Pick<CycleLog, "basalBodyTemp">>)[]): string[] {
+  const readings = logs
+    .filter((l): l is typeof l & { basalBodyTemp: number } => l.basalBodyTemp != null)
+    .map((l) => ({ date: l.date, temp: l.basalBodyTemp }))
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
+  const ovulationDates: string[] = [];
+  for (let i = BBT_BASELINE_WINDOW; i <= readings.length - BBT_CONFIRM_DAYS; i++) {
+    const baseline = readings.slice(i - BBT_BASELINE_WINDOW, i).reduce((sum, r) => sum + r.temp, 0) / BBT_BASELINE_WINDOW;
+    const confirmWindow = readings.slice(i, i + BBT_CONFIRM_DAYS);
+    const allElevated = confirmWindow.every((r) => r.temp >= baseline + BBT_SHIFT_THRESHOLD_C);
+    if (allElevated) ovulationDates.push(readings[i].date);
+  }
+  return ovulationDates;
+}
+
 /** CYCLE-ALGO-05: har bir aniqlangan sikl uchun (sikl boshlanishi → keyingi
  * sikl boshlanishi oralig'ida) ovulyatsiya signali bor-yo'qligini tekshiradi.
  * Topilsa, o'sha sikldagi LYUTEAL faza uzunligi = ovulyatsiya kunidan
@@ -278,19 +316,26 @@ export function detectOvulationSignals(logs: (Pick<CycleLog, "date"> & Partial<P
  * MIN_LUTEAL_SIGNAL_CYCLES ta sikl uchun signal topilgandagina hisoblanadi;
  * aks holda `null` (chaqiruvchi standart DEFAULT_LUTEAL_PHASE_DAYS'ga
  * tushadi — REGRESSIYA emas, faqat YAXSHILANISH: signal yo'q bo'lsa xatti-
- * harakat ilgarigidek qoladi). */
+ * harakat ilgarigidek qoladi).
+ * CYCLE-ALGO-15: BBT signali (mavjud bo'lsa) ENG ISHONCHLI manba sifatida
+ * HAR BIR sikl oynasida ALOHIDA-ALOHIDA simptomdan USTUN qo'yiladi — bitta
+ * foydalanuvchida ba'zi sikllarda BBT bo'lib, ba'zilarida bo'lmasligi
+ * mumkin (masalan faqat ba'zi oylarda o'lchagan), shuning uchun tanlov
+ * har bir sikl uchun mustaqil qilinadi, global emas. */
 function computePersonalLutealPhaseDays(
-  logs: (Pick<CycleLog, "date"> & Partial<Pick<CycleLog, "symptoms">>)[],
+  logs: (Pick<CycleLog, "date"> & Partial<Pick<CycleLog, "symptoms" | "basalBodyTemp">>)[],
   starts: string[]
 ): number | null {
-  const ovulationDates = detectOvulationSignals(logs);
-  if (ovulationDates.length === 0) return null;
+  const bbtOvulationDates = detectOvulationFromBbt(logs);
+  const symptomOvulationDates = detectOvulationSignals(logs);
+  if (bbtOvulationDates.length === 0 && symptomOvulationDates.length === 0) return null;
 
   const lutealLengths: number[] = [];
   for (let i = 0; i < starts.length - 1; i++) {
     const cycleStart = starts[i];
     const nextStart = starts[i + 1];
-    const ovulationInThisCycle = ovulationDates.find((d) => d >= cycleStart && d < nextStart);
+    const bbtDate = bbtOvulationDates.find((d) => d >= cycleStart && d < nextStart);
+    const ovulationInThisCycle = bbtDate ?? symptomOvulationDates.find((d) => d >= cycleStart && d < nextStart);
     if (!ovulationInThisCycle) continue;
     lutealLengths.push(daysBetween(ovulationInThisCycle, nextStart));
   }
@@ -386,11 +431,11 @@ const DEFAULT_TUNABLES: CycleAlgoTunables = {
  * qo'lda kiritgan/tanlagan `fallback` sozlamalariga tushadi (`cyclesAnalyzed: 0`).
  */
 export function deriveAdaptiveCycleSettings(
-  // CYCLE-ALGO-05: "symptoms" qo'shildi — personalLutealPhase hisoblash
-  // uchun kerak (detectOvulationSignals). Mavjud chaqiruvchilar to'liq
-  // CycleLog[] uzatadi, shuning uchun bu keng qamrov ORQAGA MOSLIKni
-  // buzmaydi.
-  logs: (Pick<CycleLog, "date" | "flow"> & Partial<Pick<CycleLog, "symptoms">>)[],
+  // CYCLE-ALGO-05/15: "symptoms"/"basalBodyTemp" qo'shildi — personalLutealPhase
+  // hisoblash uchun kerak (detectOvulationSignals/detectOvulationFromBbt).
+  // Mavjud chaqiruvchilar to'liq CycleLog[] uzatadi, shuning uchun bu keng
+  // qamrov ORQAGA MOSLIKni buzmaydi.
+  logs: (Pick<CycleLog, "date" | "flow"> & Partial<Pick<CycleLog, "symptoms" | "basalBodyTemp">>)[],
   fallback: Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength">,
   today: string = tashkentDateStr(),
   // CYCLE-ALGO-14: qarang yuqoridagi izoh — faqat backtest-skripti uzatadi.

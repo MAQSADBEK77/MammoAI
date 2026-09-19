@@ -25,7 +25,7 @@ export interface BacktestResult {
 // foydalanuvchi qatoriga ID/vaqt-belgisi yasashga hojat qoldirmaydi).
 // To'liq `CycleLog[]` (masalan sintetik generatorlar) ham strukturaviy
 // jihatdan mos keladi — orqaga moslik buzilmaydi.
-export type BacktestLog = Pick<CycleLog, "date" | "flow"> & Partial<Pick<CycleLog, "symptoms">>;
+export type BacktestLog = Pick<CycleLog, "date" | "flow"> & Partial<Pick<CycleLog, "symptoms" | "basalBodyTemp">>;
 
 export interface CyclePredictor {
   name: string;
@@ -160,7 +160,7 @@ function makeSyntheticLogs(cycleLengths: number[], periodLength = 5, startDate =
   const pushPeriod = (start: string) => {
     for (let d = 0; d < periodLength; d++) {
       const flow: FlowLevel = d === 0 ? "heavy" : "medium";
-      logs.push({ id: `synthetic-${id++}`, userId: "synthetic", date: addDays(start, d), flow, mood: null, symptoms: [], createdAt: start });
+      logs.push({ id: `synthetic-${id++}`, userId: "synthetic", date: addDays(start, d), flow, mood: null, symptoms: [], createdAt: start, basalBodyTemp: null });
     }
   };
   pushPeriod(cursor);

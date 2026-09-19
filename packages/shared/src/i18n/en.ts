@@ -269,6 +269,9 @@ const en: Dictionary = {
     flowLabel: "Flow intensity",
     moodLabel: "Mood",
     symptomsLabel: "Symptoms",
+    advancedSectionLabel: "Advanced",
+    basalBodyTempLabel: "Basal body temperature (°C)",
+    basalBodyTempHint: "Measure every morning right after waking up, before moving — this pinpoints ovulation more precisely than symptoms alone.",
     nextPeriodIn: (days: number) =>
       days === 0
         ? "Your period is expected today"

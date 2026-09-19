@@ -267,6 +267,9 @@ const ru: Dictionary = {
     flowLabel: "Интенсивность выделений",
     moodLabel: "Настроение",
     symptomsLabel: "Симптомы",
+    advancedSectionLabel: "Дополнительно",
+    basalBodyTempLabel: "Базальная температура тела (°C)",
+    basalBodyTempHint: "Измеряйте каждое утро сразу после пробуждения, до любого движения — это точнее симптомов помогает определить овуляцию.",
     nextPeriodIn: (days: number) =>
       days === 0
         ? "Менструация ожидается сегодня"

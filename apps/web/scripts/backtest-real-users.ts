@@ -62,12 +62,12 @@ async function loadRealUserLogs(): Promise<Map<string, BacktestLog[]>> {
   // (kelajakdagi luteal-faza hisob-kitobi uchun kerak bo'lishi mumkin),
   // lekin HECH QACHON log'ga chiqarilmaydi.
   const rows = (await sql`
-    SELECT cl.user_id, cl.date, cl.flow, cl.symptoms
+    SELECT cl.user_id, cl.date, cl.flow, cl.symptoms, cl.basal_body_temp
     FROM cycle_logs cl
     JOIN users u ON u.id = cl.user_id
     WHERE u.is_test_account = FALSE
     ORDER BY cl.user_id, cl.date
-  `) as unknown as { user_id: string; date: string; flow: BacktestLog["flow"]; symptoms: string }[];
+  `) as unknown as { user_id: string; date: string; flow: BacktestLog["flow"]; symptoms: string; basal_body_temp: number | null }[];
 
   const byUser = new Map<string, BacktestLog[]>();
   for (const row of rows) {
@@ -76,6 +76,7 @@ async function loadRealUserLogs(): Promise<Map<string, BacktestLog[]>> {
       date: row.date,
       flow: row.flow,
       symptoms: JSON.parse(row.symptoms ?? "[]"),
+      basalBodyTemp: row.basal_body_temp,
     });
     byUser.set(row.user_id, list);
   }

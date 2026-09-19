@@ -66,6 +66,11 @@ export function CycleScreen() {
   const [flow, setFlow] = useState<FlowLevel | null>(null);
   const [mood, setMood] = useState<Mood | null>(null);
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
+  // CYCLE-ALGO-15: matn ko'rinishida saqlanadi (raqam emas) — foydalanuvchi
+  // "36." kabi yarim kiritgan holatni ham to'g'ri ko'rsatish uchun; saqlashda
+  // raqamga aylantiriladi (bo'sh bo'lsa `null`).
+  const [basalBodyTempInput, setBasalBodyTempInput] = useState("");
+  const [showAdvancedLog, setShowAdvancedLog] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingLog, setDeletingLog] = useState(false);
   const [moodSaving, setMoodSaving] = useState(false);
@@ -302,6 +307,8 @@ export function CycleScreen() {
     setFlow(existing?.flow ?? null);
     setMood(existing?.mood ?? null);
     setSymptoms(existing?.symptoms ?? []);
+    setBasalBodyTempInput(existing?.basalBodyTemp != null ? String(existing.basalBodyTemp) : "");
+    setShowAdvancedLog(existing?.basalBodyTemp != null);
     setLogging(true);
   }
 
@@ -347,6 +354,7 @@ export function CycleScreen() {
       setFlow(null);
       setMood(null);
       setSymptoms([]);
+      setBasalBodyTempInput("");
     } finally {
       setDeletingLog(false);
     }
@@ -355,12 +363,18 @@ export function CycleScreen() {
   async function saveLog() {
     setSaving(true);
     try {
-      const res = await api.cycle.logDay({ date: logDate, flow, mood, symptoms });
+      // CYCLE-ALGO-15: bo'sh matn → `null` (BBT kiritilmagan), aks holda
+      // vergul o'rniga nuqta ham qabul qilinadi (foydalanuvchi klaviaturasiga
+      // qarab) — server tomonida yana bir bor 34-42°C oralig'i tekshiriladi.
+      const trimmed = basalBodyTempInput.trim().replace(",", ".");
+      const basalBodyTemp = trimmed ? Number(trimmed) : null;
+      const res = await api.cycle.logDay({ date: logDate, flow, mood, symptoms, basalBodyTemp });
       setData(res);
       setLogging(false);
       setFlow(null);
       setMood(null);
       setSymptoms([]);
+      setBasalBodyTempInput("");
     } finally {
       setSaving(false);
     }
@@ -716,6 +730,43 @@ export function CycleScreen() {
                 />
               ))}
             </div>
+          </div>
+
+          {/* CYCLE-ALGO-15: BBT — ko'pchilik foydalanuvchi kuzatmaydi, shuning
+              uchun MAJBURIY emas, "Ilg'or" nomi ostida yashirin/yig'ilgan
+              holatda boshlanadi (mavjud yozuvda qiymat bo'lsa, avtomatik
+              ochiladi — `openLogging`ga qarang). Kuzatuvchilar uchun esa
+              (BBT ovulyatsiyani simptomdan ANIQROQ aniqlaydi) aniqlikni
+              sezilarli oshiradi. */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowAdvancedLog((v) => !v)}
+              className="flex w-full items-center justify-between text-sm font-semibold text-text-secondary"
+            >
+              {dict.cycle.advancedSectionLabel}
+              <ChevronRight sx={{ fontSize: 18, transform: showAdvancedLog ? "rotate(90deg)" : undefined, transition: "transform 150ms" }} />
+            </button>
+            {showAdvancedLog && (
+              <div className="animate-fade-in-up mt-2 space-y-1.5">
+                <label htmlFor="bbt-input" className="text-xs text-text-muted">
+                  {dict.cycle.basalBodyTempLabel}
+                </label>
+                <input
+                  id="bbt-input"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={34}
+                  max={42}
+                  value={basalBodyTempInput}
+                  onChange={(e) => setBasalBodyTempInput(e.target.value)}
+                  placeholder="36.50"
+                  className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none focus:border-primary"
+                />
+                <p className="text-xs text-text-muted">{dict.cycle.basalBodyTempHint}</p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2">

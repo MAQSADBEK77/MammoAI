@@ -833,6 +833,7 @@ interface CycleLogRow {
   mood: Mood | null;
   symptoms: string;
   created_at: string;
+  basal_body_temp: number | null;
 }
 
 function cycleLogFromRow(row: CycleLogRow): CycleLog {
@@ -844,6 +845,7 @@ function cycleLogFromRow(row: CycleLogRow): CycleLog {
     mood: row.mood,
     symptoms: JSON.parse(row.symptoms) as Symptom[],
     createdAt: row.created_at,
+    basalBodyTemp: row.basal_body_temp,
   };
 }
 
@@ -915,21 +917,26 @@ async function recomputeLastPeriodStart(userId: string): Promise<void> {
 
 export async function upsertCycleLog(
   userId: string,
-  log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms">
+  log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms"> & Partial<Pick<CycleLog, "basalBodyTemp">>
 ): Promise<CycleLog> {
   await ensureSchema();
   const id = randomUUID();
   const createdAt = now();
   const symptoms = JSON.stringify(log.symptoms ?? []);
+  // CYCLE-ALGO-15: `basalBodyTemp` ixtiyoriy — chaqiruvchi bermasa (mavjud
+  // barcha eski chaqiruvlar shunday) `undefined` bo'ladi, `?? null` bilan
+  // ustunga `NULL` yoziladi (o'zgarishsiz eski xatti-harakat).
+  const basalBodyTemp = log.basalBodyTemp ?? null;
   // FIX2-26: `updated_at` har bir yozish/tahrirlashda yangilanadi —
   // active-insights.ts shundan foydalanib, faqat yozuvlar SONI o'zgarmagan
   // (mavjud kun tahrirlangan) holatlarda ham AI tahlilini qayta generatsiya
   // qilishi kerakligini aniqlaydi.
   await sql`
-    INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at, updated_at)
-    VALUES (${id}, ${userId}, ${log.date}, ${log.flow}, ${log.mood}, ${symptoms}, ${createdAt}, ${createdAt})
+    INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at, updated_at, basal_body_temp)
+    VALUES (${id}, ${userId}, ${log.date}, ${log.flow}, ${log.mood}, ${symptoms}, ${createdAt}, ${createdAt}, ${basalBodyTemp})
     ON CONFLICT (user_id, date) DO UPDATE SET
-      flow = EXCLUDED.flow, mood = EXCLUDED.mood, symptoms = EXCLUDED.symptoms, updated_at = EXCLUDED.updated_at
+      flow = EXCLUDED.flow, mood = EXCLUDED.mood, symptoms = EXCLUDED.symptoms, updated_at = EXCLUDED.updated_at,
+      basal_body_temp = EXCLUDED.basal_body_temp
   `;
   // Har doim qayta hisoblanadi (faqat `log.flow` bor bo'lganda emas) — aks
   // holda mavjud oqim kunini "bekor qilish" (flow'ni null'ga o'zgartirish)

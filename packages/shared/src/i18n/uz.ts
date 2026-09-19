@@ -281,6 +281,10 @@ const uz = {
     flowLabel: "Oqim intensivligi",
     moodLabel: "Kayfiyat",
     symptomsLabel: "Alomatlar",
+    // CYCLE-ALGO-15: bazal tana harorati (BBT) — ixtiyoriy, "Ilg'or" bo'lim.
+    advancedSectionLabel: "Ilg'or",
+    basalBodyTempLabel: "Bazal tana harorati (°C)",
+    basalBodyTempHint: "Har kuni uyg'ongan zahoti, harakatdan oldin o'lchang — ovulyatsiyani simptomdan ham aniqroq belgilashga yordam beradi.",
     nextPeriodIn: (days: number) =>
       days === 0
         ? "Hayzingiz bugun kutilmoqda"

@@ -585,6 +585,10 @@ async function initSchema() {
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lat DOUBLE PRECISION`,
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lng DOUBLE PRECISION`,
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_at TEXT`,
+    // CYCLE-ALGO-15: bazal tana harorati (BBT) — ixtiyoriy, "Ilg'or" bo'lim
+    // orqali kunlik yozuvga qo'shiladi. Ovulyatsiyani simptomdan ANIQROQ
+    // aniqlash uchun (cycle.ts#detectOvulationFromBbt).
+    sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS basal_body_temp NUMERIC`,
   ]);
 
   // Eski qatorlarda `updated_at` hali NULL — `created_at`dan bir martalik
