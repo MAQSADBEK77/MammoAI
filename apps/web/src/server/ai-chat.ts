@@ -227,7 +227,13 @@ export async function callGemini(systemPrompt: string, history: { role: "user" |
 
   const json = (await res.json().catch(() => null)) as (GeminiChatResponse & { error?: { message?: string } }) | null;
   if (!res.ok || !json) {
-    throw new ApiError(502, json?.error?.message ?? "AI yordamchidan javob olishda xatolik yuz berdi");
+    // OVERNIGHT-13: bu yerda ilgari `json?.error?.message`ni TO'G'RIDAN-TO'G'RI
+    // foydalanuvchiga ko'rsatardik — provayderning xom, INGLIZCHA xabari
+    // (masalan, kontent-filtr rad javobi "Output text may contain sensitive
+    // information...") ekranda chiqib qolardi. Endi xato server logiga
+    // yoziladi, foydalanuvchiga esa har doim tushunarli o'zbekcha xabar.
+    console.error("Gemini xatosi:", json?.error?.message ?? `HTTP ${res.status}`);
+    throw new ApiError(502, "AI yordamchidan javob olishda xatolik yuz berdi. Savolingizni biroz boshqacha yozib qayta urinib ko'ring.");
   }
   const text = json.choices?.[0]?.message?.content;
   if (!text) throw new ApiError(502, "AI yordamchidan bo'sh javob keldi");
@@ -263,7 +269,9 @@ export async function callHuaweiMaas(systemPrompt: string, history: { role: "use
 
   const json = (await res.json().catch(() => null)) as (GeminiChatResponse & { error?: { message?: string } }) | null;
   if (!res.ok || !json) {
-    throw new ApiError(502, json?.error?.message ?? "AI yordamchidan javob olishda xatolik yuz berdi");
+    // OVERNIGHT-13: quyidagi izohga qarang (callGemini) — xuddi shu tuzatish.
+    console.error("Huawei MaaS xatosi:", json?.error?.message ?? `HTTP ${res.status}`);
+    throw new ApiError(502, "AI yordamchidan javob olishda xatolik yuz berdi. Savolingizni biroz boshqacha yozib qayta urinib ko'ring.");
   }
   const text = json.choices?.[0]?.message?.content;
   if (!text) throw new ApiError(502, "AI yordamchidan bo'sh javob keldi");
