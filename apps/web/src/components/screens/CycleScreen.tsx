@@ -14,6 +14,7 @@ import {
   ChevronRight,
   EditOutlined,
   Close,
+  ArrowForwardOutlined,
 } from "@mui/icons-material";
 import type { CycleResponse, CycleLog, Dictionary, FlowLevel, Mood, PredictionConfidence, PredictionExplanationReason, Symptom } from "@mammoai/shared";
 import { formatDateDisplay, getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
@@ -105,6 +106,11 @@ export function CycleScreen() {
   // bosilganda ochiladi (ekranni yengillashtirish, foydalanuvchi so'rovi).
   const [showCheckin, setShowCheckin] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  // OVERNIGHT-17: 7 kunlik chiziqda bir kun bosilganda ilgari to'g'ridan-
+  // to'g'ri kalendar-modal ochilardi (foydalanuvchi so'rovi: "kalendar
+  // ochilmasdan to'g'ridan-to'g'ri o'tib ketsin"). Endi shu sana uchun
+  // qisqa ma'lumot kartasi BOSH SAHIFANING O'ZIDA (modal'siz) ochiladi.
+  const [viewedDayDetail, setViewedDayDetail] = useState<string | null>(null);
   // UX-01: ilgari api.cycle.get() muvaffaqiyatsiz bo'lsa `data` HECH QACHON
   // to'lmas edi — ekran CHEKSIZ "yuklanmoqda" holatida qolib ketardi (hech
   // qanday xato/qayta urinish imkoniyatisiz). Endi PregnancyScreen'dagi
@@ -234,6 +240,16 @@ export function CycleScreen() {
         : data.isIrregular
           ? dict.cycle.irregularRingLabel
           : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod);
+
+  // OVERNIGHT-15: hero bloki ilgari FAQAT `!dayInCycle` bo'lganda bosiladigan
+  // edi — lekin foydalanuvchida BIROZ tarix bo'lsa-yu (dayInCycle mavjud),
+  // hali ishonchli bashorat uchun YETARLI bo'lmasa (`isLowInfoPrediction`)
+  // yoki ma'lumot eskirgan bo'lsa (`isStale`), yuqoridagi matn aynan "bugungi
+  // holatingizni belgilang"/"yangilang" deb turib, blok bosilmas edi — foyda-
+  // lanuvchi "qayerga bosish kerakligini" tekshirib topa olmasdi. Endi
+  // qaysi holatda ustuvor CTA-matn ko'rsatilsa, aynan o'sha holatda blok
+  // bosiladigan qilindi (matn va bosiladigan-holat endi HAR DOIM mos keladi).
+  const heroIsCallToAction = !data.prediction || isLowInfoPrediction || !!data.prediction.isStale;
 
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
@@ -371,22 +387,22 @@ export function CycleScreen() {
         {weekStrip.map(({ date, dateObj }) => {
           const marker = markers[date];
           const isToday = date === today;
+          const isViewed = date === viewedDayDetail;
           return (
             <button
               key={date}
               type="button"
-              onClick={() => {
-                setSelectedDate(date);
-                setCalendarMonth(dateObj);
-                setShowCalendarModal(true);
-              }}
-              className="tap-target flex flex-col items-center gap-1 rounded-2xl py-1.5"
+              onClick={() => setViewedDayDetail((d) => (d === date ? null : date))}
+              className={clsx(
+                "tap-target flex flex-col items-center gap-1 rounded-2xl py-1.5 transition",
+                isViewed && !isToday && "bg-surface-muted"
+              )}
             >
               <span className="text-[10px] font-semibold uppercase text-text-muted">{dict.common.weekdaysShort[dateObj.getDay()]}</span>
               <span
                 className={clsx(
                   "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition",
-                  isToday ? "bg-primary text-white" : "text-text-primary"
+                  isToday ? "bg-primary text-white" : isViewed ? "ring-2 ring-primary text-text-primary" : "text-text-primary"
                 )}
               >
                 {dateObj.getDate()}
@@ -401,6 +417,44 @@ export function CycleScreen() {
           );
         })}
       </div>
+
+      {/* OVERNIGHT-17: tanlangan kun uchun — faza + o'sha kunga qayd
+          etilgan (yoki qayd etilmagan) ma'lumot, "bugungidek" bitta joyda. */}
+      {viewedDayDetail &&
+        (() => {
+          const detailLog = data.logs.find((l) => l.date === viewedDayDetail) ?? null;
+          const detailPhase = phaseForDate(viewedDayDetail);
+          return (
+            <Card className="animate-fade-in-up space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-text-primary">{formatDateLabel(viewedDayDetail)}</p>
+                <button
+                  type="button"
+                  onClick={() => setViewedDayDetail(null)}
+                  aria-label={dict.common.close}
+                  className="tap-target flex h-8 w-8 items-center justify-center rounded-full bg-surface-muted text-text-secondary active:scale-95"
+                >
+                  <Close sx={{ fontSize: 16 }} />
+                </button>
+              </div>
+              {detailPhase && <PhaseCard phase={detailPhase} />}
+              {detailLog ? (
+                <div className="flex flex-wrap gap-2">
+                  {detailLog.flow && <Badge tone="primary">{`${dict.cycle.flowCardLabel}: ${dict.cycle.flowLevels[detailLog.flow]}`}</Badge>}
+                  {detailLog.mood && <Badge tone="primary">{`${dict.cycle.moodCardLabel}: ${dict.cycle.moods[detailLog.mood]}`}</Badge>}
+                  {detailLog.symptoms.map((s) => (
+                    <Badge key={s}>{dict.cycle.symptoms[s]}</Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-text-secondary">{dict.cycle.dayDetailEmptyLabel}</p>
+              )}
+              <Button onClick={() => openLogging(viewedDayDetail, detailLog ?? undefined)} className="w-full">
+                {detailLog ? dict.cycle.detailedLogButton : dict.cycle.dayDetailLogButton}
+              </Button>
+            </Card>
+          );
+        })()}
 
       {isPerimenopause ? (
         // Bashorat halqasi o'rniga — perimenopauzada "necha kun qoldi" degan
@@ -439,8 +493,8 @@ export function CycleScreen() {
               yo'qolmaydi). */}
           <button
             type="button"
-            onClick={() => !dayInCycle && openLogging(today, todayLog)}
-            disabled={!!dayInCycle}
+            onClick={() => heroIsCallToAction && openLogging(today, todayLog)}
+            disabled={!heroIsCallToAction}
             className="relative block w-full overflow-hidden rounded-[32px] py-10 text-center disabled:cursor-default"
           >
             {/* 2026-09-18 FIX: ilgari `-light` tokenlar (o'zi allaqachon
@@ -452,6 +506,17 @@ export function CycleScreen() {
             <HeroBlob className="left-1/2 top-1/2 h-40 w-40 -translate-x-[70%] -translate-y-[30%] rotate-45 bg-accent/20" breatheDelay="-3.5s" />
             <div className="relative z-10 px-4">
               <p className="text-2xl leading-snug font-extrabold text-text-primary sm:text-3xl">{heroHeadline}</p>
+
+              {/* OVERNIGHT-15: matn "bosing" demasdan turib ham bosiladigan
+                  bo'lgani uchun ko'p foydalanuvchi buni tushunmay, alohida
+                  tugma qidirardi — endi aniq, ko'zga tashlanadigan chaqiruv
+                  qo'shildi. */}
+              {heroIsCallToAction && (
+                <p className="mt-2 flex items-center justify-center gap-1 text-sm font-bold text-primary">
+                  {dict.cycle.heroTapHint}
+                  <ArrowForwardOutlined sx={{ fontSize: 16 }} />
+                </p>
+              )}
 
               {periodDay && (
                 <div className="mt-3 flex justify-center">

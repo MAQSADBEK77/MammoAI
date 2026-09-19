@@ -288,6 +288,7 @@ const en: Dictionary = {
     perimenopauseCardBody: "Irregular cycles are natural during this time. Instead of a prediction, keep an eye on your symptoms (hot flashes, sleep, mood).",
     ringEmptyLabel: "Set your last period date to see predictions",
     notEnoughDataHeroLabel: "Log how you're feeling today — that's where your prediction starts",
+    heroTapHint: "Tap to start",
     staleDataLabel: "Data is outdated — update your last period date",
     predictionExplanation: {
       noData: "No data yet — relying on the general average",
@@ -320,6 +321,8 @@ const en: Dictionary = {
     yesterdayLabel: "Yesterday",
     daysAgoLabel: (n: number) => `${n} days ago`,
     noLogsYet: "No entries yet — add your first daily entry",
+    dayDetailEmptyLabel: "Nothing logged for this day",
+    dayDetailLogButton: "Log this day",
     moodCheckinTitle: "How are you feeling today?",
     dailyInsightsTitle: "Daily insights",
     dailyInsights: {

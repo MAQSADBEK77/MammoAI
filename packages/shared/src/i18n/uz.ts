@@ -315,6 +315,9 @@ const uz = {
     // undovchi jumla bilan almashtiriladi (CycleScreen'da confidence
     // "insufficient" yoki no_data/limited_data bo'lganda).
     notEnoughDataHeroLabel: "Bugungi holatingizni belgilang — bashorat shundan boshlanadi",
+    // OVERNIGHT-15: yuqoridagi matn "bosiladigan" ekanini bildirmasdi —
+    // foydalanuvchi buni tugma deb tushunmasdi.
+    heroTapHint: "Bosing va boshlang",
     staleDataLabel: "Ma'lumot eskirgan — oxirgi hayz sanasini yangilang",
     // CYCLE-ALGO-08: foydalanuvchiga "nega shunday bashorat qilindi" degan
     // qisqa, shaffof tushuntirish (`explainPrediction()`dagi 4 ta sabab
@@ -355,6 +358,10 @@ const uz = {
     yesterdayLabel: "Kecha",
     daysAgoLabel: (n: number) => `${n} kun oldin`,
     noLogsYet: "Hozircha yozuv yo'q — birinchi kunlik yozuvingizni qo'shing",
+    // OVERNIGHT-17: 7 kunlik chiziqdan bir sana bosilganda (kalendar
+    // ochilmasdan) o'sha kun uchun ko'rsatiladigan qisqa karta.
+    dayDetailEmptyLabel: "Bu kunga hech narsa qayd etilmagan",
+    dayDetailLogButton: "Bu kunni belgilash",
     moodCheckinTitle: "Bugun o'zingizni qanday his qilyapsiz?",
     dailyInsightsTitle: "Kunlik maslahatlar",
     // 2026-09-18: "yozib berilgan shaxsiy maslahat" ohangiga o'zgartirildi

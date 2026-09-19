@@ -286,6 +286,7 @@ const ru: Dictionary = {
     perimenopauseCardBody: "В этот период нерегулярность цикла — это естественно. Вместо прогноза отслеживайте свои симптомы (приливы, сон, настроение).",
     ringEmptyLabel: "Отметьте дату последней менструации для прогноза",
     notEnoughDataHeroLabel: "Отметьте своё состояние сегодня — с этого начнётся прогноз",
+    heroTapHint: "Нажмите и начните",
     staleDataLabel: "Данные устарели — обновите дату последней менструации",
     predictionExplanation: {
       noData: "Данных пока нет — используется общее среднее",
@@ -318,6 +319,8 @@ const ru: Dictionary = {
     yesterdayLabel: "Вчера",
     daysAgoLabel: (n: number) => `${n} дн. назад`,
     noLogsYet: "Пока нет записей — добавьте первую запись дня",
+    dayDetailEmptyLabel: "За этот день ничего не отмечено",
+    dayDetailLogButton: "Отметить этот день",
     moodCheckinTitle: "Как вы себя чувствуете сегодня?",
     dailyInsightsTitle: "Советы дня",
     dailyInsights: {
