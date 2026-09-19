@@ -9,6 +9,7 @@ import {
   Chip as MuiChip,
   LinearProgress,
   Backdrop,
+  Portal,
   ToggleButtonGroup,
   ToggleButton,
   Avatar,
@@ -467,24 +468,42 @@ export function LoadingSpinner({ label, inline = false }: { label?: string; inli
   }
 
   return (
-    <Backdrop
-      open
-      sx={{
-        position: "fixed",
-        inset: 0,
-        // BottomNav'dan (z-20) PASTROQ — aks holda sahifa o'z ma'lumotini
-        // yuklayotganda bu Backdrop pastki menyuni ham xira/bosilmas qilib
-        // qo'yardi ("pastki menyu blur tagida qolib qolishi" degan xato
-        // shundan kelib chiqqan edi). Endi pastki menyu har doim ustida —
-        // sahifa hali yuklanayotgan bo'lsa ham darhol boshqa bo'limga o'tish
-        // mumkin, kutish shart emas.
-        zIndex: 15,
-        backgroundColor: "color-mix(in srgb, var(--color-background) 30%, transparent)",
-        backdropFilter: "blur(12px)",
-      }}
-    >
-      {spinner}
-    </Backdrop>
+    // OVERNIGHT-14: bu Backdrop ilgari (app)/layout.tsx'dagi `PageTransition`
+    // (Framer Motion `motion.div`, `animate={{ y: 0 }}`) ICHIDA render
+    // bo'lardi — animatsiya davomida faol bo'lgan CSS `transform` ota-
+    // elementni `position: fixed` uchun YANGI "containing block"ka
+    // aylantiradi (CSS spetsifikatsiyasi), shuning uchun bu Backdrop butun
+    // ekran o'rniga faqat o'sha motion.div'ning kichik hududida (odatda
+    // sahifa yuqorisida) cho'zilib qolardi — "loader tepada bir necha
+    // millisekund turib, keyin (animatsiya tugab, transform olib
+    // tashlanganda) pastga/markazga sakrab tushishi" shundan edi. `Portal`
+    // bilan `document.body`ga to'g'ridan-to'g'ri chiqarib, bu muammo CSS
+    // darajasida BUTUNLAY yo'q qilinadi — endi hech qanday ota-element
+    // transformidan qat'iy nazar doim haqiqiy ekran bo'yicha markazlashadi.
+    <Portal>
+      <Backdrop
+        open
+        // Xira/blur holati hech qachon "yarim tugallangan" ko'rinishda
+        // ko'rinmasin (foydalanuvchi so'roviga ko'ra) — o'tish animatsiyasi
+        // o'chirilgan, darhol to'liq holatda paydo bo'ladi.
+        transitionDuration={0}
+        sx={{
+          position: "fixed",
+          inset: 0,
+          // BottomNav'dan (z-20) PASTROQ — aks holda sahifa o'z ma'lumotini
+          // yuklayotganda bu Backdrop pastki menyuni ham xira/bosilmas qilib
+          // qo'yardi ("pastki menyu blur tagida qolib qolishi" degan xato
+          // shundan kelib chiqqan edi). Endi pastki menyu har doim ustida —
+          // sahifa hali yuklanayotgan bo'lsa ham darhol boshqa bo'limga o'tish
+          // mumkin, kutish shart emas.
+          zIndex: 15,
+          backgroundColor: "color-mix(in srgb, var(--color-background) 30%, transparent)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        {spinner}
+      </Backdrop>
+    </Portal>
   );
 }
 
