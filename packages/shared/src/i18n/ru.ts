@@ -264,7 +264,6 @@ const ru: Dictionary = {
     symptomsCardLabel: "Симптомы",
     logFlowButton: "Отметить цикл",
     checkinButton: "Чек-ин",
-    periodDayBadge: (day: number) => `${day}-й день менструации`,
     flowLabel: "Интенсивность выделений",
     moodLabel: "Настроение",
     symptomsLabel: "Симптомы",
@@ -286,24 +285,10 @@ const ru: Dictionary = {
     perimenopauseCardBody: "В этот период нерегулярность цикла — это естественно. Вместо прогноза отслеживайте свои симптомы (приливы, сон, настроение).",
     ringEmptyLabel: "Отметьте дату последней менструации для прогноза",
     heroTapHint: "Нажмите и начните",
-    gatheringDataHeroLabel: "Данные для прогноза собираются",
     staleDataLabel: "Данные устарели — обновите дату последней менструации",
-    predictionExplanation: {
-      noData: "Данных пока нет — используется общее среднее",
-      limitedData: (n: number) => `Пока мало данных (${n} циклов) — частично используется общее среднее`,
-      outliersExcluded: (n: number, outlierCount: number) =>
-        outlierCount === 1
-          ? `Рассчитано на основе последних ${n} циклов, 1 необычный цикл был исключён`
-          : `Рассчитано на основе последних ${n} циклов, ${outlierCount} необычных циклов было исключено`,
-      standard: (n: number) => `Рассчитано на основе последних ${n} циклов`,
-    },
+    periodDayHeroLabel: (day: number, periodLength: number) => `${day}-й день менструации — продлится примерно ${periodLength} дн.`,
+    trackingImprovesLabel: "Чем больше вы отслеживаете циклы, тем точнее прогноз",
     nextPeriodRangeLabel: (earliest: string, latest: string) => `Ожидается между ${earliest}–${latest}`,
-    confidenceLabel: {
-      high: "Высокая точность",
-      medium: "Средняя точность",
-      low: "Низкая точность",
-      insufficient: "Недостаточно данных",
-    },
     articlesCardTitle: "Интересные статьи",
     riskQuizCardTitle: "Тест самопроверки",
     riskQuizCardSubtitle: "Узнайте уровень риска за 2 минуты",

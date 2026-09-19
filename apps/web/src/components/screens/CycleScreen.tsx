@@ -16,7 +16,7 @@ import {
   Close,
   ArrowForwardOutlined,
 } from "@mui/icons-material";
-import type { CycleResponse, CycleLog, Dictionary, FlowLevel, Mood, PredictionConfidence, PredictionExplanationReason, Symptom } from "@mammoai/shared";
+import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import { formatDateDisplay, getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -28,32 +28,6 @@ import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
-
-// CYCLE-002: ishonch darajasi rangi — "past"/"o'rtacha" ikkalasi ham
-// ogohlantiruvchi (warning) rang, chunki bu XATO holat emas, shunchaki
-// hali tarix kam degani — qizil (danger) bezovtalanish uyg'otmasligi kerak.
-const CONFIDENCE_TONE: Record<PredictionConfidence, "success" | "warning" | "muted"> = {
-  high: "success",
-  medium: "warning",
-  low: "warning",
-  insufficient: "muted",
-};
-
-/** CYCLE-ALGO-08: `explainPrediction()`ning til-agnostik sabab kodini
- * ekranga chiqariladigan matnga aylantiradi — predictionBasisHistory/
- * Estimate'ning o'rnini bosadi (endi 2 emas, 4 ta sabab bor). */
-function explainPredictionText(reason: PredictionExplanationReason, dict: Dictionary): string {
-  switch (reason.type) {
-    case "no_data":
-      return dict.cycle.predictionExplanation.noData;
-    case "limited_data":
-      return dict.cycle.predictionExplanation.limitedData(reason.cyclesAnalyzed);
-    case "outliers_excluded":
-      return dict.cycle.predictionExplanation.outliersExcluded(reason.cyclesAnalyzed, reason.outlierCount);
-    case "standard":
-      return dict.cycle.predictionExplanation.standard(reason.cyclesAnalyzed);
-  }
-}
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -259,36 +233,54 @@ export function CycleScreen() {
 
   const hasTodayLog = !!todayLog;
 
-  // OVERNIGHT-22 (Flo-uslubidagi tuzatish): ilgari `isLowInfoPrediction`
-  // bo'lganda hero RAQAMNI (`nextPeriodIn`) butunlay YASHIRIB, o'rniga
-  // "belgilang"/"ma'lumot to'planmoqda" chaqiruv-matnini ko'rsatardi —
-  // garchi `data.prediction` ALLAQACHON haqiqiy `daysUntilNextPeriod`
-  // bilan to'liq hisoblangan bo'lsa ham (algoritm — cycle.ts — o'zi HECH
-  // QACHON buzilmagan, faqat shu taqdimot qatlami raqamni to'sib turardi).
-  // Flo aynan shu holatda ("cyclesAnalyzed: 0", faqat standart 28 kunlik
-  // taxmin) ham DARHOL "Period in N days" ko'rsatadi, ishonchsizlikni esa
-  // KICHIKROQ, IKKINCHI DARAJALI matn bilan aytadi — raqamning o'zini
-  // hech qachon yashirmaydi. Endi shu tamoyilga o'tildi: raqam faqat IKKI
-  // haqiqiy "hech narsa hisoblab bo'lmaydi" holatida yashiriladi —
-  // `!data.prediction` (onboarding'da oxirgi hayz sanasi umuman
-  // kiritilmagan) va `isStale` (bashorat 90+ kun eski, bu boshqa,
-  // alohida holat). `isLowInfoPrediction`/`cyclesAnalyzed === 0` endi
-  // headline'ni ALMASHTIRMAYDI — buning o'rniga pastdagi izoh-blok
-  // (`explainPredictionText`) orqali QO'SHIMCHA sifatida tushuntiriladi.
+  // OVERNIGHT-23: OVERNIGHT-22 YARIM yechim edi — raqamni ko'rsatishni
+  // to'g'irladi, lekin uni BOSHQA 5 ta elementga (izoh + Badge + yana
+  // bir izoh + yana bir Badge + diapazon) o'rab, bitta fikrni OLTI marta
+  // takrorladi, ustiga "Hayzning N-kuni" bilan "keyingi hayz N kundan
+  // keyin" bir-biriga zid ko'rinardi (foydalanuvchi hozir sikl ICHIDA
+  // bo'lsa, "keyingi" haqida gapirish chalkash). Endi markaziy blokda
+  // ENG KO'PI BILAN IKKITA matn qatori: (1) ASOSIY sarlavha — aniq holatga
+  // qarab TO'RTTA turdan FAQAT BITTASI, (2) ixtiyoriy, IKKINCHI DARAJALI,
+  // FAQAT ijobiy ohangdagi bitta qo'shimcha qator. Alohida "ishonch
+  // darajasi" Badge'i va alohida "hayz kuni" Badge'i BUTUNLAY OLIB
+  // TASHLANDI — ularning ma'nosi endi to'g'ridan-to'g'ri sarlavhaning
+  // o'ziga singdirilgan.
+  const isOnPeriod = periodDay !== null;
   const heroHeadline = data.prediction?.isStale
     ? dict.cycle.staleDataLabel
     : !data.prediction
       ? dict.cycle.ringEmptyLabel
-      : data.isIrregular
-        ? dict.cycle.irregularRingLabel
-        : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod);
+      : isOnPeriod
+        ? // Hozir hayz ICHIDA bo'lsa, "keyingi hayz"dan gapirish shart emas
+          // (chalkash) — buning o'rniga HOZIRGI holat aytiladi.
+          dict.cycle.periodDayHeroLabel(periodDay!, data.settings.averagePeriodLength)
+        : data.isIrregular
+          ? dict.cycle.irregularRingLabel
+          : isLowInfoPrediction
+            ? // Past ishonchda ANIQ kun o'rniga DIAPAZON — "27 kundan keyin"
+              // kabi soxta aniqlik va pastdagi diapazon-qatorining o'zi
+              // ENDI IKKALASI BIRGA ko'rinmaydi, faqat BITTASI (diapazon).
+              dict.cycle.nextPeriodRangeLabel(
+                formatDateDisplay(data.prediction.nextPeriodStartEarliest),
+                formatDateDisplay(data.prediction.nextPeriodStartLatest)
+              )
+            : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod);
 
-  // OVERNIGHT-15/21/22: hero bloki bosilganda kunlik yozuv oynasi ochiladi —
-  // bu xatti-harakat O'ZGARMAYDI (raqam ko'rinishidan qat'iy nazar, hali
-  // ham foydali: istalgan vaqt yangi yozuv qo'shish uchun tabiiy taklif).
-  // Faqat bugun uchun yozuv ALLAQACHON mavjud bo'lsa (`hasTodayLog`), qayta
-  // bosish hech narsani o'zgartirmaydi — shuning uchun bosilmaydigan.
+  // OVERNIGHT-23: ikkinchi darajali, FAQAT ijobiy ohangdagi BITTA qator —
+  // "ma'lumot yo'q"/"yetarli emas" kabi salbiy so'zlar ATAYLAB ishlatilmaydi.
+  // Faqat past-ishonch holatida ko'rsatiladi (tartibsiz-sikl holati o'zining
+  // ALOHIDA, hero'dan TASHQARIDAGI bannerida allaqachon tushuntiriladi —
+  // shu yerda takrorlanmaydi).
+  const showTrackingNote = !!data.prediction && !data.prediction.isStale && isLowInfoPrediction && !data.isIrregular;
+
+  // OVERNIGHT-15/21/23: hero bloki bosilganda ochiladigan oyna endi HOLATGA
+  // qarab FARQLANADI — haqiqiy "hech narsa yo'q" holatida (`!data.prediction`)
+  // kerakli amal oxirgi hayz SANASINI kiritish (`openEditLastPeriod`), aks
+  // holda (ma'lumot bor, faqat kam) — kunlik yozuv qo'shish (`openLogging`,
+  // o'zgarishsiz). Bugun uchun yozuv ALLAQACHON mavjud bo'lsa (`hasTodayLog`),
+  // qayta bosish hech narsani o'zgartirmaydi — bosilmaydigan.
   const heroIsCallToAction = (!data.prediction || isLowInfoPrediction || !!data.prediction.isStale) && !hasTodayLog;
+  const heroAction = !data.prediction ? openEditLastPeriod : () => openLogging(today, todayLog);
 
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
@@ -532,7 +524,7 @@ export function CycleScreen() {
               yo'qolmaydi). */}
           <button
             type="button"
-            onClick={() => heroIsCallToAction && openLogging(today, todayLog)}
+            onClick={() => heroIsCallToAction && heroAction()}
             disabled={!heroIsCallToAction}
             className="relative block w-full overflow-hidden rounded-[32px] py-10 text-center disabled:cursor-default"
           >
@@ -544,7 +536,16 @@ export function CycleScreen() {
             <HeroBlob className="left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 bg-primary/25" />
             <HeroBlob className="left-1/2 top-1/2 h-40 w-40 -translate-x-[70%] -translate-y-[30%] rotate-45 bg-accent/20" breatheDelay="-3.5s" />
             <div className="relative z-10 px-4">
-              <p className="text-2xl leading-snug font-extrabold text-text-primary sm:text-3xl">{heroHeadline}</p>
+              {/* OVERNIGHT-23: markaziy blokda ENG KO'PI BILAN IKKITA matn
+                  qatori qoladi — asosiy sarlavha (raqam/diapazon/hozirgi
+                  hayz kuni, holatga qarab TO'RTTADAN FAQAT BITTASI) va
+                  ixtiyoriy bitta ijobiy ohangdagi qo'shimcha qator. Alohida
+                  "hayz kuni" va "ishonch darajasi" Badge'lari, va bir necha
+                  marta takrorlangan "ma'lumot yo'q" izohlari BUTUNLAY OLIB
+                  TASHLANDI. */}
+              <p className="text-2xl leading-snug font-extrabold text-text-primary sm:text-3xl">
+                {isOnPeriod && isMinor && <Emoji e="🐰" size={22} />} {heroHeadline}
+              </p>
 
               {/* OVERNIGHT-15: matn "bosing" demasdan turib ham bosiladigan
                   bo'lgani uchun ko'p foydalanuvchi buni tushunmay, alohida
@@ -557,58 +558,14 @@ export function CycleScreen() {
                 </p>
               )}
 
-              {/* OVERNIGHT-21/22: yuqoridagi raqam endi HAR DOIM ko'rinadi
-                  (algoritm — cycle.ts — hisoblagan haqiqiy taxmin), lekin
-                  foydalanuvchi BUGUN uchun ENDIGINA yozuv qo'shgan bo'lsa-yu,
-                  tarix hali kam bo'lsa, uning amalini tan oluvchi qisqa
-                  eslatma — raqamning O'RNIGA emas, unga QO'SHIMCHA. */}
-              {!heroIsCallToAction && isLowInfoPrediction && hasTodayLog && (
-                <p className="mt-2 text-sm font-semibold text-text-secondary">{dict.cycle.gatheringDataHeroLabel}</p>
-              )}
-
-              {periodDay && (
-                <div className="mt-3 flex justify-center">
-                  <Badge tone="primary">
-                    {isMinor && (
-                      <>
-                        <Emoji e="🐰" size={14} />{" "}
-                      </>
-                    )}
-                    {dict.cycle.periodDayBadge(periodDay)}
-                  </Badge>
-                </div>
-              )}
-
-              {/* FIX/OVERNIGHT-22: bu blok (izoh+Badge+sana-diapazon) ilgari
-                  "kam ma'lumot" holatida BUTUNLAY yashirilardi — o'sha
-                  paytda buning sababi bor edi (headline'ning o'zi "kam
-                  ma'lumot" deb aytardi, bu blok esa xuddi shuni takrorlardi).
-                  Endi headline HAR DOIM raqam ko'rsatgani uchun, bu blok
-                  ENDI takrorlanish emas — aksincha, raqam qanchalik
-                  ISHONCHLI ekanini (va nega) tushuntiruvchi YAGONA joy,
-                  shuning uchun `data.prediction` mavjud bo'lgan HAR qanday
-                  holatda (ishonch darajasidan qat'iy nazar) ko'rsatiladi. */}
-              {data.prediction && (
-                <div className="mt-3 flex flex-col items-center gap-1.5">
-                  <p className="max-w-xs text-center text-xs text-text-muted">{explainPredictionText(data.prediction.explanationReason, dict)}</p>
-                  {/* CYCLE-002: aniq sanani tibbiy haqiqat emas, turli aniqlikdagi
-                      taxmin sifatida ko'rsatish — foydalanuvchi ishonch darajasini
-                      ko'rib, mos ravishda kutishlarini moslashtira oladi. */}
-                  <Badge tone={CONFIDENCE_TONE[data.prediction.confidence]}>
-                    {dict.cycle.confidenceLabel[data.prediction.confidence]}
-                  </Badge>
-                  {/* CYCLE-ALGO-07: "yuqori" ishonchda aniq sana yetarli (diapazon
-                      deyarli nuqtaga teng) — faqat past/o'rta ishonchda haqiqiy
-                      diapazonni ko'rsatib, soxta aniqlik taassurotini oldini olamiz. */}
-                  {data.prediction.confidence !== "high" && !data.prediction.isStale && data.prediction.daysUntilNextPeriod >= 0 && (
-                    <p className="text-center text-xs text-text-muted">
-                      {dict.cycle.nextPeriodRangeLabel(
-                        formatDateDisplay(data.prediction.nextPeriodStartEarliest),
-                        formatDateDisplay(data.prediction.nextPeriodStartLatest)
-                      )}
-                    </p>
-                  )}
-                </div>
+              {/* OVERNIGHT-23: yagona, IJOBIY ohangdagi ikkinchi darajali
+                  qator — "ma'lumot yo'q"/"yetarli emas" kabi salbiy so'zlar
+                  ATAYLAB ishlatilmaydi. Faqat past-ishonch holatida, va
+                  yuqoridagi CTA-chaqiruv matni bilan BIR VAQTDA hech
+                  qachon (ikkalasi ham "keyingi qadam" haqida bo'lib
+                  qolmasligi uchun) ko'rsatiladi. */}
+              {!heroIsCallToAction && showTrackingNote && (
+                <p className="mt-2 text-sm font-semibold text-text-secondary">{dict.cycle.trackingImprovesLabel}</p>
               )}
             </div>
           </button>

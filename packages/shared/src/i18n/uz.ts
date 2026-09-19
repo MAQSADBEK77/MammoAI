@@ -278,7 +278,6 @@ const uz = {
     // farqli, qisqaroq tugma matnlari.
     logFlowButton: "Sikl belgilash",
     checkinButton: "Check-in",
-    periodDayBadge: (day: number) => `Hayzning ${day}-kuni`,
     flowLabel: "Oqim intensivligi",
     moodLabel: "Kayfiyat",
     symptomsLabel: "Alomatlar",
@@ -309,40 +308,29 @@ const uz = {
     irregularCheckupLink: "Tekshiruvlar bo'limiga o'tish",
     perimenopauseCardTitle: "Perimenopauza kuzatuvi",
     perimenopauseCardBody: "Bu davrda tsikl tartibsizlashishi — tabiiy holat. Bashorat o'rniga belgilaringizni (issiqlik bosishi, uyqu, kayfiyat) kuzatib boring.",
+    // OVERNIGHT-23: haqiqiy "hech narsa yo'q" holatida (`!data.prediction`)
+    // bosilsa, oxirgi hayz sanasini kiritish oynasi ochiladi (`heroAction`) —
+    // shuning uchun bu matn ham CTA sifatida o'qiladi.
     ringEmptyLabel: "Bashorat qilish uchun oxirgi hayz sanasini belgilang",
     // OVERNIGHT-15: yuqoridagi matn "bosiladigan" ekanini bildirmasdi —
     // foydalanuvchi buni tugma deb tushunmasdi.
     heroTapHint: "Bosing va boshlang",
-    // OVERNIGHT-22: bugun uchun yozuv ALLAQACHON qo'shilgan bo'lsa-yu, tarix
-    // hali kam bo'lsa — hero RAQAMI (endi HAR DOIM ko'rinadi) yonida
-    // foydalanuvchining amalini tan oluvchi qisqa qo'shimcha eslatma
-    // (izoh-blok esa "necha sikl kerak/tahlil qilindi"ni aytadi).
-    gatheringDataHeroLabel: "Bashorat uchun ma'lumot to'planmoqda",
     staleDataLabel: "Ma'lumot eskirgan — oxirgi hayz sanasini yangilang",
-    // CYCLE-ALGO-08: foydalanuvchiga "nega shunday bashorat qilindi" degan
-    // qisqa, shaffof tushuntirish (`explainPrediction()`dagi 4 ta sabab
-    // kodiga mos) — predictionBasisHistory/Estimate'ning o'rnini bosadi.
-    predictionExplanation: {
-      noData: "Ma'lumot hali yo'q — umumiy o'rtachaga tayanilmoqda",
-      limitedData: (n: number) => `Ma'lumot hali kam (${n} ta sikl) — umumiy o'rtachaga qisman tayanilmoqda`,
-      outliersExcluded: (n: number, outlierCount: number) =>
-        outlierCount === 1
-          ? `So'nggi ${n} ta sikldan hisoblangan, 1 tasi g'ayrioddiy sikl chiqarib tashlandi`
-          : `So'nggi ${n} ta sikldan hisoblangan, ${outlierCount} tasi g'ayrioddiy sikl chiqarib tashlandi`,
-      standard: (n: number) => `So'nggi ${n} ta sikl asosida hisoblangan`,
-    },
+    // OVERNIGHT-23: foydalanuvchi HOZIR hayz ICHIDA bo'lsa (`periodDay`),
+    // "keyingi hayz N kundan keyin" haqida gapirish chalkash bo'ladi —
+    // buning o'rniga HOZIRGI holat aytiladi.
+    periodDayHeroLabel: (day: number, periodLength: number) => `Hayzingiz ${day}-kuni — taxminan ${periodLength} kun davom etadi`,
+    // OVERNIGHT-23: yagona, IJOBIY ohangdagi ikkinchi darajali qator — ilgari
+    // shu o'rinda "ma'lumot yo'q"/"yetarli emas" kabi 3-4 xil salbiy iboradan
+    // BIR NECHTASI BIRGALIKDA (izoh + Badge + yana izoh) ko'rsatilardi.
+    trackingImprovesLabel: "Sikllaringizni kuzatgan sari aniqroq bo'ladi",
     // CYCLE-ALGO-07: aniq sana o'rniga diapazon — past/o'rta ishonchda
     // haqiqiy noaniqlikni yashirmaslik uchun ("13-16 kun" o'rniga bitta
-    // "13 kun" degan soxta aniqlik taassuroti bermaslik).
+    // "13 kun" degan soxta aniqlik taassuroti bermaslik). OVERNIGHT-23'dan
+    // buyon bu ASOSIY sarlavhaning o'zi (aniq kun-soni bilan bir vaqtda
+    // hech qachon emas — past ishonchda faqat shu, yuqori ishonchda esa
+    // faqat `nextPeriodIn`).
     nextPeriodRangeLabel: (earliest: string, latest: string) => `${earliest}–${latest} oralig'ida kutilmoqda`,
-    // CYCLE-002: aniq sana o'rniga ishonch darajasi — bashorat tibbiy haqiqat
-    // emas, turli aniqlikdagi taxmin ekanini ochiq ko'rsatish uchun.
-    confidenceLabel: {
-      high: "Yuqori ishonch",
-      medium: "O'rtacha ishonch",
-      low: "Past ishonch",
-      insufficient: "Yetarli ma'lumot yo'q",
-    },
     articlesCardTitle: "Qiziqarli maqolalar",
     riskQuizCardTitle: "O'z-o'zini tekshirish testi",
     riskQuizCardSubtitle: "2 daqiqada xavf darajangizni bilib oling",
