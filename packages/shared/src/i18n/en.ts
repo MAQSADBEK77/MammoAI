@@ -287,7 +287,6 @@ const en: Dictionary = {
     perimenopauseCardTitle: "Perimenopause tracking",
     perimenopauseCardBody: "Irregular cycles are natural during this time. Instead of a prediction, keep an eye on your symptoms (hot flashes, sleep, mood).",
     ringEmptyLabel: "Set your last period date to see predictions",
-    notEnoughDataHeroLabel: "Log how you're feeling today — that's where your prediction starts",
     heroTapHint: "Tap to start",
     gatheringDataHeroLabel: "Gathering data for your forecast",
     staleDataLabel: "Data is outdated — update your last period date",

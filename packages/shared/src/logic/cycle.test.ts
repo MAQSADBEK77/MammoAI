@@ -272,6 +272,31 @@ describe("predictCycle", () => {
     expect(pred?.daysUntilNextPeriod).toBe(0);
   });
 
+  // OVERNIGHT-22: bu algoritm qatlami HECH QACHON buzilmagan edi — muammo
+  // FAQAT CycleScreen.tsx'da (`isLowInfoPrediction` bo'lganda hero RAQAMNI
+  // butunlay yashirib, "belgilang" chaqiruv-matni bilan almashtirardi) edi.
+  // Shu regressiyani mustahkamlash uchun: `deriveAdaptiveCycleSettings`ning
+  // `cyclesAnalyzed: 0` fallback natijasi (faqat onboarding'dagi
+  // `lastPeriodStart`, hech qanday haqiqiy sikl tarixisiz) to'g'ridan-to'g'ri
+  // `predictCycle`ga uzatilganda, u ALLAQACHON haqiqiy, ishlatsa bo'ladigan
+  // `daysUntilNextPeriod` qaytaradi — Flo'dagi kabi "N kun qoldi" darhol
+  // ko'rsatilishi mumkin, "insufficient" ishonch darajasidan qat'iy nazar.
+  it("cyclesAnalyzed: 0 (faqat onboarding fallback) bo'lsa ham, haqiqiy daysUntilNextPeriod qaytaradi", () => {
+    const fallbackSettings = deriveAdaptiveCycleSettings([{ date: "2026-01-01", flow: "medium" as const }], {
+      lastPeriodStart: "2026-01-01",
+      averageCycleLength: 28,
+      averagePeriodLength: 5,
+    });
+    expect(fallbackSettings?.cyclesAnalyzed).toBe(0);
+    expect(fallbackSettings?.confidence).toBe("insufficient");
+
+    const pred = predictCycle(fallbackSettings!, "2026-01-01");
+    expect(pred).not.toBeNull();
+    expect(pred?.nextPeriodStart).toBe("2026-01-29"); // lastPeriodStart + 28 kun
+    expect(pred?.daysUntilNextPeriod).toBe(28);
+    expect(typeof pred?.daysUntilNextPeriod).toBe("number");
+  });
+
   it("kechikkanda bashoratni bir butun sikl OLDINGA sakratib yubormaydi (regression)", () => {
     // 2026-09-11'gacha bu haqiqiy bug edi: 1 kun kechiksa ham ilova
     // "27 kun qoldi" deb noto'g'ri ko'rsatardi (keyingi-keyingi siklga sakrab).

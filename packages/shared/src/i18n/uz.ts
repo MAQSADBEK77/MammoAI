@@ -310,19 +310,13 @@ const uz = {
     perimenopauseCardTitle: "Perimenopauza kuzatuvi",
     perimenopauseCardBody: "Bu davrda tsikl tartibsizlashishi — tabiiy holat. Bashorat o'rniga belgilaringizni (issiqlik bosishi, uyqu, kayfiyat) kuzatib boring.",
     ringEmptyLabel: "Bashorat qilish uchun oxirgi hayz sanasini belgilang",
-    // 2026-09-18: "yetarli ma'lumot yo'q" holati ilgari 4 marta (headline +
-    // izoh + Badge + sana-diapazon) takrorlanardi — endi shu BITTA, FAOL
-    // undovchi jumla bilan almashtiriladi (CycleScreen'da confidence
-    // "insufficient" yoki no_data/limited_data bo'lganda).
-    notEnoughDataHeroLabel: "Bugungi holatingizni belgilang — bashorat shundan boshlanadi",
     // OVERNIGHT-15: yuqoridagi matn "bosiladigan" ekanini bildirmasdi —
     // foydalanuvchi buni tugma deb tushunmasdi.
     heroTapHint: "Bosing va boshlang",
-    // OVERNIGHT-21: bugun uchun yozuv ALLAQACHON qo'shilgan bo'lsa (lekin
-    // bashorat hali ham ishonchsiz — bu bir kunlik yozuv bilan emas, VAQT
-    // o'tishi bilan hal bo'ladigan holat), "belgilang" CTA'sini takrorlash
-    // o'rniga foydalanuvchining amalini tan oluvchi, sabab tushuntiruvchi
-    // matn ko'rsatiladi (pastidagi izoh-blok "necha sikl kerak"ni aytadi).
+    // OVERNIGHT-22: bugun uchun yozuv ALLAQACHON qo'shilgan bo'lsa-yu, tarix
+    // hali kam bo'lsa — hero RAQAMI (endi HAR DOIM ko'rinadi) yonida
+    // foydalanuvchining amalini tan oluvchi qisqa qo'shimcha eslatma
+    // (izoh-blok esa "necha sikl kerak/tahlil qilindi"ni aytadi).
     gatheringDataHeroLabel: "Bashorat uchun ma'lumot to'planmoqda",
     staleDataLabel: "Ma'lumot eskirgan — oxirgi hayz sanasini yangilang",
     // CYCLE-ALGO-08: foydalanuvchiga "nega shunday bashorat qilindi" degan
