@@ -318,6 +318,12 @@ const uz = {
     // OVERNIGHT-15: yuqoridagi matn "bosiladigan" ekanini bildirmasdi —
     // foydalanuvchi buni tugma deb tushunmasdi.
     heroTapHint: "Bosing va boshlang",
+    // OVERNIGHT-21: bugun uchun yozuv ALLAQACHON qo'shilgan bo'lsa (lekin
+    // bashorat hali ham ishonchsiz — bu bir kunlik yozuv bilan emas, VAQT
+    // o'tishi bilan hal bo'ladigan holat), "belgilang" CTA'sini takrorlash
+    // o'rniga foydalanuvchining amalini tan oluvchi, sabab tushuntiruvchi
+    // matn ko'rsatiladi (pastidagi izoh-blok "necha sikl kerak"ni aytadi).
+    gatheringDataHeroLabel: "Bashorat uchun ma'lumot to'planmoqda",
     staleDataLabel: "Ma'lumot eskirgan — oxirgi hayz sanasini yangilang",
     // CYCLE-ALGO-08: foydalanuvchiga "nega shunday bashorat qilindi" degan
     // qisqa, shaffof tushuntirish (`explainPrediction()`dagi 4 ta sabab

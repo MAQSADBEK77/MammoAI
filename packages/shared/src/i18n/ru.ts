@@ -287,6 +287,7 @@ const ru: Dictionary = {
     ringEmptyLabel: "Отметьте дату последней менструации для прогноза",
     notEnoughDataHeroLabel: "Отметьте своё состояние сегодня — с этого начнётся прогноз",
     heroTapHint: "Нажмите и начните",
+    gatheringDataHeroLabel: "Данные для прогноза собираются",
     staleDataLabel: "Данные устарели — обновите дату последней менструации",
     predictionExplanation: {
       noData: "Данных пока нет — используется общее среднее",

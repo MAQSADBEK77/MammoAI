@@ -257,6 +257,17 @@ export function CycleScreen() {
       data.prediction.explanationReason.type === "no_data" ||
       data.prediction.explanationReason.type === "limited_data");
 
+  // OVERNIGHT-21: real foydalanuvchi bugungi holatini BELGILAGANDAN keyin ham
+  // (masalan hozirgina "hayzning 2-kuni" deb qayd etib) hero matni AYNAN bir
+  // xil "bugungi holatingizni belgilang" deb qolaverardi — go'yo uning
+  // amali HECH NARSAGA ta'sir qilmagandek. Sabab: past-ishonchli bashorat
+  // haqiqatan ham ko'proq VAQT (bir necha kun/hafta davomida yig'ilgan
+  // TARIX) talab qiladi, bitta kunlik yozuv buni darhol o'zgartirolmaydi —
+  // lekin bu HAQIQAT foydalanuvchiga hech qachon tushuntirilmasdi. Endi
+  // bugun uchun yozuv ALLAQACHON mavjud bo'lsa, boshqa (harakatga chorlamaydigan,
+  // holatni tan oluvchi) matn ko'rsatiladi.
+  const hasTodayLog = !!todayLog;
+
   // Bosh ekrandagi "hero" matni — CycleRing'ning eski sublabel mantig'i bilan
   // asosan bir xil, lekin "kam ma'lumot" holatida endi PASSIV "ma'lumot yo'q"
   // o'rniga FAOL, harakatga undovchi jumla ko'rsatiladi (pastdagi tugma
@@ -264,22 +275,24 @@ export function CycleScreen() {
   const heroHeadline = data.prediction?.isStale
     ? dict.cycle.staleDataLabel
     : !data.prediction
-      ? dict.cycle.ringEmptyLabel
+      ? hasTodayLog
+        ? dict.cycle.gatheringDataHeroLabel
+        : dict.cycle.ringEmptyLabel
       : isLowInfoPrediction
-        ? dict.cycle.notEnoughDataHeroLabel
+        ? hasTodayLog
+          ? dict.cycle.gatheringDataHeroLabel
+          : dict.cycle.notEnoughDataHeroLabel
         : data.isIrregular
           ? dict.cycle.irregularRingLabel
           : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod);
 
-  // OVERNIGHT-15: hero bloki ilgari FAQAT `!dayInCycle` bo'lganda bosiladigan
-  // edi — lekin foydalanuvchida BIROZ tarix bo'lsa-yu (dayInCycle mavjud),
-  // hali ishonchli bashorat uchun YETARLI bo'lmasa (`isLowInfoPrediction`)
-  // yoki ma'lumot eskirgan bo'lsa (`isStale`), yuqoridagi matn aynan "bugungi
-  // holatingizni belgilang"/"yangilang" deb turib, blok bosilmas edi — foyda-
-  // lanuvchi "qayerga bosish kerakligini" tekshirib topa olmasdi. Endi
-  // qaysi holatda ustuvor CTA-matn ko'rsatilsa, aynan o'sha holatda blok
-  // bosiladigan qilindi (matn va bosiladigan-holat endi HAR DOIM mos keladi).
-  const heroIsCallToAction = !data.prediction || isLowInfoPrediction || !!data.prediction.isStale;
+  // OVERNIGHT-15/21: hero bloki ilgari FAQAT `!dayInCycle` bo'lganda
+  // bosiladigan edi — endi qaysi holatda "belgilang" CTA-matni ko'rsatilsa,
+  // aynan o'sha holatda blok bosiladi. LEKIN bugun uchun yozuv ALLAQACHON
+  // mavjud bo'lsa (`hasTodayLog`), qayta bosish hech narsani o'zgartirmaydi
+  // (bugungi kun uchun qilinadigan amal allaqachon bajarilgan) — shuning
+  // uchun bu holatda blok endi CTA emas, faqat ma'lumot beruvchi.
+  const heroIsCallToAction = (!data.prediction || isLowInfoPrediction || !!data.prediction.isStale) && !hasTodayLog;
 
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
@@ -561,12 +574,14 @@ export function CycleScreen() {
                 </div>
               )}
 
-              {/* FIX: bu butun blok (izoh+Badge+sana-diapazon) faqat
-                  HAQIQIY (kam bo'lsa ham) bashorat mavjud bo'lganda
-                  ko'rsatiladi — "kam ma'lumot" holatida yuqoridagi
-                  heroHeadline'ning o'zi (notEnoughDataHeroLabel) yetarli,
-                  bularning barchasi bir xil fikrni takrorlardi. */}
-              {data.prediction && !isLowInfoPrediction && (
+              {/* FIX/OVERNIGHT-21: bu blok (izoh+Badge+sana-diapazon) ilgari
+                  "kam ma'lumot" holatida BUTUNLAY yashirilardi — chunki
+                  yuqoridagi notEnoughDataHeroLabel matni bilan bir xil
+                  fikrni takrorlardi. Lekin `hasTodayLog` holatida yuqorida
+                  ENDI boshqa (gatheringDataHeroLabel) matn ko'rsatiladi —
+                  bu blok esa AYNAN "necha sikl kerak/tahlil qilindi" degan
+                  QO'SHIMCHA, takrorlanmaydigan ma'lumotni beradi. */}
+              {data.prediction && (!isLowInfoPrediction || hasTodayLog) && (
                 <div className="mt-3 flex flex-col items-center gap-1.5">
                   <p className="max-w-xs text-center text-xs text-text-muted">{explainPredictionText(data.prediction.explanationReason, dict)}</p>
                   {/* CYCLE-002: aniq sanani tibbiy haqiqat emas, turli aniqlikdagi

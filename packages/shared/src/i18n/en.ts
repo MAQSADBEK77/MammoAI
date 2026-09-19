@@ -289,6 +289,7 @@ const en: Dictionary = {
     ringEmptyLabel: "Set your last period date to see predictions",
     notEnoughDataHeroLabel: "Log how you're feeling today — that's where your prediction starts",
     heroTapHint: "Tap to start",
+    gatheringDataHeroLabel: "Gathering data for your forecast",
     staleDataLabel: "Data is outdated — update your last period date",
     predictionExplanation: {
       noData: "No data yet — relying on the general average",
