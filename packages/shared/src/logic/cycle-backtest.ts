@@ -11,13 +11,21 @@
 // (production'dagi haqiqiy "Statistika" ekrani shu funksiyaga tayanadi).
 
 import type { CycleLog, CycleSettings, FlowLevel } from "../types";
-import { addDays, daysBetween, deriveAdaptiveCycleSettings, detectPeriodStarts, predictCycle } from "./cycle";
+import { addDays, daysBetween, deriveAdaptiveCycleSettings, detectPeriodStarts, predictCycle, type CycleAlgoTunables } from "./cycle";
 
 export interface BacktestResult {
   avgErrorDays: number;
   within2DaysPct: number;
   cyclesEvaluated: number;
 }
+
+// CYCLE-ALGO-14: `deriveAdaptiveCycleSettings`ning o'zi talab qiladigan
+// minimal shakl — `scripts/backtest-real-users.ts` bazadan FAQAT shu
+// maydonlarni o'qiydi (id/userId/mood/createdAt shart emas, haqiqiy
+// foydalanuvchi qatoriga ID/vaqt-belgisi yasashga hojat qoldirmaydi).
+// To'liq `CycleLog[]` (masalan sintetik generatorlar) ham strukturaviy
+// jihatdan mos keladi — orqaga moslik buzilmaydi.
+export type BacktestLog = Pick<CycleLog, "date" | "flow"> & Partial<Pick<CycleLog, "symptoms">>;
 
 export interface CyclePredictor {
   name: string;
@@ -30,7 +38,7 @@ export interface CyclePredictor {
    * holatni simulyatsiya qiladi). Bashorat qilingan keyingi sikl boshlanish
    * sanasini (yoki bashorat qila olmasa `null`) qaytaradi.
    */
-  predictNextStart(priorLogs: CycleLog[], asOf: string): string | null;
+  predictNextStart(priorLogs: BacktestLog[], asOf: string): string | null;
 }
 
 const FALLBACK_SETTINGS: Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength"> = {
@@ -54,6 +62,27 @@ export const currentPredictor: CyclePredictor = {
     return prediction?.nextPeriodStart ?? null;
   },
 };
+
+/**
+ * CYCLE-ALGO-14: `currentPredictor`ning aynan o'zi, faqat berilgan
+ * `tunables` (RECENCY_DECAY/SHRINKAGE_K/ADAPTIVE_MAX_CYCLES muqobil
+ * qiymatlari) bilan — `scripts/backtest-real-users.ts` shu orqali turli
+ * parametr kombinatsiyalarini HAQIQIY foydalanuvchi tarixiga qarshi
+ * o'lchab, solishtiradi. Ishlab-chiqarish kodi buni hech qachon
+ * chaqirmaydi — faqat o'lchov-skripti.
+ */
+export function makeTunablePredictor(name: string, tunables: CycleAlgoTunables): CyclePredictor {
+  return {
+    name,
+    predictNextStart(priorLogs, asOf) {
+      const fallback = { ...FALLBACK_SETTINGS, lastPeriodStart: asOf };
+      const adaptive = deriveAdaptiveCycleSettings(priorLogs, fallback, asOf, tunables);
+      if (!adaptive) return null;
+      const prediction = predictCycle(adaptive, asOf);
+      return prediction?.nextPeriodStart ?? null;
+    },
+  };
+}
 
 /**
  * MUZLATILGAN ("frozen") bazaviy chiziq — CYCLE-ALGO-01'DAN OLDIN `./cycle.ts`
@@ -86,7 +115,7 @@ export const legacyPredictor: CyclePredictor = {
  * (har bir bashorat FAQAT o'sha paytgacha mavjud tarixdan), lekin bitta
  * gap-o'rtachasi formulasi o'rniga ixtiyoriy `CyclePredictor`ni sinaydi.
  */
-export function backtestPredictor(logs: CycleLog[], predictor: CyclePredictor, minCyclesForBacktest = 4): BacktestResult | null {
+export function backtestPredictor(logs: BacktestLog[], predictor: CyclePredictor, minCyclesForBacktest = 4): BacktestResult | null {
   const starts = detectPeriodStarts(logs);
   if (starts.length < minCyclesForBacktest) return null;
 

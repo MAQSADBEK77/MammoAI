@@ -356,6 +356,27 @@ export interface AdaptiveCycleSettings {
   cycleLengthOutliers: number[];
 }
 
+// CYCLE-ALGO-14: uchta asosiy sozlash-parametri (RECENCY_DECAY/SHRINKAGE_K/
+// ADAPTIVE_MAX_CYCLES) ilgari faqat qo'lda o'ylab topilgan sintetik
+// stsenariylarga qarab tanlangan edi. Endi production'da haqiqiy
+// `cycle_logs` mavjud — `scripts/backtest-real-users.ts` shu real tarixga
+// qarshi turli qiymat kombinatsiyalarini o'lchab, ENG KAM `avgErrorDays`
+// beradiganini tanlaydi. Bu ixtiyoriy `tunables` parametri FAQAT shu
+// o'lchov-skripti uchun — hech qanday CHAQIRUVCHI uni bermasa (butun
+// production kodi ham shunday), xatti-harakat 100% ILGARIGIDEK qoladi
+// (standart qiymatlar aynan hozirgi konstantalarga teng).
+export interface CycleAlgoTunables {
+  recencyDecay: number;
+  shrinkageK: number;
+  adaptiveMaxCycles: number;
+}
+
+const DEFAULT_TUNABLES: CycleAlgoTunables = {
+  recencyDecay: RECENCY_DECAY,
+  shrinkageK: SHRINKAGE_K,
+  adaptiveMaxCycles: ADAPTIVE_MAX_CYCLES,
+};
+
 /**
  * `cycle_settings`dagi statik qiymat o'rniga, imkon qadar haqiqiy `cycle_logs`
  * tarixidan (oxirgi ADAPTIVE_MAX_CYCLES ta aniqlangan sikldan) o'rtacha sikl/
@@ -371,10 +392,12 @@ export function deriveAdaptiveCycleSettings(
   // buzmaydi.
   logs: (Pick<CycleLog, "date" | "flow"> & Partial<Pick<CycleLog, "symptoms">>)[],
   fallback: Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength">,
-  today: string = tashkentDateStr()
+  today: string = tashkentDateStr(),
+  // CYCLE-ALGO-14: qarang yuqoridagi izoh — faqat backtest-skripti uzatadi.
+  tunables: CycleAlgoTunables = DEFAULT_TUNABLES
 ): AdaptiveCycleSettings | null {
   const starts = detectPeriodStarts(logs);
-  const lengths = computeCycleLengths(logs);
+  const lengths = computeCycleLengths(logs, tunables.adaptiveMaxCycles);
 
   // CYCLE-ALGO-04: `lengths.length === 0` (0 yoki 1 ta aniqlangan sikl
   // boshlanishi — gap hisoblab bo'lmaydi) hali ham TO'LIQ fallback'ga
@@ -411,7 +434,7 @@ export function deriveAdaptiveCycleSettings(
   // barcha 6 ta sikl bir xil og'irlikda bo'lgan ilgarigi mantiq eng so'nggi
   // (haqiqatan foydali) o'zgarishlarni eski ma'lumot bilan "suyultirib"
   // yuborardi.
-  const personalCycleAvg = computeWeightedAverage(cycleLengthsForAvg);
+  const personalCycleAvg = computeWeightedAverage(cycleLengthsForAvg, tunables.recencyDecay);
   // CYCLE-ALGO-04: Bayesian shrinkage — "2 tadan kam aniqlangan sikl = to'liq
   // fallback, 2+ = to'liq shaxsiy o'rtacha" qattiq sakrashi o'rniga YUMSHOQ
   // o'tish: `finalCycleLength = (n·personalAvg + k·populationPrior) / (n+k)`.
@@ -429,7 +452,7 @@ export function deriveAdaptiveCycleSettings(
   // personalCycleAvg'ga (aslida faqat 4 ta nuqta qo'llab-quvvatlaydigan
   // darajadan) ORTIQ ishonch berardi.
   const shrinkageN = cycleLengthsForAvg.length;
-  const shrunkCycleLength = (shrinkageN * personalCycleAvg + SHRINKAGE_K * populationPrior) / (shrinkageN + SHRINKAGE_K);
+  const shrunkCycleLength = (shrinkageN * personalCycleAvg + tunables.shrinkageK * populationPrior) / (shrinkageN + tunables.shrinkageK);
   const avgCycleLength = clamp(Math.round(shrunkCycleLength), MIN_SANE_CYCLE_LENGTH, MAX_SANE_CYCLE_LENGTH);
   const lastStart = starts[starts.length - 1];
   // FIX2-19: nomi va hujjati "oxirgi bir necha davrdan o'rtacha" deydi (xuddi
@@ -440,13 +463,13 @@ export function deriveAdaptiveCycleSettings(
   // aniqlangan davr) o'rtacha olinadi; hali tugamagan (null) davrlar
   // e'tiborga olinmaydi.
   const recentPeriodLengths = starts
-    .slice(-ADAPTIVE_MAX_CYCLES)
+    .slice(-tunables.adaptiveMaxCycles)
     .map((start) => computePeriodLength(logs, start, today))
     .filter((n): n is number => n !== null);
   // CYCLE-ALGO-02: xuddi avgCycleLength kabi — og'irlik-asoslangan o'rtacha.
   const periodLength =
     recentPeriodLengths.length > 0
-      ? Math.round(computeWeightedAverage(recentPeriodLengths))
+      ? Math.round(computeWeightedAverage(recentPeriodLengths, tunables.recencyDecay))
       : (fallback.averagePeriodLength ?? DEFAULT_PERIOD_LENGTH);
 
   // CYCLE-ALGO-07: bashorat diapazoni — haqiqiy namuna og'ishi (n>=2'da) yoki
