@@ -10,7 +10,12 @@ import { AnalyticsProvider } from "@/lib/analytics";
 import { TelegramFullscreenSetup } from "@/lib/telegram";
 
 // Iliq, yumaloq shrift — o'zbek (lotin) va rus (kirill) ikkalasini ham qamrab oladi.
-const nunito = Nunito({ subsets: ["latin", "cyrillic"], variable: "--font-body" });
+// MUHIM: oddiy "cyrillic" quyi to'plami faqat RUS alifbosi uchun yetarli
+// harflarni o'z ichiga oladi — o'zbekcha kirillga XOS harflar (Ў/ў, Ғ/ғ,
+// Қ/қ, Ҳ/ҳ) undan TASHQARIDA, faqat "cyrillic-ext"da bor. Shu sabab
+// tarjima matnida "O'zbekcha (kirill)" tanlanganda aynan shu 4 ta harf
+// (o'zbek matnida ENG KO'P uchraydiganlaridan) ko'rinmay/tushib qolgan edi.
+const nunito = Nunito({ subsets: ["latin", "cyrillic", "cyrillic-ext"], variable: "--font-body" });
 
 const SITE_URL = "https://mammo.uz";
 const SITE_TITLE = "MammoAI — Ayollar salomatligi";
