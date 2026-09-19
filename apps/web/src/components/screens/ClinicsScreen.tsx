@@ -10,9 +10,10 @@ import {
   Star,
   AccessTimeOutlined,
   PhoneOutlined,
+  MyLocationOutlined,
 } from "@mui/icons-material";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
-import { getClinicRating, getClinicHours, isTopClinic } from "@mammoai/shared";
+import { getClinicRating, getClinicHours, isTopClinic, haversineDistanceKm } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Card, LinkButton, LoadingSpinner, ErrorState, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
@@ -48,6 +49,40 @@ export function ClinicsScreen() {
   const [filter, setFilter] = useState<ClinicSpecialty | "all">("all");
   const [search, setSearch] = useState("");
 
+  // OVERNIGHT-18: "eng yaqinlarini topish" — brauzer geolokatsiyasi (foydalanuvchi
+  // ruxsat bergandagina). Koordinata FAQAT xotirada saqlanadi (bu ekranda);
+  // serverga (admin panelda ko'rinishi uchun) alohida, fire-and-forget
+  // so'rov bilan yuboriladi — muvaffaqiyatsiz saqlash foydalanuvchi
+  // tajribasiga (masofa bo'yicha saralashga) ta'sir qilmasligi kerak.
+  const [nearestMode, setNearestMode] = useState<"off" | "locating" | "on" | "denied" | "unsupported">("off");
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  function toggleNearest() {
+    if (nearestMode === "on") {
+      setNearestMode("off");
+      return;
+    }
+    if (userCoords) {
+      setNearestMode("on");
+      return;
+    }
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setNearestMode("unsupported");
+      return;
+    }
+    setNearestMode("locating");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserCoords(coords);
+        setNearestMode("on");
+        api.me.update({ lastLocationLat: coords.lat, lastLocationLng: coords.lng }).catch(() => {});
+      },
+      () => setNearestMode("denied"),
+      { timeout: 10000, maximumAge: 300000 }
+    );
+  }
+
   // FIX-UX-08: so'rov muvaffaqiyatsiz bo'lganda (masalan vaqtinchalik tarmoq
   // uzilishi) .catch() yo'q edi — holat hech qachon yangilanmay, foydalanuvchi
   // abadiy "yuklanmoqda" spinnerini ko'rib qolardi.
@@ -68,12 +103,16 @@ export function ClinicsScreen() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (clinics ?? []).filter(
+    const base = (clinics ?? []).filter(
       (c) =>
         (filter === "all" || c.specialties.includes(filter)) &&
         (!q || c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q))
     );
-  }, [clinics, filter, search]);
+    if (nearestMode !== "on" || !userCoords) return base;
+    return [...base].sort(
+      (a, b) => haversineDistanceKm(userCoords, { lat: a.lat, lng: a.lng }) - haversineDistanceKm(userCoords, { lat: b.lat, lng: b.lng })
+    );
+  }, [clinics, filter, search, nearestMode, userCoords]);
 
   if (loadError) {
     return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: load }} />;
@@ -120,6 +159,28 @@ export function ClinicsScreen() {
         ]}
       />
 
+      {/* OVERNIGHT-18: yoqilganda ro'yxat/xarita ikkalasi ham eng yaqin
+          klinikadan boshlab saralanadi — navbat asosidagi (o'zgarmagan)
+          tartib o'rniga. */}
+      <div className="flex flex-col gap-1.5">
+        <button
+          type="button"
+          onClick={toggleNearest}
+          disabled={nearestMode === "locating"}
+          className={clsx(
+            "tap-target flex w-fit items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition active:scale-95 disabled:opacity-60",
+            nearestMode === "on"
+              ? "border-primary bg-primary text-white"
+              : "border-border bg-surface text-text-secondary hover:border-primary-light"
+          )}
+        >
+          <MyLocationOutlined sx={{ fontSize: 15 }} />
+          {nearestMode === "locating" ? dict.clinics.nearestLocatingLabel : dict.clinics.nearestToggleLabel}
+        </button>
+        {nearestMode === "denied" && <p className="text-xs text-danger">{dict.clinics.nearestDeniedLabel}</p>}
+        {nearestMode === "unsupported" && <p className="text-xs text-text-muted">{dict.clinics.nearestUnsupportedLabel}</p>}
+      </div>
+
       <div className="flex gap-2 overflow-x-auto pb-1">
         <FilterChip active={filter === "all"} label={dict.clinics.filterAll} onClick={() => setFilter("all")} />
         {SPECIALTIES.map((s) => (
@@ -134,6 +195,7 @@ export function ClinicsScreen() {
           {filtered.map((clinic) => {
             const rating = getClinicRating(clinic.id);
             const isTop = isTopClinic(rating);
+            const distanceKm = nearestMode === "on" && userCoords ? haversineDistanceKm(userCoords, { lat: clinic.lat, lng: clinic.lng }) : null;
             return (
               <Card key={clinic.id} className="space-y-3" onMouseEnter={() => track(clinic, "view")}>
                 <div className="flex items-start justify-between gap-2">
@@ -150,7 +212,14 @@ export function ClinicsScreen() {
                   </span>
                 </div>
 
-                {clinic.freeScreening && <Badge tone="success">{dict.clinics.freeScreeningBadge}</Badge>}
+                <div className="flex flex-wrap gap-1.5">
+                  {clinic.freeScreening && <Badge tone="success">{dict.clinics.freeScreeningBadge}</Badge>}
+                  {distanceKm != null && (
+                    <Badge tone="primary">
+                      <MyLocationOutlined sx={{ fontSize: 12 }} /> {dict.clinics.distanceKm(distanceKm)}
+                    </Badge>
+                  )}
+                </div>
 
                 <div className="space-y-1">
                   <p className="flex items-center gap-1.5 text-sm text-text-secondary">

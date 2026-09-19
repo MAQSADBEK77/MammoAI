@@ -707,6 +707,10 @@ const ru: Dictionary = {
     seedDataNotice: "База клиник регулярно обновляется.",
     distanceKm: (km: number) => `${km.toFixed(1)} км`,
     foundCountLabel: "Найдено",
+    nearestToggleLabel: "Ближайшие",
+    nearestLocatingLabel: "Определение местоположения…",
+    nearestDeniedLabel: "Доступ к местоположению запрещён — включите в настройках браузера",
+    nearestUnsupportedLabel: "На этом устройстве определить местоположение нельзя",
   },
 
   riskQuiz: {

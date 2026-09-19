@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { deleteUser, getOnboardingProfile, hasPremiumAccess, updateUser } from "@/server/repo";
-import { jsonError, requireUser } from "@/server/api-utils";
+import { ApiError, jsonError, requireUser } from "@/server/api-utils";
 import { SESSION_COOKIE } from "@/server/session";
 import type { User } from "@mammoai/shared";
 
@@ -18,7 +18,10 @@ export async function PATCH(request: NextRequest) {
   try {
     const user = await requireUser(request);
     const body = (await request.json()) as Partial<
-      Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl">
+      Pick<
+        User,
+        "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl" | "lastLocationLat" | "lastLocationLng"
+      >
     >;
     // FIX-02: `phone` bu yerda ATAYLAB tashlab yuboriladi (destructuring orqali —
     // shunchaki TS tipidan olib tashlash yetarli emas, chunki updateUser xom
@@ -30,7 +33,19 @@ export async function PATCH(request: NextRequest) {
     // kiritib yuboriladi. Telefonni o'zgartirish faqat OTP-tasdiqlash oqimi
     // (ro'yxatdan o'tishdagi kabi) orqali bo'lishi kerak, shu yerda emas.
     const { phone: _ignoredPhone, ...patch } = body;
-    const updated = await updateUser(user.id, patch);
+    // OVERNIGHT-18: `lastLocationAt` mijozdan ISHONCH bilan qabul qilinmaydi
+    // (soxta sana yuborishning oldini olish uchun) — koordinata kelgan
+    // zahoti server vaqti ishlatiladi. Asosiy sonli qiymatlar ham
+    // tekshiriladi — buzuq/xato koordinata bazaga tushib qolmasin.
+    let locationPatch: Pick<User, "lastLocationLat" | "lastLocationLng" | "lastLocationAt"> | Record<string, never> = {};
+    if (patch.lastLocationLat != null || patch.lastLocationLng != null) {
+      const { lastLocationLat: lat, lastLocationLng: lng } = patch;
+      if (typeof lat !== "number" || typeof lng !== "number" || Number.isNaN(lat) || Number.isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+        throw new ApiError(400, "Noto'g'ri koordinata");
+      }
+      locationPatch = { lastLocationLat: lat, lastLocationLng: lng, lastLocationAt: new Date().toISOString() };
+    }
+    const updated = await updateUser(user.id, { ...patch, ...locationPatch });
     const [onboardingProfile, hasPremium] = await Promise.all([getOnboardingProfile(user.id), hasPremiumAccess(user.id)]);
     return NextResponse.json({ user: updated, onboardingProfile, hasPremium });
   } catch (error) {

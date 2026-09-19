@@ -771,6 +771,11 @@ const uz = {
     seedDataNotice: "Klinikalar bazasi tez-tez yangilanib boradi.",
     distanceKm: (km: number) => `${km.toFixed(1)} km`,
     foundCountLabel: "Topildi",
+    // OVERNIGHT-18: "eng yaqinlarini topish" — brauzer geolokatsiyasi orqali.
+    nearestToggleLabel: "Eng yaqinlari",
+    nearestLocatingLabel: "Joylashuv aniqlanmoqda…",
+    nearestDeniedLabel: "Joylashuvga ruxsat berilmadi — brauzer sozlamalaridan yoqing",
+    nearestUnsupportedLabel: "Bu qurilmada joylashuvni aniqlab bo'lmaydi",
   },
 
   riskQuiz: {

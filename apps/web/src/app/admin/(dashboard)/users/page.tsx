@@ -133,6 +133,11 @@ export default function AdminUsersPage() {
                 <th className="px-5 py-3">Foydalanuvchi</th>
                 <th className="px-5 py-3">Til</th>
                 <th className="px-5 py-3">Maqsad</th>
+                {/* OVERNIGHT-18: Klinikalar bo'limidagi "eng yaqinlarini
+                    topish" orqali (foydalanuvchi ruxsat bergandagina)
+                    olingan oxirgi joylashuv — moderatsiya/qo'llab-quvvatlash
+                    uchun qaysi hududda ekanini bilish uchun foydali. */}
+                <th className="px-5 py-3">Joylashuv</th>
                 <th className="px-5 py-3">Sikl yozuvlari</th>
                 <th className="px-5 py-3">Oxirgi faollik</th>
                 <th className="px-5 py-3">Ro&apos;yxatdan o&apos;tgan</th>
@@ -143,14 +148,14 @@ export default function AdminUsersPage() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-text-muted">
+                  <td colSpan={9} className="px-5 py-10 text-center text-text-muted">
                     Yuklanmoqda…
                   </td>
                 </tr>
               )}
               {!loading && users.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-text-muted">
+                  <td colSpan={9} className="px-5 py-10 text-center text-text-muted">
                     Hech narsa topilmadi
                   </td>
                 </tr>
@@ -168,6 +173,21 @@ export default function AdminUsersPage() {
                       </Badge>
                     </td>
                     <td className="px-5 py-3 text-text-secondary">{u.primaryGoal ? (GOAL_LABELS[u.primaryGoal] ?? u.primaryGoal) : "—"}</td>
+                    <td className="px-5 py-3 text-text-secondary">
+                      {u.lastLocationLat != null && u.lastLocationLng != null ? (
+                        <a
+                          href={`https://www.openstreetmap.org/?mlat=${u.lastLocationLat}&mlon=${u.lastLocationLng}#map=14/${u.lastLocationLat}/${u.lastLocationLng}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-semibold text-primary hover:underline"
+                          title={formatDate(u.lastLocationAt)}
+                        >
+                          Xaritada ko&apos;rish
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="px-5 py-3 text-text-secondary">{u.cycleLogsCount}</td>
                     <td className="px-5 py-3 text-text-secondary">{formatDate(u.lastActiveAt)}</td>
                     <td className="px-5 py-3 text-text-secondary">{formatDate(u.createdAt)}</td>

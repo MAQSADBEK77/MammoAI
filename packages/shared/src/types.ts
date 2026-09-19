@@ -39,6 +39,12 @@ export interface User {
   avatarUrl: string | null;
   /** Admin panel — moderatsiya uchun bloklangan bo'lsa true (API kirishi rad etiladi). */
   isBlocked: boolean;
+  /** OVERNIGHT-18: Klinikalar bo'limidagi "eng yaqinlarini topish" uchun brauzer
+   * geolokatsiyasidan (foydalanuvchi ruxsat bergandagina) olingan oxirgi
+   * koordinata — admin panelda ham ko'rinadi (qaysi hududda ekanini bilish uchun). */
+  lastLocationLat: number | null;
+  lastLocationLng: number | null;
+  lastLocationAt: string | null;
 }
 
 export const BLOOD_TYPES = ["O(I) Rh+", "O(I) Rh-", "A(II) Rh+", "A(II) Rh-", "B(III) Rh+", "B(III) Rh-", "AB(IV) Rh+", "AB(IV) Rh-"] as const;

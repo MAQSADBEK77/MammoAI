@@ -16,6 +16,7 @@ export * from "./logic/daily-insights";
 export * from "./logic/wellness";
 export * from "./logic/community-safety";
 export * from "./logic/yandex-metrika-format";
+export * from "./logic/geo";
 export * from "./api-client";
 export * from "./i18n";
 export * from "./emoji";

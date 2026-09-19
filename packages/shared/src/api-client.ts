@@ -230,7 +230,12 @@ export function createApiClient(config: ApiClientConfig) {
     me: {
       get: () => request<MeResponse>("/api/me"),
       update: (
-        patch: Partial<Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl">>
+        patch: Partial<
+          Pick<
+            User,
+            "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl" | "lastLocationLat" | "lastLocationLng"
+          >
+        >
       ) => request<MeResponse>("/api/me", { method: "PATCH", body: JSON.stringify(patch) }),
       exportData: () => request<Record<string, unknown>>("/api/me/export"),
       /** Play Store "akkauntni o'chirish" talabi — akkaunt va barcha ma'lumotlarni

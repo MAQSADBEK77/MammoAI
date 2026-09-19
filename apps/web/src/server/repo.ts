@@ -96,6 +96,9 @@ interface UserRow {
   created_at: string;
   avatar_url: string | null;
   is_blocked: boolean;
+  last_location_lat: number | null;
+  last_location_lng: number | null;
+  last_location_at: string | null;
 }
 
 function userFromRow(row: UserRow): User {
@@ -112,6 +115,9 @@ function userFromRow(row: UserRow): User {
     createdAt: row.created_at,
     avatarUrl: row.avatar_url,
     isBlocked: !!row.is_blocked,
+    lastLocationLat: row.last_location_lat,
+    lastLocationLng: row.last_location_lng,
+    lastLocationAt: row.last_location_at,
   };
 }
 
@@ -134,6 +140,9 @@ export async function createAnonymousUser(language: Language): Promise<{ user: U
       createdAt,
       avatarUrl: null,
       isBlocked: false,
+      lastLocationLat: null,
+      lastLocationLng: null,
+      lastLocationAt: null,
     },
     tokenVersion: 0,
   };
@@ -174,6 +183,9 @@ export async function createUserWithIdentifier(
       createdAt,
       avatarUrl: null,
       isBlocked: false,
+      lastLocationLat: null,
+      lastLocationLng: null,
+      lastLocationAt: null,
     },
     tokenVersion: 0,
   };
@@ -188,7 +200,20 @@ export async function getUserById(id: string): Promise<(User & { tokenVersion: n
 }
 
 const USER_PATCH_COLUMNS: Record<
-  keyof Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl" | "isBlocked">,
+  keyof Pick<
+    User,
+    | "name"
+    | "phone"
+    | "language"
+    | "fontScale"
+    | "theme"
+    | "notificationsEnabled"
+    | "avatarUrl"
+    | "isBlocked"
+    | "lastLocationLat"
+    | "lastLocationLng"
+    | "lastLocationAt"
+  >,
   string
 > = {
   name: "name",
@@ -199,12 +224,28 @@ const USER_PATCH_COLUMNS: Record<
   notificationsEnabled: "notifications_enabled",
   avatarUrl: "avatar_url",
   isBlocked: "is_blocked",
+  lastLocationLat: "last_location_lat",
+  lastLocationLng: "last_location_lng",
+  lastLocationAt: "last_location_at",
 };
 
 export async function updateUser(
   id: string,
   patch: Partial<
-    Pick<User, "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl" | "isBlocked">
+    Pick<
+      User,
+      | "name"
+      | "phone"
+      | "language"
+      | "fontScale"
+      | "theme"
+      | "notificationsEnabled"
+      | "avatarUrl"
+      | "isBlocked"
+      | "lastLocationLat"
+      | "lastLocationLng"
+      | "lastLocationAt"
+    >
   >
 ): Promise<User> {
   await ensureSchema();

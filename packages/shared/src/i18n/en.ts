@@ -709,6 +709,10 @@ const en: Dictionary = {
     seedDataNotice: "The clinic list is updated regularly.",
     distanceKm: (km: number) => `${km.toFixed(1)} km`,
     foundCountLabel: "Found",
+    nearestToggleLabel: "Nearest",
+    nearestLocatingLabel: "Locating…",
+    nearestDeniedLabel: "Location access denied — enable it in your browser settings",
+    nearestUnsupportedLabel: "This device can't detect location",
   },
 
   riskQuiz: {

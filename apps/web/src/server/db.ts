@@ -576,6 +576,15 @@ async function initSchema() {
     // qiymat orasidagi solishtiruv shu bo'shliqni yopadi.
     sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS updated_at TEXT`,
     sql`ALTER TABLE ai_active_insights ADD COLUMN IF NOT EXISTS logs_updated_at_at_generation TEXT`,
+    // OVERNIGHT-18: Klinikalar bo'limidagi "eng yaqinlarini topish" — brauzer
+    // geolokatsiyasidan (foydalanuvchi ruxsat bergandagina) olingan oxirgi
+    // koordinata, admin panelda ham ko'rinishi uchun saqlanadi. Aniq manzil
+    // EMAS, faqat lat/lng — foydalanuvchi istalgan vaqt "Bloklangan
+    // foydalanuvchilar" kabi profil sozlamalaridan buni tozalay olishi
+    // kerak bo'lsa, kelajakda alohida "tozalash" tugmasi qo'shiladi.
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lat DOUBLE PRECISION`,
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lng DOUBLE PRECISION`,
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_at TEXT`,
   ]);
 
   // Eski qatorlarda `updated_at` hali NULL — `created_at`dan bir martalik
