@@ -65,7 +65,13 @@ export default function TelegramMiniAppPage() {
         }
         setPhase("needsContact");
       })
-      .catch(() => !cancelled && setPhase("error"));
+      .catch((err) => {
+        // OVERNIGHT-19: ilgari xato JIM yutib yuborilardi — sabab (masalan
+        // server tomonidagi vaqtinchalik DB migratsiya to'qnashuvi, aynan
+        // shu safar production'da topilgan) hech qayerda ko'rinmasdi.
+        console.error("Telegram Mini App kirish xatosi:", err);
+        if (!cancelled) setPhase("error");
+      });
     return () => {
       cancelled = true;
     };

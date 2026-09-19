@@ -748,10 +748,38 @@ async function initSchema() {
   // yo'qotishi mumkin edi. Endi SET NULL — hisobot qatori kontent
   // o'chirilgandan keyin ham saqlanadi (post_id shuning uchun endi ixtiyoriy).
   await sql`ALTER TABLE community_reports ALTER COLUMN post_id DROP NOT NULL`;
-  await sql`ALTER TABLE community_reports DROP CONSTRAINT IF EXISTS community_reports_post_id_fkey`;
-  await sql`ALTER TABLE community_reports ADD CONSTRAINT community_reports_post_id_fkey FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE SET NULL`;
-  await sql`ALTER TABLE community_reports DROP CONSTRAINT IF EXISTS community_reports_comment_id_fkey`;
-  await sql`ALTER TABLE community_reports ADD CONSTRAINT community_reports_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES community_comments(id) ON DELETE SET NULL`;
+  // OVERNIGHT-19 (JIDDIY): bu DROP+ADD juftligi ilgari IKKITA ALOHIDA
+  // `await sql` chaqiruvi edi — orasida hech qanday qulflash yo'q. Vercel'da
+  // bir nechta sovuq (cold-start) Lambda nusxasi BIR VAQTDA `ensureSchema()`ni
+  // birinchi marta ishga tushirsa (masalan bir nechta qurilma/foydalanuvchi
+  // deyarli bir vaqtda kirganda — aynan Telegram Mini App'da "boshqa
+  // qurilmadan kirsam xato chiqadi" degan real production topilma shundan
+  // edi), ikkala nusxa ham DROP'ni muvaffaqiyatli bajarib, keyin ikkalasi
+  // ham ADD'ga urinadi — biri g'olib chiqadi, ikkinchisi "constraint...
+  // already exists" (Postgres kodi 42710) xatosi bilan MUVAFFAQIYATSIZ
+  // bo'ladi. `ensureSchema()` natijasi HAR BIR Lambda nusxasida abadiy
+  // keshlanadi (global.__mammoaiSchemaReady) — shuning uchun bu xato bir
+  // marta yuz bersa, O'SHA ANIQ nusxa keyingi so'rovlarning BARCHASida
+  // (nusxa qayta ishga tushmagunicha) muvaffaqiyatsiz bo'lib qolaverardi —
+  // "2-3 marta yangilagandan keyin ishlaydi" aynan shu (boshqa, buzilmagan
+  // nusxaga tushib qolgandan keyin) tushuntiriladi. Endi `DO $$ ...
+  // EXCEPTION WHEN duplicate_object` bilan — ikkinchi (kechikkan) nusxa
+  // ADD'da to'qnashsa ham, xatoni JIM yutib yuboradi (natija allaqachon
+  // TO'G'RI — constraint muvaffaqiyatli boshqa nusxa tomonidan qo'yilgan).
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE community_reports DROP CONSTRAINT IF EXISTS community_reports_post_id_fkey;
+      ALTER TABLE community_reports ADD CONSTRAINT community_reports_post_id_fkey FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE SET NULL;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `;
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE community_reports DROP CONSTRAINT IF EXISTS community_reports_comment_id_fkey;
+      ALTER TABLE community_reports ADD CONSTRAINT community_reports_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES community_comments(id) ON DELETE SET NULL;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `;
 
   // FIX3-20: referral_events.clinic_id standart RESTRICT xatti-harakati
   // bilan edi (na CASCADE, na SET NULL) — deleteClinic() bu FK xatosini
@@ -759,8 +787,14 @@ async function initSchema() {
   // o'chirib bo'lmasdi (admin panelida tushunarsiz 500 xatosi). Endi SET
   // NULL — referral tarixi klinika o'chirilgandan keyin ham saqlanadi.
   await sql`ALTER TABLE referral_events ALTER COLUMN clinic_id DROP NOT NULL`;
-  await sql`ALTER TABLE referral_events DROP CONSTRAINT IF EXISTS referral_events_clinic_id_fkey`;
-  await sql`ALTER TABLE referral_events ADD CONSTRAINT referral_events_clinic_id_fkey FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE SET NULL`;
+  // OVERNIGHT-19: yuqoridagi bir xil poyga-holati xavfi — bir xil DO/EXCEPTION himoyasi.
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE referral_events DROP CONSTRAINT IF EXISTS referral_events_clinic_id_fkey;
+      ALTER TABLE referral_events ADD CONSTRAINT referral_events_clinic_id_fkey FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE SET NULL;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `;
 
   // FIX-UX-03: `checklist_items(user_id, type)`ga UNIQUE indeks qo'yishdan oldin,
   // ensureChecklistItem'dagi eski race condition tufayli produksiyada
