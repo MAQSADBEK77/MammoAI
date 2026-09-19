@@ -23,7 +23,12 @@ export function DailyInsightsCarousel({ phase }: { phase: CyclePhase | null }) {
   return (
     <div className="flex flex-col gap-2.5">
       <p className="text-base font-bold text-text-primary">{dict.cycle.dailyInsightsTitle}</p>
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+      {/* OVERNIGHT-16: ilgari kartalar hech qanday moslashuvsiz oxirgi
+          o'ringacha "xom" kesilib qolardi (tizim scrollbar'i bilan birga)
+          — o'ngdagi xiralashish (fade) "yana bor" signalini beradi,
+          scroll-snap esa har doim BUTUN kartaga to'g'ri to'xtaydi (yarim
+          karta ko'rinib qolmaydi), tizim scrollbar'i esa yashiringan. */}
+      <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)] [-webkit-mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]">
         {ids.map((id, i) => {
           const content = dict.cycle.dailyInsights[id];
           const clickable = DAILY_INSIGHT_LINK[id] === "assistant";
@@ -32,7 +37,7 @@ export function DailyInsightsCarousel({ phase }: { phase: CyclePhase | null }) {
               key={id}
               type="button"
               onClick={clickable ? () => router.push("/yordamchi") : undefined}
-              className={`w-40 shrink-0 rounded-2xl p-4 text-left ${TINTS[i % TINTS.length]} ${clickable ? "active:scale-[0.98]" : ""}`}
+              className={`w-40 shrink-0 snap-start rounded-2xl p-4 text-left ${TINTS[i % TINTS.length]} ${clickable ? "active:scale-[0.98]" : ""}`}
             >
               <div className="flex items-start justify-between">
                 <Emoji e={DAILY_INSIGHT_EMOJI[id]} size={22} />

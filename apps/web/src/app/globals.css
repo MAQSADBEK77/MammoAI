@@ -490,3 +490,14 @@ body {
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 8px 24px rgba(59, 27, 69, 0.12);
 }
+
+/* OVERNIGHT-16: gorizontal karta-karuselларда (masalan "Kunlik
+   maslahatlar") tizim scrollbar'i keraksiz vizual shovqin qo'shadi —
+   scroll-snap + qirradagi fade ("mask-image") o'zi yetarli signal beradi. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
