@@ -36,7 +36,10 @@ import { addDays, dictionaries, getPregnancyStatus, tashkentDateStr } from "@mam
 import type { ChatMessage, Language, Symptom, SymptomPattern, User } from "@mammoai/shared";
 
 const SETTING_KEY = "gemini_api_key";
-const GEMINI_MODEL = "gemini-2.5-flash";
+// gemini-2.5-flash butunlay eskirdi (Google 404: "no longer available to
+// new users") — "-latest" taxallusi doim joriy tavsiya etilgan modelga
+// ishora qiladi, shu sabab bu muammo QAYTA takrorlanmasligi kerak.
+const GEMINI_MODEL = "gemini-flash-latest";
 export type AiProvider = "gemini" | "huawei_maas";
 const PROVIDER_SETTING_KEY = "ai_provider";
 const HUAWEI_KEY_SETTING = "huawei_maas_api_key";
