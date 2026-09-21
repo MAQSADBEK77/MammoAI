@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "uz.mammoai.app",
+      "sha256_cert_fingerprints": [
+        "E5:30:B6:8A:50:FE:16:CA:58:8B:67:91:6B:4C:50:62:A2:01:DA:7B:F6:BE:AE:49:C0:71:FA:4F:30:3F:A4:64"
+      ]
+    }
+  }
+]
