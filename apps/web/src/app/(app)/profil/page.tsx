@@ -622,17 +622,6 @@ export default function ProfilePage() {
         </Card>
       </Link>
 
-      {/* PRIV-02: o'z ma'lumotini yuklab olish huquqi. Oddiy havola —
-          brauzerning o'zi faylni yuklab oladi (`Content-Disposition:
-          attachment`), shuning uchun hech qanday JS holati kerak emas. */}
-      <a href="/api/me/export" download>
-        <Card interactive className="space-y-1">
-          <SettingsRow icon="📥" label={dict.profile.exportDataLabel} last>
-            <span className="text-sm text-text-secondary">{dict.profile.exportDataHint}</span>
-          </SettingsRow>
-        </Card>
-      </a>
-
       {/* COMM-001: jamiyatda bloklangan hisoblarni boshqarish. */}
       <button type="button" onClick={openBlockedList} className="w-full text-left">
         <Card interactive className="space-y-1">

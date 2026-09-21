@@ -1043,8 +1043,6 @@ const ru: Dictionary = {
     statsDaysValue: (n: number) => `${n} дн.`,
     statsLogsLabel: "Всего записей",
     noNameFallback: "Пользователь",
-    exportDataLabel: "Скачать мои данные",
-    exportDataHint: "Файл JSON — всё остаётся у вас",
     securityTitle: "Безопасность и конфиденциальность",
     privacyPolicyLink: "Читать политику конфиденциальности",
     helpTitle: "Помощь",

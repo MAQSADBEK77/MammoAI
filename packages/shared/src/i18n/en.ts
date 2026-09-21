@@ -1045,8 +1045,6 @@ const en: Dictionary = {
     statsDaysValue: (n: number) => `${n} days`,
     statsLogsLabel: "Total entries",
     noNameFallback: "User",
-    exportDataLabel: "Download my data",
-    exportDataHint: "A JSON file — everything stays with you",
     securityTitle: "Security & privacy",
     privacyPolicyLink: "Read privacy policy",
     helpTitle: "Help",

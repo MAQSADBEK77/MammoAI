@@ -1163,8 +1163,6 @@ const uz = {
     statsDaysValue: (n: number) => `${n} kun`,
     statsLogsLabel: "Jami yozuvlar",
     noNameFallback: "Foydalanuvchi",
-    exportDataLabel: "Ma'lumotlarimni yuklab olish",
-    exportDataHint: "JSON fayl — hammasi sizda qoladi",
     securityTitle: "Xavfsizlik va maxfiylik",
     privacyPolicyLink: "Maxfiylik siyosatini o'qish",
     helpTitle: "Yordam",
