@@ -4,16 +4,16 @@ import { useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home,
-  HomeOutlined,
+  CalendarMonth,
+  CalendarMonthOutlined,
   FactCheck,
   FactCheckOutlined,
   Groups,
   GroupsOutlined,
   Favorite,
   FavoriteBorderOutlined,
-  SmartToy,
-  SmartToyOutlined,
+  ChatBubble,
+  ChatBubbleOutlineOutlined,
 } from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
@@ -58,11 +58,15 @@ export function BottomNav() {
 
   const isPartnerTracking = onboardingProfile?.primaryGoal === "partner_tracking";
   const items = [
-    { href: "/asosiy", label: dict.nav.home, Icon: Home, IconOutline: HomeOutlined },
+    { href: "/asosiy", label: dict.nav.home, Icon: CalendarMonth, IconOutline: CalendarMonthOutlined },
     ...(isPartnerTracking ? [] : [{ href: "/jamiyat", label: dict.nav.community, Icon: Groups, IconOutline: GroupsOutlined }]),
     { href: "/tekshiruvlar", label: dict.nav.checklist, Icon: FactCheck, IconOutline: FactCheckOutlined },
-    { href: "/hamkor", label: dict.partner.title, Icon: Favorite, IconOutline: FavoriteBorderOutlined },
-    { href: "/yordamchi", label: dict.nav.assistant, Icon: SmartToy, IconOutline: SmartToyOutlined },
+    { href: "/hamkor", label: dict.nav.partner, Icon: Favorite, IconOutline: FavoriteBorderOutlined },
+    // TODAY-04: menyu HAR DOIM tekis — hech qaysi band boshqasidan katta emas
+    // (foydalanuvchi so'rovi). Yordamchi "mo'ralab" turgan paytda uning
+    // ustiga chiqadigan oq tab TodayAssistantCard tomonidan chiziladi, ya'ni
+    // kartaning O'ZIGA ulangan bo'ladi — "pop up connected to that icon".
+    { href: "/yordamchi", label: dict.nav.assistant, Icon: ChatBubble, IconOutline: ChatBubbleOutlineOutlined },
   ];
 
   return (
@@ -71,7 +75,11 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-4"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + var(--tg-safe-area-bottom) + 12px)" }}
     >
-      <div className="bg-aurora-nav flex w-full max-w-md items-stretch justify-between gap-1 rounded-[32px] px-2 py-2 shadow-2xl shadow-black/30">
+      {/* TODAY-01: Figma referens bo'yicha — to'q "aurora" panel o'rniga ochiq,
+          yengil panel; faol band aksent (turkuaz) rangda, qolganlari sokin
+          kulrang. Ikonkalar Material konvensiyasi bo'yicha faolda "filled",
+          aks holda "outlined" (bu o'zgarmadi). */}
+      <div className="flex w-full max-w-md items-stretch justify-between gap-1 rounded-[28px] bg-surface px-1.5 py-2 shadow-xl shadow-black/10 ring-1 ring-border/60">
         {items.map(({ href, label, Icon, IconOutline }) => {
           const active = pathname?.startsWith(href);
           const IconComponent = active ? Icon : IconOutline;
@@ -79,17 +87,10 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="tap-target flex flex-1 flex-col items-center justify-center gap-0.5 rounded-3xl py-1.5 text-[10px] font-bold text-white/50 transition"
+              className="tap-target flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-1 text-[10px] font-bold transition"
             >
-              <span
-                className={clsx(
-                  "flex h-11 w-11 items-center justify-center rounded-full transition",
-                  active && "bg-gradient-to-br from-primary to-secondary"
-                )}
-              >
-                <IconComponent sx={{ fontSize: 26 }} className={active ? "text-white" : "text-white/50"} />
-              </span>
-              <span className={active ? "text-white" : "text-white/50"}>{label}</span>
+              <IconComponent sx={{ fontSize: 24 }} className={active ? "text-accent" : "text-text-muted"} />
+              <span className={clsx("leading-none", active ? "text-accent" : "text-text-muted")}>{label}</span>
             </Link>
           );
         })}

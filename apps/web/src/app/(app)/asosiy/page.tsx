@@ -38,11 +38,24 @@ export default function AsosiyPage() {
     return <LoadingSpinner label={dict.common.loading} />;
   }
 
-  const isPregnancyMode = goalToLandingTab(onboardingProfile.primaryGoal) === "pregnancy";
+  // TODAY-01: ilgari bu shart `goalToLandingTab(...) === "pregnancy"` edi, ya'ni
+  // "homiladorlikni REJALASHTIRAMAN" degan (hali homilador BO'LMAGAN)
+  // foydalanuvchi ham PregnancyScreen'ga — homiladorlik haftalari, tepishlar
+  // sanog'iga — tushib qolardi. Endi PregnancyScreen faqat haqiqiy
+  // homiladorlik rejimida; rejalashtiruvchilar sikl ekraniga o'tadi (onboarding
+  // ularda sikl ma'lumotini ALLAQACHON so'raydi — goal.ts#needsCycleInfo).
+  const isPregnancyMode = onboardingProfile.primaryGoal === "pregnancy";
+
+  // Referens bo'yicha qayta bezalgan "Bugun" ekrani — foydalanuvchi so'roviga
+  // ko'ra faqat shu ikki maqsad uchun. Qolgan sikl-asosidagi maqsadlar
+  // (wellbeing, understand_body, skin, perimenopause) hozircha o'zgarishsiz
+  // "classic" ko'rinishda qoladi.
+  const useTodayVariant =
+    onboardingProfile.primaryGoal === "cycle" || onboardingProfile.primaryGoal === "planning_pregnancy";
 
   return (
     <div className="space-y-8 pb-6">
-      {isPregnancyMode ? <PregnancyScreen /> : <CycleScreen />}
+      {isPregnancyMode ? <PregnancyScreen /> : <CycleScreen variant={useTodayVariant ? "today" : "classic"} />}
       <div className="border-t border-border pt-6">
         {clinicsOpen ? (
           <ClinicsScreen />

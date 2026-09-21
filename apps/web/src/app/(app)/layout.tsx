@@ -21,8 +21,42 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const showGlobalDrawerBar = pathname !== "/asosiy";
 
   useEffect(() => {
-    if (status === "anonymous") router.replace("/onboarding");
-  }, [status, router]);
+    if (status !== "anonymous") return;
+
+    // DEV-MODE-01: brauzerda `localStorage.mode = "test"` bo'lsa, sessiyasiz
+    // kelgan so'rov onboarding'ga EMAS, test hisobiga avtomatik kiritiladi.
+    //
+    // Nega shunchaki "yo'naltirmaslik" YETARLI EMAS: onboarding'ga o'tmasak
+    // ham, sessiya bo'lmagani uchun `onboardingProfile` bo'sh qoladi va
+    // ekranlar cheksiz "yuklanmoqda" holatida qotib qolardi. Shuning uchun
+    // bayroq ko'rilganda `/api/dev-login` chaqiriladi — u cookie'ni server
+    // tomonida qo'yadi va shu yerga qaytaradi.
+    //
+    // XAVFSIZLIK: uch qatlamli himoya —
+    //   1) bu shart faqat `NODE_ENV === "development"`da bajariladi
+    //      (Vercel build har doim "production", ya'ni kod umuman ishlamaydi);
+    //   2) `/api/dev-login` ham production'da 404 qaytaradi;
+    //   3) u faqat `is_test_account = TRUE` hisobiga kiradi — haqiqiy
+    //      foydalanuvchi hisobiga hech qachon.
+    if (process.env.NODE_ENV === "development") {
+      try {
+        if (window.localStorage.getItem("mode") === "test") {
+          // `router.push()` EMAS, ataylab to'liq navigatsiya: `/api/dev-login`
+          // sahifa emas, route handler — u `Set-Cookie` yuboradi va qayta
+          // yo'naltiradi. Next'ning mijoz-router'i route handler'ga o'ta
+          // olmaydi va cookie'ni qabul qilmaydi, shuning uchun bu yerda
+          // brauzerning o'z navigatsiyasi SHART.
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- route handler, sahifa emas (yuqoridagi izoh)
+          window.location.href = `/api/dev-login?next=${encodeURIComponent(pathname ?? "/asosiy")}`;
+          return;
+        }
+      } catch {
+        // localStorage bloklangan — oddiy yo'l bilan davom etamiz.
+      }
+    }
+
+    router.replace("/onboarding");
+  }, [status, router, pathname]);
 
   if (status !== "onboarded") {
     return (

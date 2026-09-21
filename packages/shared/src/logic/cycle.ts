@@ -681,3 +681,118 @@ export function isCycleIrregular(recentCycleLengths: number[]): boolean {
   const min = Math.min(...relevant);
   return max - min > 7; // 7 kundan katta farq — tartibsiz deb hisoblanadi
 }
+
+/* ------------------------------------------------------------------ *
+ * CYCLE-ALGO-16 — KO'P OYLIK bashorat va uning NOANIQLIGI.
+ *
+ * MUAMMO. `predictCycle` faqat BITTA keyingi siklni qaytarardi, shuning
+ * uchun kalendarda bir oydan nariga hech narsa chiqmasdi. Foydalanuvchi esa
+ * bir necha oy oldinga rejalashtiradi (safar, tibbiy ko'rik, homiladorlikka
+ * tayyorgarlik).
+ *
+ * ASOSIY G'OYA. Sikl uzunligi — qat'iy son emas, o'rtachasi μ va standart
+ * og'ishi σ bo'lgan TASODIFIY miqdor (ikkalasi ham foydalanuvchining o'z
+ * tarixidan: deriveAdaptiveCycleSettings). n-chi kelgusi hayz n ta shunday
+ * siklning YIG'INDISIDAN keyin boshlanadi:
+ *
+ *     boshlanish_n = oxirgi_boshlanish + n·μ
+ *
+ * Mustaqil miqdorlar yig'indisida DISPERSIYALAR qo'shiladi, standart
+ * og'ishlar emas — demak:
+ *
+ *     σ_n = σ·√n        (σ·n EMAS)
+ *
+ * Bu amaliy farq: σ=2 kun bo'lsa, 4 oydan keyingi xato ±8 kun emas, ±4 kun.
+ * Chiziqli o'sish noaniqlikni HADDAN TASHQARI oshirib ko'rsatib, uzoq
+ * bashoratni foydasiz qilib qo'yardi; umuman kengaytmaslik esa aksincha —
+ * soxta aniqlik berardi. √n — matematik jihatdan to'g'ri o'rta yo'l.
+ *
+ * OVULYATSIYA. "14-kun" qoidasi EMAS. Reproduktiv fiziologiyada follikulyar
+ * faza (hayzdan ovulyatsiyagacha) ancha o'zgaruvchan, LYUTEAL faza
+ * (ovulyatsiyadan keyingi hayzgacha) esa har bir ayolda nisbatan BARQAROR —
+ * 12–14 kun. Shuning uchun ovulyatsiya OLDINGA emas, KEYINGI hayzdan
+ * ORQAGA sanaladi:
+ *
+ *     ovulyatsiya_n = boshlanish_n − lyuteal_faza
+ *
+ * Lyuteal faza foydalanuvchining o'z signallaridan (BBT sakrashi yoki
+ * ovulyatsiya og'rig'i/shilliq o'zgarishi) o'rganiladi; signal bo'lmasa 14
+ * kun. Natijada ovulyatsiyaning noaniqligi hayz boshlanishining noaniqligi
+ * bilan bir xil — σ_n.
+ *
+ * UNUMDOR OYNA. Biologik asos: spermatozoid ayol tanasida 5 kungacha yashay
+ * oladi, tuxum hujayra ~24 soat. Demak ovulyatsiya kunidan 5 kun oldin va 1
+ * kun keyin. LEKIN ovulyatsiya kunining o'zi ±σ_n kunga noaniq bo'lsa,
+ * amaliy oyna ham shuncha kengayishi kerak — aks holda homiladorlikka
+ * tayyorgarlik ko'rayotgan foydalanuvchi haqiqiy oynani o'tkazib yuboradi.
+ * Shuning uchun oyna σ_n ga kengaytiriladi (ma'noli chegara bilan).
+ *
+ * NIMA QILINMADI. Qisqa tarixdan "trend" (sikl uzayyapti/qisqaryapti)
+ * chiqarish ATAYLAB yo'q: 3–6 nuqtadan trend chiqarish statistik jihatdan
+ * asossiz va tibbiy mazmundagi ilovada zararli bo'lardi.
+ * ------------------------------------------------------------------ */
+
+export interface ForecastedCycle {
+  /** 1 — keyingi sikl, 2 — undan keyingisi va h.k. */
+  index: number;
+  periodStart: string;
+  periodEnd: string;
+  /** Noaniqlik diapazoni: σ·√index (kun). Uzoqlashgan sari kengayadi. */
+  periodStartEarliest: string;
+  periodStartLatest: string;
+  ovulationDay: string;
+  fertileWindowStart: string;
+  fertileWindowEnd: string;
+  /** Shu siklning noaniqligi, kun (± ). UI uzoq bashoratlarni xiraroq
+   * ko'rsatishi yoki "taxminan" deb belgilashi uchun. */
+  uncertaintyDays: number;
+}
+
+/** Nechta sikl oldinga bashorat qilinadi — ~1 yil. */
+export const FORECAST_CYCLES = 13;
+
+/** Noaniqlik shundan oshsa, bashorat amalda ma'nosiz — UI uni "taxminiy"
+ * sifatida ko'rsatishi kerak. Kengaytirishning o'zi ham shu bilan
+ * chegaralanadi (aks holda uzoq oylarda butun oy "unumdor" bo'lib qolardi). */
+export const MAX_FORECAST_UNCERTAINTY_DAYS = 10;
+
+export function forecastCycles(
+  settings: Pick<CycleSettings, "lastPeriodStart" | "averageCycleLength" | "averagePeriodLength"> & {
+    personalLutealPhase?: number | null;
+    /** Sikl uzunligining standart og'ishi — berilmasa, ma'lumot yo'qligini
+     * aks ettiruvchi keng standart qiymat. */
+    stdDevDays?: number;
+  },
+  count: number = FORECAST_CYCLES
+): ForecastedCycle[] {
+  if (!settings.lastPeriodStart) return [];
+  const cycleLength = settings.averageCycleLength || DEFAULT_CYCLE_LENGTH;
+  const periodLength = settings.averagePeriodLength || DEFAULT_PERIOD_LENGTH;
+  const lutealPhaseDays = Math.min(settings.personalLutealPhase ?? DEFAULT_LUTEAL_PHASE_DAYS, cycleLength - 1);
+  const stdDev = settings.stdDevDays ?? DEFAULT_STD_DEV_DAYS;
+
+  const out: ForecastedCycle[] = [];
+  for (let i = 1; i <= count; i++) {
+    const periodStart = addDays(settings.lastPeriodStart, cycleLength * i);
+    const ovulationDay = addDays(periodStart, -lutealPhaseDays);
+
+    // σ_n = σ·√n — dispersiyalar qo'shiladi, standart og'ishlar emas.
+    const uncertaintyDays = Math.min(Math.round(stdDev * Math.sqrt(i)), MAX_FORECAST_UNCERTAINTY_DAYS);
+
+    out.push({
+      index: i,
+      periodStart,
+      periodEnd: addDays(periodStart, periodLength - 1),
+      periodStartEarliest: addDays(periodStart, -uncertaintyDays),
+      periodStartLatest: addDays(periodStart, uncertaintyDays),
+      ovulationDay,
+      // Biologik oyna (−5…+1) ovulyatsiya kunining O'Z noaniqligiga
+      // kengaytiriladi — aks holda tayyorgarlik ko'rayotgan foydalanuvchi
+      // haqiqiy oynani o'tkazib yuborishi mumkin.
+      fertileWindowStart: addDays(ovulationDay, -(5 + uncertaintyDays)),
+      fertileWindowEnd: addDays(ovulationDay, 1 + uncertaintyDays),
+      uncertaintyDays,
+    });
+  }
+  return out;
+}

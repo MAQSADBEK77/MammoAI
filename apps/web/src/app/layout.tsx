@@ -8,6 +8,7 @@ import { MuiThemeProvider } from "@/lib/mui-theme";
 import { IllustrationsProvider } from "@/lib/illustrations";
 import { AnalyticsProvider } from "@/lib/analytics";
 import { TelegramFullscreenSetup } from "@/lib/telegram";
+import { FORCED_LIGHT_PREFIXES } from "@/lib/theme-routes";
 
 // Iliq, yumaloq shrift — o'zbek (lotin) va rus (kirill) ikkalasini ham qamrab oladi.
 // MUHIM: oddiy "cyrillic" quyi to'plami faqat RUS alifbosi uchun yetarli
@@ -97,7 +98,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           id="theme-init"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("mammoai_theme");var dark=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=dark?"dark":"light";}catch(e){}})();`,
+            // THEME-01: sessiyadan oldingi sahifalarda (onboarding, Telegram
+            // kirish) mavzu MAJBURAN yorug'. Tekshiruv shu yerda ham
+            // takrorlanadi — aks holda birinchi bo'yashda qorong'u chiqib,
+            // keyin yorug'ga "yaltirab" o'tardi.
+            __html: `(function(){try{var L=${JSON.stringify(FORCED_LIGHT_PREFIXES)};var p=location.pathname;var forced=L.some(function(x){return p===x||p.indexOf(x+"/")===0;});if(forced){document.documentElement.dataset.theme="light";return;}var t=localStorage.getItem("mammoai_theme");var dark=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=dark?"dark":"light";}catch(e){}})();`,
           }}
         />
         {/* Telegram Mini App SDK — o'zimizda joylashtirib bo'lmaydi (Telegram

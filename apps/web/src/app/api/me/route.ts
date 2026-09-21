@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { deleteUser, getOnboardingProfile, hasPremiumAccess, updateUser } from "@/server/repo";
 import { ApiError, jsonError, requireUser } from "@/server/api-utils";
 import { SESSION_COOKIE } from "@/server/session";
-import type { User } from "@mammoai/shared";
+import { PET_IDS, type User } from "@mammoai/shared";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +20,16 @@ export async function PATCH(request: NextRequest) {
     const body = (await request.json()) as Partial<
       Pick<
         User,
-        "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl" | "lastLocationLat" | "lastLocationLng"
+        | "name"
+        | "phone"
+        | "language"
+        | "fontScale"
+        | "theme"
+        | "notificationsEnabled"
+        | "avatarUrl"
+        | "lastLocationLat"
+        | "lastLocationLng"
+        | "pet"
       >
     >;
     // FIX-02: `phone` bu yerda ATAYLAB tashlab yuboriladi (destructuring orqali —
@@ -33,6 +42,12 @@ export async function PATCH(request: NextRequest) {
     // kiritib yuboriladi. Telefonni o'zgartirish faqat OTP-tasdiqlash oqimi
     // (ro'yxatdan o'tishdagi kabi) orqali bo'lishi kerak, shu yerda emas.
     const { phone: _ignoredPhone, ...patch } = body;
+    // PET-01/02: `pet` mijozdan keladi — faqat tanilgan hayvon, "none"
+    // (ataylab hayvonsiz) yoki `null` qabul qilinadi; ixtiyoriy matn ustunga
+    // tushib qolmasligi kerak.
+    if ("pet" in patch && patch.pet !== null && patch.pet !== "none" && !PET_IDS.includes(patch.pet as never)) {
+      return NextResponse.json({ error: "Noma'lum tanlov" }, { status: 400 });
+    }
     // OVERNIGHT-18: `lastLocationAt` mijozdan ISHONCH bilan qabul qilinmaydi
     // (soxta sana yuborishning oldini olish uchun) — koordinata kelgan
     // zahoti server vaqti ishlatiladi. Asosiy sonli qiymatlar ham

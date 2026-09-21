@@ -9,6 +9,7 @@ import {
   predictCycle,
   getPregnancyStatus,
   WATER_TARGET_ML,
+  forecastCycles,
 } from "@mammoai/shared";
 import type { CycleResponse, PregnancyResponse, WellnessResponse } from "@mammoai/shared";
 import {
@@ -47,7 +48,13 @@ export async function buildCycleResponse(userId: string, today?: string): Promis
 
   const isIrregular = isCycleIrregular(computeCycleLengths(historyLogs));
 
-  return { settings, logs, prediction, isIrregular };
+  // CYCLE-ALGO-16: kalendar uchun ko'p oylik bashorat. `adaptive` — bashorat
+  // bilan AYNAN bir xil manba (o'rganilgan sikl/hayz uzunligi va shaxsiy
+  // lyuteal faza), shuning uchun birinchi bashorat qilingan sikl `prediction`
+  // bilan doim mos tushadi — ikkalasi boshqa-boshqa sana ko'rsatmaydi.
+  const forecast = adaptive ? forecastCycles(adaptive) : [];
+
+  return { settings, logs, prediction, isIrregular, forecast };
 }
 
 /** Vazn — oldingi qayddan (yoki, birinchi qayd bo'lsa, onboarding vaznidan) farqi, kg. */

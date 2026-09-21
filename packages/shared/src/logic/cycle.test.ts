@@ -24,6 +24,8 @@ import {
   getPredictionConfidence,
   isCycleIrregular,
   predictCycle,
+  forecastCycles,
+  MAX_FORECAST_UNCERTAINTY_DAYS,
 } from "./cycle";
 import {
   ALL_BACKTEST_SCENARIOS,
@@ -848,5 +850,52 @@ describe("explainPrediction", () => {
 
   it("yetarli sikl, outlier yo'q bo'lsa 'standard'", () => {
     expect(explainPrediction({ ...base, cyclesAnalyzed: 6 })).toEqual({ type: "standard", cyclesAnalyzed: 6 });
+  });
+});
+
+describe("forecastCycles (CYCLE-ALGO-16)", () => {
+  const settings = { lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+
+  it("bir necha sikl oldinga, har biri cycleLength qadam bilan", () => {
+    const out = forecastCycles(settings, 3);
+    expect(out.map((c) => c.periodStart)).toEqual(["2026-01-29", "2026-02-26", "2026-03-26"]);
+    expect(out[0].periodEnd).toBe("2026-02-02"); // 5 kunlik hayz
+  });
+
+  it("unumdor oyna — biologik asos: ovulyatsiyadan 5 kun oldin, 1 kun keyin", () => {
+    // stdDev 0 — sof biologik oyna, noaniqlik kengaytirishisiz.
+    const [first] = forecastCycles({ ...settings, stdDevDays: 0 }, 1);
+    expect(first.ovulationDay).toBe("2026-01-15"); // 29-yanvar - 14 kun
+    expect(first.fertileWindowStart).toBe("2026-01-10");
+    expect(first.fertileWindowEnd).toBe("2026-01-16");
+  });
+
+  it("noaniqlik √n bo'yicha kengayadi (chiziqli EMAS)", () => {
+    const out = forecastCycles({ ...settings, stdDevDays: 2 }, 9);
+    // σ·√n: 2·√1=2, 2·√4=4, 2·√9=6 — chiziqli bo'lganda 2, 8, 18 bo'lardi.
+    expect(out[0].uncertaintyDays).toBe(2);
+    expect(out[3].uncertaintyDays).toBe(4);
+    expect(out[8].uncertaintyDays).toBe(6);
+  });
+
+  it("noaniqlik ma'noli chegaradan oshmaydi", () => {
+    const out = forecastCycles({ ...settings, stdDevDays: 9 }, 13);
+    expect(out[12].uncertaintyDays).toBe(MAX_FORECAST_UNCERTAINTY_DAYS);
+  });
+
+  it("unumdor oyna ovulyatsiya noaniqligiga kengayadi", () => {
+    const [first] = forecastCycles({ ...settings, stdDevDays: 3 }, 1);
+    // ovulyatsiya 2026-01-15, noaniqlik ±3 → oyna (5+3) oldin … (1+3) keyin
+    expect(first.fertileWindowStart).toBe("2026-01-07");
+    expect(first.fertileWindowEnd).toBe("2026-01-19");
+  });
+
+  it("shaxsiy lyuteal faza hisobga olinadi", () => {
+    const [first] = forecastCycles({ ...settings, personalLutealPhase: 11 }, 1);
+    expect(first.ovulationDay).toBe("2026-01-18");
+  });
+
+  it("oxirgi hayz sanasi yo'q bo'lsa — bo'sh ro'yxat (soxta bashorat chiqarmaydi)", () => {
+    expect(forecastCycles({ ...settings, lastPeriodStart: null }, 5)).toEqual([]);
   });
 });

@@ -22,6 +22,31 @@ export type Goal =
   // kalendar-bashorat o'rniga simptom kuzatuviga urg'u beriladi.
   | "perimenopause";
 
+// PET-01 — 18 yoshgacha bo'lgan foydalanuvchilar uchun bosh ekrandagi
+// "uy hayvoni" (foydalanuvchi so'rovi). Sof BEZAK: hech qanday ma'lumot,
+// bashorat yoki tibbiy mazmunga ta'sir qilmaydi.
+export const PET_IDS = ["cat", "puppy", "bunny", "chick", "panda"] as const;
+export type Pet = (typeof PET_IDS)[number];
+
+/** PET-02: bazada saqlanadigan qiymat. Uch xil holat ATAYLAB farqlanadi:
+ *  - `null`   — foydalanuvchi hali TANLAMAGAN → standart mushukcha ko'rsatiladi;
+ *  - `"none"` — foydalanuvchi ATAYLAB "hayvon kerak emas" degan → hech narsa;
+ *  - qolgani  — tanlangan hayvon.
+ *  Agar "tanlamagan" va "kerak emas" bir xil (`null`) bo'lganida, hayvonni
+ *  o'chirgan foydalanuvchiga u har safar qaytib kelaverardi. */
+export type PetChoice = Pet | "none";
+
+/** Standart hayvon — foydalanuvchi hech narsa tanlamagan bo'lsa shu chiqadi
+ * (foydalanuvchi so'rovi: "default bo'lishi kerak mushukcha"). */
+export const DEFAULT_PET: Pet = "cat";
+
+/** Saqlangan tanlovdan KO'RSATILADIGAN hayvonni hisoblaydi. */
+export function resolvePet(choice: PetChoice | null | undefined): Pet | null {
+  if (choice === "none") return null;
+  if (choice && PET_IDS.includes(choice as Pet)) return choice as Pet;
+  return DEFAULT_PET;
+}
+
 export interface User {
   id: string;
   phone: string | null;
@@ -39,6 +64,9 @@ export interface User {
   avatarUrl: string | null;
   /** Admin panel — moderatsiya uchun bloklangan bo'lsa true (API kirishi rad etiladi). */
   isBlocked: boolean;
+  /** PET-01/02: bosh ekrandagi uy hayvoni — faqat 18 yoshgacha ko'rsatiladi.
+   * Ko'rsatish uchun `resolvePet()` orqali o'qing (null → standart mushukcha). */
+  pet: PetChoice | null;
   /** OVERNIGHT-18: Klinikalar bo'limidagi "eng yaqinlarini topish" uchun brauzer
    * geolokatsiyasidan (foydalanuvchi ruxsat bergandagina) olingan oxirgi
    * koordinata — admin panelda ham ko'rinadi (qaysi hududda ekanini bilish uchun). */

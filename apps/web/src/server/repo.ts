@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "./db";
 import { ApiError } from "./api-utils";
+import type { CheckinResponse } from "@mammoai/shared";
+import { PET_IDS, type PetChoice } from "@mammoai/shared";
 import type {
   AnalyticsEventInput,
   AnalyticsSummary,
@@ -93,6 +95,7 @@ interface UserRow {
   theme: "light" | "dark" | "system";
   notifications_enabled: boolean;
   token_version: number;
+  pet: string | null;
   created_at: string;
   avatar_url: string | null;
   is_blocked: boolean;
@@ -118,6 +121,10 @@ function userFromRow(row: UserRow): User {
     lastLocationLat: row.last_location_lat,
     lastLocationLng: row.last_location_lng,
     lastLocationAt: row.last_location_at,
+    // PET-02: bazadagi xom matnga ishonmaymiz (eski/qo'lda o'zgartirilgan
+    // qiymatlar bo'lishi mumkin) — faqat tanilgan qiymat yoki "none" o'tadi.
+    // `null` = hali tanlanmagan → mijoz tomonida standart mushukcha.
+    pet: row.pet === "none" || PET_IDS.includes(row.pet as never) ? (row.pet as PetChoice) : null,
   };
 }
 
@@ -143,6 +150,7 @@ export async function createAnonymousUser(language: Language): Promise<{ user: U
       lastLocationLat: null,
       lastLocationLng: null,
       lastLocationAt: null,
+      pet: null,
     },
     tokenVersion: 0,
   };
@@ -186,9 +194,26 @@ export async function createUserWithIdentifier(
       lastLocationLat: null,
       lastLocationLng: null,
       lastLocationAt: null,
+      pet: null,
     },
     tokenVersion: 0,
   };
+}
+
+/**
+ * DEV-LOGIN uchun: FAQAT `is_test_account` bayrog'i qo'yilgan akkauntni
+ * qaytaradi. Ataylab alohida funksiya — `findUserByIdentifier` ni
+ * ishlatib, keyin bayroqni tekshirish mumkin emas edi, chunki bayroq
+ * ommaviy `User` turida yo'q (va uni faqat shu bitta dev-yo'l uchun
+ * butun ilova bo'ylab ochish noto'g'ri bo'lardi).
+ */
+export async function findTestAccountByPhone(phone: string): Promise<{ id: string; tokenVersion: number } | null> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT id, token_version FROM users WHERE phone = ${phone} AND is_test_account = TRUE
+  `) as unknown as { id: string; token_version: number }[];
+  const row = rows[0];
+  return row ? { id: row.id, tokenVersion: row.token_version } : null;
 }
 
 export async function getUserById(id: string): Promise<(User & { tokenVersion: number }) | null> {
@@ -213,11 +238,13 @@ const USER_PATCH_COLUMNS: Record<
     | "lastLocationLat"
     | "lastLocationLng"
     | "lastLocationAt"
+    | "pet"
   >,
   string
 > = {
   name: "name",
   phone: "phone",
+  pet: "pet",
   language: "language",
   fontScale: "font_scale",
   theme: "theme",
@@ -245,6 +272,7 @@ export async function updateUser(
       | "lastLocationLat"
       | "lastLocationLng"
       | "lastLocationAt"
+      | "pet"
     >
   >
 ): Promise<User> {
@@ -278,6 +306,59 @@ export async function updateUser(
  * qatorni o'chirish tsikl yozuvlari, hamkorlik, jamiyat postlari va h.k.ni ham
  * avtomatik olib tashlaydi. Qaytarib bo'lmaydigan amal.
  */
+/**
+ * PRIV-02 — foydalanuvchining barcha ma'lumotini bitta obyektga yig'adi
+ * (yuklab olish uchun). Faqat O'QIYDI, hech narsani o'zgartirmaydi.
+ *
+ * Nima KIRMAYDI va nega:
+ *  • parol/token hash'lari va `token_version` — bular xavfsizlik siri, ularni
+ *    eksportga qo'shish foydalanuvchiga hech narsa bermaydi, lekin fayl
+ *    o'g'irlansa zarar yetkazadi;
+ *  • rate-limit jadvallari — texnik ma'lumot, foydalanuvchiga tegishli emas;
+ *  • jamiyatdagi BOSHQA odamlarning postlari/izohlari — ular boshqa
+ *    foydalanuvchilarning ma'lumoti (o'zining postlari kiradi).
+ *
+ * Yangi jadval qo'shilganda shu funksiyani ham yangilash kerak — aks holda
+ * eksport asta-sekin to'liqsiz bo'lib qoladi.
+ */
+export async function exportUserData(userId: string): Promise<Record<string, unknown>> {
+  await ensureSchema();
+
+  const q = async (label: string, rows: Promise<unknown>) => [label, await rows] as const;
+
+  const parts = await Promise.all([
+    q("profil", sql`SELECT id, phone, email, name, region, language, font_scale, theme,
+                           notifications_enabled, created_at, avatar_url, pet
+                    FROM users WHERE id = ${userId}`),
+    q("onboarding", sql`SELECT * FROM onboarding_profiles WHERE user_id = ${userId}`),
+    q("sikl_sozlamalari", sql`SELECT * FROM cycle_settings WHERE user_id = ${userId}`),
+    q("sikl_yozuvlari", sql`SELECT * FROM cycle_logs WHERE user_id = ${userId} ORDER BY date`),
+    q("kunlik_checkin", sql`SELECT * FROM checkin_answers WHERE user_id = ${userId} ORDER BY date`),
+    q("farovonlik", sql`SELECT * FROM wellness_logs WHERE user_id = ${userId} ORDER BY date`),
+    q("homiladorlik_profili", sql`SELECT * FROM pregnancy_profiles WHERE user_id = ${userId}`),
+    q("homiladorlik_tashriflari", sql`SELECT * FROM pregnancy_visits WHERE user_id = ${userId}`),
+    q("homiladorlik_olchovlari", sql`SELECT * FROM pregnancy_vitals WHERE user_id = ${userId}`),
+    q("homiladorlik_tepishlari", sql`SELECT * FROM pregnancy_kicks WHERE user_id = ${userId}`),
+    q("tekshiruv_royxati", sql`SELECT * FROM checklist_items WHERE user_id = ${userId}`),
+    q("xavf_testi", sql`SELECT * FROM risk_quiz_results WHERE user_id = ${userId}`),
+    q("mening_postlarim", sql`SELECT * FROM community_posts WHERE user_id = ${userId}`),
+    q("mening_izohlarim", sql`SELECT * FROM community_comments WHERE user_id = ${userId}`),
+    q("yordamchi_suhbati", sql`SELECT * FROM chat_messages WHERE user_id = ${userId} ORDER BY created_at`),
+    q("bildirishnomalar", sql`SELECT * FROM notifications WHERE user_id = ${userId}`),
+    q("obuna", sql`SELECT * FROM subscriptions WHERE user_id = ${userId}`),
+    q("fikrlarim", sql`SELECT * FROM feedback_responses WHERE user_id = ${userId}`),
+  ]);
+
+  return {
+    _haqida: {
+      izoh: "MammoAI — sizning shaxsiy ma'lumotlaringiz. Bu fayl faqat sizga tegishli.",
+      yaratilgan: now(),
+      format: "JSON",
+    },
+    ...Object.fromEntries(parts),
+  };
+}
+
 export async function deleteUser(id: string): Promise<void> {
   await ensureSchema();
   await sql`DELETE FROM users WHERE id = ${id}`;
@@ -949,6 +1030,109 @@ export async function upsertCycleLog(
   return cycleLogFromRow(rows[0]);
 }
 
+/* ------------------------------------------------------------------ *
+ * CAL-01 — kalendarda hayz davrini BIR BOSISHDA belgilash/olib tashlash.
+ *
+ * Foydalanuvchi so'rovi: kalendarda bir kunga bossa, o'sha kundan boshlab
+ * uning O'Z o'rtacha hayz uzunligi (cycle_settings.average_period_length)
+ * bo'yicha butun davr belgilansin; xato bosgan bo'lsa — qaytarib olsin.
+ *
+ * Nega alohida funksiya: kun-ma-kun `upsertCycleLog` chaqirish har safar
+ * `recomputeLastPeriodStart`ni ham ishga tushirardi (5 kun = 5 ta ortiqcha
+ * to'liq qayta hisoblash). Bu yerda yozuvlar yoziladi va qayta hisoblash
+ * OXIRIDA BIR MARTA bajariladi.
+ * ------------------------------------------------------------------ */
+
+function addDaysStr(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** `startDate`dan boshlab `days` kunni hayz kuni sifatida belgilaydi.
+ * Mavjud kayfiyat/simptom yozuvlari SAQLANADI — faqat `flow` qo'yiladi. */
+export async function setPeriodRange(userId: string, startDate: string, days: number): Promise<void> {
+  await ensureSchema();
+  const span = Math.min(Math.max(days, 1), 14); // aqlli chegara — xato kiritishdan himoya
+  for (let i = 0; i < span; i++) {
+    const date = addDaysStr(startDate, i);
+    await sql`
+      INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at, updated_at, basal_body_temp)
+      VALUES (${randomUUID()}, ${userId}, ${date}, 'medium', NULL, '[]', ${now()}, ${now()}, NULL)
+      ON CONFLICT (user_id, date) DO UPDATE SET flow = 'medium', updated_at = ${now()}
+    `;
+  }
+  await recomputeLastPeriodStart(userId);
+}
+
+/**
+ * CAL-04 — kalendardagi "tahrirlash" rejimining yagona yozish nuqtasi:
+ * foydalanuvchi bir nechta kunni belgilaydi/bekor qiladi va "Saqlash"ni
+ * bosganda hammasi BITTA so'rovda qo'llanadi.
+ *
+ * Nega diff (qo'shilgan/olib tashlangan), butun ro'yxat emas: foydalanuvchi
+ * kalendarda faqat bir necha oyni ko'radi, butun ro'yxatni yuborish esa
+ * KO'RINMAGAN oylardagi yozuvlarni bexosdan o'chirib yuborardi.
+ *
+ * `removed` kunlarida kayfiyat/simptom/harorat bo'lsa, yozuv O'CHIRILMAYDI —
+ * faqat `flow` bo'shatiladi (foydalanuvchining boshqa ma'lumoti yo'qolmasin).
+ */
+export async function applyPeriodDiff(userId: string, added: string[], removed: string[]): Promise<void> {
+  await ensureSchema();
+
+  for (const date of added) {
+    await sql`
+      INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at, updated_at, basal_body_temp)
+      VALUES (${randomUUID()}, ${userId}, ${date}, 'medium', NULL, '[]', ${now()}, ${now()}, NULL)
+      ON CONFLICT (user_id, date) DO UPDATE SET flow = 'medium', updated_at = ${now()}
+    `;
+  }
+
+  if (removed.length > 0) {
+    const existing = await listCycleLogs(userId, 365);
+    const byDate = new Map(existing.map((l) => [l.date, l]));
+    for (const date of removed) {
+      const log = byDate.get(date);
+      const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null);
+      if (hasOtherData) {
+        await sql`UPDATE cycle_logs SET flow = NULL, updated_at = ${now()} WHERE user_id = ${userId} AND date = ${date}`;
+      } else {
+        await sql`DELETE FROM cycle_logs WHERE user_id = ${userId} AND date = ${date}`;
+      }
+    }
+  }
+
+  await recomputeLastPeriodStart(userId);
+}
+
+/** `dateInRange` tegishli bo'lgan UZLUKSIZ hayz kunlari ketma-ketligini
+ * topib, o'shalarning hammasidan hayz belgisini olib tashlaydi (xato
+ * bosilgan sanani qaytarib olish). Kunda kayfiyat/simptom ham bo'lsa,
+ * yozuv O'CHIRILMAYDI — faqat `flow` bo'shatiladi, ya'ni foydalanuvchining
+ * boshqa ma'lumoti yo'qolmaydi. */
+export async function clearPeriodRange(userId: string, dateInRange: string): Promise<void> {
+  await ensureSchema();
+  const logs = await listCycleLogs(userId, 365);
+  const flowDates = new Set(logs.filter((l) => l.flow).map((l) => l.date));
+  if (!flowDates.has(dateInRange)) return;
+
+  const run: string[] = [dateInRange];
+  for (let d = addDaysStr(dateInRange, -1); flowDates.has(d); d = addDaysStr(d, -1)) run.unshift(d);
+  for (let d = addDaysStr(dateInRange, 1); flowDates.has(d); d = addDaysStr(d, 1)) run.push(d);
+
+  const byDate = new Map(logs.map((l) => [l.date, l]));
+  for (const date of run) {
+    const log = byDate.get(date);
+    const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null);
+    if (hasOtherData) {
+      await sql`UPDATE cycle_logs SET flow = NULL, updated_at = ${now()} WHERE user_id = ${userId} AND date = ${date}`;
+    } else {
+      await sql`DELETE FROM cycle_logs WHERE user_id = ${userId} AND date = ${date}`;
+    }
+  }
+  await recomputeLastPeriodStart(userId);
+}
+
 /** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish (masalan noto'g'ri
  * sanaga bosilgan bo'lsa) — shundan keyin ham lastPeriodStart to'g'ri qayta
  * hisoblanadi, xuddi upsert'dagidek. */
@@ -1267,6 +1451,30 @@ export async function incrementKicks(userId: string): Promise<number> {
     ON CONFLICT (user_id, date) DO UPDATE SET count = pregnancy_kicks.count + 1
   `;
   return getKicksToday(userId);
+}
+
+/* ------------------------------------------------------------------ *
+ * TODAY-02 — kunlik "Check-in" kartalari javoblari.
+ * ------------------------------------------------------------------ */
+
+export async function getCheckinAnswers(userId: string): Promise<CheckinResponse> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT question_key, answer FROM checkin_answers WHERE user_id = ${userId} AND date = ${today()}
+  `) as unknown as { question_key: string; answer: boolean }[];
+  return { date: today(), answers: rows.map((r) => ({ questionKey: r.question_key, answer: r.answer })) };
+}
+
+/** Bir savolga javob. Foydalanuvchi fikrini o'zgartirsa YANGILANADI — shu
+ * sababli `ON CONFLICT ... DO UPDATE` (dublikat yozuv yaratilmaydi). */
+export async function saveCheckinAnswer(userId: string, questionKey: string, answer: boolean): Promise<CheckinResponse> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO checkin_answers (user_id, date, question_key, answer, created_at)
+    VALUES (${userId}, ${today()}, ${questionKey}, ${answer}, ${now()})
+    ON CONFLICT (user_id, date, question_key) DO UPDATE SET answer = ${answer}, created_at = ${now()}
+  `;
+  return getCheckinAnswers(userId);
 }
 
 export async function getWellnessToday(userId: string): Promise<WellnessLog> {

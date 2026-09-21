@@ -1,35 +1,35 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jsonError, requireUser } from "@/server/api-utils";
-import {
-  getCycleSettings,
-  getOnboardingProfile,
-  getPregnancyProfile,
-  listChecklistItems,
-  listCycleLogs,
-  listPregnancyVisits,
-} from "@/server/repo";
+import { exportUserData } from "@/server/repo";
 
-/** Profil §6 "Ma'lumotlarni eksport qilish" — foydalanuvchi o'z ma'lumotlarini JSON holda oladi. */
+/**
+ * PRIV-02 — foydalanuvchining O'Z ma'lumotini yuklab olish huquqi.
+ *
+ * Sog'liq ma'lumotini saqlaydigan ilova foydalanuvchiga uning ma'lumotini
+ * mashina o'qiy oladigan formatda berishi kerak (GDPR 20-modda "ma'lumotni
+ * ko'chirish huquqi" va O'zbekiston "Personal ma'lumotlar to'g'risida"gi
+ * qonunining shunga o'xshash talabi).
+ *
+ * XAVFSIZLIK:
+ *  • faqat `requireUser()` — foydalanuvchi FAQAT o'zining ma'lumotini oladi
+ *    (hech qanday `userId` parametri qabul qilinmaydi, ya'ni boshqa
+ *    odamning ma'lumotini so'rash mumkin emas);
+ *  • javob `Content-Disposition: attachment` bilan — brauzerda ochilmaydi,
+ *    faylga tushadi;
+ *  • `Cache-Control: no-store` — sog'liq ma'lumoti keshda qolmasligi kerak.
+ */
 export async function GET(request: NextRequest) {
   try {
     const user = await requireUser(request);
-    const [onboardingProfile, cycleSettings, cycleLogs, pregnancyProfile, pregnancyVisits, checklist] = await Promise.all([
-      getOnboardingProfile(user.id),
-      getCycleSettings(user.id),
-      listCycleLogs(user.id, 10000),
-      getPregnancyProfile(user.id),
-      listPregnancyVisits(user.id),
-      listChecklistItems(user.id),
-    ]);
-    return NextResponse.json({
-      user,
-      onboardingProfile,
-      cycleSettings,
-      cycleLogs,
-      pregnancyProfile,
-      pregnancyVisits,
-      checklist,
-      exportedAt: new Date().toISOString(),
+    const data = await exportUserData(user.id);
+    const stamp = new Date().toISOString().slice(0, 10);
+
+    return new NextResponse(JSON.stringify(data, null, 2), {
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "content-disposition": `attachment; filename="mammoai-malumotlarim-${stamp}.json"`,
+        "cache-control": "no-store",
+      },
     });
   } catch (error) {
     return jsonError(error);

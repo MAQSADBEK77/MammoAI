@@ -9,6 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "seed": "node --env-file=.env.local --import tsx scripts/seed.ts",
+    "dev:test-user": "node --env-file=.env.local --import tsx scripts/dev-test-user.ts",
+    "funnel": "node --env-file=.env.local --import tsx scripts/onboarding-funnel.ts",
     "seed:pregnancy-content": "node --env-file=.env.local --import tsx scripts/seed-pregnancy-content.ts",
     "test:integration": "node --import tsx scripts/integration-test.ts"
   },

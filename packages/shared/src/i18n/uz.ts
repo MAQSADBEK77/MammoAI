@@ -53,6 +53,46 @@ const uz = {
     weekdaysShort: ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"],
   },
 
+  // TODAY-02 — kunlik "Check-in" kartalari (packages/shared/src/logic/checkin.ts
+  // dagi savollar bilan kalit bo'yicha bog'langan).
+  checkin: {
+    title: "Kunlik check-in",
+    yes: "Ha",
+    no: "Yo'q",
+    moodCategory: "Kayfiyat",
+    moodSubtitle: "Bugungi holat",
+    moodQuestion: "Bugun o'zingizni qanday his qilyapsiz?",
+    doneTitle: "Bugunga hammasi tayyor",
+    doneBody: "Ertaga yana ko'rishamiz — har kungi kichik qadam katta farq qiladi.",
+    categories: {
+      wellbeing: "Farovonlik",
+      reflection: "Mushohada",
+      body: "Tana",
+    },
+    questions: {
+      movement: { subtitle: "Yengil harakat", question: "Bugun biroz cho'zilish mashqini qildingizmi?" },
+      friend: { subtitle: "Aloqada bo'lish", question: "Bugun yaqiningiz bilan gaplashdingizmi?" },
+      water: { subtitle: "Suv balansi", question: "Bugun yetarlicha suv ichdingizmi?" },
+      sleep: { subtitle: "Dam olish", question: "Kecha yaxshi uxlab turdingizmi?" },
+      outdoors: { subtitle: "Toza havo", question: "Bugun ochiq havoda bo'ldingizmi?" },
+    },
+  },
+
+  // PET-01 — bosh ekrandagi uy hayvoni (faqat 18 yoshgacha).
+  pets: {
+    sectionTitle: "Uy hayvoning",
+    sectionHint: "Bosh ekranda sen bilan birga bo'ladi",
+    chooseTitle: "Do'stingni tanla",
+    none: "Hayvon kerak emas",
+    names: {
+      cat: "Mushukcha",
+      puppy: "Kuchukcha",
+      bunny: "Quyoncha",
+      chick: "Jo'jacha",
+      panda: "Pandacha",
+    },
+  },
+
   nav: {
     home: "Asosiy",
     cycle: "Tsikl",
@@ -62,9 +102,25 @@ const uz = {
     clinics: "Klinikalar",
     profile: "Profil",
     assistant: "Yordamchi",
+    // TODAY-01: pastki menyuda "Hamkor" o'rniga qisqaroq nom (foydalanuvchi
+    // so'rovi) — `partner.title` bo'lim ICHIDAGI sarlavha uchun o'zgarishsiz qoladi.
+    partner: "Juft",
   },
 
   auth: {
+    // ONB-05: yagona kirish ekrani (referens dizayn). Uchta usul bir joyda —
+    // ilgari bu uchta alohida qadam edi (tanlov → raqam → tasdiqlash).
+    loginTitle: "Kirish",
+    loginSubtitle: "O'zingizga qulay usulni tanlang",
+    telegramLogin: "Telegram orqali kirish",
+    googleLogin: "Google orqali kirish",
+    phoneLogin: "Telefon raqam bilan kirish",
+    comingSoon: "Tez kunda",
+    orDivider: "yoki",
+    legalNoticePrefix: "Davom etish orqali siz ",
+    legalNoticeLink: "maxfiylik siyosatimiz",
+    legalNoticeSuffix: "ga rozilik bildirasiz.",
+    identifierTitle: "Telefon raqamingizni kiriting",
     createAccount: "Akkaunt yarataman",
     haveAccount: "Menda akkaunt bor",
     identifierLabel: "Telefon raqam",
@@ -167,6 +223,29 @@ const uz = {
   },
 
   onboarding: {
+    // ONB-04: so'rovnoma uchta nomlangan bo'limga bo'linadi. Bu 21 qadamni
+    // "uchta qisqa bo'lim"ga aylantiradi va progress orqaga sakrashini
+    // butunlay yo'q qiladi (bo'lim ichidagi qadam soni barqaror).
+    sectionAbout: "Siz haqingizda",
+    sectionCycle: "Siklingiz",
+    sectionHealth: "Sog'lig'ingiz",
+    sectionProgress: (current: number, total: number) => `${current}/${total}`,
+    // ONB-02: so'rovnoma O'RTASIDA ko'rsatiladigan dastlabki bashorat.
+    // Maqsad — qiymatni oldinga chiqarish: foydalanuvchi qolgan savollarga
+    // javob berishdan OLDIN ilova nima berayotganini ko'radi.
+    previewTitle: "Dastlabki bashoratingiz tayyor",
+    previewNextPeriod: "Keyingi hayz",
+    previewPhase: "Hozirgi faza",
+    previewFertile: "Unumdor kunlar",
+    previewNote: "Bu — bitta sikl asosidagi taxmin. Yana bir nechta savol va kunlik kuzatuv bilan ilova buni sezilarli aniqlashtiradi.",
+    previewContinue: "Davom etamiz",
+    // ONB-01: "bilmayman" tanlanganda dalda beruvchi javob. ATAYLAB raqamsiz —
+    // o'ylab topilgan foiz ("ayollarning 40%i bilmaydi") yozish mumkin emas,
+    // chunki bizda unga manba yo'q. Normallashtirish raqamsiz ham ishlaydi.
+    reassureTitle: "Bu mutlaqo normal",
+    reassureCycleLengths: "Ko'p ayol sikl uzunligini aniq bilmaydi. Siz bir necha hayzni belgilashingiz bilanoq ilova buni o'zi hisoblab beradi.",
+    reassureLastPeriod: "Esdan chiqishi oddiy holat. Taxminiy sanani belgilang — keyinroq kalendardan bir bosishda to'g'rilaysiz.",
+    reassureGeneric: "Bilmasligingiz muammo emas — ilova kuzatuv davomida o'zi aniqlab boradi.",
     welcomeTitle: "Xush kelibsiz",
     welcomeSubtitle: "Salomatligingizni oson va xotirjam kuzatib boring",
     startButton: "Boshlaymiz!",
@@ -278,6 +357,27 @@ const uz = {
     // farqli, qisqaroq tugma matnlari.
     logFlowButton: "Sikl belgilash",
     checkinButton: "Check-in",
+    // TODAY-01: bosh ekranning ikki qatorli markaziy bloki — kichik yorliq
+    // ustida katta qiymat (Figma referens). Uzun, tushuntiruvchi variantlar
+    // (periodDayHeroLabel va h.k.) O'CHIRILMADI — ular hali ham "klassik"
+    // ko'rinishdagi rejimlar uchun ishlatiladi.
+    heroTodayLabel: "BUGUN",
+    // TODAY-03: ilova ochilganda bashorat hisoblanayotgan payt va yozuv
+    // saqlangandan keyingi qisqa tasdiq (referens dizayn).
+    analyzingLabel: "Ma'lumotlaringiz tahlil qilinmoqda...",
+    predictionsUpdatedLabel: "Bashoratlar yangilandi!",
+    heroPeriodLabel: "Hayz:",
+    heroPeriodDayValue: (day: number) => `${day}-kun`,
+    heroNextPeriodLabel: "Keyingi hayz:",
+    heroDelayedLabel: "Kechikmoqda:",
+    heroTodayValue: "Bugun",
+    heroDaysValue: (days: number) => `${days} kun`,
+    assistantCardTitle: "MammoAI yordamchisi",
+    assistantCardMessage: "Bugun o'zingizni qanday his qilyapsiz? Keling, birga aniqlaymiz:",
+    assistantCardOption1: "Siklim haqida savolim bor",
+    assistantCardOption2: "O'zimni yaxshi his qilishim uchun nima qilay?",
+    assistantCardCta: "Bilib olaylik",
+    assistantCardDismiss: "Yopish",
     flowLabel: "Oqim intensivligi",
     moodLabel: "Kayfiyat",
     symptomsLabel: "Alomatlar",
@@ -337,10 +437,21 @@ const uz = {
     nextPeriodRangeLabel: (earliest: string, latest: string) => `${earliest}–${latest} oralig'ida kutilmoqda`,
     articlesCardTitle: "Qiziqarli maqolalar",
     riskQuizCardTitle: "O'z-o'zini tekshirish testi",
-    riskQuizCardSubtitle: "2 daqiqada xavf darajangizni bilib oling",
+    riskQuizCardSubtitle: "2 daqiqada sog'lig'ingizni yaxshiroq tushuning",
     cycleLengthLabel: "Sikl uzunligi",
     periodLengthLabel: "Hayz davomiyligi",
     calendarTitle: "Kalendar",
+    // CAL-01 — to'liq ekranli kalendar.
+    calTapHint: "Hayz boshlangan kunga bosing — keyingi kunlar avtomatik belgilanadi. Xato bo'lsa, o'sha kunga qayta bosing.",
+    calEditPeriod: "Hayz sanalarini tahrirlash",
+    calEditHint: "Har bir kunga alohida bosing — faqat o'sha kun belgilanadi yoki bekor qilinadi.",
+    calCycleDay: (day: number) => `Sikl ${day}-kuni`,
+    calSymptomsTitle: "Simptomlar va faoliyat",
+    calNothingLogged: "Vazn, kayfiyat va simptom qo'shish",
+    calAddLog: "Qo'shish",
+    calMonthTab: "Oy",
+    calYearTab: "Yil",
+    calBackToToday: "Bugunga qaytish",
     editLastPeriodLabel: "Oxirgi hayz sanasini o'zgartirish",
     daysUnit: (n: number) => `${n} kun`,
     recentLogsTitle: "So'nggi yozuvlar",
@@ -1052,6 +1163,8 @@ const uz = {
     statsDaysValue: (n: number) => `${n} kun`,
     statsLogsLabel: "Jami yozuvlar",
     noNameFallback: "Foydalanuvchi",
+    exportDataLabel: "Ma'lumotlarimni yuklab olish",
+    exportDataHint: "JSON fayl — hammasi sizda qoladi",
     securityTitle: "Xavfsizlik va maxfiylik",
     privacyPolicyLink: "Maxfiylik siyosatini o'qish",
     helpTitle: "Yordam",

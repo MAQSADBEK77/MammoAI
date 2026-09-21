@@ -44,9 +44,10 @@ import type {
   User,
   WellnessLog,
 } from "./types";
-import type { CyclePrediction } from "./logic/cycle";
+import type { CyclePrediction, ForecastedCycle } from "./logic/cycle";
 import type { BadgeId } from "./logic/gamification";
 import type { PregnancyStatus } from "./logic/pregnancy";
+import type { CheckinResponse } from "./logic/checkin";
 import type { IllustrationSlotKey } from "./illustration-library";
 
 export class ApiError extends Error {
@@ -104,6 +105,10 @@ export interface CycleResponse {
   logs: CycleLog[];
   prediction: CyclePrediction | null;
   isIrregular: boolean;
+  /** CYCLE-ALGO-16: bir necha sikl OLDINGA bashorat (~1 yil) — kalendar
+   * faqat keyingi oyni emas, kelgusi oylarni ham belgilashi uchun.
+   * `prediction` (birinchi sikl) bilan mos, lekin undan uzunroq. */
+  forecast: ForecastedCycle[];
 }
 
 export interface WellnessResponse {
@@ -233,7 +238,16 @@ export function createApiClient(config: ApiClientConfig) {
         patch: Partial<
           Pick<
             User,
-            "name" | "phone" | "language" | "fontScale" | "theme" | "notificationsEnabled" | "avatarUrl" | "lastLocationLat" | "lastLocationLng"
+            | "name"
+            | "phone"
+            | "language"
+            | "fontScale"
+            | "theme"
+            | "notificationsEnabled"
+            | "avatarUrl"
+            | "lastLocationLat"
+            | "lastLocationLng"
+            | "pet"
           >
         >
       ) => request<MeResponse>("/api/me", { method: "PATCH", body: JSON.stringify(patch) }),
@@ -250,6 +264,18 @@ export function createApiClient(config: ApiClientConfig) {
         request<CycleResponse>("/api/cycle/settings", { method: "PATCH", body: JSON.stringify(settings) }),
       /** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish. */
       deleteLog: (date: string) => request<CycleResponse>(`/api/cycle/logs/${date}`, { method: "DELETE" }),
+      /** CAL-01: kalendarda hayz davrini BIR BOSISHDA belgilash ("set" —
+       * foydalanuvchining o'z o'rtacha uzunligi bo'yicha) yoki xato bosilgan
+       * davrni butunlay olib tashlash ("clear"). */
+      periodRange: (payload: { startDate: string; action: "set" | "clear"; days?: number }) =>
+        request<CycleResponse>("/api/cycle/period", { method: "POST", body: JSON.stringify(payload) }),
+      /** CAL-04: kalendar tahrirlash rejimi — belgilangan/bekor qilingan
+       * kunlar bitta so'rovda saqlanadi. */
+      periodDiff: (payload: { added: string[]; removed: string[] }) =>
+        request<CycleResponse>("/api/cycle/period", {
+          method: "POST",
+          body: JSON.stringify({ action: "diff", ...payload }),
+        }),
     },
     pregnancy: {
       get: () => request<PregnancyResponse>("/api/pregnancy"),
@@ -274,6 +300,11 @@ export function createApiClient(config: ApiClientConfig) {
       get: () => request<WellnessResponse>("/api/wellness"),
       addWater: (ml: number) => request<WellnessResponse>("/api/wellness/water", { method: "POST", body: JSON.stringify({ ml }) }),
       addCalories: (kcal: number) => request<WellnessResponse>("/api/wellness/calories", { method: "POST", body: JSON.stringify({ kcal }) }),
+    },
+    checkin: {
+      get: () => request<CheckinResponse>("/api/checkin"),
+      answer: (payload: { questionKey: string; answer: boolean }) =>
+        request<CheckinResponse>("/api/checkin", { method: "POST", body: JSON.stringify(payload) }),
     },
     checklist: {
       list: () => request<ChecklistResponse>("/api/checklist"),

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { MeResponse, OnboardingProfile, User } from "@mammoai/shared";
 import { api } from "./api";
 import { useI18n } from "./i18n";
+import { isForcedLightPath } from "./theme-routes";
 
 type SessionStatus = "loading" | "onboarded" | "anonymous";
 
@@ -94,14 +95,31 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } catch {
       // localStorage yopiq bo'lishi mumkin (maxfiylik rejimi) — jiddiy emas.
     }
+    // THEME-01: sessiyadan oldingi sahifalarda (onboarding, Telegram kirish)
+    // mavzu MAJBURAN yorug'. Tekshiruv SHU YERDA ham kerak: `/api/me` javob
+    // bergach bu effekt qayta ishlaydi va tekshiruvsiz bo'lsa, bloklovchi
+    // skript qo'ygan yorug' mavzuni qurilma afzalligiga qarab qorong'uga
+    // almashtirib yuborardi.
+    //
+    // Foydalanuvchining HAQIQIY tanlovi (yuqorida localStorage'ga yozilgan)
+    // o'zgarmaydi — majburlash faqat KO'RSATISHga tegishli.
+    const forcedLight = isForcedLightPath(window.location.pathname);
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
-      const next: ResolvedTheme = preference === "system" ? (media.matches ? "dark" : "light") : preference;
+      const next: ResolvedTheme = forcedLight
+        ? "light"
+        : preference === "system"
+          ? media.matches
+            ? "dark"
+            : "light"
+          : preference;
       setResolvedTheme(next);
       document.documentElement.dataset.theme = next;
     };
     apply();
-    if (preference !== "system") return;
+    // Qurilma afzalligini faqat "system" tanlovida va majburlanmagan
+    // sahifalarda tinglaymiz.
+    if (forcedLight || preference !== "system") return;
     media.addEventListener("change", apply);
     return () => media.removeEventListener("change", apply);
   }, [user?.theme]);

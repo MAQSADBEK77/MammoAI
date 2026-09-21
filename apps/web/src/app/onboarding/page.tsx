@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import type {
   CycleRegularity,
   Goal,
@@ -20,35 +21,31 @@ import {
   needsCycleInfo,
   needsHeightWeight,
   needsPersonalHealthQuestions,
+  predictCycle,
+  getCyclePhase,
+  formatDateDisplay,
   colors,
   formatUzPhoneInput,
   extractUzPhoneDigits,
   ApiError,
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useAbVariant } from "@/lib/ab";
+import { useTelegramStartLink } from "@/lib/telegram-link";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
-import { Button, IconChip, ProgressBar, DateWheelPicker, WheelPicker } from "@/components/ui";
+import { Button, IconChip, DateWheelPicker, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
+import { OnboardingIcon, type OnboardingIconName } from "@/components/onboarding/OnboardingIcon";
 import { Lottie } from "lottie-react";
 import {
   LockOutlined,
-  PersonOutlined,
-  ShieldOutlined,
-  EditOutlined,
-  CakeOutlined,
-  AutorenewOutlined,
-  SickOutlined,
-  FamilyRestroomOutlined,
-  MonitorWeightOutlined,
   SendOutlined,
-  FavoriteBorderOutlined,
+  SmsOutlined,
 } from "@mui/icons-material";
 import clsx from "clsx";
-
-type StepIconComponent = typeof LockOutlined;
 
 type Step =
   | "welcome"
@@ -63,6 +60,7 @@ type Step =
   | "cycle_regularity"
   | "cycle_lengths"
   | "last_period"
+  | "preview"
   | "typical_symptoms"
   | "period_attitude"
   | "health_conditions"
@@ -122,6 +120,11 @@ interface SurveyState {
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
+/** ONB-02: bugungi sana modul yuklanganda BIR MARTA hisoblanadi.
+ * Render ichida `Date.now()` chaqirish mumkin emas (toza bo'lmagan funksiya —
+ * eslint `react-hooks` qoidasi), va u baribir kerak emas: onboarding bir
+ * seansda tugaydi, sana o'rtada o'zgarmaydi. `CURRENT_YEAR` bilan bir xil naqsh. */
+const TODAY_MS = Date.now();
 // Yosh o'rniga tug'ilgan yil so'raladi (wheel-picker) — 13-100 yosh oralig'iga mos yillar.
 const BIRTH_YEARS = Array.from({ length: 88 }, (_, i) => CURRENT_YEAR - 100 + i);
 
@@ -179,23 +182,24 @@ const INITIAL_SURVEY: SurveyState = {
   notificationsEnabled: null,
 };
 
-// Har bir savol bosqichi uchun ikona + rang — "registratsiya juda quruq
-// ko'rinadi" degan fikrdan keyin har bir ekranga bittadan vizual urg'u qo'shish
-// uchun (welcome/analyzing o'zining maxsus ko'rinishiga ega, shu yerda kerak emas).
-// MUI ikonlari ishlatiladi (emoji emas — platformalar orasida bir xil, saytning
-// qolgan qismi bilan bir xil uslubda ko'rinadi). To'liq illyustratsiyasi bor
-// bosqichlar (STEP_ILLUSTRATION) bu yerga kiritilmagan — ular ustunroq ko'rsatiladi.
-const STEP_ICON: Partial<Record<Step, StepIconComponent>> = {
-  account_choice: PersonOutlined,
-  account_identifier: LockOutlined,
-  privacy: ShieldOutlined,
-  name: EditOutlined,
-  age: CakeOutlined,
-  cycle_regularity: AutorenewOutlined,
-  typical_symptoms: SickOutlined,
-  family_history: FamilyRestroomOutlined,
-  sexually_active: FavoriteBorderOutlined,
-  height_weight: MonitorWeightOutlined,
+// ONB-07 — har bir savol bosqichi uchun BIZNING belgimiz.
+//
+// Tarix: MUI tizim ikonkalari (rasmiy, ba'zilari kontekstga mos emas) →
+// Twemoji emoji (iliq, lekin bizning emas, har ilovada bor) → o'z to'plamimiz.
+// Batafsil: components/onboarding/OnboardingIcon.tsx
+//
+// Belgilar `currentColor`da chizilgani uchun bo'lim rangini (binafsha /
+// pushti / turkuaz) O'ZI oladi — emoji bilan bunday qilib bo'lmasdi.
+const STEP_ICON_NAME: Partial<Record<Step, OnboardingIconName>> = {
+  account_choice: "welcome",
+  privacy: "privacy",
+  name: "name",
+  age: "age",
+  cycle_regularity: "cycle",
+  typical_symptoms: "symptoms",
+  family_history: "family",
+  sexually_active: "intimacy",
+  height_weight: "measure",
 };
 
 // Har bir bosqich uchun to'liq illyustratsiya (unDraw, litsenziyasiz-erkin, tijorat
@@ -233,6 +237,54 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   last_checkup: colors.accent,
   height_weight: colors.accent,
   notifications: colors.primary,
+};
+
+/**
+ * ONB-04 — so'rovnomaning UCHTA BO'LIMI.
+ *
+ * Nega kerak: ilgari progress bitta uzun chiziq edi va u ikki muammoga ega:
+ *   1) `steps.length` maqsad tanlanganda o'zgarib, foiz ORQAGA sakrardi
+ *      (80% → 27%, ONB-03'da qisman tuzatildi);
+ *   2) 21 ta qadam "cheksiz ro'yxat" bo'lib ko'rinardi.
+ * Bo'limlarga bo'linganda ikkalasi ham yechiladi: foydalanuvchi "3 tadan
+ * 2-bo'limda, 4 tadan 2-qadamda" degan ANIQ va QISQA holatni ko'radi.
+ *
+ * Bo'limlar `STEP_ICON_COLOR`dagi MAVJUD rang zonalariga mos — ya'ni yangi
+ * dizayn tizimi o'ylab topilmadi, allaqachon borini ko'rinadigan qildik.
+ * Yagona farq: `notifications` uchinchi bo'limga o'tdi (rangi pushti bo'lsa
+ * ham) — u mantiqan oxirgi rozilik, siklga tegishli savol emas.
+ *
+ * `welcome`, `preview` va `analyzing` hech qaysi bo'limga kirmaydi: birinchisi
+ * so'rovnomadan oldin, qolgan ikkitasi — natija ekranlari.
+ */
+const SECTIONS = [
+  { key: "about", color: colors.secondary },
+  { key: "cycle", color: colors.primary },
+  { key: "health", color: colors.accent },
+] as const;
+
+const STEP_SECTION: Partial<Record<Step, 0 | 1 | 2>> = {
+  language: 0,
+  account_choice: 0,
+  account_identifier: 0,
+  phone_verify: 0,
+  privacy: 0,
+  name: 0,
+  age: 0,
+
+  goal: 1,
+  cycle_regularity: 1,
+  cycle_lengths: 1,
+  last_period: 1,
+  typical_symptoms: 1,
+  period_attitude: 1,
+
+  health_conditions: 2,
+  family_history: 2,
+  sexually_active: 2,
+  last_checkup: 2,
+  height_weight: 2,
+  notifications: 2,
 };
 
 /** STEP_ICON_COLOR'dagi rang qiymatini public/animations/aura-*.json fayl nomiga o'giradi. */
@@ -372,6 +424,37 @@ function OnboardingPageInner() {
   const isFromTelegram = searchParams.get("fromTelegram") === "1" && !!user?.phone;
 
   // Bosqichlar ro'yxati maqsad/yoshga qarab dinamik shakllanadi (App.pdf §7-10).
+  // ONB-02 / AB-01: so'rovnoma O'RTASIDA dastlabki bashoratni ko'rsatish
+  // tajribasi. Ikkala yo'l ham saqlanadi va o'lchanadi (foydalanuvchi so'rovi):
+  //   "off" — hozirgi yo'l (nazorat varianti)
+  //   "on"  — `last_period`dan keyin bashorat ekrani qo'shiladi
+  // ONB-05: botga olib boradigan havola — LandingPage'dagi bilan AYNAN bir
+  // xil manba (`useTelegramStartLink`), ya'ni bot username'i ikki joyda
+  // alohida saqlanmaydi va hech qachon bo'sh qaytmaydi.
+  const telegramLink = useTelegramStartLink();
+
+  const previewVariant = useAbVariant("onboarding_preview");
+  const showPreviewStep = previewVariant === "on";
+
+  /** Shu paytgacha yig'ilgan javoblardan hisoblangan bashorat. Sof funksiya —
+   * server so'rovi YO'Q, hammasi brauzerda (shuning uchun akkaunt ham,
+   * tarmoq ham kerak emas). Sana kiritilmagan bo'lsa `null`. */
+  const previewPrediction = useMemo(() => {
+    if (!survey.lastPeriodDate || survey.lastPeriodUnknown) return null;
+    const cycleLength = Number(survey.averageCycleLength) || 28;
+    const periodLength = Number(survey.averagePeriodLength) || 5;
+    const prediction = predictCycle({
+      lastPeriodStart: survey.lastPeriodDate,
+      averageCycleLength: cycleLength,
+      averagePeriodLength: periodLength,
+    });
+    if (!prediction) return null;
+    // Sikldagi hozirgi kun — faza uchun.
+    const diff = Math.round((TODAY_MS - new Date(survey.lastPeriodDate).getTime()) / 86400000);
+    const dayInCycle = (((diff % cycleLength) + cycleLength) % cycleLength) + 1;
+    return { prediction, phase: getCyclePhase(dayInCycle, cycleLength, periodLength) };
+  }, [survey.lastPeriodDate, survey.lastPeriodUnknown, survey.averageCycleLength, survey.averagePeriodLength]);
+
   const steps = useMemo<Step[]>(() => {
     const base: Step[] = [
       "welcome",
@@ -384,42 +467,81 @@ function OnboardingPageInner() {
       "age",
       "goal",
     ];
+    // ONB-03 (xato tuzatildi): progress chizig'i ORQAGA sakrar edi.
+    //
+    // Sabab: maqsad tanlanmaguncha ro'yxat qisqa bo'lardi (`[...list,
+    // "analyzing"]`), tanlangandan keyin esa 11 ta qadam qo'shilardi. Telegram
+    // oqimida bu shunday ko'rinardi:
+    //     maqsad qadamida, hali tanlanmagan → 4/5  = 80%
+    //     maqsad tanlandi                   → 4/15 = 27%
+    // Ya'ni foydalanuvchi 80% ko'rib, keyin 27% ga tushardi — va aynan eng
+    // muhim qadamda. Progress foizi qo'shilgandan keyin bu ochiq ko'rinib
+    // qoldi.
+    //
+    // Yechim: maqsad hali tanlanmagan bo'lsa, uzunlikni ENG KO'P UCHRAYDIGAN
+    // yo'l ("cycle") bo'yicha hisoblaymiz. Shunda maxraj boshidan barqaror
+    // bo'ladi va progress faqat OLDINGA yuradi. Foydalanuvchi boshqa maqsad
+    // tanlasa uzunlik biroz o'zgaradi, lekin bu 1-2 qadamlik farq — 80%→27%
+    // kabi sakrash emas.
     const withTail = (list: Step[]): Step[] => {
-      if (!survey.primaryGoal) return [...list, "analyzing"];
+      if (!survey.primaryGoal) return withTailForGoal(list, "cycle");
+      return withTailForGoal(list, survey.primaryGoal);
+    };
+
+    /** Berilgan maqsad uchun to'liq qadamlar ro'yxati. Ataylab `survey`ga
+     * emas, PARAMETRGA tayanadi — shu orqali maqsad hali tanlanmaganda ham
+     * uzunlikni oldindan hisoblash mumkin (yuqoridagi ONB-03 izohiga qarang). */
+    function withTailForGoal(list: Step[], goal: Goal): Step[] {
       const tail: Step[] = [];
-      if (survey.primaryGoal === "perimenopause") {
+      if (goal === "perimenopause") {
         // Sikl bashorati (regularity/lengths/last_period) va hayzga munosabat
         // savollari (period_attitude) SO'RALMAYDI — bashorat endi ma'noli
         // emas. Simptom va ma'lum sog'liq holatlari savollari esa AYNAN shu
         // rejim uchun eng muhimi, shuning uchun alohida qoldiriladi.
         tail.push("typical_symptoms", "health_conditions");
-      } else if (needsCycleInfo(survey.primaryGoal)) {
-        tail.push(
-          "cycle_regularity",
-          "cycle_lengths",
-          "last_period",
-          "typical_symptoms",
-          "period_attitude",
-          "health_conditions"
-        );
+      } else if (needsCycleInfo(goal)) {
+        tail.push("cycle_regularity", "cycle_lengths", "last_period");
+        // Bashorat ekrani AYNAN shu yerda: `last_period`dan keyin yetarli
+        // ma'lumot yig'ilgan (sikl uzunligi + oxirgi sana), qolgan savollar
+        // esa hali oldinda — ya'ni qiymat ularni to'ldirishga undaydi.
+        // Sana kiritilmagan bo'lsa bashorat hisoblanmaydi, shuning uchun
+        // qadam ham qo'shilmaydi (bo'sh ekran ko'rsatmaymiz).
+        if (showPreviewStep && previewPrediction) tail.push("preview");
+        tail.push("typical_symptoms", "period_attitude", "health_conditions");
       }
-      if (needsPersonalHealthQuestions(survey.primaryGoal)) {
+      if (needsPersonalHealthQuestions(goal)) {
         tail.push("family_history");
         // FIX-CHECKUPS: 15 yoshdan kichiklarga so'ralmaydi.
         if (age >= 15) tail.push("sexually_active");
         tail.push("last_checkup");
       }
-      if (needsHeightWeight(survey.primaryGoal)) tail.push("height_weight");
+      if (needsHeightWeight(goal)) tail.push("height_weight");
       tail.push("notifications", "analyzing");
       return [...list, ...tail];
-    };
+    }
     const filtered = isFromTelegram
       ? base.filter((s) => !["welcome", "account_choice", "account_identifier", "phone_verify"].includes(s))
       : base;
     return withTail(filtered);
-  }, [survey.primaryGoal, isFromTelegram, age]);
+  }, [survey.primaryGoal, isFromTelegram, age, showPreviewStep, previewPrediction]);
 
   const step = steps[stepIndex];
+
+  /** ONB-04: joriy bo'lim va shu bo'lim ICHIDAGI o'rin. Hisob `steps`
+   * massividan olinadi — ya'ni shartli qadamlar (masalan `sexually_active`
+   * faqat 15+ uchun) avtomatik hisobga olinadi va "4 tadan 3-qadam" doim
+   * to'g'ri chiqadi. Bo'limga kirmaydigan ekranlarda (`welcome`, `preview`,
+   * `analyzing`) `null` — progress umuman ko'rsatilmaydi. */
+  const sectionProgress = useMemo(() => {
+    const sectionIndex = STEP_SECTION[step];
+    if (sectionIndex === undefined) return null;
+    const inSection = steps.filter((st) => STEP_SECTION[st] === sectionIndex);
+    return {
+      sectionIndex,
+      current: inSection.indexOf(step) + 1,
+      total: inSection.length,
+    };
+  }, [step, steps]);
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
   const goBack = () => setStepIndex((i) => Math.max(i - 1, 0));
 
@@ -600,6 +722,9 @@ function OnboardingPageInner() {
         return survey.cycleRegularity !== null;
       case "last_period":
         return survey.lastPeriodDate.length > 0 || survey.lastPeriodUnknown;
+      // Bashorat ekrani — faqat ko'rish uchun, hech narsa tanlanmaydi.
+      case "preview":
+        return true;
       case "period_attitude":
         return survey.periodAttitude !== null;
       case "family_history":
@@ -646,9 +771,9 @@ function OnboardingPageInner() {
       // qoladi (lib/telegram.ts) — oddiy brauzerda --tg-safe-area-top 0px.
       style={{ paddingTop: "calc(var(--tg-safe-area-top) + 2rem)" }}
     >
-      {step !== "welcome" && step !== "analyzing" && (
+      {sectionProgress && (
         <div className="mb-6 shrink-0">
-          <ProgressBar value={(stepIndex / (steps.length - 1)) * 100} />
+          <SectionProgress {...sectionProgress} />
         </div>
       )}
 
@@ -663,16 +788,16 @@ function OnboardingPageInner() {
             />
           </div>
         ) : (
-          STEP_ICON[step] && (
+          STEP_ICON_NAME[step] && (
             <div className="mb-5 flex justify-center">
               <div className="relative flex h-44 w-44 items-center justify-center">
-                {/* O'zimiz yasagan Lottie ("nafas olayotgan" halqa-animatsiya) —
-                    uchinchi tomon fayl emas, generatori: apps/web/scripts/
-                    generate-onboarding-animations.py. Rang STEP_ICON_COLOR'ga mos. */}
+                {/* O'zimiz yasagan Lottie ("nafas olayotgan" halqa) —
+                    generatori: apps/web/scripts/generate-onboarding-animations.py.
+                    Rang STEP_ICON_COLOR'ga mos. */}
                 {/* MUHIM: `className="absolute inset-0"` emas — lottie-react o'zining
                     ".lottie-display{position:relative}" qoidasini Tailwind'ning
                     ".absolute"idan KEYIN yuklaydi va uni bekor qiladi, natijada bu
-                    flex ichida ODDIY qatorga aylanib, ikonkani chetga surib yuborardi.
+                    flex ichida ODDIY qatorga aylanib, belgini chetga surib yuborardi.
                     Inline `style` har doim g'olib chiqadi — shuning uchun shu yerda. */}
                 <Lottie
                   src={`/animations/aura-${auraName(STEP_ICON_COLOR[step]!)}.json`}
@@ -680,10 +805,15 @@ function OnboardingPageInner() {
                   autoplay
                   style={{ position: "absolute", inset: 0 }}
                 />
-                {(() => {
-                  const StepIcon = STEP_ICON[step]!;
-                  return <StepIcon sx={{ fontSize: 42, color: "#fff", position: "relative" }} />;
-                })()}
+                {/* ONB-07: belgi oq doira ichida, bo'lim rangida. Aura
+                    radiatsiyasi tashqarida ko'rinib turadi — shu ikkisi
+                    birgalikda "nafas olayotgan" ta'sir beradi. */}
+                <span
+                  className="relative flex h-24 w-24 items-center justify-center rounded-full bg-surface shadow-lg"
+                  style={{ color: STEP_ICON_COLOR[step] }}
+                >
+                  <OnboardingIcon name={STEP_ICON_NAME[step]!} />
+                </span>
               </div>
             </div>
           )
@@ -726,21 +856,28 @@ function OnboardingPageInner() {
         )}
 
         {step === "account_choice" && (
-          <ChoiceStep
-            title={dict.onboarding.surveyTitle}
-            options={[
-              { label: dict.auth.createAccount, value: "create", onClick: () => setSurvey((s) => ({ ...s, accountChoice: "create" })) },
-              { label: dict.auth.haveAccount, value: "login", onClick: () => setSurvey((s) => ({ ...s, accountChoice: "login" })) },
-            ]}
-            selected={survey.accountChoice}
+          // ONB-05: yagona kirish ekrani (referens dizayn). Ilgari bu yerda
+          // faqat "Akkaunt yarataman / Menda akkaunt bor" tanlovi bor edi —
+          // ya'ni foydalanuvchi hali hech narsa qilmasdan turib, o'zi haqida
+          // savolga javob berishga majbur bo'lardi. Aslida bu farq KERAK EMAS:
+          // server telefon bo'yicha o'zi aniqlaydi (`isNewAccount`) va mavjud
+          // akkaunt bo'lsa to'g'ridan-to'g'ri ilovaga kiritadi.
+          <LoginStep
+            telegramHref={telegramLink}
+            onPhone={() => {
+              setSurvey((s) => ({ ...s, accountChoice: "create" }));
+              goNext();
+            }}
           />
         )}
 
         {step === "account_identifier" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">
-              {survey.accountChoice === "login" ? dict.auth.loginIdentifierTitle : dict.auth.createIdentifierTitle}
-            </h2>
+            {/* ONB-05: ilgari sarlavha "yarataman/kirish" tanloviga qarab
+                o'zgarardi. Endi u tanlov yo'q (server o'zi aniqlaydi), shuning
+                uchun sarlavha ham NEYTRAL — bu zamonaviy amaliyot: bitta
+                maydon, tizim yangi yoki mavjud ekanini o'zi hal qiladi. */}
+            <h2 className="text-center text-xl font-bold text-text-primary">{dict.auth.identifierTitle}</h2>
             <div className="relative">
               <LockOutlined sx={{ fontSize: 18 }} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
@@ -911,6 +1048,7 @@ function OnboardingPageInner() {
             >
               {dict.common.dontKnow}
             </button>
+            {survey.cycleLengthsUnknown && <ReassureCard text={dict.onboarding.reassureCycleLengths} />}
           </div>
         )}
 
@@ -938,6 +1076,40 @@ function OnboardingPageInner() {
             >
               {dict.common.dontKnow}
             </button>
+            {survey.lastPeriodUnknown && <ReassureCard text={dict.onboarding.reassureLastPeriod} />}
+          </div>
+        )}
+
+        {step === "preview" && previewPrediction && (
+          <div className="flex flex-1 flex-col justify-center gap-5">
+            <div className="text-center">
+              <Emoji e="🌸" size={44} />
+              <h2 className="mt-3 text-xl font-bold text-text-primary">{dict.onboarding.previewTitle}</h2>
+            </div>
+
+            <div className="space-y-2.5">
+              <PreviewRow
+                label={dict.onboarding.previewNextPeriod}
+                value={formatDateDisplay(previewPrediction.prediction.nextPeriodStart)}
+              />
+              {previewPrediction.phase && (
+                <PreviewRow
+                  label={dict.onboarding.previewPhase}
+                  value={dict.cyclePhase[previewPrediction.phase].name}
+                />
+              )}
+              <PreviewRow
+                label={dict.onboarding.previewFertile}
+                value={`${formatDateDisplay(previewPrediction.prediction.fertileWindowStart)} – ${formatDateDisplay(
+                  previewPrediction.prediction.fertileWindowEnd
+                )}`}
+              />
+            </div>
+
+            {/* Halollik: bu bitta sikl asosidagi taxmin. Uni aniq sana
+                sifatida ko'rsatish tibbiy mazmundagi ilovada noto'g'ri
+                bo'lardi — shuning uchun izoh MAJBURIY. */}
+            <p className="text-center text-sm text-text-secondary">{dict.onboarding.previewNote}</p>
           </div>
         )}
 
@@ -1200,7 +1372,11 @@ function OnboardingPageInner() {
           ) : (
             <span />
           )}
-          {step === "account_identifier" ? (
+          {/* Kirish ekranida pastdagi umumiy tugma KERAK EMAS — har bir usul
+              o'z tugmasiga ega va bosilgan zahoti harakat qiladi. */}
+          {step === "account_choice" ? (
+            <span />
+          ) : step === "account_identifier" ? (
             <Button onClick={submitIdentifier} disabled={submitting || !canProceed()}>
               {dict.common.continueButton}
             </Button>
@@ -1276,5 +1452,196 @@ function ChoiceStep({
         </button>
       ))}
     </div>
+  );
+}
+
+/**
+ * ONB-01 — "bilmayman" tanlanganda chiqadigan dalda beruvchi karta.
+ *
+ * Foydalanuvchi so'rovi: bilmaslikni normallashtirish ("ooo that is okey")
+ * va nima bo'lishini aytish.
+ *
+ * MUHIM QAROR: matnda RAQAM (masalan "ayollarning 40%i bilmaydi") ATAYLAB
+ * YO'Q. Bunday foizni o'ylab topish mumkin emas — bizda unga manba yo'q, va
+ * tibbiy mazmundagi ilovada soxta statistika ishonchni buzadi. Normallashtirish
+ * raqamsiz ham ishlaydi. Haqiqiy raqam kerak bo'lsa, uni O'Z bazamizdan
+ * hisoblash mumkin (qancha foydalanuvchi "bilmayman" tanlagan) — shunda u
+ * haqiqat bo'ladi.
+ */
+function ReassureCard({ text }: { text: string }) {
+  const { dict } = useI18n();
+  return (
+    <div className="animate-fade-in-up flex items-start gap-3 rounded-2xl bg-primary-light/25 p-4">
+      <Emoji e="🌸" size={22} />
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-text-primary">{dict.onboarding.reassureTitle}</p>
+        <p className="mt-0.5 text-sm text-text-secondary">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+/** ONB-02: bashorat ekranidagi bitta qator — yorliq va qiymat. */
+function PreviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3.5 shadow-sm">
+      <span className="text-sm text-text-secondary">{label}</span>
+      <span className="text-right text-base font-bold text-text-primary">{value}</span>
+    </div>
+  );
+}
+
+/**
+ * ONB-04 — uch bo'limli progress ko'rsatgichi.
+ *
+ * Yuqorida uchta segment: o'tilgan va joriy bo'lim to'ldirilgan, keyingilari
+ * bo'sh. Ostida bo'lim nomi va undagi o'rin ("Siklingiz · 2/6").
+ *
+ * Rang joriy bo'limga tegishli (`SECTIONS[i].color`) — shu orqali bo'limdan
+ * bo'limga o'tganda foydalanuvchi RANG o'zgarishini sezadi. Rang tizimi
+ * loyihada allaqachon bor edi (`STEP_ICON_COLOR`), lekin faqat Lottie auraga
+ * qo'llanardi, ya'ni ko'rinmasdi.
+ */
+function SectionProgress({
+  sectionIndex,
+  current,
+  total,
+}: {
+  sectionIndex: 0 | 1 | 2;
+  current: number;
+  total: number;
+}) {
+  const { dict } = useI18n();
+  const color = SECTIONS[sectionIndex].color;
+  const names = [dict.onboarding.sectionAbout, dict.onboarding.sectionCycle, dict.onboarding.sectionHealth];
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-1.5">
+        {SECTIONS.map((section, i) => {
+          // O'tilgan bo'lim — to'liq; joriy — shu bo'lim ichidagi nisbat;
+          // keyingilari — bo'sh.
+          const fill = i < sectionIndex ? 100 : i === sectionIndex ? (current / total) * 100 : 0;
+          return (
+            <div key={section.key} className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
+              <div
+                className="h-full rounded-full transition-[width] duration-500"
+                style={{ width: `${fill}%`, backgroundColor: color, transitionTimingFunction: "var(--motion-ease-brand)" }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-baseline justify-between">
+        <p className="text-sm font-bold" style={{ color }}>
+          {names[sectionIndex]}
+        </p>
+        <p className="text-xs font-semibold text-text-muted">{dict.onboarding.sectionProgress(current, total)}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ONB-05 — yagona kirish ekrani (foydalanuvchi bergan referens dizayn).
+ *
+ * Nega bitta ekran: ilgari kirish uchta qadam edi — tanlov ("yarataman"/
+ * "akkauntim bor") → telefon raqam → Telegram'dan kod. Ya'ni oltita amal.
+ * Telegram tugmasi esa hammasini bitta bosishga siqadi: bot raqamni O'ZI
+ * ulashadi (`request_contact`), kod terish kerak emas.
+ *
+ * Google — hozircha O'CHIRILGAN, chunki loyihada OAuth infratuzilmasi YO'Q
+ * (tekshirildi: `google` izlari faqat shrift, Search Console va Gemini
+ * hujjatiga tegishli). Tugma ko'rinadi va "Tez kunda" deb belgilanadi —
+ * shunda foydalanuvchi kelajakda nima bo'lishini biladi, biz esa yo'q
+ * imkoniyatni bor qilib ko'rsatmaymiz.
+ *
+ * SMS o'rniga "Telefon raqam bilan kirish" — u MAVJUD oqimga olib boradi
+ * (raqam → Telegram bot kodi). Haqiqiy SMS provayderi hozircha yo'q va u
+ * har xabar uchun pul talab qiladi, shuning uchun nomi ham "SMS" emas.
+ */
+function LoginStep({ telegramHref, onPhone }: { telegramHref: string; onPhone: () => void }) {
+  const { dict } = useI18n();
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+        <Image src="/logo.svg" alt="" width={140} height={78} priority className="animate-hero-badge" />
+        <h1 className="animate-hero-title mt-2 text-3xl font-extrabold text-text-primary">{dict.auth.loginTitle}</h1>
+        <p className="animate-hero-subtitle text-text-secondary">{dict.auth.loginSubtitle}</p>
+
+        <div className="animate-fade-in-up mt-8 w-full space-y-3" style={{ animationDelay: "0.25s" }}>
+          {/* Asosiy usul — Telegram brend rangida (referensdagidek), chunki
+              u eng tez va foydalanuvchi uchun tanish. */}
+          <a
+            href={telegramHref}
+            className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-[#229ED9] px-6 py-4 text-base font-bold text-white transition active:scale-[0.98]"
+          >
+            <TelegramIcon />
+            {dict.auth.telegramLogin}
+          </a>
+
+          <button
+            type="button"
+            disabled
+            className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-surface-muted px-6 py-4 text-base font-semibold text-text-muted"
+          >
+            <GoogleIcon />
+            {dict.auth.googleLogin}
+            <span className="rounded-full bg-border px-2 py-0.5 text-[10px] font-bold uppercase">
+              {dict.auth.comingSoon}
+            </span>
+          </button>
+
+          <div className="flex items-center gap-3 py-1">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-sm text-text-muted">{dict.auth.orDivider}</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <button
+            type="button"
+            onClick={onPhone}
+            className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-surface-muted px-6 py-4 text-base font-semibold text-text-primary transition active:scale-[0.98]"
+          >
+            <SmsOutlined sx={{ fontSize: 20 }} />
+            {dict.auth.phoneLogin}
+          </button>
+        </div>
+      </div>
+
+      {/* Huquqiy eslatma. DIQQAT: bu aniq rozilikni ALMASHTIRMAYDI —
+          `privacy` qadamidagi belgilash (checkbox) o'z joyida qoladi.
+          Sog'liq ma'lumoti uchun passiv "bosish orqali rozi bo'ldingiz"
+          yetarli emas. */}
+      <p className="shrink-0 pt-6 text-center text-xs leading-relaxed text-text-muted">
+        {dict.auth.legalNoticePrefix}
+        <Link href="/maxfiylik" className="underline">
+          {dict.auth.legalNoticeLink}
+        </Link>
+        {dict.auth.legalNoticeSuffix}
+      </p>
+    </div>
+  );
+}
+
+/** Telegram logotipi — MUI to'plamida yo'q, shuning uchun inline SVG. */
+function TelegramIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M21.9 4.3 18.9 19c-.2 1-.8 1.2-1.7.8l-4.6-3.4-2.2 2.1c-.2.2-.5.4-.9.4l.3-4.7 8.6-7.8c.4-.3-.1-.5-.6-.2L7.3 13.4l-4.5-1.4c-1-.3-1-1 .2-1.4l17.5-6.7c.8-.3 1.5.2 1.4 1z" />
+    </svg>
+  );
+}
+
+/** Google "G" — rasmiy to'rt rangli belgi. */
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.3 13.2 17.6 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-2.8-.4-4.1H24v8.4h12.5c-.3 2.1-1.6 5.2-4.6 7.3l7.6 5.9c4.5-4.2 6.6-10.3 6.6-17.5z" />
+      <path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C1 16.3 0 20 0 24s1 7.7 2.6 10.8l7.9-6.1z" />
+      <path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.5-5.9l-7.6-5.9c-2 1.4-4.7 2.4-7.9 2.4-6.4 0-11.7-3.7-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z" />
+    </svg>
   );
 }

@@ -15,9 +15,11 @@ import {
   EditOutlined,
   Close,
   ArrowForwardOutlined,
+  Add,
+  LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { formatDateDisplay, getCyclePhase, localDateStr, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -28,6 +30,13 @@ import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
+import { TodayHeader, type TodayDay, type TodayDayMarker } from "@/components/screens/TodayHeader";
+import { TodayAssistantCard } from "@/components/screens/TodayAssistantCard";
+import { CheckinDeck } from "@/components/screens/checkin/CheckinDeck";
+import { TodayBackdrop, TodayStatusCircle } from "@/components/screens/TodayBackdrop";
+import { LogSheet } from "@/components/screens/LogSheet";
+import { PeriodCalendar } from "@/components/screens/PeriodCalendar";
+import { PetPicker } from "@/components/pets/PetPicker";
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
@@ -52,11 +61,21 @@ const SYMPTOMS: Symptom[] = [
   "cervical_mucus_change",
 ];
 
+/**
+ * Ekranning tashqi ko'rinishi. Ma'lumot, hisob-kitob va barcha oqimlar
+ * IKKALASIDA HAM bir xil — faqat yuqori blokning taqdimoti farq qiladi.
+ * - "classic" — 2026-09-18 dagi ko'rinish (barcha eski rejimlar).
+ * - "today"   — TODAY-01, foydalanuvchi bergan referens bo'yicha qayta
+ *               bezalgan "Bugun" ekrani (`cycle` va `planning_pregnancy`).
+ */
+export type CycleScreenVariant = "classic" | "today";
+
 /** "Asosiy" (/asosiy) sahifasining Hayz-rejim tarkibi — ilgari alohida /tsikl
  * sahifasi edi, endi rejimga qarab Asosiy ichida ko'rsatiladi. */
-export function CycleScreen() {
+export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVariant } = {}) {
+  const isTodayVariant = variant === "today";
   const { dict } = useI18n();
-  const { onboardingProfile, user } = useSession();
+  const { onboardingProfile, user, applyMeResponse } = useSession();
   const { openDrawer } = useAppDrawer();
   const router = useRouter();
   const [data, setData] = useState<CycleResponse | null>(null);
@@ -84,7 +103,21 @@ export function CycleScreen() {
   // endi bosh ekranda DOIM ko'rinib turmaydi — faqat tegishli tugma/ikonka
   // bosilganda ochiladi (ekranni yengillashtirish, foydalanuvchi so'rovi).
   const [showCheckin, setShowCheckin] = useState(false);
+  // TODAY-02: "today" ko'rinishida Check-in endi sahifa ichidagi kichik
+  // kayfiyat qatori emas, to'liq ekranli karta to'plami (CheckinDeck).
+  const [showCheckinDeck, setShowCheckinDeck] = useState(false);
+  // TODAY-03: yozuv saqlangandan keyin bashorat qayta hisoblanadi — referens
+  // dizaynda bu qisqa "yangilandi" tasdig'i bilan ko'rsatiladi (markaziy blok
+  // o'rnida, bir necha soniya).
+  const [predictionsUpdated, setPredictionsUpdated] = useState(false);
+  // PET-01: uy hayvonini tanlash varag'i — faqat 18 yoshgacha.
+  const [showPetPicker, setShowPetPicker] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  // TODAY-06: kalendar IKKI yo'l bilan ochiladi va ular boshqa-boshqa
+  // maqsadga xizmat qiladi (foydalanuvchi so'rovi):
+  //   • yuqoridagi kalendar ikonkasi → ko'rish (bashorat, fazalar, kun ma'lumoti);
+  //   • "Hayz belgilash" tugmasi   → to'g'ridan-to'g'ri tahrirlash rejimi.
+  const [calendarStartsEditing, setCalendarStartsEditing] = useState(false);
   // OVERNIGHT-17: 7 kunlik chiziqda bir kun bosilganda ilgari to'g'ridan-
   // to'g'ri kalendar-modal ochilardi (foydalanuvchi so'rovi: "kalendar
   // ochilmasdan to'g'ridan-to'g'ri o'tib ketsin"). Endi shu sana uchun
@@ -103,6 +136,12 @@ export function CycleScreen() {
   // ogohlantirishi) yashiriladi, o'rniga simptom kuzatuviga urg'u beriladi.
   const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
   const isWellbeing = onboardingProfile?.primaryGoal === "wellbeing";
+
+  useEffect(() => {
+    if (!predictionsUpdated) return;
+    const timeout = setTimeout(() => setPredictionsUpdated(false), 2500);
+    return () => clearTimeout(timeout);
+  }, [predictionsUpdated]);
 
   const loadCycle = useCallback(() => {
     setLoadError(false);
@@ -154,6 +193,19 @@ export function CycleScreen() {
   }
 
   if (!data) {
+    // TODAY-03: "today" ko'rinishida oddiy spinner o'rniga referensdagi katta
+    // "tahlil qilinmoqda" doirasi — bu birinchi kirishdagi BIRINCHI taassurot,
+    // shuning uchun bo'sh ekran emas, ilovaning o'z ohangidagi holat.
+    if (isTodayVariant) {
+      return (
+        <>
+          <TodayBackdrop />
+          <div className="relative z-10 flex min-h-[70dvh] items-center justify-center">
+            <TodayStatusCircle label={dict.cycle.analyzingLabel} />
+          </div>
+        </>
+      );
+    }
     return <LoadingSpinner label={dict.common.loading} />;
   }
 
@@ -224,6 +276,36 @@ export function CycleScreen() {
     return { date: localDateStr(d), dateObj: d };
   });
 
+  // TODAY-02: BUGUN chiziqning O'RTASIDA turadi (foydalanuvchi so'rovi) — ya'ni
+  // uch kun oldin ... bugun ... uch kun keyin. Kalendar haftasiga bog'lansa,
+  // bugun hafta boshida bo'lgan kunlari chap chekkaga tushib qolardi.
+  const todayWeek: TodayDay[] = (() => {
+    const start = new Date(today + "T00:00:00");
+    start.setDate(start.getDate() - 3);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const date = localDateStr(d);
+      const log = data.logs.find((l) => l.date === date);
+      // Kun ostidagi eng ko'pi bilan ikkita belgi — mavjud emoji xaritalaridan
+      // (yangi ikonka to'plami kiritilmagan).
+      const emojis: string[] = [];
+      if (log?.flow) emojis.push(FLOW_EMOJI[log.flow]);
+      if (log?.mood) emojis.push(MOOD_EMOJI[log.mood]);
+      if (emojis.length < 2 && log?.symptoms.length) emojis.push(SYMPTOM_EMOJI[log.symptoms[0]]);
+
+      let marker: TodayDayMarker =
+        markers[date] === "period" ? "period" : markers[date] === "predicted" ? "predicted" : null;
+      // Unumdor oyna — referensdagi turkuaz kunlar. Faqat boshqa belgi
+      // bo'lmaganda (hayz/bashorat ustunroq).
+      const p = data.prediction;
+      if (!marker && p && !p.isStale && date >= p.fertileWindowStart && date <= p.fertileWindowEnd) {
+        marker = "fertile";
+      }
+      return { date, dateObj: d, marker, emojis };
+    });
+  })();
+
   // 2026-09-18 FIX: "yetarli ma'lumot yo'q" holati ilgari BIR VAQTDA to'rt
   // xil shaklda aytilardi (headline + izoh + Badge + sana-diapazon) — endi
   // shu holat aniqlanib, pastda hammasi BITTA qatorga birlashtiriladi.
@@ -270,6 +352,25 @@ export function CycleScreen() {
                 formatDateDisplay(data.prediction.nextPeriodStartLatest)
               )
             : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod);
+
+  // TODAY-01: referensdagi ikki qatorli markaziy blok ("Period:" / "Day 6").
+  // Shartlar yuqoridagi `heroHeadline` bilan AYNAN bir xil tartibda — ikkala
+  // ko'rinish hech qachon boshqa-boshqa holat ko'rsatmasligi uchun. Ikki
+  // qatorga bo'linmaydigan holatlarda (eskirgan ma'lumot, bashorat yo'q,
+  // tartibsiz sikl, past ishonch) `heroLabel` null bo'ladi va TodayHeader
+  // o'sha bitta tushuntiruvchi qatorni kichikroq shriftda ko'rsatadi.
+  let heroLabel: string | null = null;
+  let heroValue = heroHeadline;
+  if (data.prediction && !data.prediction.isStale) {
+    if (isOnPeriod) {
+      heroLabel = dict.cycle.heroPeriodLabel;
+      heroValue = dict.cycle.heroPeriodDayValue(periodDay!);
+    } else if (!data.isIrregular && !isLowInfoPrediction) {
+      const days = data.prediction.daysUntilNextPeriod;
+      heroLabel = days < 0 ? dict.cycle.heroDelayedLabel : dict.cycle.heroNextPeriodLabel;
+      heroValue = days === 0 ? dict.cycle.heroTodayValue : dict.cycle.heroDaysValue(Math.abs(days));
+    }
+  }
 
   // OVERNIGHT-23: ikkinchi darajali, FAQAT ijobiy ohangdagi BITTA qator —
   // "ma'lumot yo'q"/"yetarli emas" kabi salbiy so'zlar ATAYLAB ishlatilmaydi.
@@ -327,6 +428,12 @@ export function CycleScreen() {
     }
   }
 
+  /** CAL-04: kalendarning tahrirlash rejimida "Saqlash" — belgilangan va
+   * bekor qilingan kunlar BITTA so'rovda qo'llanadi. */
+  async function savePeriodDiff(added: string[], removed: string[]) {
+    setData(await api.cycle.periodDiff({ added, removed }));
+  }
+
   async function pickMood(m: Mood) {
     setMoodSaving(true);
     try {
@@ -370,6 +477,11 @@ export function CycleScreen() {
       const basalBodyTemp = trimmed ? Number(trimmed) : null;
       const res = await api.cycle.logDay({ date: logDate, flow, mood, symptoms, basalBodyTemp });
       setData(res);
+      // TODAY-03: yangi yozuv bashoratni qayta hisoblatadi — foydalanuvchi
+      // buni ko'rishi kerak, aks holda "saqladim, nima o'zgardi?" degan savol
+      // qoladi. Tasdiq bir necha soniyadan keyin o'zi yo'qoladi (quyidagi
+      // effekt), markaziy blok esa yangilangan qiymat bilan qaytadi.
+      setPredictionsUpdated(true);
       setLogging(false);
       setFlow(null);
       setMood(null);
@@ -380,8 +492,106 @@ export function CycleScreen() {
     }
   }
 
-  return (
-    <div className="space-y-5">
+  // TODAY-03: "Ilg'or" (BBT) bo'limi IKKALA ko'rinishda ham bir xil —
+  // to'liq ekranli LogSheet ham, eski modal ham shu bitta JSX'ni
+  // ishlatadi (nusxalanmasligi uchun o'zgaruvchiga chiqarildi).
+  // CYCLE-ALGO-15: BBT — ko'pchilik foydalanuvchi kuzatmaydi, shuning uchun
+  // MAJBURIY emas, "Ilg'or" nomi ostida yashirin/yig'ilgan holatda boshlanadi
+  // (mavjud yozuvda qiymat bo'lsa, avtomatik ochiladi — `openLogging`ga
+  // qarang). Kuzatuvchilar uchun esa (BBT ovulyatsiyani simptomdan ANIQROQ
+  // aniqlaydi) aniqlikni sezilarli oshiradi.
+  const advancedLogFields = (
+    <div>
+      <button
+        type="button"
+        onClick={() => setShowAdvancedLog((v) => !v)}
+        className="flex w-full items-center justify-between text-sm font-semibold text-text-secondary"
+      >
+        {dict.cycle.advancedSectionLabel}
+        <ChevronRight sx={{ fontSize: 18, transform: showAdvancedLog ? "rotate(90deg)" : undefined, transition: "transform 150ms" }} />
+      </button>
+      {showAdvancedLog && (
+        <div className="animate-fade-in-up mt-2 space-y-1.5">
+          <label htmlFor="bbt-input" className="text-xs text-text-muted">
+            {dict.cycle.basalBodyTempLabel}
+          </label>
+          <input
+            id="bbt-input"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min={34}
+            max={42}
+            value={basalBodyTempInput}
+            onChange={(e) => setBasalBodyTempInput(e.target.value)}
+            placeholder="36.50"
+            className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none focus:border-primary"
+          />
+          <p className="text-xs text-text-muted">{dict.cycle.basalBodyTempHint}</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const screen = (
+    <div className={clsx("space-y-5", isTodayVariant && "relative z-10")}>
+      {isTodayVariant ? (
+        <TodayHeader
+          avatarUrl={user?.avatarUrl ?? null}
+          initials={initials}
+          // Bugun hali hech narsa qayd etilmagan bo'lsa — kichik nuqta
+          // (referensdagi bildirishnoma nuqtasining ma'noli muqobili).
+          showAvatarDot={!todayLog}
+          onOpenDrawer={openDrawer}
+          streakDays={streakDays}
+          todayLabel={todayLabel}
+          onOpenCalendar={() => {
+            setCalendarStartsEditing(false);
+            setShowCalendarModal(true);
+          }}
+          days={todayWeek}
+          today={today}
+          selectedDate={viewedDayDetail}
+          onSelectDay={(d) => setViewedDayDetail((cur) => (cur === d ? null : d))}
+          heroLabel={heroLabel}
+          heroValue={heroValue}
+          heroTapHint={heroIsCallToAction ? dict.cycle.heroTapHint : null}
+          onHeroClick={heroIsCallToAction ? heroAction : null}
+          heroStatus={predictionsUpdated ? { label: dict.cycle.predictionsUpdatedLabel, done: true } : null}
+          pet={isMinor ? resolvePet(user?.pet) : null}
+          onPetTap={() => setShowPetPicker(true)}
+          actions={[
+            {
+              key: "flow",
+              // TODAY-02 (foydalanuvchi so'rovi): "Hayz belgilash" endi
+              // to'g'ridan-to'g'ri bugungi forma emas, avval KALENDAR ochadi —
+              // hayz bir necha kun davom etgani uchun ko'pincha bugungi emas,
+              // o'tgan kunlarni belgilash kerak bo'ladi.
+              icon: <EditOutlined sx={{ fontSize: 26 }} />,
+              label: dict.cycle.logFlowButton,
+              onClick: () => {
+                setSelectedDate(today);
+                setCalendarStartsEditing(true);
+                setShowCalendarModal(true);
+              },
+              primary: true,
+            },
+            {
+              key: "symptoms",
+              icon: <Add sx={{ fontSize: 28 }} />,
+              label: dict.cycle.symptomsCardLabel,
+              onClick: () => openLogging(today, todayLog),
+            },
+            {
+              key: "checkin",
+              icon: <LibraryAddCheckOutlined sx={{ fontSize: 26 }} />,
+              label: dict.cycle.checkinButton,
+              onClick: () => setShowCheckinDeck(true),
+            },
+          ]}
+        />
+      ) : (
+        <>
       {/* 1. Yuqori qator — chapda profil-avatar (mavjud AppDrawer'ni ochadi,
           yangi navigatsiya emas), o'rtada bugungi sana, o'ngda faqat bosilganda
           to'liq oy-kalendarini ochadigan ikonka (foydalanuvchi so'rovi: bosh
@@ -463,6 +673,9 @@ export function CycleScreen() {
         })}
       </div>
 
+        </>
+      )}
+
       {/* OVERNIGHT-17: tanlangan kun uchun — faza + o'sha kunga qayd
           etilgan (yoki qayd etilmagan) ma'lumot, "bugungidek" bitta joyda. */}
       {viewedDayDetail &&
@@ -530,6 +743,9 @@ export function CycleScreen() {
             </Card>
           )}
 
+          {/* TODAY-01: "today" ko'rinishida markaziy blokni TodayHeader chizadi. */}
+          {!isTodayVariant && (
+            <>
           {/* 3. Markaziy "hero" bloki — bitta katta matn ustunlik qiladi,
               CycleRing'ning to'liq halqa diagrammasi o'rniga yumshoq,
               sekin-asta "nafas oluvchi" blob-fon (LandingPage'dagi BlobArt
@@ -583,6 +799,8 @@ export function CycleScreen() {
               )}
             </div>
           </button>
+            </>
+          )}
 
           {/* CYCLE-ALGO-12: bashorat qilingan unumdor oyna atrofida — foydalanuvchiga
               ovulyatsiya signalini qayd etishni taklif qiladi (mavjud "add log"
@@ -605,6 +823,8 @@ export function CycleScreen() {
         </>
       )}
 
+      {!isTodayVariant && (
+        <>
       {/* 4. Tezkor amallar — mavjud sikl/simptom/kayfiyat oqimlarining TASHQI
           ko'rinishi shu 3 tugmaga birlashtirildi (hech qanday yangi
           backend/holat mantig'i yozilmagan — ikkinchisi ham birinchisi ham
@@ -627,6 +847,8 @@ export function CycleScreen() {
           onClick={() => setShowCheckin((v) => !v)}
         />
       </div>
+        </>
+      )}
 
       {/* Kunlik kayfiyat so'rovi — endi faqat "Check-in" tugmasi bosilganda
           ko'rinadi (mantiq o'zgarmagan: bosilgan zahoti saqlanadi va
@@ -657,6 +879,10 @@ export function CycleScreen() {
         </div>
       )}
 
+      {/* TODAY-01: referensdagi pastki karta — mavjud AI-yordamchi ekraniga
+          (/yordamchi) olib boradi, yangi backend yozilmagan. */}
+      {isTodayVariant && <TodayAssistantCard />}
+
       {isWellbeing && <WellnessCard />}
 
       {/* 5. Kunlik maslahat kartasi — iliq, "sizga atalgan" ohangdagi matn
@@ -672,7 +898,36 @@ export function CycleScreen() {
           qaysi tugmadan chaqirilishidan qat'iy nazar (hero, "Sikl
           belgilash"/"Simptomlar", kun-tafsilot kartasi, "+ Yozuv qo'shish")
           DOIM zudlik bilan ko'rinadi. */}
-      <Dialog open={logging} onClose={() => setLogging(false)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: "28px" } } }}>
+      {/* TODAY-03: "today" ko'rinishida yozuv formasi kichik modal emas,
+          to'liq ekranli varaq (LogSheet) — referens dizayn. Mantiq bir xil:
+          ikkalasi ham shu komponentdagi `flow/mood/symptoms` holatini
+          o'zgartiradi va bir xil `saveLog`ni chaqiradi. */}
+      {isTodayVariant && logging && (
+        <LogSheet
+          date={logDate}
+          today={today}
+          onChangeDate={(d) => openLogging(d, data.logs.find((l) => l.date === d))}
+          flowLevels={FLOW_LEVELS}
+          flow={flow}
+          onToggleFlow={(f) => setFlow(flow === f ? null : f)}
+          symptomList={SYMPTOMS}
+          symptoms={symptoms}
+          onToggleSymptom={(sym) =>
+            setSymptoms((cur) => (cur.includes(sym) ? cur.filter((x) => x !== sym) : [...cur, sym]))
+          }
+          moods={MOODS}
+          mood={mood}
+          onToggleMood={(m) => setMood(mood === m ? null : m)}
+          advanced={advancedLogFields}
+          onClose={() => setLogging(false)}
+          onSave={saveLog}
+          onDelete={data.logs.some((l) => l.date === logDate) ? removeLog : null}
+          saving={saving}
+          deleting={deletingLog}
+        />
+      )}
+
+      <Dialog open={logging && !isTodayVariant} onClose={() => setLogging(false)} fullWidth maxWidth="xs" slotProps={{ paper: { sx: { borderRadius: "28px" } } }}>
         <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontWeight: 700 }}>
           {dict.cycle.dailyCheckinTitle}
           <button
@@ -732,42 +987,7 @@ export function CycleScreen() {
             </div>
           </div>
 
-          {/* CYCLE-ALGO-15: BBT — ko'pchilik foydalanuvchi kuzatmaydi, shuning
-              uchun MAJBURIY emas, "Ilg'or" nomi ostida yashirin/yig'ilgan
-              holatda boshlanadi (mavjud yozuvda qiymat bo'lsa, avtomatik
-              ochiladi — `openLogging`ga qarang). Kuzatuvchilar uchun esa
-              (BBT ovulyatsiyani simptomdan ANIQROQ aniqlaydi) aniqlikni
-              sezilarli oshiradi. */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowAdvancedLog((v) => !v)}
-              className="flex w-full items-center justify-between text-sm font-semibold text-text-secondary"
-            >
-              {dict.cycle.advancedSectionLabel}
-              <ChevronRight sx={{ fontSize: 18, transform: showAdvancedLog ? "rotate(90deg)" : undefined, transition: "transform 150ms" }} />
-            </button>
-            {showAdvancedLog && (
-              <div className="animate-fade-in-up mt-2 space-y-1.5">
-                <label htmlFor="bbt-input" className="text-xs text-text-muted">
-                  {dict.cycle.basalBodyTempLabel}
-                </label>
-                <input
-                  id="bbt-input"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  min={34}
-                  max={42}
-                  value={basalBodyTempInput}
-                  onChange={(e) => setBasalBodyTempInput(e.target.value)}
-                  placeholder="36.50"
-                  className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none focus:border-primary"
-                />
-                <p className="text-xs text-text-muted">{dict.cycle.basalBodyTempHint}</p>
-              </div>
-            )}
-          </div>
+          {advancedLogFields}
 
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => setLogging(false)} disabled={saving || deletingLog}>
@@ -894,12 +1114,29 @@ export function CycleScreen() {
         </DialogContent>
       </Dialog>
 
+      {/* CAL-01: "today" ko'rinishida kalendar to'liq ekranli va TAHRIRLASH
+          imkoniyatiga ega (referens dizayn). "classic" ko'rinish quyidagi eski
+          modalni o'zgarishsiz ishlatishda davom etadi. */}
+      {isTodayVariant && showCalendarModal && (
+        <PeriodCalendar
+          data={data}
+          today={today}
+          onSavePeriodDiff={savePeriodDiff}
+          initialEditing={calendarStartsEditing}
+          onOpenLog={(date) => {
+            setShowCalendarModal(false);
+            openLogging(date, data.logs.find((l) => l.date === date));
+          }}
+          onClose={() => setShowCalendarModal(false)}
+        />
+      )}
+
       {/* To'liq oy-kalendari — endi doim ko'rinib turmaydi, faqat yuqori
           qatordagi kalendar-ikonkasi yoki 7 kunlik chiziqdagi biror kun
           bosilganda bottom-sheet sifatida ochiladi (foydalanuvchi so'rovi).
           MonthCalendar'ning o'zi o'zgartirilmagan. */}
       <Dialog
-        open={showCalendarModal}
+        open={showCalendarModal && !isTodayVariant}
         onClose={() => setShowCalendarModal(false)}
         fullWidth
         maxWidth="xs"
@@ -947,9 +1184,57 @@ export function CycleScreen() {
               <PhaseCard phase={selectedPhase} />
             </div>
           )}
+          {/* TODAY-02: kalendar endi faqat ko'rish uchun emas — tanlangan kunni
+              shu yerdan belgilash mumkin (kalendar yopiladi va o'sha kun uchun
+              mavjud yozuv formasi ochiladi). */}
+          {(() => {
+            const selectedLog = data.logs.find((l) => l.date === selectedDate);
+            return (
+              <Button
+                onClick={() => {
+                  setShowCalendarModal(false);
+                  openLogging(selectedDate, selectedLog);
+                }}
+                className="w-full"
+              >
+                {selectedLog ? dict.cycle.detailedLogButton : dict.cycle.dayDetailLogButton}
+              </Button>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
+  );
+
+  const petPicker = isTodayVariant && isMinor && showPetPicker && (
+    <PetPicker
+      current={user?.pet ?? null}
+      onSelect={async (pet) => applyMeResponse(await api.me.update({ pet }))}
+      onClose={() => setShowPetPicker(false)}
+    />
+  );
+
+  const deck = isTodayVariant && showCheckinDeck && (
+    <CheckinDeck
+      onClose={() => setShowCheckinDeck(false)}
+      todayMood={todayLog?.mood ?? null}
+      onPickMood={pickMood}
+    />
+  );
+
+  if (!isTodayVariant) return screen;
+
+  // TODAY-01/03: butun ekranni qoplaydigan, sekin harakatlanuvchi fon.
+  // `fixed` + aniq z-index — sahifa qatlamlari (PageTransition) stacking
+  // context yaratishi mumkinligi uchun manfiy z-index'ga tayanmaymiz:
+  // fon z-0, mazmun esa z-10 (yuqoridagi `relative z-10`).
+  return (
+    <>
+      <TodayBackdrop />
+      {screen}
+      {deck}
+      {petPicker}
+    </>
   );
 }
 

@@ -4,16 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { BloodType, BlockedUserEntry, CycleResponse, Goal, Language } from "@mammoai/shared";
-import { BLOOD_TYPES, getModeAccentColors } from "@mammoai/shared";
+import { BLOOD_TYPES, getModeAccentColors, resolvePet } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Card, ErrorState } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { AchievementsCard } from "@/components/AchievementsCard";
+import { PetArt } from "@/components/pets/PetArt";
+import { PetPicker } from "@/components/pets/PetPicker";
 import { Switch, Select, MenuItem, Dialog, DialogTitle, DialogContent } from "@mui/material";
 import clsx from "clsx";
-import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, Brightness6Outlined as ThemeIcon, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen } from "@mui/icons-material";
+import { PhotoCameraOutlined as Camera, Check, EditOutlined as Pencil, FormatSizeOutlined as Type, Brightness6Outlined as ThemeIcon, AccessTimeOutlined as CalendarClock, EditNoteOutlined as NotebookPen, PetsOutlined, ChevronRight } from "@mui/icons-material";
 
 const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight" | "themeDark" | "themeSystem"; emoji: string }[] = [
   { value: "light", labelKey: "themeLight", emoji: "☀️" },
@@ -70,6 +72,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [showPetPicker, setShowPetPicker] = useState(false);
   const [editingHeader, setEditingHeader] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
 
@@ -374,6 +377,34 @@ export default function ProfilePage() {
 
       <AchievementsCard />
 
+
+
+      {/* PET-01: uy hayvoni — FAQAT 18 yoshgacha. Bosh ekranda hayvon
+          tanlanmagan bo'lsa ko'rinmaydi, shuning uchun uni topish yo'li
+          aynan shu yer. */}
+      {!!onboardingProfile && onboardingProfile.age < 18 && (
+        <Card className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowPetPicker(true)}
+            className="tap-target flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-surface-muted active:scale-95"
+          >
+            {resolvePet(user?.pet) ? (
+              <PetArt pet={resolvePet(user?.pet)!} size={56} />
+            ) : (
+              <PetsOutlined sx={{ fontSize: 28 }} className="text-text-muted" />
+            )}
+          </button>
+          <button type="button" onClick={() => setShowPetPicker(true)} className="min-w-0 flex-1 text-left">
+            <p className="font-bold text-text-primary">{dict.pets.sectionTitle}</p>
+            <p className="text-sm text-text-secondary">
+              {resolvePet(user?.pet) ? dict.pets.names[resolvePet(user?.pet)!] : dict.pets.none}
+            </p>
+          </button>
+          <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
+        </Card>
+      )}
+
       {onboardingProfile && (
         <Card className="space-y-3">
           <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{dict.profile.modeTitle}</p>
@@ -591,6 +622,17 @@ export default function ProfilePage() {
         </Card>
       </Link>
 
+      {/* PRIV-02: o'z ma'lumotini yuklab olish huquqi. Oddiy havola —
+          brauzerning o'zi faylni yuklab oladi (`Content-Disposition:
+          attachment`), shuning uchun hech qanday JS holati kerak emas. */}
+      <a href="/api/me/export" download>
+        <Card interactive className="space-y-1">
+          <SettingsRow icon="📥" label={dict.profile.exportDataLabel} last>
+            <span className="text-sm text-text-secondary">{dict.profile.exportDataHint}</span>
+          </SettingsRow>
+        </Card>
+      </a>
+
       {/* COMM-001: jamiyatda bloklangan hisoblarni boshqarish. */}
       <button type="button" onClick={openBlockedList} className="w-full text-left">
         <Card interactive className="space-y-1">
@@ -707,6 +749,17 @@ export default function ProfilePage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {showPetPicker && (
+        <PetPicker
+          current={user?.pet ?? null}
+          onSelect={async (pet) => {
+            await api.me.update({ pet });
+            await refresh();
+          }}
+          onClose={() => setShowPetPicker(false)}
+        />
+      )}
     </div>
   );
 }

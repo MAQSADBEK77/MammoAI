@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined, WorkspacePremiumRounded } from "@mui/icons-material";
 import type { ChatMessage, InsightsSummary, SymptomPattern } from "@mammoai/shared";
@@ -54,6 +54,17 @@ export function YordamchiScreen() {
 
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [draft, setDraft] = useState("");
+  // TODAY-05: bosh ekrandagi yordamchi kartasidan tayyor savol bilan kelish
+  // mumkin (`/yordamchi?q=...`) — foydalanuvchi savolni qayta yozib
+  // o'tirmasin. Matn maydonga QO'YILADI, lekin avtomatik YUBORILMAYDI:
+  // yuborishdan oldin uni tahrirlash imkoni qolishi kerak.
+  const searchParams = useSearchParams();
+  const prefill = searchParams.get("q");
+  useEffect(() => {
+    if (!prefill) return;
+    const timeout = setTimeout(() => setDraft(prefill), 0);
+    return () => clearTimeout(timeout);
+  }, [prefill]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [patterns, setPatterns] = useState<SymptomPattern[]>([]);

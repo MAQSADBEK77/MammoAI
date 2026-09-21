@@ -355,11 +355,246 @@ body {
   animation: motion-float 5s ease-in-out infinite;
 }
 
+/* TODAY-01: "Bugun" ekranining butun sahifani qoplovchi yumshoq gradienti.
+   Rang QATTIQ yozilmagan — rejim tokeni (--color-primary) fon rangi bilan
+   aralashtiriladi, shuning uchun `cycle` rejimida referensdagi pushti,
+   `planning_pregnancy`da o'sha rejimning turkuazi chiqadi va qorong'u
+   rejimda ham o'zidan-o'zi to'g'ri ishlaydi. */
+.today-backdrop {
+  /* TODAY-06: qiymatlar TAXMIN emas — referens skrinshotdan piksel ranglari
+     o'lchab olindi (chap chekka #FFF3F5 → markaz #FFE0E6 → o'ng chekka
+     #FDB6C6 ≈ primary'ning 4% / 10% / 28% aralashmasi).
+
+     Ikkita qatlam:
+       1) DIAGONAL gradient — yuqori-chapda deyarli oq, o'ng-pastga qarab
+          to'yinadi (o'lchov: bir xil balandlikda chapdan o'ngga #FEEEF1 →
+          #FDBBC9, ya'ni gorizontal farq vertikaldan KUCHLIROQ — men avval
+          buni sof vertikal deb o'ylab xato qilgandim);
+       2) markazda katta OCHIQ radial dog' — referensdagi "Day 6" atrofidagi
+          yorug' maydon aynan shu (o'lchov: y=1000 qatorida butun ekran
+          #FFE0E6, ya'ni undan yuqori va pastdagidan OCHIQROQ). */
+  background:
+    radial-gradient(
+      64% 30% at 44% 46%,
+      color-mix(in srgb, var(--color-primary) 5%, var(--color-background)) 0%,
+      transparent 75%
+    ),
+    linear-gradient(
+      158deg,
+      color-mix(in srgb, var(--color-primary) 3%, var(--color-background)) 0%,
+      color-mix(in srgb, var(--color-primary) 16%, var(--color-background)) 48%,
+      color-mix(in srgb, var(--color-primary) 29%, var(--color-background)) 100%
+    );
+}
+
+/* TODAY-05: yordamchi oynasining ochilishi. Ikki bosqich, referensdagidek:
+   avval karta pastdan SILJIB chiqadi (assistant-rise), ichida "yozmoqda"
+   nuqtalari turadi; bir necha soniyadan keyin nuqtalar o'rnini haqiqiy xabar
+   egallaydi va karta balandligi SILLIQ o'sadi.
+
+   Balandlik `max-height` bilan emas, `grid-template-rows: 0fr → 1fr` bilan
+   animatsiya qilinadi: `max-height`da aniq qiymatni oldindan bilish kerak
+   (matn uzunligi tilga qarab o'zgaradi — ru/en'da uzunroq), taxminiy katta
+   qiymat esa animatsiyani "sakragan" qilib qo'yardi. `grid` usuli haqiqiy
+   mazmun balandligini o'zi hisoblaydi. */
+@keyframes assistant-rise {
+  from {
+    translate: 0 100%;
+    opacity: 0;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+.assistant-rise {
+  animation: assistant-rise 420ms var(--motion-ease-brand) both;
+}
+
+/* Xabar pufakchalari birin-ketin chiqadi — bir vaqtda paydo bo'lgani
+   "sahifa sakradi" degan taassurot berardi. */
+@keyframes assistant-bubble {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+.assistant-bubble {
+  animation: assistant-bubble 320ms var(--motion-ease-brand) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-rise,
+  .assistant-bubble {
+    animation: none;
+  }
+}
+
+/* PET-03: bosh ekrandagi hayvon — "tirik" ko'rinishi uchun ikkita
+   MUSTAQIL harakat: yumshoq sakrash (pet-hop) va sal chayqalish (pet-sway).
+   Davrlari karrali EMAS (3.4s / 5.1s), shuning uchun takrorlanish sezilmaydi
+   va harakat mexanik ko'rinmaydi. Bosilganda `pet-pounce` — bir martalik,
+   o'ynoqi javob (bolalar uchun mo'ljallangan, shuning uchun reduced-motion'da
+   ham qoladi: bu ambient bezak emas, bevosita fidbek). */
+@keyframes pet-hop {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  35% {
+    translate: 0 -8%;
+  }
+  55% {
+    translate: 0 0;
+  }
+  70% {
+    translate: 0 -3%;
+  }
+}
+
+@keyframes pet-sway {
+  0%,
+  100% {
+    rotate: -3deg;
+  }
+  50% {
+    rotate: 3deg;
+  }
+}
+
+.pet-idle {
+  animation:
+    pet-hop 3.4s ease-in-out infinite,
+    pet-sway 5.1s ease-in-out infinite;
+  transform-origin: 50% 90%;
+  will-change: translate, rotate;
+}
+
+@keyframes pet-pounce {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.18;
+    rotate: -6deg;
+  }
+  70% {
+    scale: 0.95;
+    rotate: 4deg;
+  }
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+.pet-pounce {
+  animation: pet-pounce 520ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-idle {
+    animation: none;
+  }
+}
+
+/* CAL-03: kalendarda hayz davri belgilanganda kunlar BIRIN-KETIN to'ladi —
+   har bir kun o'z `animation-delay`i bilan. `backwards` fill-mode SHART:
+   usiz element kechikish tugaguncha allaqachon to'la ko'rinib turardi, ya'ni
+   hech qanday ketma-ketlik sezilmasdi. Bu bevosita foydalanuvchi bosishiga
+   javob (ambient bezak emas), lekin 5 ta kun ketma-ket sakraganda
+   harakatga sezgir foydalanuvchi uchun kuchli bo'lishi mumkin — shuning
+   uchun reduced-motion'da kunlar DARHOL, animatsiyasiz to'ladi. */
+@keyframes day-fill {
+  from {
+    scale: 0.2;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+.day-fill {
+  animation: day-fill 260ms var(--motion-ease-brand) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .day-fill {
+    animation: none;
+  }
+}
+
+/* TODAY-05: "Bugun" ekranining foni — referens skrinshotga imkon qadar yaqin.
+   Ikki marta xato qildim, sabablari shu yerda yozib qo'yilsin:
+     1-urinish: juda katta blur + juda past shaffoflik → "soya"dek, harakat
+                sezilmasdi;
+     2-urinish: shaffoflikni ko'targanim bilan blur (28px) qoldi → shakllar
+                bulanib, referensdagi ANIQ yoy-chiziqlari umuman yo'qoldi.
+   Referensda esa aynan shu: bir xil rang oilasidagi, o'zaro FARQI JUDA KAM
+   (8–12%) bo'lgan YIRIK doiralar, qirralari esa yumshoq, lekin KO'RINADI.
+   Shuning uchun: to'liq doira (border-radius 50%), past shaffoflik, kichik
+   blur (10px) — qirra saqlanadi, lekin chetlari tishli bo'lib qolmaydi.
+
+   Doira aylanganda ko'rinish o'zgarmagani uchun `rotate` OLIB TASHLANDI —
+   faqat `translate` va `scale` qoladi (kompozitor darajasida, repaint yo'q). */
+@keyframes today-blob-drift {
+  0%,
+  100% {
+    translate: 0 0;
+    scale: 1;
+  }
+  50% {
+    translate: 4% 3%;
+    scale: 1.08;
+  }
+}
+
+.today-blob {
+  position: absolute;
+  border-radius: 50%;
+  /* Yorug'lik dog'lari uchun blur kattaroq: ular referensda QIRRA emas,
+     yumshoq o'tish hosil qiladi. */
+  filter: blur(46px);
+  animation: today-blob-drift 34s ease-in-out infinite;
+  will-change: translate, scale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .today-blob {
+    animation: none;
+  }
+}
+
+/* TODAY-01: yordamchi kartasidagi "yozmoqda" uchtа nuqtasi — ambient
+   (bevosita bosishga javob emas) dekorativ animatsiya, shuning uchun
+   reduced-motion'da to'xtaydi, lekin nuqtalar KO'RINIB qoladi. */
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+.typing-dot {
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-ticker-track,
   .motion-breathe,
   .motion-float,
-  .bg-landing-cta {
+  .bg-landing-cta,
+  .today-blob,
+  .typing-dot {
     animation: none;
   }
 }

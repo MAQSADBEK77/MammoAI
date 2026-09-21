@@ -359,6 +359,20 @@ async function initSchema() {
     // "Sog'liqni nazorat qilish" (wellbeing) rejimi — kunlik suv/kaloriya
     // jurnali. pregnancy_kicks bilan bir xil naqsh (bitta qator/kun, upsert
     // orqali increment qilinadi).
+    // TODAY-02: kunlik "Check-in" kartalariga berilgan "Ha/Yo'q" javoblari.
+    // `question_key` — packages/shared/src/logic/checkin.ts'dagi BARQAROR kalit
+    // (savol matni o'zgarsa ham o'zgarmaydi). Kun + savol bo'yicha yagona —
+    // foydalanuvchi fikrini o'zgartirsa, javob YANGILANADI (dublikat emas).
+    sql`
+      CREATE TABLE IF NOT EXISTS checkin_answers (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        question_key TEXT NOT NULL,
+        answer BOOLEAN NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, date, question_key)
+      )
+    `,
     sql`
       CREATE TABLE IF NOT EXISTS wellness_logs (
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -585,6 +599,8 @@ async function initSchema() {
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lat DOUBLE PRECISION`,
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lng DOUBLE PRECISION`,
     sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_at TEXT`,
+    // PET-01: bosh ekrandagi uy hayvoni (faqat 18 yoshgacha) — sof bezak.
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS pet TEXT`,
     // CYCLE-ALGO-15: bazal tana harorati (BBT) — ixtiyoriy, "Ilg'or" bo'lim
     // orqali kunlik yozuvga qo'shiladi. Ovulyatsiyani simptomdan ANIQROQ
     // aniqlash uchun (cycle.ts#detectOvulationFromBbt).
