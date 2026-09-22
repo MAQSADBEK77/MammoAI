@@ -1436,7 +1436,7 @@ function SectionProgress({
 }
 
 function StepTitle({ children }: { children: ReactNode }) {
-  return <StepTitle>{children}</StepTitle>;
+  return <h2 className="text-xl font-bold leading-snug text-text-primary">{children}</h2>;
 }
 
 function LangOption({ flag, label, active, onClick }: { flag: string; label: string; active: boolean; onClick: () => void }) {
