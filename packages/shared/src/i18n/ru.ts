@@ -334,6 +334,8 @@ const ru: Dictionary = {
     heroPeriodDayValue: (day: number) => `${day}-й день`,
     heroNextPeriodLabel: "Следующие:",
     heroDelayedLabel: "Задержка:",
+    heroPeriodStartedQuestion: "Месячные начались?",
+    heroPeriodStartedCta: "Да, отметить сегодня",
     heroTodayValue: "Сегодня",
     heroDaysValue: (days: number) => `${days} дн.`,
     assistantCardTitle: "Помощник MammoAI",

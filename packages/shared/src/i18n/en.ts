@@ -336,6 +336,8 @@ const en: Dictionary = {
     heroPeriodDayValue: (day: number) => `Day ${day}`,
     heroNextPeriodLabel: "Next period:",
     heroDelayedLabel: "Delayed:",
+    heroPeriodStartedQuestion: "Has your period started?",
+    heroPeriodStartedCta: "Yes, log it today",
     heroTodayValue: "Today",
     heroDaysValue: (days: number) => `${days} days`,
     assistantCardTitle: "MammoAI Assistant",

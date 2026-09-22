@@ -452,9 +452,31 @@ export function deriveAdaptiveCycleSettings(
   // uchun ADAPTIVE_MIN_CYCLES konstantasi shunchaki olib tashlandi, xatti-
   // harakat bu yerda o'zgarmagan).
   if (lengths.length === 0) {
-    if (!fallback.lastPeriodStart) return null;
+    // CYCLE-ALGO-20: sikl UZUNLIGI hali noma'lum (gap hisoblash uchun kamida
+    // ikkita boshlanish kerak), lekin bitta haqiqiy hayz QAYD ETILGAN bo'lsa,
+    // hech bo'lmaganda LANGAR shundan olinadi.
+    //
+    // Ilgari bu shoxda doim `fallback.lastPeriodStart` — ya'ni onboarding'dagi
+    // "oxirgi marta qachon hayz ko'rgansiz?" javobi — ishlatilardi. O'sha
+    // qiymat `cycle_settings`da saqlanadi va hayz belgilanganda ham,
+    // o'chirilganda ham HECH QACHON yangilanmaydi (repo.ts faqat
+    // `cycle_logs`ga yozadi). Natijada birinchi hayzini sidqidildan qayd
+    // qilgan ayolning bashorati baribir eski onboarding sanasiga bog'langan
+    // bo'lib qolardi — qayd qilish HECH NARSANI o'zgartirmasdi. Bu butun
+    // "ma'lumot yig'ish" halqasining uzilgan joyi edi.
+    //
+    // Endi tartib: HAQIQIY qayd > onboarding javobi. Barcha qaydlar
+    // o'chirilsa, `starts` bo'shaydi va onboarding javobiga qaytiladi — u ham
+    // ayolning o'z gapi, shuning uchun uni tashlab yuborish noto'g'ri bo'lardi.
+    const lastStart = starts[starts.length - 1] ?? fallback.lastPeriodStart;
+    if (!lastStart) return null;
+    // DAVOMIYLIK bu yerda qaydlardan OLINMAYDI — ataylab. Bitta qayd etilgan
+    // hayzdan uzunlik chiqarish ishonchsiz: ayollar ko'pincha faqat BIRINCHI
+    // kunni belgilab, keyin belgilashni unutadi, va "hayzi 1 kun" degan
+    // xulosa ahvolni yomonlashtirardi. Uzunlik pastdagi asosiy shoxda —
+    // bir necha sikl bo'yicha o'rtacha sifatida — o'rganiladi.
     return {
-      lastPeriodStart: fallback.lastPeriodStart,
+      lastPeriodStart: lastStart,
       averageCycleLength: fallback.averageCycleLength || DEFAULT_CYCLE_LENGTH,
       averagePeriodLength: fallback.averagePeriodLength || DEFAULT_PERIOD_LENGTH,
       cyclesAnalyzed: 0,

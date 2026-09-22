@@ -143,6 +143,38 @@ describe("deriveAdaptiveCycleSettings", () => {
     });
   });
 
+  it("CYCLE-ALGO-20: bitta hayz qayd etilgan bo'lsa, langar QAYDdan olinadi", () => {
+    // Ayol onboarding'da "oxirgi hayzim 1-yanvarda" degan, keyin ilovada
+    // 1-martdagi hayzini qayd etgan. Ilgari bashorat baribir 1-yanvarga
+    // bog'langan bo'lib qolardi — ya'ni qayd qilish HECH NARSANI
+    // o'zgartirmasdi va butun ma'lumot yig'ish halqasi uzilgan edi.
+    const logs = [
+      { date: "2026-03-01", flow: "medium" as const },
+      { date: "2026-03-02", flow: "medium" as const },
+    ];
+    const result = deriveAdaptiveCycleSettings(logs, {
+      lastPeriodStart: "2026-01-01",
+      averageCycleLength: 30,
+      averagePeriodLength: 6,
+    });
+    expect(result?.lastPeriodStart).toBe("2026-03-01");
+    // Sikl uzunligi hali noma'lum (gap uchun ikkita boshlanish kerak) —
+    // onboarding qiymati saqlanadi, ishonch esa "insufficient".
+    expect(result?.averageCycleLength).toBe(30);
+    expect(result?.confidence).toBe("insufficient");
+  });
+
+  it("CYCLE-ALGO-20: hech qanday qayd bo'lmasa onboarding javobiga qaytadi", () => {
+    // Barcha qaydlarni o'chirgan foydalanuvchi. Onboarding javobi ham
+    // ayolning O'Z gapi, shuning uchun uni tashlab yuborish noto'g'ri.
+    const result = deriveAdaptiveCycleSettings([], {
+      lastPeriodStart: "2026-01-01",
+      averageCycleLength: 30,
+      averagePeriodLength: 6,
+    });
+    expect(result?.lastPeriodStart).toBe("2026-01-01");
+  });
+
   it("lastPeriodStart umuman bo'lmasa null qaytaradi", () => {
     const result = deriveAdaptiveCycleSettings([], { lastPeriodStart: null, averageCycleLength: 28, averagePeriodLength: 5 });
     expect(result).toBeNull();

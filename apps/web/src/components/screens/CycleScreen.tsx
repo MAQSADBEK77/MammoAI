@@ -417,7 +417,22 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // TASHLANDI — ularning ma'nosi endi to'g'ridan-to'g'ri sarlavhaning
   // o'ziga singdirilgan.
   const isOnPeriod = periodDay !== null;
-  const heroHeadline = data.prediction?.isStale
+
+  // 0-BOSQICH: kutilgan sana KELGAN yoki O'TGAN, lekin hech narsa qayd
+  // etilmagan. Ilgari bunday holatda hero "Kechikmoqda: 3 kun" deb yozardi —
+  // bu DA'VO, va u xato bo'lishi mumkin: ilova faqat hech narsa
+  // belgilanmaganini biladi, hayz boshlanganmi yoki yo'qmi — bilmaydi.
+  // Ayolning o'zidan so'rash ham halolroq, ham eng qimmatli ma'lumot
+  // yig'iladigan LAHZA (aynan shu kuni javob berish oson).
+  const periodExpectedButUnlogged =
+    !!data.prediction &&
+    !data.prediction.isStale &&
+    data.prediction.daysUntilNextPeriod <= 0 &&
+    !isOnPeriod;
+
+  const heroHeadline = periodExpectedButUnlogged
+    ? dict.cycle.heroPeriodStartedQuestion
+    : data.prediction?.isStale
     ? dict.cycle.staleDataLabel
     : !data.prediction
       ? dict.cycle.ringEmptyLabel
@@ -445,7 +460,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // o'sha bitta tushuntiruvchi qatorni kichikroq shriftda ko'rsatadi.
   let heroLabel: string | null = null;
   let heroValue = heroHeadline;
-  if (data.prediction && !data.prediction.isStale) {
+  if (data.prediction && !data.prediction.isStale && !periodExpectedButUnlogged) {
     if (isOnPeriod) {
       heroLabel = dict.cycle.heroPeriodLabel;
       heroValue = dict.cycle.heroPeriodDayValue(periodDay!);
@@ -469,8 +484,14 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // holda (ma'lumot bor, faqat kam) — kunlik yozuv qo'shish (`openLogging`,
   // o'zgarishsiz). Bugun uchun yozuv ALLAQACHON mavjud bo'lsa (`hasTodayLog`),
   // qayta bosish hech narsani o'zgartirmaydi — bosilmaydigan.
-  const heroIsCallToAction = (!data.prediction || isLowInfoPrediction || !!data.prediction.isStale) && !hasTodayLog;
+  const heroIsCallToAction =
+    (!data.prediction || isLowInfoPrediction || !!data.prediction.isStale || periodExpectedButUnlogged) && !hasTodayLog;
   const heroAction = !data.prediction ? openEditLastPeriod : () => openLogging(today, todayLog);
+  // Savol berilayotgan bo'lsa, chaqiruv ham ANIQ javob bo'lsin ("Ha, bugun
+  // belgilash") — umumiy "Bosing va boshlang" bu yerda savolga javob bermaydi.
+  const heroTapHintText = periodExpectedButUnlogged
+    ? dict.cycle.heroPeriodStartedCta
+    : dict.cycle.heroTapHint;
 
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
@@ -639,7 +660,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           onSelectDay={(d) => setViewedDayDetail((cur) => (cur === d ? null : d))}
           heroLabel={heroLabel}
           heroValue={heroValue}
-          heroTapHint={heroIsCallToAction ? dict.cycle.heroTapHint : null}
+          heroTapHint={heroIsCallToAction ? heroTapHintText : null}
           onHeroClick={heroIsCallToAction ? heroAction : null}
           heroStatus={predictionsUpdated ? { label: dict.cycle.predictionsUpdatedLabel, done: true } : null}
           pet={isMinor ? resolvePet(user?.pet) : null}
@@ -867,7 +888,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
                   qo'shildi. */}
               {heroIsCallToAction && (
                 <p className="mt-2 flex items-center justify-center gap-1 text-sm font-bold text-primary">
-                  {dict.cycle.heroTapHint}
+                  {heroTapHintText}
                   <ArrowForwardOutlined sx={{ fontSize: 16 }} />
                 </p>
               )}

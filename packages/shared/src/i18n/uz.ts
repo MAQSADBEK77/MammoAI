@@ -370,6 +370,11 @@ const uz = {
     heroPeriodDayValue: (day: number) => `${day}-kun`,
     heroNextPeriodLabel: "Keyingi hayz:",
     heroDelayedLabel: "Kechikmoqda:",
+    /** 0-BOSQICH: kutilgan sana kelgan, lekin hech narsa qayd etilmagan.
+     * Ilova "kechikmoqda" deb DA'VO qila olmaydi — u faqat hech narsa
+     * belgilanmaganini biladi, hayz boshlangan-boshlanmaganini emas. */
+    heroPeriodStartedQuestion: "Hayzingiz boshlandimi?",
+    heroPeriodStartedCta: "Ha, bugun belgilash",
     heroTodayValue: "Bugun",
     heroDaysValue: (days: number) => `${days} kun`,
     assistantCardTitle: "MammoAI yordamchisi",
