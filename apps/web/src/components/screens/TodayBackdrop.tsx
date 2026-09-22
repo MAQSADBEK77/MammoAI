@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { CheckOutlined } from "@mui/icons-material";
+import type { CyclePhase } from "@mammoai/shared";
 
 /**
  * TODAY-06 — "Bugun" ekranining foni.
@@ -19,12 +20,37 @@ import { CheckOutlined } from "@mui/icons-material";
  * shaffoflik bilan), shuning uchun sekin suzganda ekran bo'ylab yumshoq
  * yorug'lik oqimi hosil bo'ladi — referensdagi yoy-chiziqlar shundan.
  *
- * Rang `--color-primary` tokeniga bog'langan, ya'ni fon REJIMGA ergashadi:
- * hayz rejimida pushti, "homiladorlikka tayyorgarlik"da yalpiz-turkuaz.
+ * TODAY-08 (foydalanuvchi so'rovi, referens bilan): rang endi REJIMGA emas,
+ * ayolning HOZIRGI FAZASIGA ergashadi — hayz kunlari pushti, undan keyingi
+ * kunlar iliq sariq, va hokazo. Referensda ham aynan shunday: "Period in 6
+ * days" ekrani shaftoli-sariq, hayz kunlari esa pushti.
+ *
+ * Ranglar PhaseCard bilan BIR XIL manbadan (menstrual=primary,
+ * follicular=secondary, ovulation=accent, luteal=warning) — bir faza ilovaning
+ * turli joylarida turli rangda ko'rinmasligi uchun.
+ *
+ * `phase` berilmasa (homiladorlik/perimenopauza rejimi yoki ma'lumot yo'q)
+ * avvalgidek `--color-primary`ga qaytadi, ya'ni fon REJIM rangini oladi.
  */
-export function TodayBackdrop() {
+const PHASE_TINT: Record<CyclePhase, string> = {
+  menstrual: "var(--color-primary)",
+  follicular: "var(--color-secondary)",
+  ovulation: "var(--color-accent)",
+  luteal: "var(--color-warning)",
+};
+
+export function TodayBackdrop({ phase }: { phase?: CyclePhase | null }) {
+  // CSS o'zgaruvchisi sifatida beriladi: gradient globals.css'da, shakllar esa
+  // shu yerda — ikkalasi BITTA qiymatdan oziqlanishi kerak.
+  const tint = phase ? PHASE_TINT[phase] : undefined;
+  const shade = (pct: number) => `color-mix(in srgb, var(--today-tint, var(--color-primary)) ${pct}%, transparent)`;
+
   return (
-    <div aria-hidden className="today-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    <div
+      aria-hidden
+      style={tint ? ({ "--today-tint": tint } as React.CSSProperties) : undefined}
+      className="today-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden"
+    >
       {/* Markaziy yorug' maydon — "Day 6" atrofidagi ochiq soha. Eng yirik
           va eng sezilarli shakl. */}
       <span
@@ -40,8 +66,8 @@ export function TodayBackdrop() {
       {/* Pastki-o'ngdagi YAGONA to'yintiruvchi shakl — o'sha burchak
           referensda eng to'q joy. */}
       <span
-        className="today-blob bottom-[-35%] right-[-35%] h-[95vh] w-[95vh] bg-primary/14"
-        style={{ animationDuration: "41s", animationDelay: "-13s" }}
+        className="today-blob bottom-[-35%] right-[-35%] h-[95vh] w-[95vh]"
+        style={{ animationDuration: "41s", animationDelay: "-13s", background: shade(14) }}
       />
     </div>
   );

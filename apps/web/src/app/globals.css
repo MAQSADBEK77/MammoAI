@@ -376,14 +376,14 @@ body {
   background:
     radial-gradient(
       64% 30% at 44% 46%,
-      color-mix(in srgb, var(--color-primary) 5%, var(--color-background)) 0%,
+      color-mix(in srgb, var(--today-tint, var(--color-primary)) 5%, var(--color-background)) 0%,
       transparent 75%
     ),
     linear-gradient(
       158deg,
-      color-mix(in srgb, var(--color-primary) 3%, var(--color-background)) 0%,
-      color-mix(in srgb, var(--color-primary) 16%, var(--color-background)) 48%,
-      color-mix(in srgb, var(--color-primary) 29%, var(--color-background)) 100%
+      color-mix(in srgb, var(--today-tint, var(--color-primary)) 3%, var(--color-background)) 0%,
+      color-mix(in srgb, var(--today-tint, var(--color-primary)) 16%, var(--color-background)) 48%,
+      color-mix(in srgb, var(--today-tint, var(--color-primary)) 29%, var(--color-background)) 100%
     );
 }
 

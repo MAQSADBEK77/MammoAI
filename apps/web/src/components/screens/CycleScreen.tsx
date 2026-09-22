@@ -1342,9 +1342,14 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // `fixed` + aniq z-index — sahifa qatlamlari (PageTransition) stacking
   // context yaratishi mumkinligi uchun manfiy z-index'ga tayanmaymiz:
   // fon z-0, mazmun esa z-10 (yuqoridagi `relative z-10`).
+  // TODAY-08: fon ayolning HOZIRGI fazasiga ergashadi. Shart
+  // DailyInsightsCarousel bilan AYNAN bir xil — bir ekranda faza bo'yicha
+  // ikki xil qaror qabul qilinmasligi kerak.
+  const backdropPhase = !isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null;
+
   return (
     <>
-      <TodayBackdrop />
+      <TodayBackdrop phase={backdropPhase} />
       {screen}
       {deck}
       {petPicker}
