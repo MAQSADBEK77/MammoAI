@@ -61,3 +61,18 @@ describe("getFertilityLevel", () => {
     expect(getFertilityLevel("luteal")).toBe("low");
   });
 });
+
+describe("CYCLE-ALGO-24: shaxsiy lyuteal faza", () => {
+  it("lyuteal faza qisqaroq bo'lsa, ovulyatsiya KEYINROQ tushadi", () => {
+    // 28 kunlik siklda standart lyuteal (14) bilan ovulyatsiya 14-kun.
+    expect(getCyclePhase(14, 28, 5)).toBe("ovulation");
+    // Shaxsiy lyuteal 11 kun bo'lsa — ovulyatsiya 17-kunga siljiydi,
+    // ya'ni 14-kun endi follikulyar.
+    expect(getCyclePhase(17, 28, 5, 11)).toBe("ovulation");
+    expect(getCyclePhase(14, 28, 5, 11)).toBe("follicular");
+  });
+
+  it("uzatilmasa xatti-harakat O'ZGARMAYDI (standart 14)", () => {
+    expect(getCyclePhase(14, 28, 5, undefined)).toBe(getCyclePhase(14, 28, 5));
+  });
+});

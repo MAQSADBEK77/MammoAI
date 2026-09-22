@@ -261,17 +261,26 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     }
   }
 
-  const cycleLen = data.settings.averageCycleLength || 28;
-  const periodLen = data.settings.averagePeriodLength || 5;
+  // CYCLE-ALGO-23: faza va sikl kuni endi BASHORAT bilan bir xil qiymatlardan
+  // hisoblanadi. Ilgari bu yerda xom `cycle_settings` (onboarding javobi)
+  // ishlatilardi, kalendar belgilari esa `forecast`dan kelardi — natijada
+  // bitta kun haqida ikki xil gap aytilardi.
+  const cycleLen = data.prediction?.averageCycleLength || data.settings.averageCycleLength || 28;
+  const periodLen = data.prediction?.averagePeriodLength || data.settings.averagePeriodLength || 5;
+  /** Fazani hisoblash uchun LANGAR — bashorat ishlatadigani bilan bir xil. */
+  const phaseAnchor = data.prediction?.lastPeriodStart ?? data.settings.lastPeriodStart;
+  /** CYCLE-ALGO-24: ovulyatsiya o'rni ham bashorat bilan bir xil bo'lishi
+   * uchun — shaxsiy lyuteal faza (o'rganilgan bo'lsa). */
+  const lutealDays = data.prediction?.lutealPhaseDays;
 
   // Berilgan istalgan sana uchun tsikl fazasini hisoblaydi — kalendarda qaysi
   // kun bosilsa, o'sha kun uchun "prognoz" ko'rsatish uchun (App.pdf/Figma
   // referens: "kalendar pastida ma'lumot bersin, tanlov qilishiga qarab").
   function phaseForDate(dateStr: string) {
-    if (!data!.settings.lastPeriodStart) return null;
-    const diff = Math.round((new Date(dateStr).getTime() - new Date(data!.settings.lastPeriodStart).getTime()) / 86400000);
+    if (!phaseAnchor) return null;
+    const diff = Math.round((new Date(dateStr).getTime() - new Date(phaseAnchor).getTime()) / 86400000);
     const dayInCycle = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
-    return getCyclePhase(dayInCycle, cycleLen, periodLen);
+    return getCyclePhase(dayInCycle, cycleLen, periodLen, lutealDays);
   }
 
   function formatDateLabel(dateStr: string) {
@@ -289,10 +298,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // ma'lumotni yangilang", raqam emas.
   let periodDay: number | null = null;
   let dayInCycle: number | null = null;
-  if (data.settings.lastPeriodStart && !data.prediction?.isStale) {
-    const diff = Math.round(
-      (new Date(today).getTime() - new Date(data.settings.lastPeriodStart).getTime()) / 86400000
-    );
+  if (phaseAnchor && !data.prediction?.isStale) {
+    const diff = Math.round((new Date(today).getTime() - new Date(phaseAnchor).getTime()) / 86400000);
     // `dayInCycle` — "siklning N-kuni", ya'ni BASHORAT (faza taxmini), shuning
     // uchun u foydalanuvchi kiritgan sanaga tayanishi mumkin.
     dayInCycle = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
@@ -549,7 +556,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
   // hisoblanadi (foydalanuvchi so'rovi: fazalar ranglar bilan ajralib tursin).
   const phaseMarkers: Record<string, ReturnType<typeof getCyclePhase>> = {};
-  if (data.settings.lastPeriodStart) {
+  if (phaseAnchor) {
     const y = calendarMonth.getFullYear();
     const m = calendarMonth.getMonth();
     const daysInMonth = new Date(y, m + 1, 0).getDate();

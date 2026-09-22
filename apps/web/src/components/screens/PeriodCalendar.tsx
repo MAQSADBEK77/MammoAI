@@ -673,21 +673,40 @@ function MiniMonth({
   );
 }
 
-/** Sikl kuni — `lastPeriodStart`dan boshlab. Ma'lumot bo'lmasa `null`. */
+/** CYCLE-ALGO-23: sikl kuni va faza BASHORAT bilan bir xil qiymatlardan
+ * hisoblanadi.
+ *
+ * Ilgari bu yerda xom `cycle_settings` (onboarding javobi) ishlatilardi,
+ * katakchalarning RANGI esa `data.forecast`dan — ya'ni `cycle_logs`dan
+ * o'rganilgan qiymatlardan — kelardi. Ikki manba mos kelmaganda bitta kun
+ * haqida ikki xil gap aytilardi: katakcha "bashorat qilingan hayz" deb
+ * chizilgan, uni bosganda ochilgan kartada esa "Ovulyatsiya" yozilgan
+ * (foydalanuvchi ko'rgan holat: 13-oktabr, "Sikl 15-kuni · Ovulyatsiya",
+ * holbuki o'sha kun bashorat qilingan hayzning birinchi kuni edi). */
+function effectiveCycleParams(data: CycleResponse) {
+  return {
+    start: data.prediction?.lastPeriodStart ?? data.settings.lastPeriodStart,
+    cycleLength: data.prediction?.averageCycleLength || data.settings.averageCycleLength || 28,
+    periodLength: data.prediction?.averagePeriodLength || data.settings.averagePeriodLength || DEFAULT_PERIOD_LENGTH,
+    // CYCLE-ALGO-24: ovulyatsiya o'rni — bashorat bilan bir xil.
+    lutealPhaseDays: data.prediction?.lutealPhaseDays,
+  };
+}
+
 function cycleDayFor(date: string, data: CycleResponse): number | null {
-  const start = data.settings.lastPeriodStart;
+  const { start, cycleLength } = effectiveCycleParams(data);
   if (!start) return null;
   const diff = Math.round((new Date(date).getTime() - new Date(start).getTime()) / 86400000);
   if (diff < 0) return null;
-  const len = data.settings.averageCycleLength || 28;
-  return (diff % len) + 1;
+  return (diff % cycleLength) + 1;
 }
 
 /** Berilgan kun uchun sikl fazasi — sikl kuni ma'lum bo'lsa. */
 function phaseFor(date: string, data: CycleResponse): ReturnType<typeof getCyclePhase> | null {
   const day = cycleDayFor(date, data);
   if (day === null) return null;
-  return getCyclePhase(day, data.settings.averageCycleLength || 28, data.settings.averagePeriodLength || 5);
+  const { cycleLength, periodLength, lutealPhaseDays } = effectiveCycleParams(data);
+  return getCyclePhase(day, cycleLength, periodLength, lutealPhaseDays);
 }
 
 function addDays(dateStr: string, days: number): string {

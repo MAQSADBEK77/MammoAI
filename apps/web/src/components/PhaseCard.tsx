@@ -1,7 +1,7 @@
 "use client";
 
 import type { CyclePhase } from "@mammoai/shared";
-import { getFertilityLevel, CYCLE_PHASE_EMOJI, cssGradient, colors } from "@mammoai/shared";
+import { getFertilityLevel, CYCLE_PHASE_EMOJI, colors } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { Emoji } from "@/components/Emoji";
 
@@ -28,16 +28,30 @@ export function PhaseCard({ phase }: { phase: CyclePhase }) {
   const copy = dict.cyclePhase[phase];
 
   return (
-    <div className="rounded-3xl p-5 text-white shadow-lg" style={{ background: cssGradient(color) }}>
-      <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-1.5 text-lg font-bold">
+    // TODAY-12 (foydalanuvchi so'rovi: "asosiydagi design moslash kerak"):
+    // ilgari bu karta TO'YINGAN gradient fon + oq matn edi. Oq varaq ichida
+    // (kun tafsilotlari oynasida) u og'ir, begona blok bo'lib ko'rinardi va
+    // ilovaning qolgan qismidagi yengil, yumshoq uslubga mos kelmasdi.
+    //
+    // Endi u ham ilovaning o'z tilida: faza rangi FON sifatida emas, YENGIL
+    // qatlam (10%) va urg'u rangi sifatida ishlatiladi; matn esa odatdagi
+    // qora. Faza baribir rang orqali darhol tanilib turadi.
+    <div
+      className="rounded-3xl p-5"
+      style={{ background: `color-mix(in srgb, ${color} 10%, var(--color-surface))` }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-lg font-bold text-text-primary">
           <Emoji e={CYCLE_PHASE_EMOJI[phase]} /> {copy.name}
         </p>
-        <span className="rounded-full bg-white/25 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
+        <span
+          className="rounded-full px-3 py-1 text-xs font-bold"
+          style={{ background: `color-mix(in srgb, ${color} 18%, var(--color-surface))`, color }}
+        >
           {dict.cyclePhase.fertilityLabel}: {dict.cyclePhase.fertilityLevels[fertility]}
         </span>
       </div>
-      <p className="mt-2 text-sm text-white/90">{copy.description}</p>
+      <p className="mt-2.5 text-sm leading-relaxed text-text-secondary">{copy.description}</p>
     </div>
   );
 }

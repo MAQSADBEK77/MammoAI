@@ -620,6 +620,22 @@ export interface CyclePrediction {
   fertileWindowEnd: string;
   ovulationDay: string;
   daysUntilNextPeriod: number;
+  /** CYCLE-ALGO-23: bashorat ASOSIDAGI sikl uzunligi va LANGAR sanasi.
+   *
+   * Nega ochiq qaytariladi: UI fazani (`getCyclePhase`) mustaqil hisoblardi
+   * va buning uchun XOM `cycle_settings` qiymatlarini olardi, kalendar
+   * belgilari esa `forecast`dan — ya'ni O'RGANILGAN qiymatlardan — kelardi.
+   * Ikki manba bir-biriga mos kelmasa, bitta kun HAQIDA IKKI XIL gap
+   * aytilardi: katakcha "bashorat qilingan hayz" deb bo'yalgan, kartada esa
+   * "Ovulyatsiya" yozilgan (foydalanuvchi ko'rgan holat, 13-oktabr).
+   * Endi ikkalasi ham shu yagona manbadan oziqlanadi. */
+  averageCycleLength: number;
+  lastPeriodStart: string;
+  /** CYCLE-ALGO-24: ovulyatsiyadan keyingi faza uzunligi — BBT/simptomlardan
+   * o'rganilgan bo'lsa shaxsiy, aks holda standart. UI faza hisoblashda
+   * SHUNI ishlatishi kerak, aks holda kalendardagi ovulyatsiya belgisi bilan
+   * fazalar kartasi bir-biriga zid bo'lib qolardi. */
+  lutealPhaseDays: number;
   /** CYCLE-ALGO-19: bashorat ASOSIDAGI hayz davomiyligi — mavjud bo'lsa
    * `cycle_logs`dan O'RGANILGAN qiymat, aks holda foydalanuvchi onboarding'da
    * kiritgani. UI shu qiymatga tayanishi kerak, `cycle_settings`dagi xom
@@ -710,6 +726,9 @@ export function predictCycle(
     ovulationDay,
     daysUntilNextPeriod,
     averagePeriodLength: periodLength,
+    averageCycleLength: cycleLength,
+    lastPeriodStart: settings.lastPeriodStart,
+    lutealPhaseDays,
     cyclesAnalyzed: 0, // chaqiruvchi (buildCycleResponse) adaptiv qiymat bilan qayta belgilaydi
     isStale: daysUntilNextPeriod < -STALE_PREDICTION_DAYS,
     confidence: "insufficient", // chaqiruvchi adaptiv qiymat bilan qayta belgilaydi
