@@ -580,6 +580,14 @@ async function main() {
     // o'chirilgan kunda qolib ketardi — orqasida hech qanday qayd yo'q
     // sanadan bashorat qilishda davom etardi (foydalanuvchi buni sezgan:
     // "hamma narsani o'chirdim, lekin hali ham bashorat qilyapti").
+    for (const start of ["2026-03-01", "2026-04-01", "2026-05-02"]) {
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(start + "T00:00:00Z");
+        d.setUTCDate(d.getUTCDate() + i);
+        await deleteCycleLog(qaUserId, d.toISOString().slice(0, 10));
+      }
+    }
+
     const logsAfterDelete = await listCycleLogs(qaUserId, 365);
     assert(
       logsAfterDelete.every((l) => !l.flow),
