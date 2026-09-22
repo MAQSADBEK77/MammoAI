@@ -527,6 +527,10 @@ const uz = {
       "Shifokorga aniq ma'lumot bilan borasiz",
     ],
     symptomPatternsEmptyCta: "Simptom belgilash",
+    /** REUSE-01: o'z-o'zini tekshirish kartasi endi NATIJANI ko'rsatadi. */
+    selfCheckLastResult: "Oxirgi natija",
+    selfCheckUpdated: (date: string) => `${date} da`,
+    selfCheckDisclaimer: "Bu — tashxis emas. Natija faqat siz bergan javoblarga asoslangan; tashvishlansangiz shifokorga murojaat qiling.",
     // 2026-09-18: "yozib berilgan shaxsiy maslahat" ohangiga o'zgartirildi
     // (foydalanuvchi so'rovi: "yaqin do'st/hamshira yozganday" — lekin
     // mazmun/aniqlik o'zgarmaydi, faqat ohang, hech qachon "chiroyli yolg'on"ga

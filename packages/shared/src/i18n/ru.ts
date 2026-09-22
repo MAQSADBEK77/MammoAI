@@ -444,6 +444,9 @@ const ru: Dictionary = {
       "Придёте к врачу с точными данными",
     ],
     symptomPatternsEmptyCta: "Отметить симптом",
+    selfCheckLastResult: "Последний результат",
+    selfCheckUpdated: (date: string) => `${date}`,
+    selfCheckDisclaimer: "Это не диагноз. Результат основан только на ваших ответах; при беспокойстве обратитесь к врачу.",
     dailyInsights: {
       phase_menstrual: {
         title: "Дни цикла",

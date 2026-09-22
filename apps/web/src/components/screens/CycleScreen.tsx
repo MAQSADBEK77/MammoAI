@@ -18,7 +18,7 @@ import {
   Add,
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
-import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
+import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
 import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -31,6 +31,7 @@ import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { MyCyclesCard } from "@/components/screens/MyCyclesCard";
 import { CycleHistoryCard } from "@/components/screens/CycleHistoryCard";
 import { SymptomPatternsCard } from "@/components/screens/SymptomPatternsCard";
+import { SelfCheckCard, ArticlesRow } from "@/components/screens/SelfCheckCard";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
 import { TodayHeader, type TodayDay, type TodayDayMarker } from "@/components/screens/TodayHeader";
@@ -171,6 +172,13 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // qanday xato/qayta urinish imkoniyatisiz). Endi PregnancyScreen'dagi
   // bilan bir xil naqsh.
   const [loadError, setLoadError] = useState(false);
+  // REUSE-01: bosh ekrandagi "o'z-o'zini tekshirish" va "maqolalar" kartalari
+  // endi NATIJA/KONTENTNI ko'rsatadi, shuning uchun ularga ma'lumot kerak.
+  // Alohida so'rov — `/api/cycle` javobiga qo'shish uni har bir sikl
+  // yangilanishida ham qayta yuklashga majbur qilardi, holbuki bu ma'lumot
+  // deyarli o'zgarmaydi.
+  const [quizResult, setQuizResult] = useState<RiskQuizResult | null>(null);
+  const [articles, setArticles] = useState<Article[]>([]);
 
   const today = localDateStr();
   const isMinor = !!onboardingProfile && onboardingProfile.age < 18;
@@ -189,6 +197,16 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   const loadCycle = useCallback(() => {
     setLoadError(false);
     api.cycle.get().then(setData).catch(() => setLoadError(true));
+  }, []);
+
+  useEffect(() => {
+    // Xato bo'lsa jim o'tiladi: bu ikkalasi ham QO'SHIMCHA ma'lumot, ular
+    // yuklanmasa ham bosh ekran ishlashi kerak.
+    const timeout = setTimeout(() => {
+      api.riskQuiz.get().then(setQuizResult).catch(() => {});
+      api.articles.list().then(setArticles).catch(() => {});
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -1203,25 +1221,18 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-2 gap-3">
-        <button onClick={() => router.push("/xavf-testi")} className="text-left">
-          <Card interactive className="h-full space-y-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-warning/15">
-              <GppMaybeOutlined sx={{ fontSize: 20 }} className="text-warning" />
-            </span>
-            <p className="font-semibold text-text-primary">{dict.cycle.riskQuizCardTitle}</p>
-            <p className="text-xs text-text-secondary">{dict.cycle.riskQuizCardSubtitle}</p>
-          </Card>
-        </button>
-        <button onClick={() => router.push("/maqolalar")} className="text-left">
-          <Card interactive className="h-full space-y-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary/15">
-              <MenuBookOutlined sx={{ fontSize: 20 }} className="text-secondary" />
-            </span>
-            <p className="font-semibold text-text-primary">{dict.cycle.articlesCardTitle}</p>
-          </Card>
-        </button>
-      </div>
+      {/* REUSE-01: ilgari bu ikkalasi faqat SARLAVHADAN iborat kichik
+          kartacha edi — natija ham, kontent ham ko'rinmasdi. Production
+          raqamlari esa boshqa narsani aytadi: testni 34 ta ayol to'ldirgan,
+          ya'ni hayz qayd etgandan (30) KO'PROQ. Eng ko'p ishlatilgan
+          xususiyatlardan biri eng kam ko'rinadigan joyda turgan edi. */}
+      <SelfCheckCard result={quizResult} onOpen={() => router.push("/xavf-testi")} />
+
+      <ArticlesRow
+        articles={articles.slice(0, 6)}
+        onOpen={(slug) => router.push(`/maqolalar/${slug}`)}
+        onOpenAll={() => router.push("/maqolalar")}
+      />
 
       {/* So'nggi yozuvlar — Figma referens: nisbiy sana + emoji + qisqa tavsif +
           o'q, har bir qator bosilsa o'sha kun tahrirlanadi. */}

@@ -446,6 +446,9 @@ const en: Dictionary = {
       "Bring precise data to your doctor",
     ],
     symptomPatternsEmptyCta: "Log a symptom",
+    selfCheckLastResult: "Last result",
+    selfCheckUpdated: (date: string) => `${date}`,
+    selfCheckDisclaimer: "This is not a diagnosis. The result is based only on your answers; see a doctor if you are concerned.",
     dailyInsights: {
       phase_menstrual: {
         title: "Your period days",
