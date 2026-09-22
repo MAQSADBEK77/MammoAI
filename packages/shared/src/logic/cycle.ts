@@ -28,10 +28,14 @@ const DEFAULT_STD_DEV_DAYS = 4;
 // isCycleIrregular=true bo'lganda diapazon KENGROQ bo'lishi kerak (talab 6b:
 // "masalan ±1.5 std dev, ±1 emas").
 const IRREGULAR_STD_DEV_MULTIPLIER = 1.5;
-const MIN_SANE_CYCLE_LENGTH = 15;
-const MAX_SANE_CYCLE_LENGTH = 60;
-const MIN_SANE_PERIOD_LENGTH = 1;
-const MAX_SANE_PERIOD_LENGTH = 10;
+// VALIDATE-01: eksport qilindi — onboarding'dagi "sikl uzunligi" maydonlari
+// endi AYNAN shu chegaralarni qayta ishlatadi. Ilgari bu chegaralar faqat
+// LOG'LARDAN hisoblangan adaptiv yo'lga qo'llanilardi, foydalanuvchi qo'lda
+// kiritgan qiymat esa umuman tekshirilmasdan bashoratga tushardi.
+export const MIN_SANE_CYCLE_LENGTH = 15;
+export const MAX_SANE_CYCLE_LENGTH = 60;
+export const MIN_SANE_PERIOD_LENGTH = 1;
+export const MAX_SANE_PERIOD_LENGTH = 10;
 
 // CYCLE-ALGO-01: eksport qilingan — cycle-backtest.ts (backtest harness) shu
 // ikkalasini qayta ishlatadi, sana matematikasini uchinchi marta yozmaslik uchun.

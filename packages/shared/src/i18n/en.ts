@@ -208,6 +208,8 @@ const en: Dictionary = {
 
     averageCycleLengthQuestion: "How many days does your cycle usually last?",
     averagePeriodLengthQuestion: "How many days does your period usually last?",
+    cycleLengthsRangeHint: (cMin: number, cMax: number, pMin: number, pMax: number) =>
+      `Cycle length must be ${cMin}–${cMax} days and period length ${pMin}–${pMax} days. Not sure? Choose "I don't know".`,
     lastPeriodQuestion: "When did your last period start?",
 
     typicalSymptomsQuestion: "What symptoms do you usually notice?",

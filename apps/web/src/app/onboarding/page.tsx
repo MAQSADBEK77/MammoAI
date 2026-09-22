@@ -16,6 +16,10 @@ import type {
 import {
   ADULT_GOALS,
   MINOR_GOALS,
+  MIN_SANE_CYCLE_LENGTH,
+  MAX_SANE_CYCLE_LENGTH,
+  MIN_SANE_PERIOD_LENGTH,
+  MAX_SANE_PERIOD_LENGTH,
   goalToLandingTab,
   needsCycleInfo,
   needsHeightWeight,
@@ -144,6 +148,19 @@ function kgToLb(kg: number): number {
 }
 function lbToKg(lb: number): number {
   return Math.round(lb / 2.20462);
+}
+
+/** VALIDATE-01: "cycle_lengths" bosqichidagi qo'lda kiritilgan qiymat —
+ * bo'sh/NaN/manfiy yoki mantiqsiz kattalikni (masalan 280) o'tkazmaydi.
+ * Chegaralar logic/cycle.ts bilan BIR MANBADAN olinadi. */
+function isSaneCycleLengths(cycleLength: string, periodLength: string): boolean {
+  const c = Number(cycleLength);
+  const p = Number(periodLength);
+  if (!Number.isInteger(c) || !Number.isInteger(p)) return false;
+  if (c < MIN_SANE_CYCLE_LENGTH || c > MAX_SANE_CYCLE_LENGTH) return false;
+  if (p < MIN_SANE_PERIOD_LENGTH || p > MAX_SANE_PERIOD_LENGTH) return false;
+  // Hayz davri siklning o'zidan uzun bo'la olmaydi.
+  return p <= c;
 }
 
 const INITIAL_SURVEY: SurveyState = {
@@ -617,6 +634,10 @@ function OnboardingPageInner() {
         return survey.primaryGoal !== null && goalOptions.includes(survey.primaryGoal);
       case "cycle_regularity":
         return survey.cycleRegularity !== null;
+      case "cycle_lengths":
+        // "Bilmayman" yoqilgan bo'lsa qiymatlar standartga (28/5) majburlab
+        // qo'yiladi — alohida tekshiruv shart emas.
+        return survey.cycleLengthsUnknown || isSaneCycleLengths(survey.averageCycleLength, survey.averagePeriodLength);
       case "last_period":
         return survey.lastPeriodDate.length > 0 || survey.lastPeriodUnknown;
       case "period_attitude":
@@ -890,6 +911,9 @@ function OnboardingPageInner() {
               <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
               <input
                 type="number"
+                inputMode="numeric"
+                min={MIN_SANE_CYCLE_LENGTH}
+                max={MAX_SANE_CYCLE_LENGTH}
                 value={survey.averageCycleLength}
                 onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
                 className="tap-target mt-4 w-full rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
@@ -897,11 +921,26 @@ function OnboardingPageInner() {
               <h2 className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
               <input
                 type="number"
+                inputMode="numeric"
+                min={MIN_SANE_PERIOD_LENGTH}
+                max={MAX_SANE_PERIOD_LENGTH}
                 value={survey.averagePeriodLength}
                 onChange={(e) => setSurvey((s) => ({ ...s, averagePeriodLength: e.target.value }))}
                 className="tap-target mt-4 w-full rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
               />
             </div>
+            {/* VALIDATE-01: "Keyingi" o'chirilganda SABABI ko'rinib tursin —
+                aks holda tugma shunchaki "ishlamayotgan"dek tuyuladi. */}
+            {!survey.cycleLengthsUnknown && !isSaneCycleLengths(survey.averageCycleLength, survey.averagePeriodLength) && (
+              <p className="text-sm text-danger">
+                {dict.onboarding.cycleLengthsRangeHint(
+                  MIN_SANE_CYCLE_LENGTH,
+                  MAX_SANE_CYCLE_LENGTH,
+                  MIN_SANE_PERIOD_LENGTH,
+                  MAX_SANE_PERIOD_LENGTH
+                )}
+              </p>
+            )}
             <button
               type="button"
               onClick={() =>
