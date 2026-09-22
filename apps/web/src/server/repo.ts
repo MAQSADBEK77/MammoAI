@@ -60,7 +60,7 @@ import {
   DEFAULT_PERIOD_LENGTH,
   DEFAULT_SLOT_ASSIGNMENTS,
   SLOT_KEYS,
-  detectPeriodStarts,
+  deriveAdaptiveCycleSettings,
   getPregnancyStatus,
   tashkentDateStr,
 } from "@mammoai/shared";
@@ -958,43 +958,37 @@ export async function getMaxCycleLogUpdatedAt(userId: string): Promise<string | 
   return rows[0]?.max_updated_at ?? null;
 }
 
-/** `upsertCycleLog` VA `deleteCycleLog` ikkalasi ham chaqiradi — CYCLE-001
- * tuzatishi (bir joyda, ikki chaqiruvchi uchun): butun tarix ustida
- * `deriveAdaptiveCycleSettings`dagi bilan BIR XIL streak-aniqlash
- * (detectPeriodStarts) ishlatiladi, shunda "davom etayotgan hayz kuni"
- * bilan "haqiqatan yangi hayz boshlanishi" ANIQ farqlanadi — va bitta
- * kunni o'chirish ham (masalan xato qo'yilgan yozuvni bekor qilish)
- * boshlanish sanasini to'g'ri qayta hisoblaydi. `null` — hech qanday
- * hayz kuni aniqlanmasa (masalan oxirgi hayz kuni o'chirilgan bo'lsa).
+/**
+ * ARCH-01 (2026-09-22) — bu yerda ilgari `recomputeLastPeriodStart()` bor edi:
+ * har bir hayz yozuvidan keyin u `cycle_settings.last_period_start`ni
+ * `cycle_logs`dan qayta hisoblab yozib qo'yardi.
+ *
+ * OLIB TASHLANDI, chunki u ikkita muammoning manbai edi:
+ *
+ * 1. IKKI MANBA. `cycle_settings` ham, `cycle_logs` ham bir xil savolga javob
+ *    berardi ("oxirgi hayz qachon boshlangan?"). Yangi kod yozgan odam
+ *    ikkalasidan birini tanlashi kerak edi va noto'g'ri tanlasa xato JIM
+ *    turardi. Shu haftada bunday to'rtta joy topildi (bosh ekran, kalendar,
+ *    faza kartasi, hamkor ekrani).
+ *
+ * 2. BUG-01: "qiymat qaydlardan kelgan bo'lsa tozalaymiz" sharti O'LIK KOD
+ *    edi — u qaydlarni O'CHIRISHDAN KEYIN o'qirdi, o'sha sanada qayd hali
+ *    tursa esa funksiya yuqorida return qilardi. Ya'ni shartga yetib
+ *    kelinganda u har doim `false`. Natijada barcha qaydlar o'chirilsa ham
+ *    langar tozalanmasdi va ilova orqasida hech narsa yo'q sanadan bashorat
+ *    qilishda davom etardi (foydalanuvchi buni sezgan).
+ *
+ * Endi mas'uliyat aniq bo'lindi:
+ *   • `cycle_settings.last_period_start` — AYOLNING O'ZI aytgan sana
+ *     (onboarding yoki "oxirgi hayz sanasini o'zgartirish" oynasi). Uni
+ *     faqat foydalanuvchi o'zgartiradi.
+ *   • `cycle_logs` — haqiqiy qaydlar. Ular BOR bo'lsa, o'qish paytida
+ *     ustun turadi: `deriveAdaptiveCycleSettings` da
+ *     `starts[starts.length - 1] ?? fallback.lastPeriodStart` (CYCLE-ALGO-20).
+ *
+ * Shu tufayli hech narsani sinxronlab turish shart emas, va barcha qaydlar
+ * o'chirilsa ilova tabiiy ravishda ayolning o'z gapiga qaytadi.
  */
-async function recomputeLastPeriodStart(userId: string): Promise<void> {
-  const recentLogs = await listCycleLogs(userId, 365);
-  const starts = detectPeriodStarts(recentLogs);
-  const lastDetectedStart = starts[starts.length - 1] ?? null;
-  const settings = await getCycleSettings(userId);
-
-  if (lastDetectedStart) {
-    // Haqiqiy signal bor (kamida bitta hayz boshlanishi aniqlangan) — yangilash xavfsiz.
-    if (lastDetectedStart !== settings.lastPeriodStart) {
-      await updateCycleSettings(userId, { lastPeriodStart: lastDetectedStart });
-    }
-    return;
-  }
-
-  // FIX-01: hech qanday hayz boshlanishi aniqlanmadi. Joriy qiymatni FAQAT
-  // u aynan cycle_logs'dagi (endi olib tashlangan/bekor qilingan) bir
-  // yozuvdan kelib chiqqan bo'lsagina tozalaymiz. Aks holda (masalan
-  // onboarding'da qo'lda kiritilgan sana, cycle_logs'da hech qachon mos
-  // yozuv bo'lmagan) — uni saqlab qolamiz. Avval bu yerda shartsiz
-  // `null`ga yozib yuborilardi: foydalanuvchi qo'lda oxirgi hayz sanasini
-  // kiritib, keyin faqat kayfiyat/simptom (flow'siz) belgilasa, bashorat
-  // butunlay yo'qolib qolardi.
-  if (settings.lastPeriodStart === null) return;
-  const hadMatchingLog = recentLogs.some((l) => l.date === settings.lastPeriodStart && l.flow);
-  if (hadMatchingLog) {
-    await updateCycleSettings(userId, { lastPeriodStart: null });
-  }
-}
 
 export async function upsertCycleLog(
   userId: string,
@@ -1022,7 +1016,6 @@ export async function upsertCycleLog(
   // Har doim qayta hisoblanadi (faqat `log.flow` bor bo'lganda emas) — aks
   // holda mavjud oqim kunini "bekor qilish" (flow'ni null'ga o'zgartirish)
   // eski boshlanish sanasini eskirgan holda qoldirib ketardi.
-  await recomputeLastPeriodStart(userId);
 
   const rows = (await sql`
     SELECT * FROM cycle_logs WHERE user_id = ${userId} AND date = ${log.date}
@@ -1062,7 +1055,6 @@ export async function setPeriodRange(userId: string, startDate: string, days: nu
       ON CONFLICT (user_id, date) DO UPDATE SET flow = 'medium', updated_at = ${now()}
     `;
   }
-  await recomputeLastPeriodStart(userId);
 }
 
 /**
@@ -1102,7 +1094,6 @@ export async function applyPeriodDiff(userId: string, added: string[], removed: 
     }
   }
 
-  await recomputeLastPeriodStart(userId);
 }
 
 /** `dateInRange` tegishli bo'lgan UZLUKSIZ hayz kunlari ketma-ketligini
@@ -1130,7 +1121,6 @@ export async function clearPeriodRange(userId: string, dateInRange: string): Pro
       await sql`DELETE FROM cycle_logs WHERE user_id = ${userId} AND date = ${date}`;
     }
   }
-  await recomputeLastPeriodStart(userId);
 }
 
 /** CYCLE-002: xato qayd etilgan kunni butunlay o'chirish (masalan noto'g'ri
@@ -1139,7 +1129,6 @@ export async function clearPeriodRange(userId: string, dateInRange: string): Pro
 export async function deleteCycleLog(userId: string, date: string): Promise<void> {
   await ensureSchema();
   await sql`DELETE FROM cycle_logs WHERE user_id = ${userId} AND date = ${date}`;
-  await recomputeLastPeriodStart(userId);
 }
 
 // ---------------------------------------------------------------------------
@@ -3966,10 +3955,16 @@ export async function getPartnerStatus(userId: string): Promise<PartnerStatusRes
     todayMood = rows[0]?.mood ?? null;
   }
   if (partnerSharing.period) {
-    const settings = await getCycleSettings(partnerId);
-    if (settings.lastPeriodStart) {
-      const diff = Math.round((new Date(today()).getTime() - new Date(settings.lastPeriodStart).getTime()) / 86400000);
-      const cycleLen = settings.averageCycleLength || DEFAULT_CYCLE_LENGTH;
+    // ARCH-01: hamkorga ko'rsatiladigan sikl kuni AYOLNING O'ZI ko'radigan
+    // bilan bir xil bo'lishi shart. Ilgari bu yerda xom `cycle_settings`
+    // ishlatilardi, ayolning ekrani esa qaydlardan o'rganilgan qiymatlarni —
+    // ya'ni ikkalasi boshqa-boshqa kun ko'rsatishi mumkin edi. Bu shu haftada
+    // topilgan "ikki manba" muammosining TO'RTINCHI nusxasi.
+    const [settings, logs] = await Promise.all([getCycleSettings(partnerId), listCycleLogs(partnerId, 365)]);
+    const adaptive = deriveAdaptiveCycleSettings(logs, settings);
+    if (adaptive) {
+      const diff = Math.round((new Date(today()).getTime() - new Date(adaptive.lastPeriodStart).getTime()) / 86400000);
+      const cycleLen = adaptive.averageCycleLength;
       cycleDay = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
     }
   }

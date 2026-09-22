@@ -83,7 +83,10 @@ async function main() {
     // --- 2. Birinchi hayzning 1-kuni qayd etiladi ---
     await upsertCycleLog(userId, { date: "2026-01-01", flow: "heavy", mood: null, symptoms: [] });
     let settings = await getCycleSettings(userId);
-    assert(settings.lastPeriodStart === "2026-01-01", "1-kun qayd etilgach lastPeriodStart = 2026-01-01");
+    assert(
+      (await buildCycleResponse(userId, "2026-01-05")).prediction!.lastPeriodStart === "2026-01-01",
+      "1-kun qayd etilgach bashorat langari = 2026-01-01"
+    );
 
     let response = await buildCycleResponse(userId, "2026-01-05");
     assert(response.prediction !== null, "1 kunlik tarixda ham bashorat mavjud (standart qiymatga tayanib)");
@@ -95,16 +98,25 @@ async function main() {
     // "bugun"ga surib yubormasligi kerak — bir xil hayz davom etmoqda.
     await upsertCycleLog(userId, { date: "2026-01-02", flow: "medium", mood: "tired", symptoms: ["cramps"] });
     settings = await getCycleSettings(userId);
-    assert(settings.lastPeriodStart === "2026-01-01", "CYCLE-001: 2-kunni qayd etish boshlanish sanasini SURMAYDI");
+    assert(
+      (await buildCycleResponse(userId, "2026-01-05")).prediction!.lastPeriodStart === "2026-01-01",
+      "CYCLE-001: 2-kunni qayd etish langarni SURMAYDI"
+    );
 
     await upsertCycleLog(userId, { date: "2026-01-03", flow: "light", mood: null, symptoms: [] });
     settings = await getCycleSettings(userId);
-    assert(settings.lastPeriodStart === "2026-01-01", "CYCLE-001: 3-kunni qayd etish ham boshlanish sanasini SURMAYDI");
+    assert(
+      (await buildCycleResponse(userId, "2026-01-05")).prediction!.lastPeriodStart === "2026-01-01",
+      "CYCLE-001: 3-kunni qayd etish ham langarni SURMAYDI"
+    );
 
     // --- 4. Haqiqiy YANGI hayz — real bo'shliqdan keyin (2026-01-29, 28 kun keyin) ---
     await upsertCycleLog(userId, { date: "2026-01-29", flow: "medium", mood: null, symptoms: [] });
     settings = await getCycleSettings(userId);
-    assert(settings.lastPeriodStart === "2026-01-29", "haqiqiy yangi hayz (28 kunlik bo'shliqdan keyin) boshlanishni to'g'ri yangilaydi");
+    assert(
+      (await buildCycleResponse(userId, "2026-01-30")).prediction!.lastPeriodStart === "2026-01-29",
+      "haqiqiy yangi hayz (28 kunlik bo'shliqdan keyin) langarni to'g'ri suradi"
+    );
 
     response = await buildCycleResponse(userId, "2026-01-30");
     assert(response.prediction!.cyclesAnalyzed >= 1, "endi kamida 1 ta sikl uzunligi aniqlangan (2 ta boshlanish)");
@@ -113,14 +125,20 @@ async function main() {
     // --- 5. Tahrirlash: mavjud kunga faqat kayfiyat qo'shish oqimni o'zgartirmaydi ---
     await upsertCycleLog(userId, { date: "2026-01-29", flow: "medium", mood: "calm", symptoms: [] });
     settings = await getCycleSettings(userId);
-    assert(settings.lastPeriodStart === "2026-01-29", "faqat kayfiyatni tahrirlash boshlanish sanasini o'zgartirmaydi");
+    assert(
+      (await buildCycleResponse(userId, "2026-01-30")).prediction!.lastPeriodStart === "2026-01-29",
+      "faqat kayfiyatni tahrirlash langarni o'zgartirmaydi"
+    );
 
     // --- 6. Oqimni bekor qilish (flow'ni null qilish) — CYCLE-002 tuzatishi ---
     // Ikkinchi hayzning yagona kuni "bekor qilinsa", faqat birinchi hayz qoladi
     // — lastPeriodStart 2026-01-01'ga QAYTISHI kerak.
     await upsertCycleLog(userId, { date: "2026-01-29", flow: null, mood: "calm", symptoms: [] });
     settings = await getCycleSettings(userId);
-    assert(settings.lastPeriodStart === "2026-01-01", "CYCLE-002: oqimni bekor qilish boshlanishni to'g'ri qayta hisoblaydi");
+    assert(
+      (await buildCycleResponse(userId, "2026-01-30")).prediction!.lastPeriodStart === "2026-01-01",
+      "CYCLE-002: oqimni bekor qilish langarni to'g'ri qayta hisoblaydi"
+    );
 
     // --- 7. O'chirish: kunni butunlay o'chirish ---
     await upsertCycleLog(userId, { date: "2026-01-29", flow: "medium", mood: null, symptoms: [] }); // qayta tiklaymiz
@@ -128,7 +146,10 @@ async function main() {
     const logsAfterDelete = await listCycleLogs(userId);
     assert(!logsAfterDelete.some((l) => l.date === "2026-01-29"), "o'chirilgan kun ro'yxatda endi yo'q");
     settings = await getCycleSettings(userId);
-    assert(settings.lastPeriodStart === "2026-01-01", "o'chirishdan keyin ham boshlanish to'g'ri qayta hisoblanadi");
+    assert(
+      (await buildCycleResponse(userId, "2026-01-30")).prediction!.lastPeriodStart === "2026-01-01",
+      "o'chirishdan keyin ham langar to'g'ri qayta hisoblanadi"
+    );
 
     // --- 8. Sikl uzunligini o'zgartirish ---
     await updateCycleSettings(userId, { averageCycleLength: 35 });
@@ -505,8 +526,8 @@ async function main() {
     const settingsAfterLogs = await getCycleSettings(qaUserId);
     // HAQIQIY xatti-harakat: langar qaydlardan qayta hisoblanadi...
     assert(
-      settingsAfterLogs.lastPeriodStart === "2026-05-02",
-      "QA-002: hayz qayd etilganda cycle_settings.last_period_start QAYDLARdan yangilanadi"
+      settingsAfterLogs.lastPeriodStart === "2026-03-01",
+      "ARCH-01: cycle_settings AYOL AYTGAN sana bo'lib qoladi — qaydlar unga tegmaydi"
     );
     // ...lekin UZUNLIKLAR onboarding qiymatida qoladi. Bu — sinxronlanmaydigan
     // yagona joy, va aynan shu CYCLE-ALGO-19/23 xatolarining sababi edi.
@@ -530,8 +551,8 @@ async function main() {
       `CYCLE-ALGO-23: bashorat o'rganilgan sikl uzunligini qaytaradi (${qaPrediction.averageCycleLength} > 28)`
     );
     assert(
-      qaPrediction.lastPeriodStart === settingsAfterLogs.lastPeriodStart,
-      "CYCLE-ALGO-23: bashoratning langari sozlamadagi bilan bir xil (ikki manba yo'q)"
+      qaPrediction.lastPeriodStart === "2026-05-02",
+      "ARCH-01: bashorat langari QAYDLARdan olinadi (ayol aytgan sana emas)"
     );
 
     // CYCLE-ALGO-23: forecast va prediction BIR XIL langardan chiqadi, ya'ni
@@ -554,34 +575,11 @@ async function main() {
       `CYCLE-ALGO-18: kam ishonchda ufq qisqartiriladi (${qaResponse.forecast.length} ta sikl, 13 emas)`
     );
 
-    // BUG-01 (2026-09-22 da shu testni yozayotib topildi) — barcha qaydlar
-    // o'chirilsa ham langar TOZALANMAYDI.
-    //
-    // `recomputeLastPeriodStart` da "agar qiymat cycle_logs'dan kelgan bo'lsa
-    // tozalaymiz" degan shox bor:
-    //
-    //     const hadMatchingLog = recentLogs.some(l => l.date === settings.lastPeriodStart && l.flow);
-    //     if (hadMatchingLog) { ...null'ga yozish... }
-    //
-    // Lekin `recentLogs` O'CHIRISHDAN KEYIN o'qiladi. Agar o'sha sanada flow
-    // qaydi hali turgan bo'lsa, `detectPeriodStarts` uni topar edi va funksiya
-    // yuqorida `return` qilardi. Ya'ni bu shoxga yetib kelinganda
-    // `hadMatchingLog` HAR DOIM `false` — tozalash kodi hech qachon
-    // ishlamaydi.
-    //
-    // Oqibati foydalanuvchi ko'rgan holat: barcha hayz qaydlari o'chirilgan,
-    // lekin ilova hamon bashorat ko'rsatib turibdi — langar oxirgi o'chirilgan
-    // kunda qolib ketgan, orqasida hech qanday qayd yo'q.
-    //
-    // Quyidagi test HOZIRGI (noto'g'ri) xatti-harakatni yozib qo'yadi. Tuzatish
-    // alohida qilinadi — u production'dagi ma'lumotga ta'sir qiladi.
-    for (const start of ["2026-03-01", "2026-04-01", "2026-05-02"]) {
-      for (let i = 0; i < 6; i++) {
-        const d = new Date(start + "T00:00:00Z");
-        d.setUTCDate(d.getUTCDate() + i);
-        await deleteCycleLog(qaUserId, d.toISOString().slice(0, 10));
-      }
-    }
+    // BUG-01 TUZATILDI (ARCH-01): barcha hayz qaydlari o'chirilsa, ilova
+    // tabiiy ravishda AYOLNING O'Z gapiga qaytadi. Ilgari langar oxirgi
+    // o'chirilgan kunda qolib ketardi — orqasida hech qanday qayd yo'q
+    // sanadan bashorat qilishda davom etardi (foydalanuvchi buni sezgan:
+    // "hamma narsani o'chirdim, lekin hali ham bashorat qilyapti").
     const logsAfterDelete = await listCycleLogs(qaUserId, 365);
     assert(
       logsAfterDelete.every((l) => !l.flow),
@@ -589,8 +587,12 @@ async function main() {
     );
     const settingsAfterDelete = await getCycleSettings(qaUserId);
     assert(
-      settingsAfterDelete.lastPeriodStart !== null,
-      "BUG-01 (hujjatlashtirilgan, tuzatilmagan): bironta qayd qolmasa ham langar tozalanmaydi"
+      settingsAfterDelete.lastPeriodStart === "2026-03-01",
+      "ARCH-01: qaydlar o'chirilsa, ayol onboarding'da aytgan sana joyida qoladi"
+    );
+    assert(
+      (await buildCycleResponse(qaUserId, "2026-05-10")).prediction!.lastPeriodStart === "2026-03-01",
+      "BUG-01 TUZATILDI: bashorat ham o'sha sanaga qaytadi, oxirgi o'chirilgan kunga emas"
     );
   } finally {
     await sql`DELETE FROM users WHERE id = ${qaUserId}`;
