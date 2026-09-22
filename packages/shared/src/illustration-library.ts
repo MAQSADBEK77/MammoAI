@@ -6,6 +6,9 @@
 
 export type IllustrationCategory =
   | "classic"
+  // BRAND-01: loyihaning O'Z buyurtma rasmlari (unDraw emas) — bitta ayol
+  // qahramon va bitta palitra (#F0446F / #FFC9D3 / #FFF0F3) atrofida chizilgan.
+  | "brand"
   | "security"
   | "calendar"
   | "checklist"
@@ -87,12 +90,32 @@ const LIBRARY_ITEMS: LibraryIllustration[] = [
   { slug: "peekaboo_5o8i", name: "Peekaboo", category: "family" },
   { slug: "quality-time_h2b9", name: "Quality Time", category: "family" },
   { slug: "sweet-home_b054", name: "Sweet Home", category: "family" },
+
+  // BRAND-01 — loyihaning o'z rasmlari. 400x400 (qahramonli sahna) va 200x200
+  // (maqsad nishonlari) ikki o'lchamda; ikkalasi ham `max-h-full` bilan bir xil
+  // balandlikdagi blokka sig'adi.
+  { slug: "welcome-start", name: "Xush kelibsiz (brend)", category: "brand" },
+  { slug: "create-account", name: "Hisob yaratish (brend)", category: "brand" },
+  { slug: "create-account-alt", name: "Hisob yaratish — muqobil (brend)", category: "brand" },
+  { slug: "onboarding-complete", name: "Onboarding yakuni (brend)", category: "brand" },
+  { slug: "onboarding-symptoms", name: "Simptomlar (brend)", category: "brand" },
+  { slug: "onboarding-due-date", name: "Tug'ruq sanasi (brend)", category: "brand" },
+  { slug: "feature-calendar", name: "Kalendar (brend)", category: "brand" },
+  { slug: "feature-ai-assistant", name: "AI yordamchi (brend)", category: "brand" },
+  { slug: "empty-no-data", name: "Ma'lumot yo'q (brend)", category: "brand" },
+  { slug: "empty-no-questions", name: "Savol yo'q (brend)", category: "brand" },
+  { slug: "goal-track-period", name: "Maqsad: hayzni kuzatish (brend)", category: "brand" },
+  { slug: "goal-track-flow", name: "Maqsad: oqim kuzatuvi (brend)", category: "brand" },
+  { slug: "goal-get-pregnant", name: "Maqsad: homiladorlikni rejalashtirish (brend)", category: "brand" },
+  { slug: "goal-track-pregnancy", name: "Maqsad: homiladorlik (brend)", category: "brand" },
+  { slug: "goal-wellbeing", name: "Maqsad: umumiy salomatlik (brend)", category: "brand" },
 ];
 
 export const ILLUSTRATION_LIBRARY: LibraryIllustration[] = [...CLASSICS, ...LIBRARY_ITEMS];
 
 export const ILLUSTRATION_CATEGORY_LABEL: Record<IllustrationCategory, string> = {
   classic: "Ilovaning asl rasmlari",
+  brand: "Brend rasmlari (buyurtma)",
   security: "Xavfsizlik",
   calendar: "Kalendar",
   checklist: "Vazifalar",
