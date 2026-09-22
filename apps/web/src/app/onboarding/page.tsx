@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import type {
@@ -39,6 +39,7 @@ import { Emoji } from "@/components/Emoji";
 import { Lottie } from "lottie-react";
 import {
   LockOutlined,
+  TranslateOutlined,
   PersonOutlined,
   ShieldOutlined,
   EditOutlined,
@@ -202,9 +203,16 @@ const INITIAL_SURVEY: SurveyState = {
 // MUI ikonlari ishlatiladi (emoji emas — platformalar orasida bir xil, saytning
 // qolgan qismi bilan bir xil uslubda ko'rinadi). To'liq illyustratsiyasi bor
 // bosqichlar (STEP_ILLUSTRATION) bu yerga kiritilmagan — ular ustunroq ko'rsatiladi.
+/** LAYOUT-01: har bir bosqichdagi vizual blokning yagona, qat'iy balandligi. */
+const STEP_VISUAL_HEIGHT = "h-36";
+
 const STEP_ICON: Partial<Record<Step, StepIconComponent>> = {
+  // LAYOUT-01: `language` ilgari YAGONA vizualsiz savol bosqichi edi.
+  language: TranslateOutlined,
   account_choice: PersonOutlined,
-  account_identifier: LockOutlined,
+  // LAYOUT-01: `account_identifier` bu yerdan olib tashlandi — u
+  // STEP_ILLUSTRATION'da ham bor, render'da esa illyustratsiya ustun
+  // keladi, ya'ni bu LockOutlined hech qachon chizilmasdi (o'lik sozlama).
   privacy: ShieldOutlined,
   name: EditOutlined,
   age: CakeOutlined,
@@ -232,6 +240,7 @@ const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
 };
 
 const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
+  language: colors.secondary,
   account_choice: colors.secondary,
   account_identifier: colors.secondary,
   phone_verify: colors.secondary,
@@ -693,19 +702,18 @@ function OnboardingPageInner() {
       )}
 
       <div key={step} className={clsx("animate-fade-in-up flex flex-1 flex-col", step !== "welcome" && "overflow-y-auto")}>
-        {STEP_ILLUSTRATION[step] ? (
-          <div className="mb-4 flex justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-            <img
-              src={resolveIllustration(`onboarding.${step}` as IllustrationSlotKey)}
-              alt=""
-              className={clsx("w-auto", step === "last_period" ? "h-24" : "h-36")}
-            />
-          </div>
-        ) : (
-          STEP_ICON[step] && (
-            <div className="mb-5 flex justify-center">
-              <div className="relative flex h-44 w-44 items-center justify-center">
+        {/* LAYOUT-01: vizual blok endi QAT'IY balandlikda (STEP_VISUAL_HEIGHT) —
+            ilgari illyustratsiya h-36 (`last_period`da h-24), ikonka h-44, pastki
+            masofa esa mb-4/mb-5 edi, `language`da umuman vizual yo'q edi. Natijada
+            sarlavha har bosqichda boshqa balandlikdan boshlanib, bosqichdan
+            bosqichga "sakrab" turardi. */}
+        {(STEP_ILLUSTRATION[step] || STEP_ICON[step]) && (
+          <div className={clsx("mb-5 flex shrink-0 items-center justify-center", STEP_VISUAL_HEIGHT)}>
+            {STEP_ILLUSTRATION[step] ? (
+              /* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */
+              <img src={resolveIllustration(`onboarding.${step}` as IllustrationSlotKey)} alt="" className="max-h-full w-auto" />
+            ) : (
+              <div className="relative flex h-full w-36 items-center justify-center">
                 {/* O'zimiz yasagan Lottie ("nafas olayotgan" halqa-animatsiya) —
                     uchinchi tomon fayl emas, generatori: apps/web/scripts/
                     generate-onboarding-animations.py. Rang STEP_ICON_COLOR'ga mos. */}
@@ -725,8 +733,8 @@ function OnboardingPageInner() {
                   return <StepIcon sx={{ fontSize: 42, color: "#fff", position: "relative" }} />;
                 })()}
               </div>
-            </div>
-          )
+            )}
+          </div>
         )}
         {step === "welcome" && (
           // Tugma endi logo/sarlavha bilan bitta markazlashgan ustunda emas — tepadagi
@@ -756,8 +764,8 @@ function OnboardingPageInner() {
         )}
 
         {step === "language" && (
-          <div className="flex flex-1 flex-col items-center justify-start gap-4">
-            <h2 className="text-center mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</h2>
+          <div className="flex flex-1 flex-col justify-start gap-4">
+            <StepTitle>{dict.onboarding.languageTitle}</StepTitle>
             <LangOption flag="🇺🇿" label="O'zbekcha (lotin)" active={language === "uz"} onClick={() => setLanguage("uz")} />
             <LangOption flag="🇺🇿" label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onClick={() => setLanguage("uz-cyrl")} />
             <LangOption flag="🇷🇺" label="Русский" active={language === "ru"} onClick={() => setLanguage("ru")} />
@@ -778,9 +786,7 @@ function OnboardingPageInner() {
 
         {step === "account_identifier" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">
-              {survey.accountChoice === "login" ? dict.auth.loginIdentifierTitle : dict.auth.createIdentifierTitle}
-            </h2>
+            <StepTitle>{survey.accountChoice === "login" ? dict.auth.loginIdentifierTitle : dict.auth.createIdentifierTitle}</StepTitle>
             <div className="relative">
               <LockOutlined sx={{ fontSize: 18 }} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
@@ -798,7 +804,7 @@ function OnboardingPageInner() {
 
         {step === "phone_verify" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.auth.phoneVerifyTitle}</h2>
+            <StepTitle>{dict.auth.phoneVerifyTitle}</StepTitle>
             <p className="text-center text-sm leading-relaxed text-text-secondary">{dict.auth.phoneVerifyIntro}</p>
             {phoneDeepLink && (
               <a
@@ -836,7 +842,7 @@ function OnboardingPageInner() {
 
         {step === "privacy" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.privacy.offerTitle}</h2>
+            <StepTitle>{dict.privacy.offerTitle}</StepTitle>
             <p className="text-sm leading-relaxed text-text-secondary">{dict.privacy.offerIntro}</p>
             <div className="space-y-4 rounded-2xl border border-border bg-surface p-4">
               {dict.privacy.offerSections.map((section) => (
@@ -864,7 +870,7 @@ function OnboardingPageInner() {
 
         {step === "name" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.nameQuestion}</h2>
+            <StepTitle>{dict.onboarding.nameQuestion}</StepTitle>
             <input
               value={survey.name}
               onChange={(e) => setSurvey((s) => ({ ...s, name: e.target.value }))}
@@ -876,7 +882,7 @@ function OnboardingPageInner() {
 
         {step === "age" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.birthYearLabel}</h2>
+            <StepTitle>{dict.onboarding.birthYearLabel}</StepTitle>
             <WheelPicker options={BIRTH_YEARS} value={survey.birthYear} onChange={(v) => setSurvey((s) => ({ ...s, birthYear: v }))} />
           </div>
         )}
@@ -908,7 +914,7 @@ function OnboardingPageInner() {
         {step === "cycle_lengths" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
             <div className={clsx(survey.cycleLengthsUnknown && "pointer-events-none opacity-50")}>
-              <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
+              <StepTitle>{dict.onboarding.averageCycleLengthQuestion}</StepTitle>
               <input
                 type="number"
                 inputMode="numeric"
@@ -918,7 +924,7 @@ function OnboardingPageInner() {
                 onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
                 className="tap-target mt-4 w-full rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
               />
-              <h2 className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
+              <StepTitle>{dict.onboarding.averagePeriodLengthQuestion}</StepTitle>
               <input
                 type="number"
                 inputMode="numeric"
@@ -974,7 +980,7 @@ function OnboardingPageInner() {
 
         {step === "last_period" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
+            <StepTitle>{dict.onboarding.lastPeriodQuestion}</StepTitle>
             <div className={clsx(survey.lastPeriodUnknown && "pointer-events-none opacity-50")}>
               <DateWheelPicker
                 value={survey.lastPeriodDate}
@@ -1001,7 +1007,7 @@ function OnboardingPageInner() {
 
         {step === "typical_symptoms" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</h2>
+            <StepTitle>{dict.onboarding.typicalSymptomsQuestion}</StepTitle>
             <div className="grid grid-cols-2 gap-2">
               {symptomOptions.map((sym) => (
                 <IconChip
@@ -1039,7 +1045,7 @@ function OnboardingPageInner() {
 
         {step === "health_conditions" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.healthConditionsQuestion}</h2>
+            <StepTitle>{dict.onboarding.healthConditionsQuestion}</StepTitle>
             <div className="grid grid-cols-2 gap-2">
               {HEALTH_CONDITION_OPTIONS.map((cond) => (
                 <IconChip
@@ -1100,8 +1106,8 @@ function OnboardingPageInner() {
         )}
 
         {step === "height_weight" && (
-          <div className="flex flex-1 flex-col justify-start gap-5">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
+          <div className="flex flex-1 flex-col justify-start gap-4">
+            <StepTitle>{dict.onboarding.heightWeightTitle}</StepTitle>
 
             {/* Metrik/Imperial birlik tanlovi — bosilganda joriy qiymat bir martagina
                 boshqa birlikka o'giriladi, keyin har bir tizim o'z holatini saqlaydi. */}
@@ -1209,7 +1215,7 @@ function OnboardingPageInner() {
               <p className="mt-2 text-sm font-semibold leading-snug text-text-primary">{dict.onboarding.notificationsSamplePreview}</p>
             </div>
 
-            <h2 className="max-w-xs text-xl font-bold leading-snug text-text-primary">{dict.onboarding.notificationsQuestion}</h2>
+            <StepTitle>{dict.onboarding.notificationsQuestion}</StepTitle>
 
             <Button
               className="w-full max-w-xs"
@@ -1229,7 +1235,7 @@ function OnboardingPageInner() {
             <img src={resolveIllustration("onboarding.analyzing")} alt="" className={clsx("h-40 w-auto", !finishError && "animate-pulse")} />
             {finishError ? (
               <>
-                <h2 className="text-xl font-bold text-text-primary">{finishError}</h2>
+                <StepTitle>{finishError}</StepTitle>
                 <Button
                   onClick={() => {
                     finishStartedRef.current = true;
@@ -1241,7 +1247,7 @@ function OnboardingPageInner() {
               </>
             ) : (
               <>
-                <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.analyzingTitle}</h2>
+                <StepTitle>{dict.onboarding.analyzingTitle}</StepTitle>
                 <p className="text-text-secondary">{dict.onboarding.analyzingSubtitle}</p>
               </>
             )}
@@ -1286,12 +1292,21 @@ function OnboardingPageInner() {
 // shunda PregnancyScreen kabi boshqa fayllar ham (masalan DateWheelPicker
 // orqali) qayta ishlatishi mumkin.
 
+/** LAYOUT-01: BARCHA bosqich sarlavhalari uchun yagona ko'rinish — chapga
+ * tekislangan. Ilgari 11 ta bosqich `text-center`, 8 tasi (ChoiceStep orqali)
+ * chapga tekislangan edi, shuning uchun bosqichdan bosqichga o'tganda sarlavha
+ * yon tomonga "sakrardi" (eng ko'zga tashlanadigani — hisob yaratish oqimi:
+ * account_choice chapda, account_identifier/phone_verify/privacy markazda). */
+function StepTitle({ children }: { children: ReactNode }) {
+  return <StepTitle>{children}</StepTitle>;
+}
+
 function LangOption({ flag, label, active, onClick }: { flag: string; label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className={clsx(
-        "tap-target flex w-full max-w-xs items-center gap-3 rounded-3xl px-6 py-4 text-lg font-semibold transition active:scale-[0.98]",
+        "tap-target flex w-full items-center gap-3 rounded-3xl px-6 py-4 text-lg font-semibold transition active:scale-[0.98]",
         active ? "bg-primary text-white shadow-lg shadow-primary/30" : "bg-surface text-text-primary shadow-md shadow-text-primary/5 hover:bg-surface-muted"
       )}
     >
@@ -1315,24 +1330,28 @@ function ChoiceStep({
   selected: string | null;
 }) {
   return (
-    <div className="flex flex-1 flex-col justify-start gap-3">
-      <h2 className="mb-2 text-xl font-bold text-text-primary">{title}</h2>
-      {description && <p className="-mt-1 mb-1 text-sm leading-relaxed text-text-secondary">{description}</p>}
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={opt.onClick}
-          className={clsx(
-            "tap-target flex w-full items-center gap-3 rounded-3xl border-2 px-5 py-4 text-left text-base font-medium transition active:scale-[0.98]",
-            selected === opt.value
-              ? "border-primary bg-primary-light text-primary-dark shadow-lg shadow-primary/20"
-              : "border-border bg-surface text-text-primary hover:border-primary-light"
-          )}
-        >
-          {opt.icon && <Emoji e={opt.icon} />}
-          {opt.label}
-        </button>
-      ))}
+    <div className="flex flex-1 flex-col justify-start gap-4">
+      <StepTitle>{title}</StepTitle>
+      {description && <p className="-mt-2 text-sm leading-relaxed text-text-secondary">{description}</p>}
+      {/* LAYOUT-01: tanlovlar o'z ichida zichroq (gap-3) turadi, tashqi masofa esa
+          boshqa bosqichlar bilan bir xil (gap-4) bo'lishi uchun alohida ro'yxat. */}
+      <div className="flex flex-col gap-3">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={opt.onClick}
+            className={clsx(
+              "tap-target flex w-full items-center gap-3 rounded-3xl border-2 px-5 py-4 text-left text-base font-medium transition active:scale-[0.98]",
+              selected === opt.value
+                ? "border-primary bg-primary-light text-primary-dark shadow-lg shadow-primary/20"
+                : "border-border bg-surface text-text-primary hover:border-primary-light"
+            )}
+          >
+            {opt.icon && <Emoji e={opt.icon} />}
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
