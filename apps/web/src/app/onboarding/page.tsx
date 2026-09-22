@@ -313,6 +313,54 @@ const PERIOD_ATTITUDE_ICON: Record<PeriodAttitude, string> = {
 // `useSearchParams()` (fromTelegram=1 aniqlash uchun) Next.js'ning statik
 // prerender qilishiga to'sqinlik qiladi — Suspense chegarasi shart (bug fixi:
 // apps/web/src/app/baholash/page.tsxdagi bilan bir xil sabab).
+/** Bosqichlar ro'yxati maqsad/yoshga qarab dinamik shakllanadi (App.pdf §7-10).
+ * Komponentdan TASHQARIDA — chunki ProgressBar maxraji uchun bu xuddi shu
+ * qurilish mantig'i "agar maqsad X bo'lsa" deb OLDINDAN ham chaqiriladi
+ * (pastdagi `projectedSteps`ga qarang). */
+function buildSteps(primaryGoal: Goal | null, isFromTelegram: boolean, age: number): Step[] {
+  const base: Step[] = [
+    "welcome",
+    "language",
+    "account_choice",
+    "account_identifier",
+    "phone_verify",
+    "privacy",
+    "name",
+    "age",
+    "goal",
+  ];
+  const list = isFromTelegram
+    ? base.filter((s) => !["welcome", "account_choice", "account_identifier", "phone_verify"].includes(s))
+    : base;
+  if (!primaryGoal) return [...list, "analyzing"];
+  const tail: Step[] = [];
+  if (primaryGoal === "perimenopause") {
+    // Sikl bashorati (regularity/lengths/last_period) va hayzga munosabat
+    // savollari (period_attitude) SO'RALMAYDI — bashorat endi ma'noli
+    // emas. Simptom va ma'lum sog'liq holatlari savollari esa AYNAN shu
+    // rejim uchun eng muhimi, shuning uchun alohida qoldiriladi.
+    tail.push("typical_symptoms", "health_conditions");
+  } else if (needsCycleInfo(primaryGoal)) {
+    tail.push(
+      "cycle_regularity",
+      "cycle_lengths",
+      "last_period",
+      "typical_symptoms",
+      "period_attitude",
+      "health_conditions"
+    );
+  }
+  if (needsPersonalHealthQuestions(primaryGoal)) {
+    tail.push("family_history");
+    // FIX-CHECKUPS: 15 yoshdan kichiklarga so'ralmaydi.
+    if (age >= 15) tail.push("sexually_active");
+    tail.push("last_checkup");
+  }
+  if (needsHeightWeight(primaryGoal)) tail.push("height_weight");
+  tail.push("notifications", "analyzing");
+  return [...list, ...tail];
+}
+
 export default function OnboardingPage() {
   return (
     <Suspense fallback={<div className="min-h-dvh bg-background" />}>
@@ -371,53 +419,24 @@ function OnboardingPageInner() {
   // doim "uz" bilan yaratadi) — foydalanuvchi tilni O'ZI, shu qadamda tanlaydi.
   const isFromTelegram = searchParams.get("fromTelegram") === "1" && !!user?.phone;
 
-  // Bosqichlar ro'yxati maqsad/yoshga qarab dinamik shakllanadi (App.pdf §7-10).
-  const steps = useMemo<Step[]>(() => {
-    const base: Step[] = [
-      "welcome",
-      "language",
-      "account_choice",
-      "account_identifier",
-      "phone_verify",
-      "privacy",
-      "name",
-      "age",
-      "goal",
-    ];
-    const withTail = (list: Step[]): Step[] => {
-      if (!survey.primaryGoal) return [...list, "analyzing"];
-      const tail: Step[] = [];
-      if (survey.primaryGoal === "perimenopause") {
-        // Sikl bashorati (regularity/lengths/last_period) va hayzga munosabat
-        // savollari (period_attitude) SO'RALMAYDI — bashorat endi ma'noli
-        // emas. Simptom va ma'lum sog'liq holatlari savollari esa AYNAN shu
-        // rejim uchun eng muhimi, shuning uchun alohida qoldiriladi.
-        tail.push("typical_symptoms", "health_conditions");
-      } else if (needsCycleInfo(survey.primaryGoal)) {
-        tail.push(
-          "cycle_regularity",
-          "cycle_lengths",
-          "last_period",
-          "typical_symptoms",
-          "period_attitude",
-          "health_conditions"
-        );
-      }
-      if (needsPersonalHealthQuestions(survey.primaryGoal)) {
-        tail.push("family_history");
-        // FIX-CHECKUPS: 15 yoshdan kichiklarga so'ralmaydi.
-        if (age >= 15) tail.push("sexually_active");
-        tail.push("last_checkup");
-      }
-      if (needsHeightWeight(survey.primaryGoal)) tail.push("height_weight");
-      tail.push("notifications", "analyzing");
-      return [...list, ...tail];
-    };
-    const filtered = isFromTelegram
-      ? base.filter((s) => !["welcome", "account_choice", "account_identifier", "phone_verify"].includes(s))
-      : base;
-    return withTail(filtered);
-  }, [survey.primaryGoal, isFromTelegram, age]);
+  const steps = useMemo<Step[]>(
+    () => buildSteps(survey.primaryGoal, isFromTelegram, age),
+    [survey.primaryGoal, isFromTelegram, age]
+  );
+
+  // PROGRESS-01: ProgressBar maxraji `steps.length` bo'lganda, maqsad
+  // tanlanishidan OLDIN ro'yxat qisqa ("…goal" + "analyzing") bo'lgani uchun
+  // "goal" bosqichida progress ~89% ko'rinardi va maqsad tanlangan zahoti
+  // ro'yxat uzayib, ~42%ga QAYTIB TUSHARDI. Maqsad tanlanmaguncha maxraj
+  // sifatida joriy (yosh bo'yicha) ro'yxatdagi ENG UZUN yo'l olinadi — u
+  // ta'rifi bo'yicha tanlanishi mumkin bo'lgan har qanday yo'ldan qisqa
+  // emas, shuning uchun ko'rsatkich hech qachon orqaga qaytmaydi.
+  const projectedSteps = useMemo<Step[]>(() => {
+    if (survey.primaryGoal) return steps;
+    return (isMinor ? MINOR_GOALS : ADULT_GOALS)
+      .map((g) => buildSteps(g, isFromTelegram, age))
+      .reduce((longest, cur) => (cur.length > longest.length ? cur : longest));
+  }, [survey.primaryGoal, steps, isMinor, isFromTelegram, age]);
 
   const step = steps[stepIndex];
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
@@ -648,7 +667,7 @@ function OnboardingPageInner() {
     >
       {step !== "welcome" && step !== "analyzing" && (
         <div className="mb-6 shrink-0">
-          <ProgressBar value={(stepIndex / (steps.length - 1)) * 100} />
+          <ProgressBar value={Math.min(100, (stepIndex / Math.max(1, projectedSteps.length - 1)) * 100)} />
         </div>
       )}
 
