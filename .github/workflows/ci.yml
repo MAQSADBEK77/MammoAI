@@ -44,3 +44,42 @@ jobs:
         run: npm run test:integration --workspace=apps/web
         env:
           DATABASE_URL: postgresql://mammoai:mammoai@localhost:5432/mammoai_ci
+
+  # DEPLOY-02: `main`ga tushgan o'zgarishni Vercel'da deploy qilish.
+  #
+  # Nega kerak: Vercel loyihasi HOBBY (shaxsiy) rejada. Bu rejada faqat loyiha
+  # EGASINING git push'lari deploy'ni ishga tushiradi — boshqa hamkorning
+  # commitlari e'tiborsiz qoladi. 2026-09-22 da aynan shu holat bo'ldi: yetti
+  # ta commit `main`ga tushdi, GitHub Actions ularni tekshirdi va o'tkazdi,
+  # lekin production 18 soat oldingi kodni ko'rsatishda davom etdi va sababini
+  # tashqaridan bilish imkoni yo'q edi.
+  #
+  # Deploy Hook bu cheklovga bog'liq emas: u oddiy POST so'rov, kim push
+  # qilganidan qat'i nazar ishlaydi. Natijada deploy KO'RINADIGAN bo'ladi —
+  # GitHub Actions'da yashil/qizil belgi sifatida.
+  #
+  # Sozlash (bir marta):
+  #   1. Vercel → loyiha → Settings → Git → Deploy Hooks → "Create Hook"
+  #      (nomi: main, shoxi: main) → URL nusxalanadi;
+  #   2. GitHub → repo → Settings → Secrets and variables → Actions →
+  #      "New repository secret" → nomi VERCEL_DEPLOY_HOOK, qiymati o'sha URL.
+  #
+  # Secret qo'yilmaguncha bu qadam shunchaki o'tkazib yuboriladi — CI yiqilmaydi.
+  deploy:
+    needs: typecheck-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vercel deploy'ni ishga tushirish
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "VERCEL_DEPLOY_HOOK secret'i yo'q — deploy o'tkazib yuborildi."
+            echo "Sozlash yo'riqnomasi shu faylning yuqorisidagi izohda."
+            exit 0
+          fi
+          echo "Deploy hook chaqirilmoqda..."
+          curl -fsS -X POST "$HOOK" | head -c 400
+          echo
+          echo "Ishga tushdi. Vercel → Deployments bo'limida kuzating."
