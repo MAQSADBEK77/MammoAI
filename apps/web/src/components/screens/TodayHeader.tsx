@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import clsx from "clsx";
 import { Avatar } from "@mui/material";
-import { CalendarMonthOutlined } from "@mui/icons-material";
+import { CalendarMonthOutlined, InfoOutlined } from "@mui/icons-material";
 import { Emoji } from "@/components/Emoji";
 import { useI18n } from "@/lib/i18n";
 import { TodayStatusCircle } from "@/components/screens/TodayBackdrop";
@@ -69,25 +69,12 @@ export interface TodayHeaderProps {
    * hayz paytida "Edit period dates"). `null` — hech narsa ko'rsatilmaydi
    * (masalan ma'lumot yetarli emas va da'vo qilish noto'g'ri bo'lardi). */
   heroChip: { label: string; onClick?: () => void; solid?: boolean } | null;
-  /** TODAY-10: tezkor amallar ostidagi ixcham ma'lumot plitalari. Paragraf
-   * emas — son va bitta belgi. Bo'sh ro'yxat bo'lsa umuman chizilmaydi. */
-  stats: TodayStat[];
   /** PET-01: 18 yoshgacha bo'lgan foydalanuvchining uy hayvoni. `null` —
    * ko'rsatilmaydi (tanlanmagan yoki foydalanuvchi katta yoshda). */
   pet: Pet | null;
   onPetTap: () => void;
 
   actions: TodayAction[];
-}
-
-/** TODAY-10: bitta ma'lumot plitasi. `ring` berilsa (0..1) qiymat atrofida
- * halqa chiziladi — referensdagi "CYCLE DAY" plitasi kabi. */
-export interface TodayStat {
-  key: string;
-  label: string;
-  value: string;
-  emoji: string;
-  ring?: number;
 }
 
 export interface TodayAction {
@@ -118,7 +105,6 @@ export function TodayHeader({
   onHeroClick,
   heroStatus,
   heroChip,
-  stats,
   pet,
   onPetTap,
   actions,
@@ -380,13 +366,21 @@ export function TodayHeader({
             onClick={heroChip.onClick}
             disabled={!heroChip.onClick}
             className={clsx(
-              "tap-target rounded-full px-5 text-sm font-bold transition disabled:cursor-default",
+              "tap-target transition disabled:cursor-default",
               heroChip.solid
-                ? "bg-surface text-primary shadow-md active:scale-[0.98]"
-                : "bg-surface/70 text-text-secondary"
+                ? // Hayz paytidagi amal — referensda TO'LDIRILGAN oq tabletka.
+                  "rounded-full bg-surface px-6 text-base font-bold text-primary shadow-md active:scale-[0.98]"
+                : // Ma'lumot qatori — referensda bu tabletka EMAS: yengil
+                  // shaffof to'rtburchak, yumshoq burchakli, matni QORA va
+                  // qalin emas, o'ngida esa ⓘ belgisi. Ilgari u kichik,
+                  // qalin, kulrang tabletka edi — referensga o'xshamasdi.
+                  "inline-flex items-center gap-2 rounded-xl bg-surface/55 px-4 py-2.5 text-base text-text-primary active:bg-surface/80"
             )}
           >
-            {heroChip.label}
+            <span>{heroChip.label}</span>
+            {!heroChip.solid && heroChip.onClick && (
+              <InfoOutlined sx={{ fontSize: 20 }} className="shrink-0 text-text-muted" />
+            )}
           </button>
         </div>
       )}
@@ -418,43 +412,6 @@ export function TodayHeader({
         ))}
       </div>
 
-      {/* 5. Ma'lumot plitalari (TODAY-10) — referensdagi "CYCLE DAY / Next
-          Period / Next Fertile" qatori. Ataylab PARAGRAFSIZ: kichik yorliq,
-          katta qiymat va bitta belgi. Nechta plita kelishi chaqiruvchida hal
-          qilinadi (masalan ishonch yetarli bo'lmasa "unumdor kunlar"
-          yuborilmaydi), shuning uchun bu yerda qat'iy uchta emas. */}
-      {stats.length > 0 && (
-        <div className="grid grid-cols-3 gap-2.5">
-          {stats.map((stat) => (
-            <div key={stat.key} className="rounded-2xl bg-surface/70 p-3 text-center">
-              <p className="text-[11px] font-bold uppercase leading-tight tracking-wide text-text-muted">
-                {stat.label}
-              </p>
-              <div className="mt-1.5 flex items-center justify-center gap-1">
-                {stat.ring === undefined ? (
-                  <Emoji e={stat.emoji} size={16} />
-                ) : (
-                  // Halqa — qiymat sikl ichida qayerda turganini KO'RSATADI.
-                  // `conic-gradient` tanlandi: SVG qo'shmasdan, bitta element.
-                  <span
-                    className="flex h-8 w-8 items-center justify-center rounded-full"
-                    style={{
-                      background: `conic-gradient(var(--color-primary) ${Math.round(Math.min(Math.max(stat.ring, 0), 1) * 360)}deg, color-mix(in srgb, var(--color-primary) 15%, transparent) 0)`,
-                    }}
-                  >
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-xs font-extrabold text-text-primary">
-                      {stat.value}
-                    </span>
-                  </span>
-                )}
-                {stat.ring === undefined && (
-                  <span className="text-sm font-extrabold text-text-primary">{stat.value}</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

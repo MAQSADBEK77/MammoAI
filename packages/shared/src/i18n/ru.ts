@@ -362,6 +362,12 @@ const ru: Dictionary = {
     pregnancyChanceLow: "Низкая вероятность беременности",
     pregnancyChanceHigh: "Высокая вероятность беременности",
     pregnancyChanceUnknown: "Отметьте месячные, чтобы узнать",
+    pregnancyChanceExplainHigh: (from: string, to: string) =>
+      `Сегодня вы в фертильном окне (${from} – ${to}). Это дни вокруг овуляции — вероятность беременности самая высокая.`,
+    pregnancyChanceExplainLow: (from: string, to: string) =>
+      `Фертильное окно ожидается ${from} – ${to}. Сегодня вы вне его, поэтому вероятность низкая.`,
+    pregnancyChanceExplainNote:
+      "Это оценка по введённым вами данным, а не медицинское заключение. Не используйте как метод контрацепции.",
     statCycleDay: "День цикла",
     statNextPeriod: "Следующие месячные",
     statNextFertile: "Фертильные дни",

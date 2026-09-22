@@ -407,6 +407,14 @@ const uz = {
     pregnancyChanceLow: "Homiladorlik ehtimoli past",
     pregnancyChanceHigh: "Homiladorlik ehtimoli yuqori",
     pregnancyChanceUnknown: "Bilish uchun hayzingizni belgilang",
+    /** ⓘ bosilganda — HISOB-KITOBNING o'zi tushuntiriladi, umumiy gap emas. */
+    pregnancyChanceExplainHigh: (from: string, to: string) =>
+      `Bugun unumdor oyna ichidasiz (${from} – ${to}). Bu ovulyatsiya atrofidagi kunlar — homiladorlik ehtimoli eng yuqori davr.`,
+    pregnancyChanceExplainLow: (from: string, to: string) =>
+      `Unumdor oyna ${from} – ${to} oralig'ida kutilmoqda. Bugun undan tashqaridasiz, shuning uchun ehtimol past.`,
+    /** MUHIM: bu — kontratseptsiya usuli emas. Buni aytmaslik xavfli bo'lardi. */
+    pregnancyChanceExplainNote:
+      "Bu — siz kiritgan ma'lumotlar asosidagi taxmin, tibbiy xulosa emas. Homiladorlikdan saqlanish usuli sifatida ishlatmang.",
     statCycleDay: "Sikl kuni",
     statNextPeriod: "Keyingi hayz",
     statNextFertile: "Unumdor kunlar",

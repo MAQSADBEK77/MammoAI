@@ -30,7 +30,7 @@ import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
-import { TodayHeader, type TodayDay, type TodayDayMarker, type TodayStat } from "@/components/screens/TodayHeader";
+import { TodayHeader, type TodayDay, type TodayDayMarker } from "@/components/screens/TodayHeader";
 import { TodayAssistantCard } from "@/components/screens/TodayAssistantCard";
 import { CheckinDeck } from "@/components/screens/checkin/CheckinDeck";
 import { TodayBackdrop, TodayStatusCircle } from "@/components/screens/TodayBackdrop";
@@ -151,6 +151,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // PET-01: uy hayvonini tanlash varag'i — faqat 18 yoshgacha.
   const [showPetPicker, setShowPetPicker] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  /** TODAY-09: homiladorlik ehtimoli qatoridagi ⓘ oynasi. */
+  const [showChanceInfo, setShowChanceInfo] = useState(false);
   // TODAY-06: kalendar IKKI yo'l bilan ochiladi va ular boshqa-boshqa
   // maqsadga xizmat qiladi (foydalanuvchi so'rovi):
   //   • yuqoridagi kalendar ikonkasi → ko'rish (bashorat, fazalar, kun ma'lumoti);
@@ -526,43 +528,14 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     }
     const inFertileWindow =
       today >= data.prediction.fertileWindowStart && today <= data.prediction.fertileWindowEnd;
-    return { label: inFertileWindow ? dict.cycle.pregnancyChanceHigh : dict.cycle.pregnancyChanceLow };
+    return {
+      label: inFertileWindow ? dict.cycle.pregnancyChanceHigh : dict.cycle.pregnancyChanceLow,
+      // ⓘ — umumiy gap emas, AYNAN shu xulosa qanday chiqqani tushuntiriladi.
+      onClick: () => setShowChanceInfo(true),
+    };
   })();
 
-  // TODAY-10: tezkor amallar ostidagi ixcham plitalar. Faqat BILADIGAN
-  // narsamiz ko'rsatiladi — har bir plita alohida shart bilan qo'shiladi.
-  const todayStats: TodayStat[] = (() => {
-    const out: TodayStat[] = [];
-    if (dayInCycle !== null && !data.prediction?.isStale) {
-      out.push({
-        key: "cycleDay",
-        label: dict.cycle.statCycleDay,
-        value: String(dayInCycle),
-        emoji: "🌀",
-        ring: dayInCycle / cycleLen,
-      });
-    }
-    if (data.prediction && !data.prediction.isStale) {
-      out.push({
-        key: "nextPeriod",
-        label: dict.cycle.statNextPeriod,
-        value: formatDateLabel(data.prediction.nextPeriodStart),
-        emoji: "💧",
-      });
-      // Unumdor kunlar — kalendardagi bilan BIR XIL qoida: ishonch yetarli
-      // bo'lmaganda oyna 19 kunga cho'ziladi, ya'ni hech qanday ma'lumot
-      // bermaydi. Bunday holatda plita umuman qo'shilmaydi.
-      if (!hasNoCycleData) {
-        out.push({
-          key: "nextFertile",
-          label: dict.cycle.statNextFertile,
-          value: formatDateLabel(data.prediction.fertileWindowStart),
-          emoji: "🌿",
-        });
-      }
-    }
-    return out;
-  })();
+
 
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
@@ -735,7 +708,6 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           onHeroClick={heroIsCallToAction ? heroAction : null}
           heroStatus={predictionsUpdated ? { label: dict.cycle.predictionsUpdatedLabel, done: true } : null}
           heroChip={heroChip}
-          stats={todayStats}
           pet={isMinor ? resolvePet(user?.pet) : null}
           onPetTap={() => setShowPetPicker(true)}
           actions={[
@@ -1411,10 +1383,44 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // ikki xil qaror qabul qilinmasligi kerak.
   const backdropPhase = !isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null;
 
+  // ⓘ oynasi: xulosa QANDAY chiqqani + ogohlantirish. Ogohlantirish shart —
+  // "ehtimol past" ni saqlanish usuli deb tushunish real xavf.
+  const chanceInfoDialog = (
+    <Dialog
+      open={showChanceInfo}
+      onClose={() => setShowChanceInfo(false)}
+      fullWidth
+      maxWidth="xs"
+      slotProps={{ paper: { sx: { borderRadius: "24px", margin: 2 } } }}
+    >
+      <DialogContent>
+        {data.prediction && (
+          <div className="space-y-3">
+            <p className="text-base leading-relaxed text-text-primary">
+              {today >= data.prediction.fertileWindowStart && today <= data.prediction.fertileWindowEnd
+                ? dict.cycle.pregnancyChanceExplainHigh(
+                    formatDateLabel(data.prediction.fertileWindowStart),
+                    formatDateLabel(data.prediction.fertileWindowEnd)
+                  )
+                : dict.cycle.pregnancyChanceExplainLow(
+                    formatDateLabel(data.prediction.fertileWindowStart),
+                    formatDateLabel(data.prediction.fertileWindowEnd)
+                  )}
+            </p>
+            <p className="rounded-2xl bg-surface-muted p-3 text-sm leading-relaxed text-text-secondary">
+              {dict.cycle.pregnancyChanceExplainNote}
+            </p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <>
       <TodayBackdrop phase={backdropPhase} />
       {screen}
+      {chanceInfoDialog}
       {deck}
       {petPicker}
     </>

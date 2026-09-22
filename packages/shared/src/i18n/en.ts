@@ -364,6 +364,12 @@ const en: Dictionary = {
     pregnancyChanceLow: "Low chance of getting pregnant",
     pregnancyChanceHigh: "High chance of getting pregnant",
     pregnancyChanceUnknown: "Log your period to find out",
+    pregnancyChanceExplainHigh: (from: string, to: string) =>
+      `You are in your fertile window today (${from} – ${to}). These are the days around ovulation, when the chance of pregnancy is highest.`,
+    pregnancyChanceExplainLow: (from: string, to: string) =>
+      `Your fertile window is expected ${from} – ${to}. Today falls outside it, so the chance is low.`,
+    pregnancyChanceExplainNote:
+      "This is an estimate based on what you have logged, not a medical conclusion. Do not use it as a method of contraception.",
     statCycleDay: "Cycle day",
     statNextPeriod: "Next period",
     statNextFertile: "Fertile days",
