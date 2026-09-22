@@ -39,13 +39,10 @@ import { Emoji } from "@/components/Emoji";
 import { Lottie } from "lottie-react";
 import {
   LockOutlined,
-  TranslateOutlined,
-  PersonOutlined,
   ShieldOutlined,
   EditOutlined,
   CakeOutlined,
   AutorenewOutlined,
-  SickOutlined,
   FamilyRestroomOutlined,
   MonitorWeightOutlined,
   SendOutlined,
@@ -250,9 +247,6 @@ const SECTION_TONE: Record<SectionId, "secondary" | "primary" | "accent"> = {
 const STEP_VISUAL_HEIGHT = "h-36";
 
 const STEP_ICON: Partial<Record<Step, StepIconComponent>> = {
-  // LAYOUT-01: `language` ilgari YAGONA vizualsiz savol bosqichi edi.
-  language: TranslateOutlined,
-  account_choice: PersonOutlined,
   // LAYOUT-01: `account_identifier` bu yerdan olib tashlandi — u
   // STEP_ILLUSTRATION'da ham bor, render'da esa illyustratsiya ustun
   // keladi, ya'ni bu LockOutlined hech qachon chizilmasdi (o'lik sozlama).
@@ -260,7 +254,6 @@ const STEP_ICON: Partial<Record<Step, StepIconComponent>> = {
   name: EditOutlined,
   age: CakeOutlined,
   cycle_regularity: AutorenewOutlined,
-  typical_symptoms: SickOutlined,
   family_history: FamilyRestroomOutlined,
   sexually_active: FavoriteBorderOutlined,
   height_weight: MonitorWeightOutlined,
@@ -271,6 +264,8 @@ const STEP_ICON: Partial<Record<Step, StepIconComponent>> = {
 // ko'rsatiladi. Haqiqiy odam fotosurati emas (roziliksiz/litsenziyasiz muammo
 // bo'lardi), lekin "quruq matn" o'rniga chizilgan sifatli vizual taassurot beradi.
 const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
+  language: "language",
+  account_choice: "account-choice",
   account_identifier: "secure-login",
   phone_verify: "secure-login",
   goal: "goal",
@@ -280,6 +275,8 @@ const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
   last_checkup: "doctor",
   notifications: "notifications",
   period_attitude: "meditation",
+  // BRAND-02: endi o'z rasmimiz bor — ilgari bu bosqich faqat MUI ikonkasi edi.
+  typical_symptoms: "symptoms",
 };
 
 const STEP_ICON_COLOR: Partial<Record<Step, string>> = {

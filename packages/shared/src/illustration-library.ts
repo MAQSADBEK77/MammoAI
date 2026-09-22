@@ -128,6 +128,8 @@ export const ILLUSTRATION_CATEGORY_LABEL: Record<IllustrationCategory, string> =
 
 /** Ilovadagi har bir illyustratsiya "joyi" — admin panelda mustaqil tanlanadi. */
 export type IllustrationSlotKey =
+  | "onboarding.language"
+  | "onboarding.account_choice"
   | "onboarding.account_identifier"
   | "onboarding.phone_verify"
   | "onboarding.goal"
@@ -137,6 +139,7 @@ export type IllustrationSlotKey =
   | "onboarding.last_checkup"
   | "onboarding.notifications"
   | "onboarding.period_attitude"
+  | "onboarding.typical_symptoms"
   | "onboarding.analyzing"
   | "screen.tekshiruvlar"
   | "screen.pregnancy"
@@ -154,6 +157,8 @@ export const SLOT_SECTION_LABEL = {
 } as const;
 
 export const SLOT_META: Record<IllustrationSlotKey, { section: keyof typeof SLOT_SECTION_LABEL; label: string }> = {
+  "onboarding.language": { section: "onboarding", label: "Til tanlash" },
+  "onboarding.account_choice": { section: "onboarding", label: "Hisob yaratish / kirish" },
   "onboarding.account_identifier": { section: "onboarding", label: "Telefon raqam kiritish" },
   "onboarding.phone_verify": { section: "onboarding", label: "Telegram orqali tasdiqlash" },
   "onboarding.goal": { section: "onboarding", label: "Maqsad tanlash" },
@@ -163,6 +168,7 @@ export const SLOT_META: Record<IllustrationSlotKey, { section: keyof typeof SLOT
   "onboarding.last_checkup": { section: "onboarding", label: "Oxirgi tekshiruv" },
   "onboarding.notifications": { section: "onboarding", label: "Bildirishnoma so'rovi" },
   "onboarding.period_attitude": { section: "onboarding", label: "Hayzga munosabat" },
+  "onboarding.typical_symptoms": { section: "onboarding", label: "Odatdagi alomatlar" },
   "onboarding.analyzing": { section: "onboarding", label: "Tahlil qilinmoqda / yakun" },
   "screen.tekshiruvlar": { section: "screen", label: "Tekshiruv ro'yxati ekrani" },
   "screen.pregnancy": { section: "screen", label: "Homiladorlik ekrani" },
@@ -179,16 +185,22 @@ export const SLOT_KEYS = Object.keys(SLOT_META) as IllustrationSlotKey[];
 /** Admin hali hech narsa o'zgartirmagan bo'lsa ishlatiladigan boshlang'ich holat —
  * ilovaning HOZIRGI (kod ichida qattiq yozilgan bo'lgan) ko'rinishi bilan bir xil. */
 export const DEFAULT_SLOT_ASSIGNMENTS: Record<IllustrationSlotKey, string> = {
-  "onboarding.account_identifier": "classic-secure-login",
+  // BRAND-02: tilga MOS rasm hali yo'q — vaqtincha "welcome-start" qo'yildi
+  // (shu ekran Telegram orqali kelganlar uchun BIRINCHI ekran).
+  "onboarding.language": "welcome-start",
+  "onboarding.account_choice": "create-account",
+  // Qo'lida telefon ushlagan rasm — aynan raqam kiritish qadamiga mos.
+  "onboarding.account_identifier": "create-account-alt",
   "onboarding.phone_verify": "classic-secure-login",
   "onboarding.goal": "classic-goal",
-  "onboarding.cycle_lengths": "classic-calendar",
+  "onboarding.cycle_lengths": "feature-calendar",
   "onboarding.last_period": "classic-calendar",
   "onboarding.health_conditions": "classic-medicine",
   "onboarding.last_checkup": "classic-doctor",
   "onboarding.notifications": "classic-notifications",
   "onboarding.period_attitude": "classic-meditation",
-  "onboarding.analyzing": "classic-well-done",
+  "onboarding.typical_symptoms": "onboarding-symptoms",
+  "onboarding.analyzing": "onboarding-complete",
   "screen.tekshiruvlar": "classic-healthy-lifestyle",
   "screen.pregnancy": "classic-expecting",
   "landing.heroLeft": "classic-welcome",
