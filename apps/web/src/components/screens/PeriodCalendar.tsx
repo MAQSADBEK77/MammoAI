@@ -32,7 +32,11 @@ import { PhaseCard } from "@/components/PhaseCard";
 const MONTHS_BACK = 12;
 const MONTHS_FORWARD = 12;
 
-type DayState = "period" | "predicted" | "fertile" | null;
+// CAL-03: "ovulation" qo'shildi. `forecast[].ovulationDay` allaqachon
+// hisoblanardi, lekin hech qayerda CHIZILMASDI — foydalanuvchi buni sezdi
+// ("why ovulation days arent added to the calendar"). U unumdor oynaning eng
+// muhim kuni, shuning uchun oynadan ajralib turishi kerak.
+type DayState = "period" | "predicted" | "ovulation" | "fertile" | null;
 
 /** Noaniqlik shu chegaradan oshsa, bashorat kalendarda XIRAROQ chiziladi —
  * foydalanuvchi uzoq oydagi sanaga yaqin oydagidek ishonmasligi uchun. */
@@ -97,9 +101,10 @@ export function PeriodCalendar({
   /** Bashorat qilingan kunlar — BIR NECHA sikl oldinga (CYCLE-ALGO-16).
    * Set sifatida oldindan yig'iladi: kalendarda ~750 ta katak bor, har biri
    * uchun butun ro'yxatni aylanib chiqish sezilarli sekinlashuv berardi. */
-  const { predictedDates, fertileDates, faintDates } = useMemo(() => {
+  const { predictedDates, fertileDates, ovulationDates, faintDates } = useMemo(() => {
     const predicted = new Set<string>();
     const fertile = new Set<string>();
+    const ovulation = new Set<string>();
     const faint = new Set<string>();
     const push = (target: Set<string>, from: string, to: string, alsoFaint: boolean) => {
       for (let d = from; d <= to; d = addDays(d, 1)) {
@@ -118,9 +123,15 @@ export function PeriodCalendar({
     for (const c of data.forecast) {
       const uncertain = c.uncertaintyDays > FAINT_UNCERTAINTY_DAYS;
       push(predicted, c.periodStart, c.periodEnd, uncertain);
-      if (showFertile) push(fertile, c.fertileWindowStart, c.fertileWindowEnd, uncertain);
+      if (showFertile) {
+        push(fertile, c.fertileWindowStart, c.fertileWindowEnd, uncertain);
+        // Ovulyatsiya unumdor oyna ICHIDA — u bilan bir xil shart ostida
+        // ko'rsatiladi (ishonch yetarli bo'lmaganda ikkalasi ham chiqmaydi).
+        ovulation.add(c.ovulationDay);
+        if (uncertain) faint.add(c.ovulationDay);
+      }
     }
-    return { predictedDates: predicted, fertileDates: fertile, faintDates: faint };
+    return { predictedDates: predicted, fertileDates: fertile, ovulationDates: ovulation, faintDates: faint };
   }, [data.forecast, data.prediction?.confidence]);
 
   const months = useMemo(
@@ -156,6 +167,9 @@ export function PeriodCalendar({
     if (editing) return draft.has(date) ? "period" : predictedDates.has(date) ? "predicted" : null;
     if (loggedPeriodDates.has(date)) return "period";
     if (predictedDates.has(date)) return "predicted";
+    // Ovulyatsiya unumdor oynadan USTUN — aks holda u oyna ichida yo'qolib
+    // ketardi (u ham "fertile", lekin oynaning eng muhim kuni).
+    if (ovulationDates.has(date)) return "ovulation";
     if (fertileDates.has(date)) return "fertile";
     return null;
   }
@@ -594,6 +608,9 @@ function MonthGrid({
                 delay !== null && "day-fill",
                 state === "period" && "bg-primary text-white",
                 state === "predicted" && "border-2 border-dashed border-primary text-primary",
+                // Ovulyatsiya — to'liq aksent halqa. Unumdor oyna faqat
+                // rangli matn, shuning uchun ular chalkashmaydi.
+                state === "ovulation" && "ring-2 ring-accent text-accent",
                 state === "fertile" && "text-accent",
                 // Tahrirlashda BELGILANMAGAN kunlar ham gardishli bo'ladi —
                 // "bu yerga bosish mumkin" degan aniq ishora (oddiy rejimda
@@ -644,6 +661,7 @@ function MiniMonth({
               "h-2 w-2 rounded-full",
               state === "period" && "bg-primary",
               state === "predicted" && "bg-primary/35",
+              state === "ovulation" && "bg-accent",
               state === "fertile" && "bg-accent/50",
               !state && "bg-border",
               date === today && "ring-2 ring-text-primary/40"

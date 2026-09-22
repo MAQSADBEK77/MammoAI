@@ -27,7 +27,7 @@ import type { Pet } from "@mammoai/shared";
  */
 
 /** Hafta chizig'idagi bir kunning holati — rang/shakl shu bo'yicha tanlanadi. */
-export type TodayDayMarker = "period" | "predicted" | "fertile" | null;
+export type TodayDayMarker = "period" | "predicted" | "ovulation" | "fertile" | null;
 
 export interface TodayDay {
   date: string;
@@ -282,6 +282,8 @@ export function TodayHeader({
                   isToday ? "h-11 w-11 text-base ring-4 ring-surface" : "h-9 w-9 text-sm",
                   marker === "period" && "bg-primary text-white",
                   marker === "predicted" && "border-2 border-dashed border-primary text-primary",
+                  // CAL-03: ovulyatsiya kalendardagi bilan BIR XIL ko'rinadi.
+                  marker === "ovulation" && "ring-2 ring-accent text-accent",
                   marker === "fertile" && "text-accent",
                   !marker && (isToday ? "bg-surface text-text-primary" : "text-text-primary"),
                   isToday && "shadow-md",
@@ -374,7 +376,13 @@ export function TodayHeader({
                   // shaffof to'rtburchak, yumshoq burchakli, matni QORA va
                   // qalin emas, o'ngida esa ⓘ belgisi. Ilgari u kichik,
                   // qalin, kulrang tabletka edi — referensga o'xshamasdi.
-                  "inline-flex items-center gap-2 rounded-xl bg-surface/55 px-4 py-2.5 text-base text-text-primary active:bg-surface/80"
+                  // O'lchov (referens PNG piksellari, 2026-09-22): chip foni
+                  // sahifa rangidan deyarli farq qilmaydi (#F5F1F0 vs
+                  // #F8F3F0) — ya'ni u quyuq tabletka EMAS, juda yengil
+                  // qatlam. Matn esa DEYARLI QORA (#050101) va ~17px, qalin
+                  // emas. Menda 16px va ko'kimtir-kulrang edi, farq shundan
+                  // ko'rinardi.
+                  "inline-flex items-center gap-2 rounded-xl bg-surface/45 px-4 py-2.5 text-[17px] leading-tight text-text-primary active:bg-surface/70"
             )}
           >
             <span>{heroChip.label}</span>

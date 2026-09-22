@@ -344,6 +344,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     const logByDate = new Map(data.logs.map((l) => [l.date, l]));
     const predicted = new Set<string>();
     const fertile = new Set<string>();
+    const ovulation = new Set<string>();
     // Bashorat eskirgan bo'lsa (oxirgi hayz juda uzoq oldin qayd etilgan)
     // hech qanday bashorat belgisi qo'yilmaydi — aks holda chiziq allaqachon
     // o'tib ketgan "bashorat"larni ko'rsatib, xato ma'lumot berardi.
@@ -359,7 +360,12 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
       for (const c of data.forecast) {
         for (const [from, to, target] of [
           [c.periodStart, c.periodEnd, predicted],
-          ...(showFertile ? ([[c.fertileWindowStart, c.fertileWindowEnd, fertile]] as const) : []),
+          ...(showFertile
+            ? ([
+                [c.fertileWindowStart, c.fertileWindowEnd, fertile],
+                [c.ovulationDay, c.ovulationDay, ovulation],
+              ] as const)
+            : []),
         ] as const) {
           const cur = new Date(from + "T00:00:00");
           const end = new Date(to + "T00:00:00");
@@ -387,6 +393,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
 
       // Haqiqiy qayd bashoratdan USTUN, bashorat esa unumdor oynadan.
       let marker: TodayDayMarker = log?.flow ? "period" : predicted.has(date) ? "predicted" : null;
+      // Tartib kalendar bilan AYNAN bir xil: ovulyatsiya unumdor oynadan ustun.
+      if (!marker && ovulation.has(date)) marker = "ovulation";
       if (!marker && fertile.has(date)) marker = "fertile";
       return { date, dateObj: d, marker, emojis };
     });
