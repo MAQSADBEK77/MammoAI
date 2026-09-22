@@ -418,6 +418,18 @@ const en: Dictionary = {
     dayDetailLogButton: "Log this day",
     moodCheckinTitle: "How are you feeling today?",
     dailyInsightsTitle: "Daily insights",
+    myCyclesTitle: "My cycles",
+    myCyclesPreviousCycle: "Previous cycle length",
+    myCyclesPreviousPeriod: "Previous period length",
+    myCyclesVariation: "Cycle length variation",
+    myCyclesRange: (min: number, max: number) => `${min}–${max} days`,
+    myCyclesEmpty: "Log your period — your cycle analysis will appear here.",
+    myCyclesLogCta: "Log period",
+    myCyclesStatusNormal: "Normal",
+    myCyclesStatusShort: "Short",
+    myCyclesStatusLong: "Long",
+    myCyclesStatusRegular: "Regular",
+    myCyclesStatusIrregular: "Irregular",
     dailyInsights: {
       phase_menstrual: {
         title: "Your period days",

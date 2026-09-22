@@ -494,6 +494,20 @@ const uz = {
     dayDetailLogButton: "Bu kunni belgilash",
     moodCheckinTitle: "Bugun o'zingizni qanday his qilyapsiz?",
     dailyInsightsTitle: "Kunlik maslahatlar",
+    /** SUMMARY-01: "Mening sikllarim" — faqat QAYD ETILGAN narsani
+     * o'lchaydi, bashorat emas. Ma'lumot yetmasa raqam o'rniga taklif. */
+    myCyclesTitle: "Mening sikllarim",
+    myCyclesPreviousCycle: "Oldingi sikl uzunligi",
+    myCyclesPreviousPeriod: "Oldingi hayz davomiyligi",
+    myCyclesVariation: "Sikl uzunligi o'zgarishi",
+    myCyclesRange: (min: number, max: number) => `${min}–${max} kun`,
+    myCyclesEmpty: "Hayzingizni belgilang — sikllaringiz tahlili shu yerda paydo bo'ladi.",
+    myCyclesLogCta: "Hayzni belgilash",
+    myCyclesStatusNormal: "Odatiy",
+    myCyclesStatusShort: "Qisqa",
+    myCyclesStatusLong: "Uzun",
+    myCyclesStatusRegular: "Muntazam",
+    myCyclesStatusIrregular: "Tartibsiz",
     // 2026-09-18: "yozib berilgan shaxsiy maslahat" ohangiga o'zgartirildi
     // (foydalanuvchi so'rovi: "yaqin do'st/hamshira yozganday" — lekin
     // mazmun/aniqlik o'zgarmaydi, faqat ohang, hech qachon "chiroyli yolg'on"ga

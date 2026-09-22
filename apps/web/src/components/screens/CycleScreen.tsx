@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -28,6 +28,7 @@ import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { useAppDrawer } from "@/components/AppDrawer";
 import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
+import { MyCyclesCard } from "@/components/screens/MyCyclesCard";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
 import { TodayHeader, type TodayDay, type TodayDayMarker } from "@/components/screens/TodayHeader";
@@ -515,6 +516,9 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   const heroAction = !data.prediction ? openEditLastPeriod : () => openLogging(today, todayLog);
   // Savol berilayotgan bo'lsa, chaqiruv ham ANIQ javob bo'lsin ("Ha, bugun
   // belgilash") — umumiy "Bosing va boshlang" bu yerda savolga javob bermaydi.
+  /** SUMMARY-01: faqat QAYD ETILGAN narsani o'lchaydi — bashorat emas. */
+  const cycleSummary = summarizeCycles(data.logs, today);
+
   const heroTapHintText = periodExpectedButUnlogged
     ? dict.cycle.heroPeriodStartedCta
     : dict.cycle.heroTapHint;
@@ -1053,6 +1057,13 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
       {/* 5. Kunlik maslahat kartasi — iliq, "sizga atalgan" ohangdagi matn
           (dict.cycle.dailyInsights, mazmuni o'zgarmagan, faqat ohang). */}
       <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
+
+      {/* SUMMARY-01 — "Mening sikllarim". Referensda (Flo) bosh ekranning
+          pastki qismi "qayd qilsang — buni qaytarib beraman" tamoyiliga
+          qurilgan; bizda esa qayd qilishdan nima foyda ko'rilishi hech
+          qayerda ko'rsatilmasdi. Perimenopauzada ko'rsatilmaydi — u yerda
+          "odatiy sikl uzunligi" tushunchasining o'zi boshqa. */}
+      {!isPerimenopause && <MyCyclesCard summary={cycleSummary} onLogPeriod={() => openLogging(today, todayLog)} />}
 
       {/* OVERNIGHT-20: bu forma ILGARI oddiy inline <Card> edi — sahifada
           DailyInsightsCarousel'dan PASTDA render bo'lardi, ya'ni hero/tezkor

@@ -416,6 +416,18 @@ const ru: Dictionary = {
     dayDetailLogButton: "Отметить этот день",
     moodCheckinTitle: "Как вы себя чувствуете сегодня?",
     dailyInsightsTitle: "Советы дня",
+    myCyclesTitle: "Мои циклы",
+    myCyclesPreviousCycle: "Длина прошлого цикла",
+    myCyclesPreviousPeriod: "Длительность прошлых месячных",
+    myCyclesVariation: "Разброс длины цикла",
+    myCyclesRange: (min: number, max: number) => `${min}–${max} дн.`,
+    myCyclesEmpty: "Отмечайте месячные — здесь появится анализ ваших циклов.",
+    myCyclesLogCta: "Отметить месячные",
+    myCyclesStatusNormal: "Норма",
+    myCyclesStatusShort: "Короткий",
+    myCyclesStatusLong: "Длинный",
+    myCyclesStatusRegular: "Регулярный",
+    myCyclesStatusIrregular: "Нерегулярный",
     dailyInsights: {
       phase_menstrual: {
         title: "Дни цикла",
