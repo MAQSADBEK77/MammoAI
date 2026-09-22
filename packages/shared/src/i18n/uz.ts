@@ -445,7 +445,7 @@ const uz = {
     calTapHint: "Hayz boshlangan kunga bosing — keyingi kunlar avtomatik belgilanadi. Xato bo'lsa, o'sha kunga qayta bosing.",
     calEditPeriod: "Hayz sanalarini tahrirlash",
     calEditHint: (days: number) =>
-      `Hayz boshlangan kunga bosing — keyingi ${days} kun avtomatik belgilanadi (bugundan nariga o'tmaydi). Ortiqcha kunni olib tashlash uchun ustiga yana bosing.`,
+      `Hayz boshlangan kunga bosing — ${days} kun avtomatik belgilanadi (bugundan nariga o'tmaydi). Belgilangan kunlar yoniga bosilsa faqat o'sha bitta kun qo'shiladi, ustiga yana bosilsa olib tashlanadi.`,
     calCycleDay: (day: number) => `Sikl ${day}-kuni`,
     calSymptomsTitle: "Simptomlar va faoliyat",
     calNothingLogged: "Vazn, kayfiyat va simptom qo'shish",

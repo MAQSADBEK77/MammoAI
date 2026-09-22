@@ -63,8 +63,12 @@ export function PeriodCalendar({
   const { dict } = useI18n();
   const todayDate = useMemo(() => new Date(today + "T00:00:00"), [today]);
   /** Ayolning O'Z hayz davomiyligi — avtomatik to'ldirish shunga qarab
-   * bo'ladi (onboarding'da "bilmayman" degan bo'lsa, standart 5). */
-  const periodLength = data.settings.averagePeriodLength || DEFAULT_PERIOD_LENGTH;
+   * bo'ladi. Manbalar tartibi MUHIM: avval `prediction` (u `cycle_logs`dan
+   * O'RGANILGAN qiymat), keyin onboarding javobi, oxirida standart 5.
+   * `cycle_settings` onboarding'dan keyin hech qachon yangilanmaydi — unga
+   * tayanilsa, hayzi doim 6 kun davom etadigan ayolda ham abadiy 5 qolardi. */
+  const periodLength =
+    data.prediction?.averagePeriodLength || data.settings.averagePeriodLength || DEFAULT_PERIOD_LENGTH;
   const [view, setView] = useState<"month" | "year">("month");
   const [year, setYear] = useState(todayDate.getFullYear());
   const [selected, setSelected] = useState<string | null>(null);
@@ -183,14 +187,25 @@ export function PeriodCalendar({
       return;
     }
 
+    // CAL-02: avtomatik to'ldirish faqat YANGI hayz boshlanganda ishlaydi.
+    // Agar bosilgan kun allaqachon belgilangan kunga TUTASH bo'lsa, ayol
+    // mavjud hayzni uzaytiryapti (masalan odatda 5 kun, bu safar 6 kun
+    // ketdi) — bunday holatda faqat o'sha bitta kun qo'shiladi. Aks holda
+    // 6-kunni qo'shmoqchi bo'lgan ayolga ilova yana 5 kun belgilab berardi.
+    const extendsExistingPeriod = draft.has(addDays(date, -1)) || draft.has(addDays(date, 1));
+
     const added: string[] = [];
-    for (let i = 0; i < periodLength; i++) {
-      const d = addDays(date, i);
-      if (d > today) break;
-      if (!draft.has(d)) added.push(d);
+    if (extendsExistingPeriod) {
+      added.push(date);
+    } else {
+      for (let i = 0; i < periodLength; i++) {
+        const d = addDays(date, i);
+        if (d > today) break;
+        if (!draft.has(d)) added.push(d);
+      }
+      // Hamma kun allaqachon belgilangan bo'lsa ham boshlanish kuni qo'shilsin.
+      if (added.length === 0) added.push(date);
     }
-    // Hamma kun allaqachon belgilangan bo'lsa ham boshlanish kuni qo'shilsin.
-    if (added.length === 0) added.push(date);
     setFillOrder(added);
     setDraft((cur) => {
       const next = new Set(cur);

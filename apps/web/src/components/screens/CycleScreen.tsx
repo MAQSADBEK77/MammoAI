@@ -301,7 +301,10 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   const loggedPeriodStart = !data.prediction?.isStale ? lastLoggedPeriodStart(data.logs) : null;
   if (loggedPeriodStart) {
     const diff = Math.round((new Date(today).getTime() - new Date(loggedPeriodStart).getTime()) / 86400000);
-    if (diff >= 0 && diff < data.settings.averagePeriodLength) periodDay = diff + 1;
+    // CYCLE-ALGO-19: O'RGANILGAN davomiylik (prediction), xom `cycle_settings`
+    // emas — u onboarding'dan keyin hech qachon yangilanmaydi.
+    const effectivePeriodLength = data.prediction?.averagePeriodLength || data.settings.averagePeriodLength;
+    if (diff >= 0 && diff < effectivePeriodLength) periodDay = diff + 1;
   }
 
   const todayLog = data.logs.find((l) => l.date === today);

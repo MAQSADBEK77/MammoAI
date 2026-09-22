@@ -269,6 +269,17 @@ describe("predictCycle", () => {
     expect(predictCycle({ lastPeriodStart: null, averageCycleLength: 28, averagePeriodLength: 5 })).toBeNull();
   });
 
+  it("CYCLE-ALGO-19: hayz davomiyligi natijada OCHIQ qaytariladi", () => {
+    // UI (kalendardagi avtomatik to'ldirish, bosh sahifadagi "hayz N-kuni")
+    // shu qiymatga tayanadi. `cycle_settings` onboarding'dan keyin hech qachon
+    // yangilanmaydi, shuning uchun u yerdan olish mumkin emas — hayzi doim
+    // 6 kun ketadigan ayolda ham abadiy 5 bo'lib qolardi.
+    const pred = predictCycle({ lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 6 });
+    expect(pred?.averagePeriodLength).toBe(6);
+    // nextPeriodEnd bilan mos: start + davomiylik - 1
+    expect(pred?.nextPeriodEnd).toBe("2026-02-03");
+  });
+
   it("aynan kutilgan kunda (day 0) daysUntilNextPeriod = 0 bo'ladi", () => {
     const pred = predictCycle({ lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5 }, "2026-01-29");
     expect(pred?.nextPeriodStart).toBe("2026-01-29");

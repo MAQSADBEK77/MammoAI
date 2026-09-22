@@ -584,6 +584,13 @@ export interface CyclePrediction {
   fertileWindowEnd: string;
   ovulationDay: string;
   daysUntilNextPeriod: number;
+  /** CYCLE-ALGO-19: bashorat ASOSIDAGI hayz davomiyligi — mavjud bo'lsa
+   * `cycle_logs`dan O'RGANILGAN qiymat, aks holda foydalanuvchi onboarding'da
+   * kiritgani. UI shu qiymatga tayanishi kerak, `cycle_settings`dagi xom
+   * qiymatga emas: `cycle_settings` onboarding'dan keyin HECH QACHON
+   * yangilanmaydi (repo.ts faqat `cycle_logs`ga yozadi), ya'ni hayzi odatda
+   * 6 kun davom etadigan ayolda ham u abadiy 5 bo'lib qolardi. */
+  averagePeriodLength: number;
   /** Necha ta haqiqiy sikl asosida hisoblangani — 0 bo'lsa, taxminiy (sozlamaga
    * asoslangan) bashorat. UI'da "so'nggi N ta sikl asosida" kabi shaffoflik uchun. */
   cyclesAnalyzed: number;
@@ -666,6 +673,7 @@ export function predictCycle(
     fertileWindowEnd,
     ovulationDay,
     daysUntilNextPeriod,
+    averagePeriodLength: periodLength,
     cyclesAnalyzed: 0, // chaqiruvchi (buildCycleResponse) adaptiv qiymat bilan qayta belgilaydi
     isStale: daysUntilNextPeriod < -STALE_PREDICTION_DAYS,
     confidence: "insufficient", // chaqiruvchi adaptiv qiymat bilan qayta belgilaydi
