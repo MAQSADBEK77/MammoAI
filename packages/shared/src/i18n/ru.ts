@@ -428,6 +428,10 @@ const ru: Dictionary = {
     myCyclesStatusLong: "Длинный",
     myCyclesStatusRegular: "Регулярный",
     myCyclesStatusIrregular: "Нерегулярный",
+    cycleHistoryTitle: "История циклов",
+    cycleHistoryCurrent: (days: number) => `Текущий цикл: ${days} дн.`,
+    cycleHistoryStarted: (date: string) => `Начался ${date}`,
+    cycleHistoryLegendFertile: "Фертильные дни",
     dailyInsights: {
       phase_menstrual: {
         title: "Дни цикла",

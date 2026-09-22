@@ -430,6 +430,10 @@ const en: Dictionary = {
     myCyclesStatusLong: "Long",
     myCyclesStatusRegular: "Regular",
     myCyclesStatusIrregular: "Irregular",
+    cycleHistoryTitle: "Cycle history",
+    cycleHistoryCurrent: (days: number) => `Current cycle: ${days} days`,
+    cycleHistoryStarted: (date: string) => `Started ${date}`,
+    cycleHistoryLegendFertile: "Fertile days",
     dailyInsights: {
       phase_menstrual: {
         title: "Your period days",

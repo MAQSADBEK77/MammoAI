@@ -508,6 +508,11 @@ const uz = {
     myCyclesStatusLong: "Uzun",
     myCyclesStatusRegular: "Muntazam",
     myCyclesStatusIrregular: "Tartibsiz",
+    /** HISTORY-01: "Sikl tarixi" — o'tgan sikllar va ularning shakli. */
+    cycleHistoryTitle: "Sikl tarixi",
+    cycleHistoryCurrent: (days: number) => `Joriy sikl: ${days} kun`,
+    cycleHistoryStarted: (date: string) => `${date} dan boshlandi`,
+    cycleHistoryLegendFertile: "Unumdor kunlar",
     // 2026-09-18: "yozib berilgan shaxsiy maslahat" ohangiga o'zgartirildi
     // (foydalanuvchi so'rovi: "yaqin do'st/hamshira yozganday" — lekin
     // mazmun/aniqlik o'zgarmaydi, faqat ohang, hech qachon "chiroyli yolg'on"ga

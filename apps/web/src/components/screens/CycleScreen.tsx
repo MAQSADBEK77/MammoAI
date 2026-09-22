@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -29,6 +29,7 @@ import { useAppDrawer } from "@/components/AppDrawer";
 import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { MyCyclesCard } from "@/components/screens/MyCyclesCard";
+import { CycleHistoryCard } from "@/components/screens/CycleHistoryCard";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
 import { TodayHeader, type TodayDay, type TodayDayMarker } from "@/components/screens/TodayHeader";
@@ -518,6 +519,10 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // belgilash") — umumiy "Bosing va boshlang" bu yerda savolga javob bermaydi.
   /** SUMMARY-01: faqat QAYD ETILGAN narsani o'lchaydi — bashorat emas. */
   const cycleSummary = summarizeCycles(data.logs, today);
+  /** HISTORY-01: o'tgan sikllar. Lyuteal faza bashorat bilan BIR XIL
+   * manbadan olinadi (CYCLE-ALGO-24) — aks holda tarixdagi ovulyatsiya
+   * nuqtasi kalendardagidan farq qilardi. */
+  const cycleHistory = buildCycleHistory(data.logs, today, { lutealPhaseDays: data.prediction?.lutealPhaseDays });
 
   const heroTapHintText = periodExpectedButUnlogged
     ? dict.cycle.heroPeriodStartedCta
@@ -1064,6 +1069,9 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           qayerda ko'rsatilmasdi. Perimenopauzada ko'rsatilmaydi — u yerda
           "odatiy sikl uzunligi" tushunchasining o'zi boshqa. */}
       {!isPerimenopause && <MyCyclesCard summary={cycleSummary} onLogPeriod={() => openLogging(today, todayLog)} />}
+
+      {/* HISTORY-01 — o'tgan sikllar va ularning shakli. */}
+      {!isPerimenopause && <CycleHistoryCard cycles={cycleHistory} />}
 
       {/* OVERNIGHT-20: bu forma ILGARI oddiy inline <Card> edi — sahifada
           DailyInsightsCarousel'dan PASTDA render bo'lardi, ya'ni hero/tezkor
