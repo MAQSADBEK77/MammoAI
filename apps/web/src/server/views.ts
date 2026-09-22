@@ -10,6 +10,7 @@ import {
   getPregnancyStatus,
   WATER_TARGET_ML,
   forecastCycles,
+  tashkentDateStr,
 } from "@mammoai/shared";
 import type { CycleResponse, PregnancyResponse, WellnessResponse } from "@mammoai/shared";
 import {
@@ -52,7 +53,13 @@ export async function buildCycleResponse(userId: string, today?: string): Promis
   // bilan AYNAN bir xil manba (o'rganilgan sikl/hayz uzunligi va shaxsiy
   // lyuteal faza), shuning uchun birinchi bashorat qilingan sikl `prediction`
   // bilan doim mos tushadi — ikkalasi boshqa-boshqa sana ko'rsatmaydi.
-  const forecast = adaptive ? forecastCycles(adaptive) : [];
+  // CYCLE-ALGO-17: `today` UZATILADI — tugab bo'lgan sikllar chiqarib
+  // tashlanishi uchun. Sikllar `lastPeriodStart`dan sanaladi, ya'ni oxirgi
+  // hayz uzoq oldin qayd etilgan (yoki faqat onboarding'da bir marta
+  // kiritilgan) foydalanuvchida birinchi "bashorat"lar allaqachon o'tmishda
+  // qolgan bo'lardi va kalendarda o'tib ketgan kunlar "kutilmoqda" bo'lib
+  // turardi.
+  const forecast = adaptive ? forecastCycles(adaptive, undefined, today ?? tashkentDateStr()) : [];
 
   return { settings, logs, prediction, isIrregular, forecast };
 }

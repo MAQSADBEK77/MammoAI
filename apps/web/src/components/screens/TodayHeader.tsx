@@ -110,23 +110,52 @@ export function TodayHeader({
   // element DOM'ga tushishidan oldin ham ishlashi mumkin (kalendarda aynan shu
   // sabab bir yil oldingi oy ochilib qolgandi). Shuning uchun bugungi tugma
   // DOM'ga BIRIKKAN paytda, bir marta o'rnatiladi.
+  //
+  // "Sahifadan chiqib qaytganda bugunga qaytsinmi?" — HA, va bu o'z-o'zidan
+  // shunday: boshqa bo'limga o'tilganda butun ekran yechiladi (unmount), qaytib
+  // kelinganda esa yangi nusxa ochiladi va quyidagi `didCenterToday` yana
+  // `false` bo'ladi. Ya'ni qo'shimcha kod kerak emas. Foydalanuvchi sahifadan
+  // CHIQMASDAN uzoqqa surib ketgan holat uchun esa pastdagi "Bugun" tugmasi
+  // bor — u scrollni ZO'RLAB tortmaydi (bu asabiylashtirardi), faqat taklif
+  // qiladi va faqat bugun ko'rinmay qolganda chiqadi.
   const stripRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLButtonElement | null>(null);
   const didCenterToday = useRef(false);
+  const [todayOffscreen, setTodayOffscreen] = useState(false);
+
+  function centerToday(smooth: boolean) {
+    const strip = stripRef.current;
+    const el = todayRef.current;
+    if (!strip || !el) return;
+    const stripBox = strip.getBoundingClientRect();
+    const elBox = el.getBoundingClientRect();
+    // `offsetLeft` EMAS: u eng yaqin joylashtirilgan (positioned) ota elementga
+    // nisbatan hisoblanadi, bu esa bu komponentdan tashqarida bo'lishi mumkin.
+    // Qirralar farqi har qanday holatda to'g'ri ishlaydi.
+    const delta = elBox.left - stripBox.left - (stripBox.width - elBox.width) / 2;
+    if (smooth) strip.scrollBy({ left: delta, behavior: "smooth" });
+    else strip.scrollLeft += delta;
+  }
 
   function attachToday(el: HTMLButtonElement | null) {
-    const strip = stripRef.current;
-    if (!el || !strip || didCenterToday.current) return;
+    todayRef.current = el;
+    if (!el || didCenterToday.current) return;
     didCenterToday.current = true;
     // rAF — element biriktirildi, lekin joylashuv hali yakunlanmagan bo'lishi
     // mumkin, ya'ni o'lchamlar hali 0 bo'lishi ehtimoli bor.
-    requestAnimationFrame(() => {
-      const stripBox = strip.getBoundingClientRect();
-      const elBox = el.getBoundingClientRect();
-      // `offsetLeft` EMAS: u eng yaqin joylashtirilgan (positioned) ota
-      // elementga nisbatan hisoblanadi, bu esa bu komponentdan tashqarida
-      // bo'lishi mumkin. Qirralar farqi har qanday holatda to'g'ri ishlaydi.
-      strip.scrollLeft += elBox.left - stripBox.left - (stripBox.width - elBox.width) / 2;
-    });
+    requestAnimationFrame(() => centerToday(false));
+  }
+
+  /** Bugun ko'rinish maydonidan chiqib ketganini kuzatadi. Hodisa
+   * ishlovchisida — effektda emas, ya'ni ortiqcha render kaskadi yo'q. */
+  function handleStripScroll() {
+    const strip = stripRef.current;
+    const el = todayRef.current;
+    if (!strip || !el) return;
+    const stripBox = strip.getBoundingClientRect();
+    const elBox = el.getBoundingClientRect();
+    const hidden = elBox.right < stripBox.left + 4 || elBox.left > stripBox.right - 4;
+    setTodayOffscreen((cur) => (cur === hidden ? cur : hidden));
   }
 
   return (
@@ -196,8 +225,21 @@ export function TodayHeader({
           sig'dirish uchun qisilib, karusel ma'nosini yo'qotardi. Shu sababli
           RESP-01dagi "tor ekranda kichraytirish" ham endi kerak emas —
           sig'masa shunchaki suriladi. */}
-      <div ref={stripRef} className="no-scrollbar -mx-4 overflow-x-auto overscroll-x-contain">
-        <div className="flex w-max gap-0.5 px-4 sm:gap-1">
+      <div className="relative">
+      {/* Tasma sahifaning oddiy matn maydonidan CHIQMAYDI. Ilgari u ekran
+          chekkasigacha cho'zilgan edi (`-mx-4` + `px-4`) va shu sababli
+          markazlashtirish kun CHEGARASIGA tushmasdi — chap va o'ngda kunlarning
+          yarmi kesilib turardi. Endi konteyner kengligi aynan 7 kunga teng,
+          ya'ni bugun markazda turganda chapda 3 ta va o'ngda 3 ta BUTUN kun
+          qoladi.
+
+          `snap-mandatory` + `snap-start`: qo'lda surilganda ham tasma doim
+          kun chegarasida to'xtaydi, hech qachon yarim kun ko'rinmaydi. */}
+      <div
+        ref={stripRef}
+        onScroll={handleStripScroll}
+        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain"
+      >
         {days.map(({ date, dateObj, marker, emojis }) => {
           const isToday = date === today;
           const isSelected = date === selectedDate;
@@ -207,7 +249,12 @@ export function TodayHeader({
               ref={isToday ? attachToday : undefined}
               type="button"
               onClick={() => onSelectDay(date)}
-              className="tap-target flex w-12 shrink-0 flex-col items-center gap-1.5 rounded-2xl py-1"
+              // Kenglik EKRANga bog'liq: `100%` — surilish konteynerining
+              // kengligi, ya'ni sahifaning matn maydoni bilan bir xil.
+              // 1/7 = bir vaqtda AYNAN 7 kun ko'rinadi (qat'iy 48px bo'lsa
+              // keng ekranda 8-9 tasi sig'ib, chiziq siqiq ko'rinardi).
+              style={{ width: "calc(100% / 7)" }}
+              className="tap-target flex shrink-0 snap-start flex-col items-center gap-1.5 rounded-2xl py-1"
             >
               <span
                 className={clsx(
@@ -256,7 +303,22 @@ export function TodayHeader({
             </button>
           );
         })}
-        </div>
+      </div>
+
+      {/* Faqat bugun ko'rinmay qolganda chiqadi. Surilish yo'nalishidan
+          qat'i nazar o'ngda turadi — o'rni sakrab yurgani ko'zni charchatardi. */}
+      <button
+        type="button"
+        onClick={() => centerToday(true)}
+        tabIndex={todayOffscreen ? undefined : -1}
+        aria-hidden={!todayOffscreen}
+        className={clsx(
+          "absolute -top-1 right-0 rounded-full bg-surface px-3 py-1 text-xs font-bold text-primary shadow-md transition-all duration-200",
+          todayOffscreen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-1 opacity-0"
+        )}
+      >
+        {dict.cycle.todayLabel}
+      </button>
       </div>
 
       {/* 3. Markaziy blok — referensda ekranning eng katta, eng sokin qismi:

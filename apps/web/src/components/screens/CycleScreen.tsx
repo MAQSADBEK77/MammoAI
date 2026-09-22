@@ -38,6 +38,37 @@ import { LogSheet } from "@/components/screens/LogSheet";
 import { PeriodCalendar } from "@/components/screens/PeriodCalendar";
 import { PetPicker } from "@/components/pets/PetPicker";
 
+/** 0-BOSQICH: oxirgi QAYD ETILGAN hayzning birinchi kuni — ketma-ket "flow"
+ * kunlari guruhining boshi. `null` — foydalanuvchi hech qachon hayz qayd
+ * etmagan.
+ *
+ * Nega kerak: "Hayz: N-kun" — bu HOZIRGI holat haqidagi DA'VO. Ilgari u
+ * `cycle_settings.last_period_start`dan, ya'ni onboarding'dagi bir martalik
+ * "oxirgi marta qachon hayz ko'rgansiz?" javobidan hisoblanardi. O'sha qiymat
+ * hayz belgilanganda ham, o'chirilganda ham HECH QACHON yangilanmaydi
+ * (repo.ts: setPeriodRange/applyPeriodDiff/clearPeriodRange faqat `cycle_logs`
+ * ga tegadi). Natijada hech narsa belgilamagan foydalanuvchiga ilova
+ * "Hayz: 3-kun" deb aytardi — production'da 71 ta foydalanuvchiga tegishli.
+ *
+ * Ilova ayolning hozir hayz ko'rayotganini BILA OLMAYDI — buni faqat ayolning
+ * o'zi aytadi. Shuning uchun endi da'vo faqat haqiqiy qaydga tayanadi. */
+function lastLoggedPeriodStart(logs: CycleLog[]): string | null {
+  const dates = logs
+    .filter((l) => l.flow)
+    .map((l) => l.date)
+    .sort();
+  if (dates.length === 0) return null;
+  let start = dates[dates.length - 1];
+  for (let i = dates.length - 2; i >= 0; i--) {
+    const next = new Date(dates[i] + "T00:00:00");
+    next.setDate(next.getDate() + 1);
+    // Uzilish topildi — oldingi kunlar BOSHQA hayzga tegishli.
+    if (localDateStr(next) !== start) break;
+    start = dates[i];
+  }
+  return start;
+}
+
 /** TODAY-07: bosh ekrandagi kunlar karuseli qancha oraliqni qamraydi.
  * Bugundan oldin/keyin ~6 hafta — qayd qilish va yaqin bashoratlar uchun
  * yetarli, lekin chiziqni cheksiz uzaytirib yubormaydi (undan uzoqni ko'rish
@@ -260,8 +291,17 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     const diff = Math.round(
       (new Date(today).getTime() - new Date(data.settings.lastPeriodStart).getTime()) / 86400000
     );
-    if (diff >= 0 && diff < data.settings.averagePeriodLength) periodDay = diff + 1;
+    // `dayInCycle` — "siklning N-kuni", ya'ni BASHORAT (faza taxmini), shuning
+    // uchun u foydalanuvchi kiritgan sanaga tayanishi mumkin.
     dayInCycle = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
+  }
+
+  // `periodDay` esa bashorat EMAS, hozirgi holat haqidagi da'vo — u faqat
+  // haqiqiy qayddan chiqadi (qarang: lastLoggedPeriodStart izohi).
+  const loggedPeriodStart = !data.prediction?.isStale ? lastLoggedPeriodStart(data.logs) : null;
+  if (loggedPeriodStart) {
+    const diff = Math.round((new Date(today).getTime() - new Date(loggedPeriodStart).getTime()) / 86400000);
+    if (diff >= 0 && diff < data.settings.averagePeriodLength) periodDay = diff + 1;
   }
 
   const todayLog = data.logs.find((l) => l.date === today);

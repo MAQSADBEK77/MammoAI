@@ -862,6 +862,29 @@ describe("forecastCycles (CYCLE-ALGO-16)", () => {
     expect(out[0].periodEnd).toBe("2026-02-02"); // 5 kunlik hayz
   });
 
+  it("CYCLE-ALGO-17: tugab bo'lgan sikllar chiqarib tashlanadi", () => {
+    // `today` 2026-03-10 — birinchi ikkita sikl (29-yanvar va 26-fevral)
+    // allaqachon o'tgan. Ilgari ular kalendarda "kutilmoqda" bo'lib turardi
+    // (foydalanuvchi ko'rgan holat: bugun 22-sentabr, "15-19 sentabr
+    // kutilmoqda").
+    const out = forecastCycles({ ...settings, stdDevDays: 0 }, 4, "2026-03-10");
+    expect(out.map((c) => c.periodStart)).toEqual(["2026-03-26", "2026-04-23"]);
+    // `index` saqlanadi — noaniqlik i-siklga bog'liq, qayta raqamlanmaydi.
+    expect(out[0].index).toBe(3);
+  });
+
+  it("CYCLE-ALGO-17: noaniqlik oynasi hali ochiq sikl QOLADI", () => {
+    // 29-yanvarda kutilgan hayz, ±4 kun noaniqlik → eng kech 2-fevral.
+    // Bugun 1-fevral: hayz hali boshlanishi MUMKIN, shuning uchun
+    // bashorat olib tashlanmaydi.
+    const out = forecastCycles({ ...settings, stdDevDays: 4 }, 2, "2026-02-01");
+    expect(out[0].periodStart).toBe("2026-01-29");
+  });
+
+  it("CYCLE-ALGO-17: `today` berilmasa hech narsa filtrlanmaydi", () => {
+    expect(forecastCycles(settings, 3)).toHaveLength(3);
+  });
+
   it("unumdor oyna — biologik asos: ovulyatsiyadan 5 kun oldin, 1 kun keyin", () => {
     // stdDev 0 — sof biologik oyna, noaniqlik kengaytirishisiz.
     const [first] = forecastCycles({ ...settings, stdDevDays: 0 }, 1);

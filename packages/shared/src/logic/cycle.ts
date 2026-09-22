@@ -763,7 +763,13 @@ export function forecastCycles(
      * aks ettiruvchi keng standart qiymat. */
     stdDevDays?: number;
   },
-  count: number = FORECAST_CYCLES
+  count: number = FORECAST_CYCLES,
+  /** CYCLE-ALGO-17: berilgan bo'lsa — TUGAB BO'LGAN sikllar chiqarib
+   * tashlanadi. Sikllar `lastPeriodStart`dan sanaladi, ya'ni oxirgi hayz
+   * uzoq oldin bo'lsa birinchi "bashorat"lar allaqachon O'TMISHDA qoladi.
+   * Foydalanuvchi ekranida bu "15–19 sentabr kutilmoqda" (bugun 22-sentabr)
+   * ko'rinishida chiqardi — o'tib ketgan kunni kutish mumkin emas. */
+  today?: string
 ): ForecastedCycle[] {
   if (!settings.lastPeriodStart) return [];
   const cycleLength = settings.averageCycleLength || DEFAULT_CYCLE_LENGTH;
@@ -778,13 +784,19 @@ export function forecastCycles(
 
     // σ_n = σ·√n — dispersiyalar qo'shiladi, standart og'ishlar emas.
     const uncertaintyDays = Math.min(Math.round(stdDev * Math.sqrt(i)), MAX_FORECAST_UNCERTAINTY_DAYS);
+    const periodStartLatest = addDays(periodStart, uncertaintyDays);
+
+    // Diapazonning ENG KECH ehtimoli ham o'tib ketgan bo'lsa — bu bashorat
+    // emas, o'tmish. `periodStartLatest` bo'yicha tekshiriladi (`periodEnd`
+    // emas): noaniqlik oynasi hali ochiq ekan, hayz boshlanishi mumkin.
+    if (today && addDays(periodStart, periodLength - 1) < today && periodStartLatest < today) continue;
 
     out.push({
       index: i,
       periodStart,
       periodEnd: addDays(periodStart, periodLength - 1),
       periodStartEarliest: addDays(periodStart, -uncertaintyDays),
-      periodStartLatest: addDays(periodStart, uncertaintyDays),
+      periodStartLatest,
       ovulationDay,
       // Biologik oyna (−5…+1) ovulyatsiya kunining O'Z noaniqligiga
       // kengaytiriladi — aks holda tayyorgarlik ko'rayotgan foydalanuvchi
