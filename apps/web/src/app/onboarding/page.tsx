@@ -34,7 +34,7 @@ import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
-import { Button, IconChip, ProgressBar, DateWheelPicker, WheelPicker } from "@/components/ui";
+import { Button, IconChip, DateWheelPicker, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { Lottie } from "lottie-react";
 import {
@@ -203,6 +203,49 @@ const INITIAL_SURVEY: SurveyState = {
 // MUI ikonlari ishlatiladi (emoji emas — platformalar orasida bir xil, saytning
 // qolgan qismi bilan bir xil uslubda ko'rinadi). To'liq illyustratsiyasi bor
 // bosqichlar (STEP_ILLUSTRATION) bu yerga kiritilmagan — ular ustunroq ko'rsatiladi.
+/** SECTION-01: 21 ta bosqich uchta nomlangan bo'limga guruhlanadi. Sabablari:
+ *  1) 21 ta qadamli bitta uzun chiziq psixologik jihatdan "cheksiz" ko'rinadi;
+ *     uchta bo'lim esa boshqarsa bo'ladigan bosqichlarga bo'ladi;
+ *  2) progress ORQAGA qaytmasligi kafolatlanadi — "about" bo'limi HAR DOIM
+ *     bir xil uzunlikda (maqsaddan qat'i nazar), "cycle"/"health" bo'limlariga
+ *     esa faqat maqsad TANLANGANDAN KEYIN kiriladi, ya'ni ularga kirilgan
+ *     paytda uzunligi allaqachon ma'lum.
+ *  Har bir yo'l uchun bo'limlar ketma-ket (contiguous) ekanligi tekshirilgan. */
+const SECTION_IDS = ["about", "cycle", "health"] as const;
+type SectionId = (typeof SECTION_IDS)[number];
+
+const STEP_SECTION: Partial<Record<Step, SectionId>> = {
+  language: "about",
+  account_choice: "about",
+  account_identifier: "about",
+  phone_verify: "about",
+  privacy: "about",
+  name: "about",
+  age: "about",
+  // `goal` ATAYLAB 1-bo'limning OXIRI — u tanlangach qolgan ikki bo'limning
+  // uzunligi aniq bo'ladi, shuning uchun ularda sakrash bo'lishi mumkin emas.
+  goal: "about",
+  cycle_regularity: "cycle",
+  cycle_lengths: "cycle",
+  last_period: "cycle",
+  typical_symptoms: "cycle",
+  period_attitude: "cycle",
+  health_conditions: "health",
+  family_history: "health",
+  sexually_active: "health",
+  last_checkup: "health",
+  height_weight: "health",
+  notifications: "health",
+};
+
+/** Bo'lim rangi — STEP_ICON_COLOR bilan bir xil uchlik, shunda chiziqdagi rang
+ * va ekrandagi ikonka rangi bir-biriga mos tushadi (rang zonalari ko'rinadi). */
+const SECTION_TONE: Record<SectionId, "secondary" | "primary" | "accent"> = {
+  about: "secondary",
+  cycle: "primary",
+  health: "accent",
+};
+
 /** LAYOUT-01: har bir bosqichdagi vizual blokning yagona, qat'iy balandligi. */
 const STEP_VISUAL_HEIGHT = "h-36";
 
@@ -258,7 +301,9 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
   sexually_active: colors.accent,
   last_checkup: colors.accent,
   height_weight: colors.accent,
-  notifications: colors.primary,
+  // SECTION-01: ilgari `primary` edi — lekin u "health" bo'limining oxirgi
+  // qadami, shuning uchun rang zonasi bo'lim bilan mos kelmasdi.
+  notifications: colors.accent,
 };
 
 /** STEP_ICON_COLOR'dagi rang qiymatini public/animations/aura-*.json fayl nomiga o'giradi. */
@@ -463,6 +508,34 @@ function OnboardingPageInner() {
       .map((g) => buildSteps(g, isFromTelegram, age))
       .reduce((longest, cur) => (cur.length > longest.length ? cur : longest));
   }, [survey.primaryGoal, steps, isMinor, isFromTelegram, age]);
+
+  /** SECTION-01: har bir bo'lim uchun to'ldirilganlik ulushi (0..1). Uchala
+   * bo'lim HAR DOIM chiziladi — hatto bosqichi yo'q bo'lsa ham (masalan
+   * homiladorlikda "cycle" savollari so'ralmaydi) — shunda maqsad tanlanganda
+   * segmentlar eni o'zgarib "sakramaydi"; bo'sh bo'lim shunchaki o'tilgach
+   * to'la ko'rinadi. Uzunlik uchun `projectedSteps` ishlatiladi, chunki maqsad
+   * tanlanmaguncha haqiqiy ro'yxat hali qisqa. */
+  const sections = useMemo(() => {
+    const currentStep = steps[stepIndex];
+    const currentSection = currentStep ? STEP_SECTION[currentStep] : undefined;
+    // "welcome" va "analyzing" hech qaysi bo'limga tegishli emas (ikkalasida ham
+    // chiziq ko'rsatilmaydi). Baribir aniq qiymat beramiz: welcome'da HECH NARSA
+    // o'tilmagan (0), analyzing'da esa HAMMASI o'tilgan.
+    const currentIndex = currentSection
+      ? SECTION_IDS.indexOf(currentSection)
+      : currentStep === "analyzing"
+        ? SECTION_IDS.length
+        : 0;
+    return SECTION_IDS.map((id) => {
+      const stepsHere = projectedSteps.filter((st) => STEP_SECTION[st] === id);
+      const doneHere = steps.slice(0, stepIndex).filter((st) => STEP_SECTION[st] === id).length;
+      const passed = SECTION_IDS.indexOf(id) < currentIndex;
+      const fill = stepsHere.length === 0 ? (passed ? 1 : 0) : Math.min(1, doneHere / stepsHere.length);
+      return { id, fill: passed ? 1 : fill, active: id === currentSection };
+    });
+  }, [steps, stepIndex, projectedSteps]);
+
+  const overallPercent = Math.round((sections.reduce((sum, sec) => sum + sec.fill, 0) / SECTION_IDS.length) * 100);
 
   const step = steps[stepIndex];
   const goNext = () => setStepIndex((i) => Math.min(i + 1, steps.length - 1));
@@ -705,7 +778,17 @@ function OnboardingPageInner() {
     >
       {step !== "welcome" && step !== "analyzing" && (
         <div className="mb-6 shrink-0">
-          <ProgressBar value={Math.min(100, (stepIndex / Math.max(1, projectedSteps.length - 1)) * 100)} />
+          <SectionProgress
+            sections={sections}
+            percent={overallPercent}
+            label={
+              sections.find((sec) => sec.active)?.id === "cycle"
+                ? dict.onboarding.sectionCycle
+                : sections.find((sec) => sec.active)?.id === "health"
+                  ? dict.onboarding.sectionHealth
+                  : dict.onboarding.sectionAbout
+            }
+          />
         </div>
       )}
 
@@ -1315,6 +1398,43 @@ function OnboardingPageInner() {
  * chapga tekislangan edi, shuning uchun bosqichdan bosqichga o'tganda sarlavha
  * yon tomonga "sakrardi" (eng ko'zga tashlanadigani — hisob yaratish oqimi:
  * account_choice chapda, account_identifier/phone_verify/privacy markazda). */
+/** SECTION-01: bitta uzun chiziq o'rniga uchta segment + bo'lim nomi va umumiy
+ * foiz. Foiz ATAYLAB ko'rsatiladi (mahsulot talabi) — bu faqat progress endi
+ * hech qachon orqaga qaytmagani uchun xavfsiz. */
+function SectionProgress({
+  sections,
+  percent,
+  label,
+}: {
+  sections: { id: SectionId; fill: number; active: boolean }[];
+  percent: number;
+  label: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between">
+        <p className="text-sm font-semibold text-text-primary">{label}</p>
+        <p className="text-sm font-semibold tabular-nums text-text-secondary">{percent}%</p>
+      </div>
+      <div className="flex gap-1.5" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+        {sections.map((sec) => (
+          <div key={sec.id} className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
+            <div
+              className={clsx(
+                "h-full rounded-full transition-[width] duration-500 ease-out",
+                SECTION_TONE[sec.id] === "secondary" && "bg-secondary",
+                SECTION_TONE[sec.id] === "primary" && "bg-primary",
+                SECTION_TONE[sec.id] === "accent" && "bg-accent"
+              )}
+              style={{ width: `${Math.round(sec.fill * 100)}%` }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StepTitle({ children }: { children: ReactNode }) {
   return <StepTitle>{children}</StepTitle>;
 }
