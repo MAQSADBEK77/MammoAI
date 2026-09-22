@@ -470,6 +470,132 @@ async function main() {
     "DATA-ACCURACY-06: oddiy (test bo'lmagan) foydalanuvchi 'a'zolar' soniga +1 qo'shadi"
   );
 
+  // ══════════════════════════════════════════════════════════════════════
+  // QA-002 (2026-09-22) — sikl sozlamalari va bashorat orasidagi ALOQA.
+  //
+  // Nega aynan bu: shu hafta topilgan xatolarning deyarli hammasi mantiqda
+  // emas, QATLAMLAR ORASIDA edi — bir joy `cycle_settings`ni o'qidi, boshqasi
+  // `cycle_logs`dan o'rganilgan qiymatni, va ular mos kelmadi. Sof funksiya
+  // testlari (263 ta) buni ushlay olmaydi, chunki har bir funksiya alohida
+  // to'g'ri ishlaydi.
+  //
+  // Ustiga men kodni O'QIB xato xulosa chiqardim ("cycle_settings hech qachon
+  // yangilanmaydi"). Quyidagi testlar haqiqiy xatti-harakatni YOZIB qo'yadi,
+  // shuning uchun keyingi safar o'qish o'rniga ishga tushirish kifoya.
+  // ══════════════════════════════════════════════════════════════════════
+  const qaUserId = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${qaUserId}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  try {
+    // Onboarding: ayol "siklim 28 kun, hayzim 5 kun" degan.
+    await updateCycleSettings(qaUserId, {
+      lastPeriodStart: "2026-03-01",
+      averageCycleLength: 28,
+      averagePeriodLength: 5,
+    });
+
+    // Haqiqatda esa sikli 31 kun va hayzi 6 kun davom etadi — uch marta.
+    for (const start of ["2026-03-01", "2026-04-01", "2026-05-02"]) {
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(start + "T00:00:00Z");
+        d.setUTCDate(d.getUTCDate() + i);
+        await upsertCycleLog(qaUserId, { date: d.toISOString().slice(0, 10), flow: "medium", mood: null, symptoms: [] });
+      }
+    }
+
+    const settingsAfterLogs = await getCycleSettings(qaUserId);
+    // HAQIQIY xatti-harakat: langar qaydlardan qayta hisoblanadi...
+    assert(
+      settingsAfterLogs.lastPeriodStart === "2026-05-02",
+      "QA-002: hayz qayd etilganda cycle_settings.last_period_start QAYDLARdan yangilanadi"
+    );
+    // ...lekin UZUNLIKLAR onboarding qiymatida qoladi. Bu — sinxronlanmaydigan
+    // yagona joy, va aynan shu CYCLE-ALGO-19/23 xatolarining sababi edi.
+    assert(
+      settingsAfterLogs.averagePeriodLength === 5 && settingsAfterLogs.averageCycleLength === 28,
+      "QA-002: uzunliklar esa YANGILANMAYDI — onboarding qiymatida qoladi"
+    );
+
+    const qaResponse = await buildCycleResponse(qaUserId, "2026-05-10");
+    const qaPrediction = qaResponse.prediction!;
+
+    // CYCLE-ALGO-19/23: o'rganilgan qiymatlar UI'ga yetib borishi SHART —
+    // aks holda kalendar `forecast`dan, faza kartasi esa `cycle_settings`dan
+    // hisoblab, bitta kun haqida ikki xil gap aytardi.
+    assert(
+      qaPrediction.averagePeriodLength === 6,
+      "CYCLE-ALGO-19: bashorat O'RGANILGAN hayz uzunligini (6) qaytaradi, onboarding qiymatini (5) emas"
+    );
+    assert(
+      qaPrediction.averageCycleLength > 28,
+      `CYCLE-ALGO-23: bashorat o'rganilgan sikl uzunligini qaytaradi (${qaPrediction.averageCycleLength} > 28)`
+    );
+    assert(
+      qaPrediction.lastPeriodStart === settingsAfterLogs.lastPeriodStart,
+      "CYCLE-ALGO-23: bashoratning langari sozlamadagi bilan bir xil (ikki manba yo'q)"
+    );
+
+    // CYCLE-ALGO-23: forecast va prediction BIR XIL langardan chiqadi, ya'ni
+    // kalendardagi birinchi bashorat sanasi hero'dagi bilan mos tushadi.
+    assert(
+      qaResponse.forecast.length > 0 && qaResponse.forecast[0].periodStart === qaPrediction.nextPeriodStart,
+      "CYCLE-ALGO-23: kalendardagi birinchi bashorat hero'dagi sana bilan AYNAN bir xil"
+    );
+
+    // CYCLE-ALGO-17: tugab bo'lgan sikllar ro'yxatga tushmaydi.
+    assert(
+      qaResponse.forecast.every((c) => c.periodEnd >= "2026-05-10" || c.periodStartLatest >= "2026-05-10"),
+      "CYCLE-ALGO-17: o'tib ketgan sikllar bashorat ro'yxatida YO'Q"
+    );
+
+    // CYCLE-ALGO-18: ufq ishonchga bog'liq — bu yerda 2 ta sikl aniqlangan
+    // ("low"), ya'ni bir yillik ro'yxat chiqmasligi kerak.
+    assert(
+      qaResponse.forecast.length <= 6,
+      `CYCLE-ALGO-18: kam ishonchda ufq qisqartiriladi (${qaResponse.forecast.length} ta sikl, 13 emas)`
+    );
+
+    // BUG-01 (2026-09-22 da shu testni yozayotib topildi) — barcha qaydlar
+    // o'chirilsa ham langar TOZALANMAYDI.
+    //
+    // `recomputeLastPeriodStart` da "agar qiymat cycle_logs'dan kelgan bo'lsa
+    // tozalaymiz" degan shox bor:
+    //
+    //     const hadMatchingLog = recentLogs.some(l => l.date === settings.lastPeriodStart && l.flow);
+    //     if (hadMatchingLog) { ...null'ga yozish... }
+    //
+    // Lekin `recentLogs` O'CHIRISHDAN KEYIN o'qiladi. Agar o'sha sanada flow
+    // qaydi hali turgan bo'lsa, `detectPeriodStarts` uni topar edi va funksiya
+    // yuqorida `return` qilardi. Ya'ni bu shoxga yetib kelinganda
+    // `hadMatchingLog` HAR DOIM `false` — tozalash kodi hech qachon
+    // ishlamaydi.
+    //
+    // Oqibati foydalanuvchi ko'rgan holat: barcha hayz qaydlari o'chirilgan,
+    // lekin ilova hamon bashorat ko'rsatib turibdi — langar oxirgi o'chirilgan
+    // kunda qolib ketgan, orqasida hech qanday qayd yo'q.
+    //
+    // Quyidagi test HOZIRGI (noto'g'ri) xatti-harakatni yozib qo'yadi. Tuzatish
+    // alohida qilinadi — u production'dagi ma'lumotga ta'sir qiladi.
+    for (const start of ["2026-03-01", "2026-04-01", "2026-05-02"]) {
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(start + "T00:00:00Z");
+        d.setUTCDate(d.getUTCDate() + i);
+        await deleteCycleLog(qaUserId, d.toISOString().slice(0, 10));
+      }
+    }
+    const logsAfterDelete = await listCycleLogs(qaUserId, 365);
+    assert(
+      logsAfterDelete.every((l) => !l.flow),
+      "QA-002: barcha hayz qaydlari haqiqatan o'chirildi"
+    );
+    const settingsAfterDelete = await getCycleSettings(qaUserId);
+    assert(
+      settingsAfterDelete.lastPeriodStart !== null,
+      "BUG-01 (hujjatlashtirilgan, tuzatilmagan): bironta qayd qolmasa ham langar tozalanmaydi"
+    );
+  } finally {
+    await sql`DELETE FROM users WHERE id = ${qaUserId}`;
+  }
+
   const communityPost = await createCommunityPost(realAccountId, { tag: "general", body: "DATA-ACCURACY-06 test posti", isAnonymous: false });
   const statsAfterPost = await getCommunityStats();
   assert(
