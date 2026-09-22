@@ -17,6 +17,10 @@ import type {
 import {
   ADULT_GOALS,
   MINOR_GOALS,
+  MIN_SANE_CYCLE_LENGTH,
+  MAX_SANE_CYCLE_LENGTH,
+  MIN_SANE_PERIOD_LENGTH,
+  MAX_SANE_PERIOD_LENGTH,
   goalToLandingTab,
   needsCycleInfo,
   needsHeightWeight,
@@ -147,6 +151,29 @@ function kgToLb(kg: number): number {
 }
 function lbToKg(lb: number): number {
   return Math.round(lb / 2.20462);
+}
+
+/** VALIDATE-01: "cycle_lengths" bosqichidagi qo'lda kiritilgan qiymat —
+ * bo'sh/NaN/manfiy yoki mantiqsiz kattalikni (masalan 280) o'tkazmaydi.
+ *
+ * Ilgari bu bosqich `canProceed()`da UMUMAN yo'q edi (`default: return true`
+ * shoxiga tushardi) va inputlarda `min`/`max` ham qo'yilmagandi. Qiymat
+ * keyin ham hech qayerda ushlanmaydi: /api/cycle/settings uni tekshirmaydi,
+ * repo.ts shundayligicha bazaga yozadi, `predictCycle` esa faqat
+ * `|| DEFAULT_CYCLE_LENGTH` bilan himoyalangan — bu 0/NaN'ni tutadi, lekin
+ * 999 yoki -5 ni EMAS. Mavjud MIN/MAX_SANE_* chegaralari esa faqat
+ * LOG'LARDAN hisoblangan yo'lga qo'llanilardi, yangi foydalanuvchida log
+ * yo'q, ya'ni u yo'l hech qachon ishga tushmaydi.
+ *
+ * Chegaralar logic/cycle.ts bilan BIR MANBADAN olinadi. */
+function isSaneCycleLengths(cycleLength: string, periodLength: string): boolean {
+  const c = Number(cycleLength);
+  const p = Number(periodLength);
+  if (!Number.isInteger(c) || !Number.isInteger(p)) return false;
+  if (c < MIN_SANE_CYCLE_LENGTH || c > MAX_SANE_CYCLE_LENGTH) return false;
+  if (p < MIN_SANE_PERIOD_LENGTH || p > MAX_SANE_PERIOD_LENGTH) return false;
+  // Hayz davri siklning o'zidan uzun bo'la olmaydi.
+  return p <= c;
 }
 
 const INITIAL_SURVEY: SurveyState = {
@@ -557,7 +584,22 @@ function OnboardingPageInner() {
     return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
   }
 
-  async function submitIdentifier() {
+  /** RESEND-01: ilgari bu funksiya OXIRIDA shartsiz `goNext()` chaqirardi va
+   * "phone_verify" bosqichidagi "qayta yuborish" havolasi ham AYNAN shuni
+   * chaqirardi — natijada qayta yuborishni bosgan foydalanuvchi telefonini
+   * TASDIQLAMASDAN keyingi bosqichga o'tib ketardi.
+   *
+   * Bu jim xato emas edi, oqibati eng oxirida chiqardi: ayol butun
+   * so'rovnomani (15+ savol) to'ldirib, "tahlil qilinmoqda" ekraniga
+   * yetganda /api/onboarding avtorizatsiya talab qilib, hammasi xatoga
+   * urilardi. Ya'ni butun mehnat behuda ketardi.
+   *
+   * Voronka o'lchovi buni tasdiqladi: onboarding'ni tugatmaganlarning eng
+   * katta guruhi — 17 kishi — aynan `phone_verify` bosqichida qotib qolgan.
+   *
+   * Yechim: bosqichni surish MAS'ULIYATI chaqiruvchida. Funksiya faqat
+   * muvaffaqiyat/muvaffaqiyatsizlikni qaytaradi. */
+  async function startPhoneCode(): Promise<boolean> {
     setSubmitting(true);
     setErrorMessage(null);
     try {
@@ -567,13 +609,14 @@ function OnboardingPageInner() {
       setPhoneDeepLink(res.deepLink);
       setCodeSent(false);
       setVerifyCode("");
-      goNext();
+      return true;
     } catch (error) {
       // Server haqiqatan formatni rad etsa — o'zining aniq xabari (ApiError.message)
       // ko'rsatiladi. `fetch` tarmoq xatosida (internet yo'q va h.k.) oddiy Error
       // uloqtiradi — bu holatda "raqamingiz noto'g'ri" degan noto'g'ri xulosaga
       // kelmaslik uchun alohida, to'g'ri xabar ko'rsatiladi.
       setErrorMessage(error instanceof ApiError ? error.message : dict.auth.identifierNetworkError);
+      return false;
     } finally {
       setSubmitting(false);
     }
@@ -710,6 +753,10 @@ function OnboardingPageInner() {
         return extractUzPhoneDigits(survey.identifier) !== null;
       case "phone_verify":
         return codeSent && verifyCode.trim().length === 6;
+      case "cycle_lengths":
+        // "Bilmayman" yoqilgan bo'lsa qiymatlar standartga (28/5) majburlab
+        // qo'yiladi — alohida tekshiruv shart emas.
+        return survey.cycleLengthsUnknown || isSaneCycleLengths(survey.averageCycleLength, survey.averagePeriodLength);
       case "name":
         return survey.name.trim().length > 0;
       case "age":
@@ -925,7 +972,12 @@ function OnboardingPageInner() {
               </div>
             )}
             {errorMessage && <p className="text-center text-sm text-danger">{errorMessage}</p>}
-            <button type="button" onClick={submitIdentifier} className="text-center text-sm font-semibold text-primary-dark underline-offset-2 hover:underline">
+            <button
+              type="button"
+              onClick={() => void startPhoneCode()}
+              disabled={submitting}
+              className="text-center text-sm font-semibold text-primary-dark underline-offset-2 hover:underline disabled:opacity-50"
+            >
               {dict.auth.resendLink}
             </button>
           </div>
@@ -1008,6 +1060,9 @@ function OnboardingPageInner() {
               <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
               <input
                 type="number"
+                inputMode="numeric"
+                min={MIN_SANE_CYCLE_LENGTH}
+                max={MAX_SANE_CYCLE_LENGTH}
                 value={survey.averageCycleLength}
                 onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
                 className="tap-target mt-4 w-full rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
@@ -1015,10 +1070,26 @@ function OnboardingPageInner() {
               <h2 className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
               <input
                 type="number"
+                inputMode="numeric"
+                min={MIN_SANE_PERIOD_LENGTH}
+                max={MAX_SANE_PERIOD_LENGTH}
                 value={survey.averagePeriodLength}
                 onChange={(e) => setSurvey((s) => ({ ...s, averagePeriodLength: e.target.value }))}
                 className="tap-target mt-4 w-full rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
               />
+              {/* VALIDATE-01: tugma o'chiq bo'lsa NEGA o'chiqligi aytiladi —
+                  aks holda foydalanuvchi sababini bilmay qotib qoladi. */}
+              {!survey.cycleLengthsUnknown &&
+                !isSaneCycleLengths(survey.averageCycleLength, survey.averagePeriodLength) && (
+                  <p className="mt-3 text-center text-sm text-text-secondary">
+                    {dict.onboarding.cycleLengthsRangeHint(
+                      MIN_SANE_CYCLE_LENGTH,
+                      MAX_SANE_CYCLE_LENGTH,
+                      MIN_SANE_PERIOD_LENGTH,
+                      MAX_SANE_PERIOD_LENGTH
+                    )}
+                  </p>
+                )}
             </div>
             <button
               type="button"
@@ -1377,7 +1448,12 @@ function OnboardingPageInner() {
           {step === "account_choice" ? (
             <span />
           ) : step === "account_identifier" ? (
-            <Button onClick={submitIdentifier} disabled={submitting || !canProceed()}>
+            <Button
+              onClick={async () => {
+                if (await startPhoneCode()) goNext();
+              }}
+              disabled={submitting || !canProceed()}
+            >
               {dict.common.continueButton}
             </Button>
           ) : step === "phone_verify" ? (

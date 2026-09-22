@@ -269,6 +269,8 @@ const ru: Dictionary = {
 
     averageCycleLengthQuestion: "Сколько дней обычно длится ваш цикл?",
     averagePeriodLengthQuestion: "Сколько дней обычно длится менструация?",
+    cycleLengthsRangeHint: (cMin: number, cMax: number, pMin: number, pMax: number) =>
+      `Длина цикла должна быть ${cMin}–${cMax} дней, а длительность менструации — ${pMin}–${pMax} дней. Не знаете — выберите «Не знаю».`,
     lastPeriodQuestion: "Когда была последняя менструация?",
 
     typicalSymptomsQuestion: "Какие симптомы вы обычно ощущаете?",

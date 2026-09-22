@@ -296,6 +296,10 @@ const uz = {
 
     averageCycleLengthQuestion: "Sikllingiz odatda necha kun davom etadi?",
     averagePeriodLengthQuestion: "Hayzingiz odatda necha kun davom etadi?",
+    /** VALIDATE-01: tugma o'chiq bo'lsa, NEGA o'chiqligi aytilishi kerak —
+     * aks holda foydalanuvchi qotib qoladi. */
+    cycleLengthsRangeHint: (cMin: number, cMax: number, pMin: number, pMax: number) =>
+      `Sikl uzunligi ${cMin}–${cMax} kun, hayz davomiyligi esa ${pMin}–${pMax} kun oralig'ida bo'lishi kerak. Bilmasangiz — "Bilmayman"ni tanlang.`,
     lastPeriodQuestion: "Oxirgi marta qachon hayz ko'rgansiz?",
 
     typicalSymptomsQuestion: "Odatda qanday alomatlarni sezasiz?",
