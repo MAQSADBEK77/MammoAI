@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import clsx from "clsx";
 import { Avatar } from "@mui/material";
 import { CalendarMonthOutlined } from "@mui/icons-material";
@@ -105,6 +105,30 @@ export function TodayHeader({
 }: TodayHeaderProps) {
   const { dict } = useI18n();
 
+  // TODAY-07: karusel BUGUNgi kun markazda turgan holda ochiladi. Buni effekt
+  // bilan qilish ishonchsiz — `days` ma'lumot yuklangach o'zgaradi va effekt
+  // element DOM'ga tushishidan oldin ham ishlashi mumkin (kalendarda aynan shu
+  // sabab bir yil oldingi oy ochilib qolgandi). Shuning uchun bugungi tugma
+  // DOM'ga BIRIKKAN paytda, bir marta o'rnatiladi.
+  const stripRef = useRef<HTMLDivElement>(null);
+  const didCenterToday = useRef(false);
+
+  function attachToday(el: HTMLButtonElement | null) {
+    const strip = stripRef.current;
+    if (!el || !strip || didCenterToday.current) return;
+    didCenterToday.current = true;
+    // rAF — element biriktirildi, lekin joylashuv hali yakunlanmagan bo'lishi
+    // mumkin, ya'ni o'lchamlar hali 0 bo'lishi ehtimoli bor.
+    requestAnimationFrame(() => {
+      const stripBox = strip.getBoundingClientRect();
+      const elBox = el.getBoundingClientRect();
+      // `offsetLeft` EMAS: u eng yaqin joylashtirilgan (positioned) ota
+      // elementga nisbatan hisoblanadi, bu esa bu komponentdan tashqarida
+      // bo'lishi mumkin. Qirralar farqi har qanday holatda to'g'ri ishlaydi.
+      strip.scrollLeft += elBox.left - stripBox.left - (stripBox.width - elBox.width) / 2;
+    });
+  }
+
   return (
     <div className="space-y-4">
       {/* 1. Yuqori qator — chapda avatar (+streak), o'rtada ANIQ markazlashgan
@@ -157,24 +181,33 @@ export function TodayHeader({
         </div>
       </div>
 
-      {/* 2. Hafta chizig'i — referensdagidek KALENDAR haftasi (Yakshanbadan
-          Shanbagacha), bugunni markazga olgan siljuvchi oyna emas: shu tufayli
-          hafta kunlari harflari doim o'z o'rnida turadi va bugungi kun
-          ustidagi yorliq "BUGUN" so'ziga almashadi. */}
-      {/* RESP-01: 320px kenglikdagi telefonda 7×44px doira + bo'shliqlar
-          ekranga SIG'MAS edi (gorizontal skroll paydo bo'lardi). Endi
-          o'lchamlar tor ekranda kichrayadi, kengroqda esa referensdagi
-          o'lchamga qaytadi. */}
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+      {/* 2. Kunlar karuseli (TODAY-07 — foydalanuvchi so'rovi: "can you make
+          that like carusel i can see other dates as well by scrolling").
+          Ilgari bu qat'iy `grid-cols-7` edi, ya'ni faqat 7 kun ko'rinardi va
+          boshqa sanaga o'tish uchun to'liq kalendarni ochish kerak bo'lardi.
+
+          `-mx-4` + `px-4`: sahifaning o'z chap/o'ng chekkasi 16px (layout
+          `px-4`). Surilish maydoni ekran chekkasigacha yetishi, lekin kunlar
+          avvalgi joyidan boshlanishi kerak — shuning uchun konteyner
+          chekkadan chiqariladi, ichki qatorga esa o'sha 16px qaytariladi.
+          Aks holda birinchi/oxirgi kun chekkaga yopishib qolardi.
+
+          Kun kengligi QAT'IY (w-12): `flex-1` bo'lsa kunlar ekranga
+          sig'dirish uchun qisilib, karusel ma'nosini yo'qotardi. Shu sababli
+          RESP-01dagi "tor ekranda kichraytirish" ham endi kerak emas —
+          sig'masa shunchaki suriladi. */}
+      <div ref={stripRef} className="no-scrollbar -mx-4 overflow-x-auto overscroll-x-contain">
+        <div className="flex w-max gap-0.5 px-4 sm:gap-1">
         {days.map(({ date, dateObj, marker, emojis }) => {
           const isToday = date === today;
           const isSelected = date === selectedDate;
           return (
             <button
               key={date}
+              ref={isToday ? attachToday : undefined}
               type="button"
               onClick={() => onSelectDay(date)}
-              className="tap-target flex flex-col items-center gap-1.5 rounded-2xl py-1"
+              className="tap-target flex w-12 shrink-0 flex-col items-center gap-1.5 rounded-2xl py-1"
             >
               <span
                 className={clsx(
@@ -191,9 +224,9 @@ export function TodayHeader({
               <span
                 className={clsx(
                   "flex items-center justify-center rounded-full font-bold transition",
-                  isToday
-                    ? "h-10 w-10 text-sm ring-4 ring-surface sm:h-11 sm:w-11 sm:text-base"
-                    : "h-8 w-8 text-xs sm:h-9 sm:w-9 sm:text-sm",
+                  // Kun kengligi qat'iy bo'lgani uchun o'lcham ham ekran
+                  // kengligiga bog'lanmaydi — hamma qurilmada bir xil.
+                  isToday ? "h-11 w-11 text-base ring-4 ring-surface" : "h-9 w-9 text-sm",
                   marker === "period" && "bg-primary text-white",
                   marker === "predicted" && "border-2 border-dashed border-primary text-primary",
                   marker === "fertile" && "text-accent",
@@ -223,6 +256,7 @@ export function TodayHeader({
             </button>
           );
         })}
+        </div>
       </div>
 
       {/* 3. Markaziy blok — referensda ekranning eng katta, eng sokin qismi:

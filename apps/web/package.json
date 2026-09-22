@@ -12,7 +12,8 @@
     "dev:test-user": "node --env-file=.env.local --import tsx scripts/dev-test-user.ts",
     "funnel": "node --env-file=.env.local --import tsx scripts/onboarding-funnel.ts",
     "seed:pregnancy-content": "node --env-file=.env.local --import tsx scripts/seed-pregnancy-content.ts",
-    "test:integration": "node --import tsx scripts/integration-test.ts"
+    "test:integration": "node --import tsx scripts/integration-test.ts",
+    "health": "node --env-file=.env.local --import tsx scripts/prod-health.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

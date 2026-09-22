@@ -38,6 +38,13 @@ import { LogSheet } from "@/components/screens/LogSheet";
 import { PeriodCalendar } from "@/components/screens/PeriodCalendar";
 import { PetPicker } from "@/components/pets/PetPicker";
 
+/** TODAY-07: bosh ekrandagi kunlar karuseli qancha oraliqni qamraydi.
+ * Bugundan oldin/keyin ~6 hafta — qayd qilish va yaqin bashoratlar uchun
+ * yetarli, lekin chiziqni cheksiz uzaytirib yubormaydi (undan uzoqni ko'rish
+ * uchun to'liq kalendar bor). */
+const STRIP_DAYS_BACK = 45;
+const STRIP_DAYS_FORWARD = 45;
+
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
 const SYMPTOMS: Symptom[] = [
@@ -276,17 +283,48 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     return { date: localDateStr(d), dateObj: d };
   });
 
-  // TODAY-02: BUGUN chiziqning O'RTASIDA turadi (foydalanuvchi so'rovi) — ya'ni
-  // uch kun oldin ... bugun ... uch kun keyin. Kalendar haftasiga bog'lansa,
-  // bugun hafta boshida bo'lgan kunlari chap chekkaga tushib qolardi.
-  const todayWeek: TodayDay[] = (() => {
+  // TODAY-02: BUGUN chiziqning O'RTASIDA turadi (foydalanuvchi so'rovi).
+  //
+  // TODAY-07 (foydalanuvchi so'rovi 2026-09-22: "when it comes to the days
+  // above seven days can you make that like carusel i can see other dates as
+  // well by scrolling?"): chiziq endi 7 kun bilan CHEKLANMAGAN — u ikki oyga
+  // yaqin oraliqni qamraydi va gorizontal suriladi (TodayHeader karusel qilib
+  // chizadi, bugun esa markazga o'rnatiladi). Butun kalendarni bu yerda
+  // ko'rsatish shart emas — chuqur ko'rish uchun PeriodCalendar bor.
+  const dayStrip: TodayDay[] = (() => {
+    // `markers` faqat qayd etilgan kunlar + KEYINGI bitta hayzni bilardi, ya'ni
+    // karusel uzaytirilganda o'ngdagi kunlar bo'sh qolardi. Shuning uchun bu
+    // yerda kalendar bilan BIR XIL manba — `data.forecast` (bir necha sikl
+    // oldinga) ishlatiladi.
+    const logByDate = new Map(data.logs.map((l) => [l.date, l]));
+    const predicted = new Set<string>();
+    const fertile = new Set<string>();
+    // Bashorat eskirgan bo'lsa (oxirgi hayz juda uzoq oldin qayd etilgan)
+    // hech qanday bashorat belgisi qo'yilmaydi — aks holda chiziq allaqachon
+    // o'tib ketgan "bashorat"larni ko'rsatib, xato ma'lumot berardi.
+    if (!data.prediction?.isStale) {
+      for (const c of data.forecast) {
+        for (const [from, to, target] of [
+          [c.periodStart, c.periodEnd, predicted],
+          [c.fertileWindowStart, c.fertileWindowEnd, fertile],
+        ] as const) {
+          const cur = new Date(from + "T00:00:00");
+          const end = new Date(to + "T00:00:00");
+          while (cur <= end) {
+            target.add(localDateStr(cur));
+            cur.setDate(cur.getDate() + 1);
+          }
+        }
+      }
+    }
+
     const start = new Date(today + "T00:00:00");
-    start.setDate(start.getDate() - 3);
-    return Array.from({ length: 7 }, (_, i) => {
+    start.setDate(start.getDate() - STRIP_DAYS_BACK);
+    return Array.from({ length: STRIP_DAYS_BACK + STRIP_DAYS_FORWARD + 1 }, (_, i) => {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       const date = localDateStr(d);
-      const log = data.logs.find((l) => l.date === date);
+      const log = logByDate.get(date);
       // Kun ostidagi eng ko'pi bilan ikkita belgi — mavjud emoji xaritalaridan
       // (yangi ikonka to'plami kiritilmagan).
       const emojis: string[] = [];
@@ -294,14 +332,9 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
       if (log?.mood) emojis.push(MOOD_EMOJI[log.mood]);
       if (emojis.length < 2 && log?.symptoms.length) emojis.push(SYMPTOM_EMOJI[log.symptoms[0]]);
 
-      let marker: TodayDayMarker =
-        markers[date] === "period" ? "period" : markers[date] === "predicted" ? "predicted" : null;
-      // Unumdor oyna — referensdagi turkuaz kunlar. Faqat boshqa belgi
-      // bo'lmaganda (hayz/bashorat ustunroq).
-      const p = data.prediction;
-      if (!marker && p && !p.isStale && date >= p.fertileWindowStart && date <= p.fertileWindowEnd) {
-        marker = "fertile";
-      }
+      // Haqiqiy qayd bashoratdan USTUN, bashorat esa unumdor oynadan.
+      let marker: TodayDayMarker = log?.flow ? "period" : predicted.has(date) ? "predicted" : null;
+      if (!marker && fertile.has(date)) marker = "fertile";
       return { date, dateObj: d, marker, emojis };
     });
   })();
@@ -549,7 +582,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
             setCalendarStartsEditing(false);
             setShowCalendarModal(true);
           }}
-          days={todayWeek}
+          days={dayStrip}
           today={today}
           selectedDate={viewedDayDetail}
           onSelectDay={(d) => setViewedDayDetail((cur) => (cur === d ? null : d))}
