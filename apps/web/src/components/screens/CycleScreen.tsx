@@ -30,7 +30,7 @@ import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
-import { TodayHeader, type TodayDay, type TodayDayMarker } from "@/components/screens/TodayHeader";
+import { TodayHeader, type TodayDay, type TodayDayMarker, type TodayStat } from "@/components/screens/TodayHeader";
 import { TodayAssistantCard } from "@/components/screens/TodayAssistantCard";
 import { CheckinDeck } from "@/components/screens/checkin/CheckinDeck";
 import { TodayBackdrop, TodayStatusCircle } from "@/components/screens/TodayBackdrop";
@@ -502,6 +502,68 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     ? dict.cycle.heroPeriodStartedCta
     : dict.cycle.heroTapHint;
 
+  // TODAY-09: hero ostidagi bir qatorli holat (referenslarning uchalasida ham
+  // shu joyda bitta qator bor). Uch holat, tartibi muhim:
+  //   1) hayz ketayotgan bo'lsa — eng foydali amal shu paytda sanalarni
+  //      to'g'irlash (Flo ham aynan shuni qo'yadi);
+  //   2) ishonchli bashorat bo'lsa — homiladorlik ehtimoli;
+  //   3) ma'lumot yetarli bo'lmasa — DA'VO QILINMAYDI, nima qilish kerakligi
+  //      aytiladi. Aks holda hech qachon hayz qayd etmagan ayolga "ehtimol
+  //      past" deb ishontirgan bo'lardik — biz buni bilmaymiz.
+  const heroChip: { label: string; onClick?: () => void; solid?: boolean } | null = (() => {
+    if (isOnPeriod) {
+      return {
+        label: dict.cycle.calEditPeriod,
+        solid: true,
+        onClick: () => {
+          setCalendarStartsEditing(true);
+          setShowCalendarModal(true);
+        },
+      };
+    }
+    if (!data.prediction || data.prediction.isStale || hasNoCycleData) {
+      return { label: dict.cycle.pregnancyChanceUnknown, onClick: () => openLogging(today, todayLog) };
+    }
+    const inFertileWindow =
+      today >= data.prediction.fertileWindowStart && today <= data.prediction.fertileWindowEnd;
+    return { label: inFertileWindow ? dict.cycle.pregnancyChanceHigh : dict.cycle.pregnancyChanceLow };
+  })();
+
+  // TODAY-10: tezkor amallar ostidagi ixcham plitalar. Faqat BILADIGAN
+  // narsamiz ko'rsatiladi — har bir plita alohida shart bilan qo'shiladi.
+  const todayStats: TodayStat[] = (() => {
+    const out: TodayStat[] = [];
+    if (dayInCycle !== null && !data.prediction?.isStale) {
+      out.push({
+        key: "cycleDay",
+        label: dict.cycle.statCycleDay,
+        value: String(dayInCycle),
+        emoji: "🌀",
+        ring: dayInCycle / cycleLen,
+      });
+    }
+    if (data.prediction && !data.prediction.isStale) {
+      out.push({
+        key: "nextPeriod",
+        label: dict.cycle.statNextPeriod,
+        value: formatDateLabel(data.prediction.nextPeriodStart),
+        emoji: "💧",
+      });
+      // Unumdor kunlar — kalendardagi bilan BIR XIL qoida: ishonch yetarli
+      // bo'lmaganda oyna 19 kunga cho'ziladi, ya'ni hech qanday ma'lumot
+      // bermaydi. Bunday holatda plita umuman qo'shilmaydi.
+      if (!hasNoCycleData) {
+        out.push({
+          key: "nextFertile",
+          label: dict.cycle.statNextFertile,
+          value: formatDateLabel(data.prediction.fertileWindowStart),
+          emoji: "🌿",
+        });
+      }
+    }
+    return out;
+  })();
+
   // Kalendarda ko'rsatilayotgan oyning har bir kuni uchun tsikl fazasi — shu
   // orqali oldingi/keyingi oylarga o'tilganda ham fon ranglari to'g'ri
   // hisoblanadi (foydalanuvchi so'rovi: fazalar ranglar bilan ajralib tursin).
@@ -672,6 +734,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           heroTapHint={heroIsCallToAction ? heroTapHintText : null}
           onHeroClick={heroIsCallToAction ? heroAction : null}
           heroStatus={predictionsUpdated ? { label: dict.cycle.predictionsUpdatedLabel, done: true } : null}
+          heroChip={heroChip}
+          stats={todayStats}
           pet={isMinor ? resolvePet(user?.pet) : null}
           onPetTap={() => setShowPetPicker(true)}
           actions={[

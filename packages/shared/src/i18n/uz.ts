@@ -401,6 +401,15 @@ const uz = {
           ? `Keyingi hayzingiz ${days} kundan keyin`
           : `Hayzingiz ${Math.abs(days)} kun kechikmoqda`,
     fertileWindowLabel: "Unumdor kunlar oynasi",
+    /** TODAY-09: hero ostidagi bir qatorli holat (referensdagi "Low chances
+     * of getting pregnant"). Ishonch yetarli bo'lmaganda DA'VO qilinmaydi —
+     * o'rniga nima qilish kerakligi aytiladi. */
+    pregnancyChanceLow: "Homiladorlik ehtimoli past",
+    pregnancyChanceHigh: "Homiladorlik ehtimoli yuqori",
+    pregnancyChanceUnknown: "Bilish uchun hayzingizni belgilang",
+    statCycleDay: "Sikl kuni",
+    statNextPeriod: "Keyingi hayz",
+    statNextFertile: "Unumdor kunlar",
     // CYCLE-ALGO-12: bashorat qilingan unumdor oyna atrofida — foydalanuvchiga
     // ovulyatsiya signalini (simptom) qayd etishni taklif qiladi, bu esa
     // ikki-fazali lyuteal modelni (CYCLE-ALGO-05) aniqlashtiradi.

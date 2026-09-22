@@ -361,6 +361,12 @@ const en: Dictionary = {
           ? `Your next period is in ${days} days`
           : `Your period is ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} late`,
     fertileWindowLabel: "Fertile window",
+    pregnancyChanceLow: "Low chance of getting pregnant",
+    pregnancyChanceHigh: "High chance of getting pregnant",
+    pregnancyChanceUnknown: "Log your period to find out",
+    statCycleDay: "Cycle day",
+    statNextPeriod: "Next period",
+    statNextFertile: "Fertile days",
     ovulationSignalPromptTitle: "Noticing any ovulation signs?",
     ovulationSignalPromptBody: "Did you feel ovulation pain or notice a change in cervical mucus these days? Log it — it sharpens the prediction.",
     ovulationSignalPromptButton: "Log it",

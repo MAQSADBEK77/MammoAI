@@ -359,6 +359,12 @@ const ru: Dictionary = {
           ? `Следующая менструация через ${days} дн.`
           : `Менструация задерживается на ${Math.abs(days)} дн.`,
     fertileWindowLabel: "Окно фертильности",
+    pregnancyChanceLow: "Низкая вероятность беременности",
+    pregnancyChanceHigh: "Высокая вероятность беременности",
+    pregnancyChanceUnknown: "Отметьте месячные, чтобы узнать",
+    statCycleDay: "День цикла",
+    statNextPeriod: "Следующие месячные",
+    statNextFertile: "Фертильные дни",
     ovulationSignalPromptTitle: "Заметили признаки овуляции?",
     ovulationSignalPromptBody: "Чувствовали ли вы боль при овуляции или изменение выделений в эти дни? Отметьте — это уточнит прогноз.",
     ovulationSignalPromptButton: "Отметить",
