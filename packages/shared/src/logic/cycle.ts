@@ -20,6 +20,15 @@ const ADAPTIVE_MAX_CYCLES = 6; // o'rtacha shu oxirgi N ta sikldan hisoblanadi (
 // "3 ta siklga teng ishonch og'irligi" — n=SHRINKAGE_K'da shaxsiy va umumiy
 // (prior) taxminan teng og'irlikda bo'ladi (n/(n+k) = 3/6 = 50%).
 const SHRINKAGE_K = 3;
+// CYCLE-ALGO-21 SINALDI VA QAYTARILDI (2026-09-22): prior og'irligini
+// kuzatilgan og'ishga bog'lash (K = K·σ_obs/σ_prior) qo'lda tuzilgan
+// stsenariyda yaxshi natija berdi, lekin cycle-backtest harness'ida IKKI
+// stsenariyda ham yomonlashtirdi (muntazam 0.6→0.8 kun, tartibsiz 2.8→3.0).
+// Sabab: u stsenariylarda prior haqiqatga yaqin, ya'ni uni zaiflashtirish
+// shovqinni kuchaytiradi. Haqiqiy muammo K'da emas — onboarding'dagi
+// "Bilmayman" tanlovi SAQLANMAYDI, shuning uchun algoritm ayolning haqiqiy
+// javobini standart 28/5 qiymatdan ajrata olmaydi. To'g'ri yechim: o'sha
+// bayroqni saqlash va prior'ni FAQAT o'sha holatda zaiflashtirish.
 // CYCLE-ALGO-07: bashorat DIAPAZONI shakllanadigan standart og'ish — n<2'da
 // (ishonchli namuna og'ishini hisoblab bo'lmaydigan holatlarda) ishlatiladi.
 // 4 kun — "past ishonch" darajasiga mos keladigan, taxminiy tarqalishni aks
@@ -519,6 +528,7 @@ export function deriveAdaptiveCycleSettings(
   // personalCycleAvg'ga (aslida faqat 4 ta nuqta qo'llab-quvvatlaydigan
   // darajadan) ORTIQ ishonch berardi.
   const shrinkageN = cycleLengthsForAvg.length;
+
   const shrunkCycleLength = (shrinkageN * personalCycleAvg + tunables.shrinkageK * populationPrior) / (shrinkageN + tunables.shrinkageK);
   const avgCycleLength = clamp(Math.round(shrunkCycleLength), MIN_SANE_CYCLE_LENGTH, MAX_SANE_CYCLE_LENGTH);
   const lastStart = starts[starts.length - 1];

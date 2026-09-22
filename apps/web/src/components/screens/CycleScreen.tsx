@@ -396,11 +396,19 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // Confidence "insufficient" YOKI sabab turi hali chinakam sikl tarixi
   // yo'qligini bildirsa (no_data/limited_data) — ikkalasi ham "hali ishonchli
   // bashorat yo'q" degani, faqat turli darajada.
-  const isLowInfoPrediction =
+  // CYCLE-ALGO-22: ilgari `limited_data` ham shu yerga kirardi, ya'ni IKKI ta
+  // haqiqiy sikl qayd etgan ayolga ham hero toza son ("8 kun qoldi") o'rniga
+  // uzun jumla — "11.09.2026–19.09.2026 oralig'ida kutilmoqda" — ko'rsatilardi
+  // (foydalanuvchi: "yozuv ham uzun"). Bu ortiqcha ehtiyotkorlik edi: ikkita
+  // haqiqiy sikl BOR ma'lumot, shunchaki kam. Endi uzun diapazon faqat
+  // HECH QANDAY sikl ma'lumoti bo'lmaganda chiqadi; "kam ma'lumot" holati esa
+  // pastdagi kichik izoh qatorida (showTrackingNote) aytiladi — bir fikr
+  // ikkita joyda takrorlanmaydi.
+  const hasNoCycleData =
     !!data.prediction &&
-    (data.prediction.confidence === "insufficient" ||
-      data.prediction.explanationReason.type === "no_data" ||
-      data.prediction.explanationReason.type === "limited_data");
+    (data.prediction.confidence === "insufficient" || data.prediction.explanationReason.type === "no_data");
+  const hasLimitedCycleData = data.prediction?.explanationReason.type === "limited_data";
+  const isLowInfoPrediction = hasNoCycleData;
 
   const hasTodayLog = !!todayLog;
 
@@ -476,7 +484,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // Faqat past-ishonch holatida ko'rsatiladi (tartibsiz-sikl holati o'zining
   // ALOHIDA, hero'dan TASHQARIDAGI bannerida allaqachon tushuntiriladi —
   // shu yerda takrorlanmaydi).
-  const showTrackingNote = !!data.prediction && !data.prediction.isStale && isLowInfoPrediction && !data.isIrregular;
+  const showTrackingNote =
+    !!data.prediction && !data.prediction.isStale && (isLowInfoPrediction || hasLimitedCycleData) && !data.isIrregular;
 
   // OVERNIGHT-15/21/23: hero bloki bosilganda ochiladigan oyna endi HOLATGA
   // qarab FARQLANADI — haqiqiy "hech narsa yo'q" holatida (`!data.prediction`)
