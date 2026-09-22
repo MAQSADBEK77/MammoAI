@@ -480,7 +480,14 @@ function OnboardingPageInner() {
     return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
   }
 
-  async function submitIdentifier() {
+  /** RESEND-01: ilgari bu funksiya OXIRIDA shartsiz `goNext()` chaqirardi va
+   * "phone_verify" bosqichidagi "qayta yuborish" havolasi ham AYNAN shuni
+   * chaqirardi — natijada qayta yuborishni bosgan foydalanuvchi telefonini
+   * TASDIQLAMASDAN keyingi bosqichga (privacy) o'tib ketardi. U butun so'rovnomani
+   * to'ldirib, faqat eng oxirida — `analyzing`da, /api/onboarding avtorizatsiya
+   * talab qilganda — xatoga urilardi. Endi bosqichni surish MAS'ULIYATI
+   * chaqiruvchida: funksiya faqat muvaffaqiyat/muvaffaqiyatsizlikni qaytaradi. */
+  async function startPhoneCode(): Promise<boolean> {
     setSubmitting(true);
     setErrorMessage(null);
     try {
@@ -490,13 +497,14 @@ function OnboardingPageInner() {
       setPhoneDeepLink(res.deepLink);
       setCodeSent(false);
       setVerifyCode("");
-      goNext();
+      return true;
     } catch (error) {
       // Server haqiqatan formatni rad etsa — o'zining aniq xabari (ApiError.message)
       // ko'rsatiladi. `fetch` tarmoq xatosida (internet yo'q va h.k.) oddiy Error
       // uloqtiradi — bu holatda "raqamingiz noto'g'ri" degan noto'g'ri xulosaga
       // kelmaslik uchun alohida, to'g'ri xabar ko'rsatiladi.
       setErrorMessage(error instanceof ApiError ? error.message : dict.auth.identifierNetworkError);
+      return false;
     } finally {
       setSubmitting(false);
     }
@@ -834,7 +842,12 @@ function OnboardingPageInner() {
               </div>
             )}
             {errorMessage && <p className="text-center text-sm text-danger">{errorMessage}</p>}
-            <button type="button" onClick={submitIdentifier} className="text-center text-sm font-semibold text-primary-dark underline-offset-2 hover:underline">
+            <button
+              type="button"
+              onClick={() => void startPhoneCode()}
+              disabled={submitting}
+              className="text-center text-sm font-semibold text-primary-dark underline-offset-2 hover:underline disabled:opacity-50"
+            >
               {dict.auth.resendLink}
             </button>
           </div>
@@ -1265,7 +1278,12 @@ function OnboardingPageInner() {
             <span />
           )}
           {step === "account_identifier" ? (
-            <Button onClick={submitIdentifier} disabled={submitting || !canProceed()}>
+            <Button
+              onClick={async () => {
+                if (await startPhoneCode()) goNext();
+              }}
+              disabled={submitting || !canProceed()}
+            >
               {dict.common.continueButton}
             </Button>
           ) : step === "phone_verify" ? (
