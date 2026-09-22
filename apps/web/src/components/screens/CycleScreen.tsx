@@ -342,11 +342,19 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     // Bashorat eskirgan bo'lsa (oxirgi hayz juda uzoq oldin qayd etilgan)
     // hech qanday bashorat belgisi qo'yilmaydi — aks holda chiziq allaqachon
     // o'tib ketgan "bashorat"larni ko'rsatib, xato ma'lumot berardi.
+    const showFertile = data.prediction?.confidence !== "insufficient";
+    // CYCLE-ALGO-18: hali birorta sikl aniqlanmagan bo'lsa ("insufficient" —
+    // odatda faqat onboarding'da bitta sana kiritilgan) unumdor oyna
+    // KO'RSATILMAYDI. Sabab: bunday holatda noaniqlik ~6 kun, ya'ni oyna
+    // 19 kunga cho'ziladi — siklning uchdan ikki qismi. Bu ma'lumot bermaydi,
+    // faqat kalendarni xira kulrang qilib to'ldiradi (foydalanuvchi: "why
+    // some dates are dark and some are grey"), va homiladorlikka
+    // tayyorlanayotgan yoki aksincha saqlanayotgan ayolni chalg'itadi.
     if (!data.prediction?.isStale) {
       for (const c of data.forecast) {
         for (const [from, to, target] of [
           [c.periodStart, c.periodEnd, predicted],
-          [c.fertileWindowStart, c.fertileWindowEnd, fertile],
+          ...(showFertile ? ([[c.fertileWindowStart, c.fertileWindowEnd, fertile]] as const) : []),
         ] as const) {
           const cur = new Date(from + "T00:00:00");
           const end = new Date(to + "T00:00:00");

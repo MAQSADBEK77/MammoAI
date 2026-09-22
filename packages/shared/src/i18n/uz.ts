@@ -444,7 +444,8 @@ const uz = {
     // CAL-01 — to'liq ekranli kalendar.
     calTapHint: "Hayz boshlangan kunga bosing — keyingi kunlar avtomatik belgilanadi. Xato bo'lsa, o'sha kunga qayta bosing.",
     calEditPeriod: "Hayz sanalarini tahrirlash",
-    calEditHint: "Har bir kunga alohida bosing — faqat o'sha kun belgilanadi yoki bekor qilinadi.",
+    calEditHint: (days: number) =>
+      `Hayz boshlangan kunga bosing — keyingi ${days} kun avtomatik belgilanadi (bugundan nariga o'tmaydi). Ortiqcha kunni olib tashlash uchun ustiga yana bosing.`,
     calCycleDay: (day: number) => `Sikl ${day}-kuni`,
     calSymptomsTitle: "Simptomlar va faoliyat",
     calNothingLogged: "Vazn, kayfiyat va simptom qo'shish",

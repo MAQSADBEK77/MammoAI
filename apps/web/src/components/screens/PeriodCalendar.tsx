@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { Close, ArrowUpward, ChevronLeft, ChevronRight, Add, CheckOutlined } from "@mui/icons-material";
 import type { CycleLog, CycleResponse } from "@mammoai/shared";
-import { FLOW_EMOJI, MOOD_EMOJI, SYMPTOM_EMOJI, getCyclePhase, localDateStr } from "@mammoai/shared";
+import { DEFAULT_PERIOD_LENGTH, FLOW_EMOJI, MOOD_EMOJI, SYMPTOM_EMOJI, getCyclePhase, localDateStr } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { Portal } from "@/components/Portal";
 import { Emoji } from "@/components/Emoji";
@@ -62,6 +62,9 @@ export function PeriodCalendar({
 }: PeriodCalendarProps) {
   const { dict } = useI18n();
   const todayDate = useMemo(() => new Date(today + "T00:00:00"), [today]);
+  /** Ayolning O'Z hayz davomiyligi — avtomatik to'ldirish shunga qarab
+   * bo'ladi (onboarding'da "bilmayman" degan bo'lsa, standart 5). */
+  const periodLength = data.settings.averagePeriodLength || DEFAULT_PERIOD_LENGTH;
   const [view, setView] = useState<"month" | "year">("month");
   const [year, setYear] = useState(todayDate.getFullYear());
   const [selected, setSelected] = useState<string | null>(null);
@@ -71,6 +74,10 @@ export function PeriodCalendar({
     () => (initialEditing ? new Set(data.logs.filter((l) => l.flow).map((l) => l.date)) : new Set())
   );
   const [saving, setSaving] = useState(false);
+  /** CAL-01: oxirgi avtomatik to'ldirishda qo'shilgan kunlar — TARTIBI bilan.
+   * Faqat animatsiya uchun: har bir kun o'z navbatida "chiqadi" (globals.css
+   * `.day-fill`), shuning uchun kechikish shu ro'yxatdagi o'rniga bog'liq. */
+  const [fillOrder, setFillOrder] = useState<string[]>([]);
   const [showBackToToday, setShowBackToToday] = useState(false);
   const todayMonthRef = useRef<HTMLDivElement | null>(null);
   const monthRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -96,13 +103,21 @@ export function PeriodCalendar({
         if (alsoFaint) faint.add(d);
       }
     };
+    // CYCLE-ALGO-18: hali birorta sikl aniqlanmagan bo'lsa ("insufficient" —
+    // odatda faqat onboarding'da bitta sana kiritilgan) unumdor oyna
+    // KO'RSATILMAYDI. Sabab: bunday holatda noaniqlik ~6 kun, ya'ni oyna
+    // 19 kunga cho'ziladi — siklning uchdan ikki qismi. Bu ma'lumot bermaydi,
+    // faqat kalendarni xira kulrang qilib to'ldiradi (foydalanuvchi: "why
+    // some dates are dark and some are grey"), va homiladorlikka
+    // tayyorlanayotgan yoki aksincha saqlanayotgan ayolni chalg'itadi.
+    const showFertile = data.prediction?.confidence !== "insufficient";
     for (const c of data.forecast) {
       const uncertain = c.uncertaintyDays > FAINT_UNCERTAINTY_DAYS;
       push(predicted, c.periodStart, c.periodEnd, uncertain);
-      push(fertile, c.fertileWindowStart, c.fertileWindowEnd, uncertain);
+      if (showFertile) push(fertile, c.fertileWindowStart, c.fertileWindowEnd, uncertain);
     }
     return { predictedDates: predicted, fertileDates: fertile, faintDates: faint };
-  }, [data.forecast]);
+  }, [data.forecast, data.prediction?.confidence]);
 
   const months = useMemo(
     () =>
@@ -141,22 +156,58 @@ export function PeriodCalendar({
     return null;
   }
 
+  /** CAL-01 (foydalanuvchi so'rovi): hayz boshlangan kunga bosilganda qolgan
+   * kunlarni ham QO'LDA belgilash shart emas — ayolning o'z hayz davomiyligi
+   * bo'yicha avtomatik to'ldiriladi.
+   *
+   * MUHIM cheklov — bugundan nariga O'TMAYDI. `cycle_logs`ga yozilgan "flow"
+   * qayd "shu kuni hayz bo'lgan" degani; kelasi kunlar uchun buni yozish
+   * ilova bilmagan narsasini da'vo qilishi bo'lardi (aynan shu muammoni
+   * 0-bosqichda bosh sahifadan olib tashladik). Kelajakdagi kunlar allaqachon
+   * BASHORAT sifatida (punktir gardish) ko'rinadi.
+   *
+   * Belgilangan kunga bosish — faqat O'SHA kunni olib tashlaydi (butun
+   * guruhni emas): ayol davomiylikni bir kunga qisqartira olishi kerak. */
   function handleDayTap(date: string) {
     if (!editing) {
       setSelected(date);
       return;
     }
-    // Faqat SHU kun — qo'shni kunlarga tegilmaydi.
+    if (draft.has(date)) {
+      setFillOrder([]);
+      setDraft((cur) => {
+        const next = new Set(cur);
+        next.delete(date);
+        return next;
+      });
+      return;
+    }
+
+    const added: string[] = [];
+    for (let i = 0; i < periodLength; i++) {
+      const d = addDays(date, i);
+      if (d > today) break;
+      if (!draft.has(d)) added.push(d);
+    }
+    // Hamma kun allaqachon belgilangan bo'lsa ham boshlanish kuni qo'shilsin.
+    if (added.length === 0) added.push(date);
+    setFillOrder(added);
     setDraft((cur) => {
       const next = new Set(cur);
-      if (next.has(date)) next.delete(date);
-      else next.add(date);
+      for (const d of added) next.add(d);
       return next;
     });
   }
 
+  /** Animatsiya kechikishi — kun avtomatik to'ldirishda nechanchi bo'lsa. */
+  function fillDelayMs(date: string): number | null {
+    const i = fillOrder.indexOf(date);
+    return i === -1 ? null : i * 90;
+  }
+
   function startEditing() {
     setSelected(null);
+    setFillOrder([]);
     setDraft(new Set(loggedPeriodDates));
     setEditing(true);
   }
@@ -217,7 +268,7 @@ export function PeriodCalendar({
 
           {editing && (
             <p className="mx-auto max-w-md px-4 pb-2 text-center text-xs text-text-secondary">
-              {dict.cycle.calEditHint}
+              {dict.cycle.calEditHint(periodLength)}
             </p>
           )}
 
@@ -284,6 +335,7 @@ export function PeriodCalendar({
                       dayState={dayState}
                       isFaint={(d) => faintDates.has(d)}
                       onDayTap={handleDayTap}
+                      fillDelayMs={fillDelayMs}
                     />
                   </div>
                 );
@@ -472,6 +524,7 @@ function MonthGrid({
   dayState,
   isFaint,
   onDayTap,
+  fillDelayMs,
 }: {
   monthDate: Date;
   today: string;
@@ -482,6 +535,9 @@ function MonthGrid({
   /** Uzoq (noaniqroq) bashorat — xiraroq chiziladi. */
   isFaint: (date: string) => boolean;
   onDayTap: (date: string) => void;
+  /** CAL-01: avtomatik to'ldirilgan kun uchun animatsiya kechikishi (ms),
+   * yoki `null` — bu kun avtomatik to'ldirilmagan. */
+  fillDelayMs: (date: string) => number | null;
 }) {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -497,6 +553,7 @@ function MonthGrid({
         const date = localDateStr(new Date(year, month, i + 1));
         const state = dayState(date);
         const isToday = date === today;
+        const delay = fillDelayMs(date);
         return (
           <button
             key={date}
@@ -510,8 +567,16 @@ function MonthGrid({
               {isToday ? todayLabel : ""}
             </span>
             <span
+              // CAL-01: avtomatik to'ldirilgan kunlar BIR VAQTDA emas,
+              // birin-ketin "chiqadi" — shu orqali ayol qaysi kunlar
+              // qo'shilganini ko'zi bilan kuzatib boradi. `key`ga kechikish
+              // qo'shilgan: aks holda React bir xil elementni qayta
+              // ishlatib, animatsiyani qaytadan ishga tushirmasdi.
+              key={delay === null ? "d" : `d-${delay}`}
+              style={delay === null ? undefined : { animationDelay: `${delay}ms` }}
               className={clsx(
                 "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition sm:h-10 sm:w-10 sm:text-base",
+                delay !== null && "day-fill",
                 state === "period" && "bg-primary text-white",
                 state === "predicted" && "border-2 border-dashed border-primary text-primary",
                 state === "fertile" && "text-accent",

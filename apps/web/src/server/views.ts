@@ -12,7 +12,7 @@ import {
   forecastCycles,
   tashkentDateStr,
 } from "@mammoai/shared";
-import type { CycleResponse, PregnancyResponse, WellnessResponse } from "@mammoai/shared";
+import type { CycleResponse, PredictionConfidence, PregnancyResponse, WellnessResponse } from "@mammoai/shared";
 import {
   getCycleSettings,
   getKicksToday,
@@ -24,6 +24,18 @@ import {
   listPregnancyVisits,
   listRecentVitalsByType,
 } from "./repo";
+
+/** CYCLE-ALGO-18: kalendarda nechta sikl oldinga ko'rsatiladi — ishonch
+ * darajasiga qarab. Ma'lumot qancha ko'p bo'lsa, uzoq bashorat shuncha
+ * asosli. "insufficient" = hali birorta ham sikl aniqlanmagan (odatda
+ * foydalanuvchi faqat onboarding'da sana kiritgan) — bunda faqat ENG YAQIN
+ * sikl ko'rsatiladi. */
+const FORECAST_HORIZON: Record<PredictionConfidence, number> = {
+  insufficient: 1,
+  low: 3,
+  medium: 6,
+  high: 13,
+};
 
 /** `today` — ixtiyoriy, faqat QA-001 integratsiya testi uchun (deterministik
  * sana bilan tekshirish); haqiqiy so'rovlarda hech qachon uzatilmaydi, shuning
@@ -59,7 +71,26 @@ export async function buildCycleResponse(userId: string, today?: string): Promis
   // kiritilgan) foydalanuvchida birinchi "bashorat"lar allaqachon o'tmishda
   // qolgan bo'lardi va kalendarda o'tib ketgan kunlar "kutilmoqda" bo'lib
   // turardi.
-  const forecast = adaptive ? forecastCycles(adaptive, undefined, today ?? tashkentDateStr()) : [];
+  //
+  // CYCLE-ALGO-18: ufq ISHONCH darajasiga bog'landi. Ilgari hamma uchun 13 ta
+  // sikl chiqarilardi — hatto hech qachon hayz QAYD ETMAGAN, faqat
+  // onboarding'da bitta sana kiritgan foydalanuvchi uchun ham. Natijada
+  // kalendar bir yillik "bashorat" bilan to'lib ketardi: har bir siklda
+  // punktir hayz kunlari + ~15 kunlik unumdor oyna, hammasi xira kulrang.
+  // Foydalanuvchi buni shunday ta'rifladi: "why some dates are dark and some
+  // are grey". Bir martalik o'z-o'zidan aytilgan sanadan bir yil oldinga
+  // bashorat qilish — soxta aniqlik. Ma'lumot ko'paygan sari ufq ham uzayadi.
+  // Tartib MUHIM: avval to'liq ro'yxat yaratiladi va TUGAGANLARI tashlanadi,
+  // keyin qolganidan N tasi olinadi. Teskarisida (avval N ta yaratib, keyin
+  // filtrlash) oxirgi hayzi uzoq oldin bo'lgan foydalanuvchida hamma sikl
+  // o'tmishda qolib, bashorat BUTUNLAY yo'qolardi — "eng yaqin 1 ta sikl"
+  // o'rniga "0 ta sikl".
+  const forecast = adaptive
+    ? forecastCycles(adaptive, undefined, today ?? tashkentDateStr()).slice(
+        0,
+        FORECAST_HORIZON[adaptive.confidence]
+      )
+    : [];
 
   return { settings, logs, prediction, isIrregular, forecast };
 }

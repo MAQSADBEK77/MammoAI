@@ -380,7 +380,8 @@ const en: Dictionary = {
     calendarTitle: "Calendar",
     calTapHint: "Tap the day your period started — the following days are marked automatically. Tapped by mistake? Tap it again.",
     calEditPeriod: "Edit period dates",
-    calEditHint: "Tap each day separately — only that day is marked or unmarked.",
+    calEditHint: (days: number) =>
+      `Tap the day your period started — the next ${days} days are marked automatically (never past today). Tap a day again to remove it.`,
     calCycleDay: (day: number) => `Cycle day ${day}`,
     calSymptomsTitle: "Symptoms and activities",
     calNothingLogged: "Add weight, mood & symptoms",
