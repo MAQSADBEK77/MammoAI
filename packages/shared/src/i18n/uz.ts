@@ -513,6 +513,20 @@ const uz = {
     cycleHistoryCurrent: (days: number) => `Joriy sikl: ${days} kun`,
     cycleHistoryStarted: (date: string) => `${date} dan boshlandi`,
     cycleHistoryLegendFertile: "Unumdor kunlar",
+    /** PATTERN-01: "Simptom naqshlarim". Da'vo faqat yetarli ma'lumot
+     * bo'lganda qilinadi — aks holda shunchaki son aytiladi. */
+    symptomPatternsTitle: "Simptom naqshlarim",
+    symptomPatternDominant: (symptom: string, phase: string) =>
+      `Siz "${symptom}"ni asosan ${phase} davrida belgilagansiz.`,
+    symptomPatternNotEnough: (count: number) =>
+      `${count} marta belgilangan — naqsh haqida gapirish uchun hali kam.`,
+    symptomPatternsEmptyTitle: "Simptomlaringizni kuzating",
+    symptomPatternsEmptyBullets: [
+      "Bir necha sikl bo'ylab xaritada ko'rasiz",
+      "Takrorlanuvchi naqsh bor-yo'qligini bilasiz",
+      "Shifokorga aniq ma'lumot bilan borasiz",
+    ],
+    symptomPatternsEmptyCta: "Simptom belgilash",
     // 2026-09-18: "yozib berilgan shaxsiy maslahat" ohangiga o'zgartirildi
     // (foydalanuvchi so'rovi: "yaqin do'st/hamshira yozganday" — lekin
     // mazmun/aniqlik o'zgarmaydi, faqat ohang, hech qachon "chiroyli yolg'on"ga

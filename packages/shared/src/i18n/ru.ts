@@ -432,6 +432,18 @@ const ru: Dictionary = {
     cycleHistoryCurrent: (days: number) => `Текущий цикл: ${days} дн.`,
     cycleHistoryStarted: (date: string) => `Начался ${date}`,
     cycleHistoryLegendFertile: "Фертильные дни",
+    symptomPatternsTitle: "Мои закономерности",
+    symptomPatternDominant: (symptom: string, phase: string) =>
+      `Вы отмечали «${symptom}» в основном в период «${phase}».`,
+    symptomPatternNotEnough: (count: number) =>
+      `Отмечено ${count} раз — пока мало, чтобы говорить о закономерности.`,
+    symptomPatternsEmptyTitle: "Отслеживайте симптомы",
+    symptomPatternsEmptyBullets: [
+      "Увидите их на карте нескольких циклов",
+      "Поймёте, есть ли повторяющаяся закономерность",
+      "Придёте к врачу с точными данными",
+    ],
+    symptomPatternsEmptyCta: "Отметить симптом",
     dailyInsights: {
       phase_menstrual: {
         title: "Дни цикла",

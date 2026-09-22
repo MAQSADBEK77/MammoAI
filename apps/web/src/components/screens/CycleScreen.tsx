@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { CycleResponse, CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
-import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -30,6 +30,7 @@ import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { MyCyclesCard } from "@/components/screens/MyCyclesCard";
 import { CycleHistoryCard } from "@/components/screens/CycleHistoryCard";
+import { SymptomPatternsCard } from "@/components/screens/SymptomPatternsCard";
 import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
 import { TodayHeader, type TodayDay, type TodayDayMarker } from "@/components/screens/TodayHeader";
@@ -523,6 +524,12 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
    * manbadan olinadi (CYCLE-ALGO-24) — aks holda tarixdagi ovulyatsiya
    * nuqtasi kalendardagidan farq qilardi. */
   const cycleHistory = buildCycleHistory(data.logs, today, { lutealPhaseDays: data.prediction?.lutealPhaseDays });
+  /** PATTERN-01: eng ko'p belgilangan 2 ta simptom. Ko'proq ko'rsatish
+   * ekranni cho'zib yuborardi va foyda qo'shmasdi. */
+  const symptomPatterns = buildSymptomPatterns(data.logs, today, {
+    lutealPhaseDays: data.prediction?.lutealPhaseDays,
+    maxSymptoms: 2,
+  });
 
   const heroTapHintText = periodExpectedButUnlogged
     ? dict.cycle.heroPeriodStartedCta
@@ -1072,6 +1079,11 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
 
       {/* HISTORY-01 — o'tgan sikllar va ularning shakli. */}
       {!isPerimenopause && <CycleHistoryCard cycles={cycleHistory} />}
+
+      {/* PATTERN-01 — simptomlar sikl bo'ylab qayerga tushgani. */}
+      {!isPerimenopause && (
+        <SymptomPatternsCard patterns={symptomPatterns} onLogSymptom={() => openLogging(today, todayLog)} />
+      )}
 
       {/* OVERNIGHT-20: bu forma ILGARI oddiy inline <Card> edi — sahifada
           DailyInsightsCarousel'dan PASTDA render bo'lardi, ya'ni hero/tezkor

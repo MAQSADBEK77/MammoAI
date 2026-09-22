@@ -434,6 +434,18 @@ const en: Dictionary = {
     cycleHistoryCurrent: (days: number) => `Current cycle: ${days} days`,
     cycleHistoryStarted: (date: string) => `Started ${date}`,
     cycleHistoryLegendFertile: "Fertile days",
+    symptomPatternsTitle: "My symptom patterns",
+    symptomPatternDominant: (symptom: string, phase: string) =>
+      `You logged "${symptom}" mostly during your ${phase} phase.`,
+    symptomPatternNotEnough: (count: number) =>
+      `Logged ${count} times — not enough yet to call it a pattern.`,
+    symptomPatternsEmptyTitle: "Track your symptoms",
+    symptomPatternsEmptyBullets: [
+      "See them mapped across several cycles",
+      "Find out if there is a repeating pattern",
+      "Bring precise data to your doctor",
+    ],
+    symptomPatternsEmptyCta: "Log a symptom",
     dailyInsights: {
       phase_menstrual: {
         title: "Your period days",

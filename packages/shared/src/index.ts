@@ -5,6 +5,7 @@ export * from "./logic/cycle";
 export * from "./logic/cycle-phase";
 export * from "./logic/cycle-summary";
 export * from "./logic/cycle-history";
+export * from "./logic/symptom-patterns";
 export * from "./logic/cycle-backtest";
 export * from "./logic/insights";
 export * from "./logic/pregnancy";
