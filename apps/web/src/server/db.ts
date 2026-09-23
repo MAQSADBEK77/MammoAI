@@ -59,10 +59,36 @@ if (process.env.NODE_ENV !== "production") global.__mammoaiSql = sql;
 // so'rovlar bir-biriga bog'liq emas, shuning uchun ketma-ket emas, parallel
 // yuboriladi (Supabase pooler'gacha bo'lgan tarmoq kechikishi tufayli 17 ta
 // ketma-ket so'rov cold-start'da bir necha o'n soniyagacha cho'zilishi mumkin edi).
+// CONN-LIMIT-01 — sxema so'rovlarini CHEKLANGAN parallellik bilan bajaradi.
+//
+// Nega: `initSchema` bloklari 27 tagacha so'rovni BIR VAQTDA yuborardi.
+// postgres.js har bir band ulanish uchun yangi ulanish ochadi, ya'ni har
+// bir sovuq start bazaga darhol ~27 ta mijoz-ulanish ochardi. Supabase
+// pooler chegarasi 200 — demak bir vaqtda ko'tarilgan 7-8 nusxa uni
+// to'ldirib yuborardi.
+//
+// Aynan shu deploy paytida sodir bo'ldi (eski nusxalar hali o'chmagan,
+// yangilari birdan ko'tarilyapti) va production'da
+// "(EMAXCONN) max client connections reached, limit: 200" sifatida
+// ko'rindi — foydalanuvchi buni "Nimadir xato ketdi" ekrani sifatida
+// ushladi.
+//
+// Endi bir vaqtda ko'pi bilan BATCH_SIZE ta so'rov ketadi. Umumiy vaqt
+// deyarli o'zgarmaydi (bloklar baribir parallel), lekin ulanishlar
+// portlashi yo'qoladi. MUHIM: elementlar endi FUNKSIYA — shunda ular
+// navbati kelgunicha umuman boshlanmaydi.
+const SCHEMA_BATCH_SIZE = 6;
+
+async function runBatched(tasks: (() => Promise<unknown>)[], size = SCHEMA_BATCH_SIZE): Promise<void> {
+  for (let i = 0; i < tasks.length; i += size) {
+    await Promise.all(tasks.slice(i, i + size).map((run) => run()));
+  }
+}
+
 async function initSchema() {
   // 0-bosqich: hech kimga bog'liq bo'lmagan jadvallar.
-  await Promise.all([
-    sql`
+  await runBatched([
+    () => sql`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         phone TEXT UNIQUE,
@@ -80,7 +106,7 @@ async function initSchema() {
         is_blocked BOOLEAN NOT NULL DEFAULT FALSE
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS articles (
         id TEXT PRIMARY KEY,
         slug TEXT UNIQUE NOT NULL,
@@ -90,7 +116,7 @@ async function initSchema() {
         body TEXT NOT NULL
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS clinics (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -106,7 +132,7 @@ async function initSchema() {
     // Umumiy kalit-qiymat sozlamalar — .env'ga bog'lanmasdan, admin panel orqali
     // ishlab chiqarishda ham o'zgartirsa bo'ladigan sirlar/moslamalar uchun
     // (masalan Telegram bot tokeni — qayta deploy qilmasdan yangilash mumkin bo'lsin).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS app_settings (
         key TEXT PRIMARY KEY,
         value TEXT,
@@ -120,7 +146,7 @@ async function initSchema() {
     // keyin qo'shiladigan son) — provayderning HAQIQIY, JONLI kvota-qoldig'i
     // EMAS (Huawei buni so'rash uchun ochiq API bermaydi). `users`ga bog'liq
     // emas, shuning uchun 0-bosqichda.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS ai_usage_daily (
         provider TEXT NOT NULL,
         day DATE NOT NULL,
@@ -134,7 +160,7 @@ async function initSchema() {
     // kiritgach, shu jadvalga vaqtinchalik yozuv qo'shiladi (token — Telegram
     // chuqur havolasi uchun); botga "Start" bosilgach, chat_id va tasodifiy kod
     // shu yerga yoziladi, keyin foydalanuvchi kodni kiritib tasdiqlaydi.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS phone_verifications (
         id TEXT PRIMARY KEY,
         token TEXT UNIQUE NOT NULL,
@@ -149,7 +175,7 @@ async function initSchema() {
     // Admin panelda tanlanadigan illyustratsiyalar — har bir "joy" (masalan
     // "onboarding.welcome") mustaqil ravishda qaysi unDraw rasmi (slug)
     // ko'rsatilishini belgilaydi (packages/shared/src/illustration-library.ts).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS illustration_slots (
         slot_key TEXT PRIMARY KEY,
         illustration_slug TEXT NOT NULL,
@@ -161,7 +187,7 @@ async function initSchema() {
     // rate-limit yo'q edi — bitta so'rovda 100 tagacha soxta hodisa cheksiz
     // marta yuborilishi mumkin edi. IP manzil bo'yicha (foydalanuvchi bo'lmasa
     // ham ishlaydi) — `users`ga bog'liq emas, shuning uchun 0-bosqichda.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS analytics_ingest_attempts (
         ip_key TEXT PRIMARY KEY,
         attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -174,7 +200,7 @@ async function initSchema() {
     // yo'q edi — istalgan kishi cheksiz marta ixtiyoriy telefon raqamlar bilan
     // so'rov yuborishi mumkin edi. IP manzil bo'yicha — `users`ga bog'liq
     // emas, shuning uchun 0-bosqichda.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS phone_code_start_attempts (
         ip_key TEXT PRIMARY KEY,
         attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -185,7 +211,7 @@ async function initSchema() {
     // FIX3-18: admin login parolini kiritishda hech qanday urinishlar
     // cheklovi yo'q edi (oddiy foydalanuvchi OTP'i FIX-04 bilan himoyalangan,
     // lekin admin login emas) — IP manzil bo'yicha.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS admin_login_attempts (
         ip_key TEXT PRIMARY KEY,
         attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -196,8 +222,8 @@ async function initSchema() {
   ]);
 
   // 1-bosqich: faqat users'ga bog'liq jadvallar (parallel, chunki bir-biriga bog'liq emas).
-  await Promise.all([
-    sql`
+  await runBatched([
+    () => sql`
       CREATE TABLE IF NOT EXISTS onboarding_profiles (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         name TEXT,
@@ -217,7 +243,7 @@ async function initSchema() {
         blood_type TEXT
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS risk_quiz_results (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         answers TEXT NOT NULL,
@@ -226,7 +252,7 @@ async function initSchema() {
         completed_at TEXT NOT NULL
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS cycle_settings (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         last_period_start TEXT,
@@ -234,7 +260,7 @@ async function initSchema() {
         average_period_length INTEGER NOT NULL DEFAULT 5
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS cycle_logs (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -250,7 +276,7 @@ async function initSchema() {
     // (24 soat amal qiladi), ulangandan keyin `partner_links` yaratiladi va
     // invite o'chiriladi. Har ikkala foydalanuvchi o'z ulashish sozlamalarini
     // mustaqil boshqaradi (user_a_shares/user_b_shares — JSON).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS partner_invites (
         id TEXT PRIMARY KEY,
         code TEXT UNIQUE NOT NULL,
@@ -259,7 +285,7 @@ async function initSchema() {
         expires_at TEXT NOT NULL
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS partner_links (
         id TEXT PRIMARY KEY,
         user_a_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -272,7 +298,7 @@ async function initSchema() {
     // FIX-03: hamkor kodini (4 xonali edi, endi ancha uzunroq) qo'pol kuch
     // bilan sinashning oldini olish — repo.ts:connectPartnerByCode har
     // urinishda shu jadvalni tekshiradi/yangilaydi.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS partner_connect_attempts (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -285,7 +311,7 @@ async function initSchema() {
     // istalgan login qilgan foydalanuvchi biror insonning postiga
     // cheksiz tez izoh yozib, uning Telegram/telefoniga bildirishnoma
     // "bombardimoni" uyushtirishi mumkin edi.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS comment_rate_limit_attempts (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -297,7 +323,7 @@ async function initSchema() {
     // yo'q edi — fikr-mulohaza jadvali spam bilan to'ldirilishi yoki bitta
     // foydalanuvchi ko'p postlarni "shikoyat" qilib moderatsiya navbatini
     // bezovta qilishi mumkin edi.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS feedback_rate_limit_attempts (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -305,7 +331,7 @@ async function initSchema() {
         blocked_until TEXT
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS community_report_rate_limit_attempts (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -313,7 +339,7 @@ async function initSchema() {
         blocked_until TEXT
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_profiles (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         last_menstrual_period TEXT,
@@ -325,7 +351,7 @@ async function initSchema() {
     // mumkin (onboarding tugamasdan oldingi hodisalar) — CASCADE, chunki akkaunt
     // o'chirilganda bog'liq analitika ham tozalanishi kerak (App.pdf'dan tashqari,
     // maxfiylik siyosati bilan izchil).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS analytics_events (
         id TEXT PRIMARY KEY,
         user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
@@ -338,7 +364,7 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_visits (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -349,7 +375,7 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_kicks (
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         date TEXT NOT NULL,
@@ -364,7 +390,7 @@ async function initSchema() {
     // `question_key` — packages/shared/src/logic/checkin.ts'dagi BARQAROR kalit
     // (savol matni o'zgarsa ham o'zgarmaydi). Kun + savol bo'yicha yagona —
     // foydalanuvchi fikrini o'zgartirsa, javob YANGILANADI (dublikat emas).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS checkin_answers (
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         date TEXT NOT NULL,
@@ -374,7 +400,7 @@ async function initSchema() {
         PRIMARY KEY (user_id, date, question_key)
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS wellness_logs (
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         date TEXT NOT NULL,
@@ -384,7 +410,7 @@ async function initSchema() {
       )
     `,
     // "Sog'liq ko'rsatkichlari" — foydalanuvchi o'zi qayd etadigan tezkor-jurnal.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_vitals (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -402,7 +428,7 @@ async function initSchema() {
     // yo'l saqlanadi. Sabab: bitta avatar (users.avatar_url, base64) bilan
     // solishtirganda bu yerda ko'p va kattaroq rasm bo'lishi mumkin — bazani
     // shishirib yubormaslik uchun (postgres-pool-hang-bug xotira eslatmasi).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_album_photos (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -422,7 +448,7 @@ async function initSchema() {
     // emas) — cycle_settings kabi singleton naqsh. Holat SAQLANMAYDI, har doim
     // `expires_at`dan HISOBLANADI (NULL = muddatsiz) — ikkita maydon orasida
     // sinxronizatsiya xatosi bo'lmasligi uchun.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS subscriptions (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         plan TEXT NOT NULL DEFAULT 'premium',
@@ -439,7 +465,7 @@ async function initSchema() {
     // tilda talqin qiladi. Har chaqiruvda QAYTA generatsiya qilinmaydi (API
     // xarajati) — `logs_count_at_generation` orqali faqat yangi log qo'shilgan
     // yoki 7 kundan ko'p vaqt o'tgan bo'lsa yangilanadi (server/active-insights.ts).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS ai_active_insights (
         user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         content TEXT NOT NULL,
@@ -447,7 +473,7 @@ async function initSchema() {
         generated_at TEXT NOT NULL
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS checklist_items (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -460,7 +486,7 @@ async function initSchema() {
     `,
     // Jamiyat (Community) — post-lenta. `is_anonymous` true bo'lsa, muallif
     // nomi API darajasida ham yashiriladi (repo.ts).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS community_posts (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -475,7 +501,7 @@ async function initSchema() {
     // AI Yordamchi — chat tarixi. Alohida "xotira" jadvali yo'q: kontekst
     // har safar mavjud cycle_logs/onboarding_profiles/pregnancy_profiles'dan
     // jonli yig'iladi (server/ai-chat.ts:buildUserContext).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS chat_messages (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -488,7 +514,7 @@ async function initSchema() {
     // uchun — bitta (user_id, usage_date) qatorini `ON CONFLICT DO UPDATE`
     // orqali oshirish, parallel so'rovlar orasida poyga holatining oldini
     // oladi (mavjud rate-limiter jadvallari bilan bir xil naqsh).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS chat_daily_usage (
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         usage_date TEXT NOT NULL,
@@ -498,7 +524,7 @@ async function initSchema() {
     `,
     // Feedback loop — "Fikr bildirish" menyu bandi + AI Yordamchi ichidagi
     // yumshoq 👍/👎 so'rov. `trigger`: 'manual' | 'chat_prompt'.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS feedback_responses (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -511,7 +537,7 @@ async function initSchema() {
     // Telegram Mini App orqali kirish — foydalanuvchi "Telefon raqamimni ulashish"
     // tugmasini bosgach, telefon shu yerga yoziladi (webhook orqali), keyin
     // /finish shu yozuvni o'qib akkaunt yaratadi/topadi va o'chiradi.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS telegram_miniapp_pending (
         telegram_user_id TEXT PRIMARY KEY,
         phone TEXT,
@@ -523,7 +549,7 @@ async function initSchema() {
     // tashlab ketgan bo'lsa ham). Admin paneldan "hammaga xabar yuborish"
     // (broadcast) shu jadvaldagi + `users.telegram_user_id`dagi chat_id'larga
     // yuboriladi (repo.ts#listTelegramBroadcastChatIds).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS telegram_bot_starts (
         chat_id TEXT PRIMARY KEY,
         telegram_user_id TEXT,
@@ -538,21 +564,21 @@ async function initSchema() {
   // 1.5-bosqich: eski (allaqachon mavjud) jadvallarga yangi ustunlar qo'shish —
   // `CREATE TABLE IF NOT EXISTS` yangi ustunlarni qo'shmaydi, shuning uchun
   // productionda avval yaratilgan jadvallar uchun alohida `ALTER TABLE` kerak.
-  await Promise.all([
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`,
+  await runBatched([
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`,
     // Admin panel — foydalanuvchini bloklash (App.pdf'dan tashqari, moderatsiya uchun).
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE`,
-    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE`,
+    () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
     // FIX-CHECKUPS: bachadon bo'yni skrininggi/JYYI/kontratseptsiya kabi
     // bir nechta yangi tekshiruv turi shunga bog'liq (checklist-rules.ts).
-    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS sexually_active BOOLEAN NOT NULL DEFAULT FALSE`,
+    () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS sexually_active BOOLEAN NOT NULL DEFAULT FALSE`,
     // PROFILE-01: onboarding'dan KEYIN so'raladigan savollar. Barchasi
     // nullable — `NULL` = "hali so'ralmagan", bu "yo'q" bilan bir xil emas.
-    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS hpv_vaccinated BOOLEAN`,
-    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS hormonal_contraception BOOLEAN`,
-    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS smokes BOOLEAN`,
-    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS has_given_birth BOOLEAN`,
-    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS chronic_conditions TEXT`,
+    () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS hpv_vaccinated BOOLEAN`,
+    () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS hormonal_contraception BOOLEAN`,
+    () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS smokes BOOLEAN`,
+    () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS has_given_birth BOOLEAN`,
+    () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS chronic_conditions TEXT`,
     // MUHIM: `notifications`ga tegishli ALTER'lar ATAYLAB bu yerda EMAS —
     // pastda, jadvalning o'zi ("2.5-bosqich") yaratilgandan KEYIN (qarang:
     // "2.6-bosqich"). Bu yerda turganda haqiqiy production'da hech qachon
@@ -564,15 +590,15 @@ async function initSchema() {
     // Telegram Mini App orqali kirgan (yoki keyinroq bog'langan) foydalanuvchilar —
     // 1:1 shaxsiy chatda chat_id === user_id, shuning uchun bot xabar yuborishda
     // ham shu ustunning o'zi ishlatiladi (alohida chat_id ustuni shart emas).
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_user_id TEXT`,
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_user_id TEXT`,
     // Play Store tekshiruvchisi kabi ichki test hisoblar — admin panelning
     // Foydalanuvchilar/Analitika ro'yxatlari va statistikasida ko'rinmasligi kerak.
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_test_account BOOLEAN NOT NULL DEFAULT FALSE`,
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_test_account BOOLEAN NOT NULL DEFAULT FALSE`,
     // Yorug'/Qorong'u/Tizim mavzu tanlovi — eski "Yuqori kontrast" (high_contrast)
     // o'rnini bosadi. `high_contrast` ustuni ataylab o'chirilmaydi (dead column,
     // qaytarib bo'lmaydigan DROP COLUMN'dan qochish uchun), shunchaki endi kod
     // hech qayerda o'qimaydi/yozmaydi.
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'system'`,
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'system'`,
     // Haqiqiy telefon push-bildirishnomasi (Expo Push API) — roadmap 10-band.
     // Bitta ustun, bitta qurilma (soddalik uchun — foydalanuvchi yangi
     // qurilmada kirsa eskisi ustidan yoziladi, ko'p-qurilma qo'llab-quvvatlash
@@ -585,34 +611,34 @@ async function initSchema() {
     // /api/push-token route'ini) olib tashlash REJALASHTIRILGAN, lekin
     // bu safar bajarilmagan — DB sxema o'zgarishi alohida migratsiya
     // sifatida qilinishi kerak.
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS expo_push_token TEXT`,
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS expo_push_token TEXT`,
     // FIX-04: OTP kodini cheksiz sinab ko'rishning oldini olish uchun —
     // repo.ts:verifyPhoneCode shu ustunni token bo'yicha oshirib boradi va
     // chegaradan oshsa tokenni bekor qiladi.
-    sql`ALTER TABLE phone_verifications ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0`,
+    () => sql`ALTER TABLE phone_verifications ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0`,
     // FIX2-26: ilgari faqat `logs_count_at_generation` (yozuvlar SONI)
     // o'zgarganda AI tahlili qayta generatsiya qilinardi — foydalanuvchi
     // mavjud kunning kayfiyati/simptomini TAHRIRLASA (son o'zgarmaydi),
     // AI matni eskirgan qolardi. `cycle_logs.updated_at` (har bir yozish/
     // tahrirlashda yangilanadi) va `ai_active_insights`dagi keshlangan
     // qiymat orasidagi solishtiruv shu bo'shliqni yopadi.
-    sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS updated_at TEXT`,
-    sql`ALTER TABLE ai_active_insights ADD COLUMN IF NOT EXISTS logs_updated_at_at_generation TEXT`,
+    () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS updated_at TEXT`,
+    () => sql`ALTER TABLE ai_active_insights ADD COLUMN IF NOT EXISTS logs_updated_at_at_generation TEXT`,
     // OVERNIGHT-18: Klinikalar bo'limidagi "eng yaqinlarini topish" — brauzer
     // geolokatsiyasidan (foydalanuvchi ruxsat bergandagina) olingan oxirgi
     // koordinata, admin panelda ham ko'rinishi uchun saqlanadi. Aniq manzil
     // EMAS, faqat lat/lng — foydalanuvchi istalgan vaqt "Bloklangan
     // foydalanuvchilar" kabi profil sozlamalaridan buni tozalay olishi
     // kerak bo'lsa, kelajakda alohida "tozalash" tugmasi qo'shiladi.
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lat DOUBLE PRECISION`,
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lng DOUBLE PRECISION`,
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_at TEXT`,
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lat DOUBLE PRECISION`,
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_lng DOUBLE PRECISION`,
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_location_at TEXT`,
     // PET-01: bosh ekrandagi uy hayvoni (faqat 18 yoshgacha) — sof bezak.
-    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS pet TEXT`,
+    () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS pet TEXT`,
     // CYCLE-ALGO-15: bazal tana harorati (BBT) — ixtiyoriy, "Ilg'or" bo'lim
     // orqali kunlik yozuvga qo'shiladi. Ovulyatsiyani simptomdan ANIQROQ
     // aniqlash uchun (cycle.ts#detectOvulationFromBbt).
-    sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS basal_body_temp NUMERIC`,
+    () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS basal_body_temp NUMERIC`,
   ]);
 
   // 1.6-bosqich: NOT NULL cheklovini olib tashlash — ATAYLAB yuqoridagi
@@ -638,8 +664,8 @@ async function initSchema() {
   await sql`UPDATE cycle_logs SET updated_at = created_at WHERE updated_at IS NULL`;
 
   // 2-bosqich: users + clinics + checklist_items + community_posts'ga bog'liq.
-  await Promise.all([
-    sql`
+  await runBatched([
+    () => sql`
       CREATE TABLE IF NOT EXISTS referral_events (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -657,7 +683,7 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS community_post_likes (
         post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -665,7 +691,7 @@ async function initSchema() {
         PRIMARY KEY (post_id, user_id)
       )
     `,
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS community_comments (
         id TEXT PRIMARY KEY,
         post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
@@ -677,7 +703,7 @@ async function initSchema() {
     `,
     // Hamkor bilan haqiqiy suhbat (Telegram uslubida) — avvalgi "Xabar" faqat
     // bir martalik bildirishnoma edi, endi to'liq tarix bilan ikki tomonlama chat.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS partner_messages (
         id TEXT PRIMARY KEY,
         partner_link_id TEXT NOT NULL REFERENCES partner_links(id) ON DELETE CASCADE,
@@ -707,24 +733,24 @@ async function initSchema() {
   // 2.6-bosqich: `notifications`ga tegishli ALTER'lar — jadval yuqorida
   // ("2.5-bosqich") ENDIGINA yaratilgani uchun, faqat SHUNDAN keyin
   // xavfsiz (qarang: "1.5-bosqich"dagi izoh).
-  await Promise.all([
+  await runBatched([
     // Hamkor "Xabar" (tezkor eslatma) tugmasi shu ustunni ishlatadi —
     // izoh-bildirishnomalaridan farqli o'laroq, erkin matn saqlaydi.
-    sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS message TEXT`,
+    () => sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS message TEXT`,
     // Kunlik eslatma (system) bildirishnomalari uchun — haqiqiy "actor"
     // (boshqa foydalanuvchi) yo'q, shuning uchun bu ustun endi ixtiyoriy.
-    sql`ALTER TABLE notifications ALTER COLUMN actor_user_id DROP NOT NULL`,
+    () => sql`ALTER TABLE notifications ALTER COLUMN actor_user_id DROP NOT NULL`,
   ]);
 
   // 2.7-bosqich: COMM-001 (moderatsiya) — ikkalasi ham yuqoridagi
   // community_posts/community_comments/users allaqachon mavjud bo'lgandan
   // KEYIN yaratiladi (xuddi notifications kabi — "2.6-bosqich"dagi bug bilan
   // bir xil sababga ko'ra tartib muhim).
-  await Promise.all([
+  await runBatched([
     // Shikoyat — post yoki izohga, sabab + ixtiyoriy izoh bilan. Anonim
     // postlarda ham ishlaydi (moderator postning haqiqiy egasini ko'radi,
     // hisobot qoldiruvchi buni bilishi shart emas).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS community_reports (
         id TEXT PRIMARY KEY,
         reporter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -744,7 +770,7 @@ async function initSchema() {
     // ko'rmaydi, "shu postni yozganni bloklash" server tomonda hal qilinadi —
     // shuning uchun anonim post muallifini ham, ismini bilmasdan, bloklash
     // mumkin).
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS blocked_users (
         blocker_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         blocked_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -755,7 +781,7 @@ async function initSchema() {
     // ADMIN-001: bitta umumiy `ADMIN_PASSWORD` o'rniga har bir admin uchun
     // alohida hisob (email+parol) — bu ikkalasi ham `users`ga bog'liq emas,
     // shuning uchun istalgan bosqichda yaratilishi mumkin.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS admin_users (
         id TEXT PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
@@ -766,7 +792,7 @@ async function initSchema() {
     `,
     // CONTENT-001: homiladorlikning har bir haftasi uchun admin-tahrirlanadigan
     // matn — boshqa jadvallarga bog'liq emas, istalgan bosqichda yaratilishi mumkin.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_week_content (
         week INTEGER PRIMARY KEY,
         size_label TEXT NOT NULL,
@@ -778,7 +804,7 @@ async function initSchema() {
     // Audit-jurnal — kim, qachon, nima qilgani. `admin_label`ning o'zi
     // saqlanadi (FK emas) — shunda admin hisobi keyinchalik o'chirilsa ham
     // tarixiy yozuv "kim qilgani"ni yo'qotmaydi.
-    sql`
+    () => sql`
       CREATE TABLE IF NOT EXISTS admin_audit_log (
         id TEXT PRIMARY KEY,
         admin_label TEXT NOT NULL,
@@ -894,34 +920,34 @@ async function initSchema() {
   await sql`DROP INDEX IF EXISTS idx_partner_links_b`;
 
   // 3-bosqich: indekslar — tegishli jadvallar allaqachon mavjud, hammasi parallel.
-  await Promise.all([
-    sql`CREATE INDEX IF NOT EXISTS idx_phone_verifications_created ON phone_verifications(created_at)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_cycle_logs_user ON cycle_logs(user_id)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id)`,
-    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_checklist_user_type ON checklist_items(user_id, type)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_album_user ON pregnancy_album_photos(user_id, created_at DESC)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_community_posts_tag ON community_posts(tag, created_at DESC)`,
+  await runBatched([
+    () => sql`CREATE INDEX IF NOT EXISTS idx_phone_verifications_created ON phone_verifications(created_at)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_cycle_logs_user ON cycle_logs(user_id)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_checklist_user ON checklist_items(user_id)`,
+    () => sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_checklist_user_type ON checklist_items(user_id, type)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_album_user ON pregnancy_album_photos(user_id, created_at DESC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_community_posts_tag ON community_posts(tag, created_at DESC)`,
     // FIX3-22: "Barchasi" (teg tanlanmagan) standart ko'rinish teg bo'yicha
     // filtrlamaydi — bu holatda yuqoridagi kompozit indeks ishlamaydi va
     // Postgres butun jadvalni skanerlab saralashga majbur bo'ladi.
-    sql`CREATE INDEX IF NOT EXISTS idx_community_posts_created ON community_posts(created_at DESC)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_partner_invites_code ON partner_invites(code)`,
-    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_links_a_unique ON partner_links(user_a_id)`,
-    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_links_b_unique ON partner_links(user_b_id)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_partner_messages_link ON partner_messages(partner_link_id, created_at ASC)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_created ON analytics_events(created_at)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_user ON analytics_events(user_id)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(type, created_at)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id, created_at ASC)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback_responses(created_at DESC)`,
-    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_user_id ON users(telegram_user_id) WHERE telegram_user_id IS NOT NULL`,
-    sql`CREATE INDEX IF NOT EXISTS idx_community_reports_status ON community_reports(status, created_at DESC)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_blocked_users_blocker ON blocked_users(blocker_id)`,
-    sql`CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created ON admin_audit_log(created_at DESC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_community_posts_created ON community_posts(created_at DESC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_partner_invites_code ON partner_invites(code)`,
+    () => sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_links_a_unique ON partner_links(user_a_id)`,
+    () => sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_links_b_unique ON partner_links(user_b_id)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_partner_messages_link ON partner_messages(partner_link_id, created_at ASC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_created ON analytics_events(created_at)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_user ON analytics_events(user_id)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(type, created_at)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id, created_at ASC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback_responses(created_at DESC)`,
+    () => sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_user_id ON users(telegram_user_id) WHERE telegram_user_id IS NOT NULL`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_community_reports_status ON community_reports(status, created_at DESC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_blocked_users_blocker ON blocked_users(blocker_id)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created ON admin_audit_log(created_at DESC)`,
   ]);
 }
 
