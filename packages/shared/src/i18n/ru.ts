@@ -1042,6 +1042,7 @@ const ru: Dictionary = {
     sendCodeHint: "Отправьте этот код своему партнёру",
     copyCodeButton: "Копировать",
     codeCopied: "Скопировано",
+    copyFailed: "Не удалось скопировать — перепишите код вручную",
     orDivider: "— или —",
     codeInputPlaceholder: "Введите код партнёра...",
     connectSubmitButton: "Подключить ✓",

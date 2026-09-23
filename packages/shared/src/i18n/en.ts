@@ -1044,6 +1044,7 @@ const en: Dictionary = {
     sendCodeHint: "Send this code to your partner",
     copyCodeButton: "Copy",
     codeCopied: "Copied",
+    copyFailed: "Couldn't copy — please note the code down manually",
     orDivider: "— or —",
     codeInputPlaceholder: "Enter partner's code...",
     connectSubmitButton: "Connect ✓",

@@ -1166,6 +1166,7 @@ const uz = {
     sendCodeHint: "Bu kodni hamkoringizga yuboring",
     copyCodeButton: "Nusxalash",
     codeCopied: "Nusxalandi",
+    copyFailed: "Nusxalab bo'lmadi — kodni qo'lda ko'chiring",
     orDivider: "— yoki —",
     codeInputPlaceholder: "Hamkor kodini kiriting...",
     connectSubmitButton: "Ulash ✓",

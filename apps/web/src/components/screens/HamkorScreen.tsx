@@ -10,11 +10,11 @@ import {
   Circle,
 } from "@mui/icons-material";
 import type { PartnerShareSettings, PartnerStatusResponse } from "@mammoai/shared";
-import { MOOD_EMOJI, formatDateDisplay } from "@mammoai/shared";
+import { ApiError, MOOD_EMOJI, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useConfirm } from "@/lib/confirm";
 import { api } from "@/lib/api";
-import { Button, Card, LoadingSpinner, ErrorState, ScreenHeader, Badge } from "@/components/ui";
+import { Button, Card, LoadingSpinner, ErrorState, ScreenHeader, Badge, Toast } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { PartnerChatDialog } from "./PartnerChatDialog";
 
@@ -33,7 +33,7 @@ export function HamkorScreen() {
   const [connectError, setConnectError] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
-  const [flash, setFlash] = useState<string | null>(null);
+  const [flash, setFlash] = useState<{ message: string; tone: "info" | "error" } | null>(null);
   const [saving, setSaving] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   // UX-02: ilgari api.partner.status() muvaffaqiyatsiz bo'lsa `status` HECH
@@ -55,17 +55,25 @@ export function HamkorScreen() {
   }
   if (!status) return <LoadingSpinner label={dict.common.loading} />;
 
-  function flashMessage(text: string) {
-    setFlash(text);
-    setTimeout(() => setFlash(null), 2000);
+  // TOAST-01 (profil bilan bir xil): xato va tasdiq farqlanadi, xato
+  // uzoqroq turadi va ekranning ko'rinadigan joyida chiqadi — ilgari u
+  // uzun sahifaning eng pastida, kulrang rangda edi.
+  function flashMessage(text: string, tone: "info" | "error" = "info") {
+    setFlash({ message: text, tone });
+    setTimeout(() => setFlash(null), tone === "error" ? 5000 : 2000);
   }
 
   async function openConnectModal() {
     setConnectError(null);
     setConnectOpen(true);
-    if (!status!.myInviteCode) {
-      const res = await api.partner.generateCode();
-      setStatus(res);
+    if (status!.myInviteCode) return;
+    // PARTNER-01: ilgari bu chaqiruvda try/catch YO'Q edi — so'rov
+    // muvaffaqiyatsiz bo'lsa oyna KODSIZ ochilib qolardi va ayol nima
+    // bo'lganini bilmasdi (konsolda tutilmagan xato).
+    try {
+      setStatus(await api.partner.generateCode());
+    } catch {
+      setConnectError(dict.common.errorGeneric);
     }
   }
 
@@ -77,8 +85,13 @@ export function HamkorScreen() {
       setStatus(res);
       setConnectOpen(false);
       setCodeInput("");
-    } catch {
-      setConnectError(dict.partner.invalidCode);
+    } catch (err) {
+      // PARTNER-01: ilgari HAR QANDAY nosozlik "kod noto'g'ri" deb
+      // ko'rsatilardi — server yiqilganda ham ayolga uning kodi xato
+      // deyilardi va u to'g'ri kodni qayta-qayta kiritib ovora bo'lardi.
+      // 4xx — haqiqatan kod muammosi; qolgani — bizning tarafimizda.
+      const isCodeProblem = err instanceof ApiError && err.status >= 400 && err.status < 500;
+      setConnectError(isCodeProblem ? dict.partner.invalidCode : dict.common.errorGeneric);
     } finally {
       setConnecting(false);
     }
@@ -94,7 +107,7 @@ export function HamkorScreen() {
       // UX-02: ilgari catch YO'Q edi — so'rov muvaffaqiyatsiz bo'lsa
       // Switch ko'rinishda o'zgarmagandek qolardi (chunki state yangilanmadi),
       // lekin foydalanuvchiga NIMA uchun hech narsa saqlanmagani aytilmasdi.
-      flashMessage(dict.common.errorGeneric);
+      flashMessage(dict.common.errorGeneric, "error");
     } finally {
       setSaving(false);
     }
@@ -110,16 +123,26 @@ export function HamkorScreen() {
     try {
       setStatus(await api.partner.disconnect());
     } catch {
-      flashMessage(dict.common.errorGeneric);
+      flashMessage(dict.common.errorGeneric, "error");
     } finally {
       setDisconnecting(false);
     }
   }
 
   async function copyCode() {
-    if (!status!.myInviteCode) return;
-    await navigator.clipboard.writeText(status!.myInviteCode);
-    flashMessage(dict.partner.codeCopied);
+    const code = status!.myInviteCode;
+    if (!code) return;
+    // PARTNER-01: `navigator.clipboard` ishonchsiz — Telegram Mini App
+    // webview'ida, HTTPS bo'lmagan kontekstda yoki ruxsat berilmaganda
+    // XATO TASHLAYDI. Ilgari tutilmasdi: ayol "Nusxalash"ni bosardi,
+    // hech narsa nusxalanmasdi va hech qanday xabar ham chiqmasdi.
+    try {
+      await navigator.clipboard.writeText(code);
+      flashMessage(dict.partner.codeCopied);
+    } catch {
+      // Nusxalab bo'lmadi — kodni o'zi ko'chira olishi uchun aytamiz.
+      flashMessage(dict.partner.copyFailed, "error");
+    }
   }
 
   const daysAgo = status.linkedSince ? Math.floor((new Date().getTime() - new Date(status.linkedSince).getTime()) / 86400000) : 0;
@@ -256,7 +279,7 @@ export function HamkorScreen() {
         </>
       )}
 
-      {flash && <p className="text-center text-sm text-text-muted">{flash}</p>}
+      {flash && <Toast message={flash.message} tone={flash.tone === "error" ? "error" : "success"} />}
 
       {/* Ulanish modali — kod ko'rsatish + kod kiritish, Figma'dagi bitta oyna */}
       <Dialog open={connectOpen} onClose={() => setConnectOpen(false)} fullWidth maxWidth="xs">
