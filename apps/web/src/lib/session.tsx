@@ -2,11 +2,20 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { MeResponse, OnboardingProfile, User } from "@mammoai/shared";
+import { ApiError } from "@mammoai/shared";
 import { api } from "./api";
 import { useI18n } from "./i18n";
 import { isForcedLightPath } from "./theme-routes";
 
-type SessionStatus = "loading" | "onboarded" | "anonymous";
+/**
+ * SESSION-KEEP-01: `"error"` — sessiya holatini ANIQLAB BO'LMADI.
+ *
+ * Bu `"anonymous"`dan tubdan farq qiladi: `"anonymous"` = "bu odam
+ * tizimga kirmagan" (ishonchli fakt), `"error"` = "bilmayapmiz, server
+ * javob bermadi". Ikkisini aralashtirish foydalanuvchini o'z hisobidan
+ * quvib chiqaradi.
+ */
+type SessionStatus = "loading" | "onboarded" | "anonymous" | "error";
 
 type ResolvedTheme = "light" | "dark";
 
@@ -62,11 +71,30 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     try {
       const res = await api.me.get();
       applyMeResponse(res);
-    } catch {
-      setStatus("anonymous");
-      setUser(null);
-      setOnboardingProfile(null);
-      setHasPremium(false);
+    } catch (error) {
+      // SESSION-KEEP-01: ilgari bu `catch` HAR QANDAY nosozlikni
+      // "tizimga kirmagan" deb hisoblardi — 500, tarmoq uzilishi,
+      // taymaut, hammasi. Keyin `(app)/layout.tsx` uni onboarding'ga
+      // majburan yo'naltirardi.
+      //
+      // Natijada: baza bir zumga javob bermay qolsa, cookie'si MUTLAQO
+      // yaroqli bo'lgan ayol o'z hisobidan chiqarib yuborilardi va ilova
+      // "boshidan boshlanardi". Aynan shu bugun ro'y berdi — baza
+      // ulanishlari tugaganda (CONN-LIMIT-01) foydalanuvchilar tizimdan
+      // chiqib ketgan.
+      //
+      // Endi FAQAT 401 haqiqiy "kirmagan" degani. Qolgan hamma narsa —
+      // "bilmayapmiz", va bunda mavjud sessiya SAQLANADI.
+      if (error instanceof ApiError && error.status === 401) {
+        setStatus("anonymous");
+        setUser(null);
+        setOnboardingProfile(null);
+        setHasPremium(false);
+        return;
+      }
+      // Allaqachon kirgan bo'lsa — holatni buzmaymiz. Hali yuklanayotgan
+      // bo'lsa — "error", mijoz qayta urinish tugmasini ko'rsatadi.
+      setStatus((prev) => (prev === "onboarded" ? prev : "error"));
     }
   }, [applyMeResponse]);
 
