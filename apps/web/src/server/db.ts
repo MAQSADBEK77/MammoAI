@@ -953,8 +953,17 @@ async function initSchema() {
 export function ensureSchema(): Promise<void> {
   // Kesh `global`da — Next.js dev'dagi HMR va serverless nusxa ichidagi
   // barcha modul qayta yuklanishlari bo'ylab saqlanishi uchun.
-  global.__mammoaiSchemaReady ??= memoizeAsyncSuccess(initSchema, (error) =>
-    console.error("initSchema muvaffaqiyatsiz tugadi (keyingi so'rovda qayta urinadi):", error)
-  );
+  //
+  // `??=` EMAS, balki ANIQ tur tekshiruvi. Sabab: bu global'ning SHAKLI
+  // o'zgardi (ilgari `Promise`, endi funksiya). Dev serverda (HMR/Turbopack)
+  // jarayon kod o'zgarishidan omon qoladi va ESKI qiymat global'da qolib
+  // ketadi — `??=` uni "allaqachon bor" deb almashtirmasdi va keyingi
+  // qatorda "is not a function" bilan HAR BIR so'rov 500 qaytarardi.
+  // Tur tekshiruvi bunday mos kelmagan qiymatni jimgina almashtiradi.
+  if (typeof global.__mammoaiSchemaReady !== "function") {
+    global.__mammoaiSchemaReady = memoizeAsyncSuccess(initSchema, (error) =>
+      console.error("initSchema muvaffaqiyatsiz tugadi (keyingi so'rovda qayta urinadi):", error)
+    );
+  }
   return global.__mammoaiSchemaReady();
 }
