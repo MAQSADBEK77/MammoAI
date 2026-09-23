@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SendOutlined } from "@mui/icons-material";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -27,11 +27,23 @@ type Phase = "loading" | "notTelegram" | "needsContact" | "waitingContact" | "de
  * muvaffaqiyatli tugagach oddiy httpOnly sessiya cookie'si o'rnatiladi va
  * foydalanuvchi asosiy ilovaga (yoki onboarding'ga) yo'naltiriladi.
  */
-export default function TelegramMiniAppPage() {
+function TelegramMiniAppInner() {
   const { dict } = useI18n();
   const router = useRouter();
   const { applyMeResponse, refresh } = useSession();
   const { webApp, initData, tgUser, status: telegramStatus } = useTelegram();
+
+  // DEEPLINK-01: bot xabaridagi tugma ilovani ANIQ bir ekranda ochishi uchun
+  // (`?next=/asosiy?log=1`). Onboardingni tugatgan foydalanuvchi shu manzilga
+  // tushadi, tugatmagani esa baribir onboardingga — yarim sozlangan hisob
+  // bilan ichki ekranga kirib qolmasligi kerak.
+  //
+  // XAVFSIZLIK: faqat SHU saytdagi nisbiy yo'l qabul qilinadi. Tekshiruvsiz
+  // bo'lsa `?next=https://zararli.example` ochiq-yo'naltirish zaifligini
+  // berardi; `//` ham rad etiladi — u protokolga nisbiy manzil.
+  const searchParams = useSearchParams();
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
   const [phase, setPhase] = useState<Phase>("loading");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -60,7 +72,7 @@ export default function TelegramMiniAppPage() {
         if (cancelled) return;
         if (res.loggedIn) {
           await refresh();
-          router.replace(res.onboarded ? "/" : "/onboarding?fromTelegram=1");
+          router.replace(res.onboarded ? nextPath : "/onboarding?fromTelegram=1");
           return;
         }
         setPhase("needsContact");
@@ -107,7 +119,7 @@ export default function TelegramMiniAppPage() {
         setPhase("finishing");
         const finishRes = await api.auth.telegramMiniAppFinish(initData);
         applyMeResponse(finishRes);
-        router.replace(finishRes.onboardingProfile ? "/" : "/onboarding?fromTelegram=1");
+        router.replace(finishRes.onboardingProfile ? nextPath : "/onboarding?fromTelegram=1");
       } catch {
         // Navbatdagi poll'da qayta urinib ko'ramiz — bitta muvaffaqiyatsiz so'rov jim o'tkaziladi.
       }
@@ -168,5 +180,18 @@ export default function TelegramMiniAppPage() {
     <div className="flex min-h-dvh items-center justify-center bg-background">
       <LoadingSpinner label={dict.auth.miniAppLoading} />
     </div>
+  );
+}
+
+/**
+ * DEEPLINK-01: `useSearchParams()` Next.js'da Suspense chegarasini talab
+ * qiladi (statik prerender paytida) — `/klinikalar` sahifasidagi bilan
+ * bir xil naqsh.
+ */
+export default function TelegramMiniAppPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-background" />}>
+      <TelegramMiniAppInner />
+    </Suspense>
   );
 }

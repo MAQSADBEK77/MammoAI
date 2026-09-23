@@ -1267,6 +1267,7 @@ const uz = {
   // har kuni bir xil xabar yuborib zerikarli qilib yubormaslik uchun.
   reminders: {
     logToday: "Bugungi holatingizni hali belgilamadingiz. Bir daqiqa ajratib, sikl kuzatuvini davom ettiring 🌸",
+    logButton: "Belgilash",
     periodToday: "Bugun hayzingiz boshlanishi kutilmoqda 🩷",
     periodTomorrow: "Ertaga hayzingiz boshlanishi kutilmoqda — tayyorgarlik ko'ring 🩷",
     periodSoon: (days: number) => `${days} kundan keyin hayzingiz boshlanadi 🩷`,
