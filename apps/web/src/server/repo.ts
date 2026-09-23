@@ -2291,6 +2291,15 @@ export async function getAdminStats(): Promise<AdminStats> {
         SELECT user_id, created_at FROM pregnancy_visits WHERE (created_at)::timestamptz >= now() - interval '7 days'
         UNION ALL
         SELECT user_id, created_at FROM feedback_responses WHERE (created_at)::timestamptz >= now() - interval '7 days'
+        UNION ALL
+        -- ADMIN-ACTIVITY-02: eng KENG signal — istalgan ekranni ochish.
+        -- WEB3-06 ro'yxatni ancha kengaytirgan edi, lekin bu manba
+        -- qolib ketgan: ilovani ochib maqola o'qiyotgan yoki o'z
+        -- tekshiruvlarini ko'rayotgan ayol "faol emas" deb sanalardi.
+        -- O'lchandi: mavjud manbalar ~57 kishini beradi, analitikaning
+        -- O'ZI esa 81 — ya'ni ko'rsatkich sezilarli kam edi.
+        SELECT user_id, created_at FROM analytics_events
+        WHERE user_id IS NOT NULL AND (created_at)::timestamptz >= now() - interval '7 days'
       ) recent
       JOIN users u ON u.id = recent.user_id AND u.is_test_account = FALSE
     `,
@@ -2300,12 +2309,18 @@ export async function getAdminStats(): Promise<AdminStats> {
       JOIN users u ON u.id = o.user_id AND u.is_test_account = FALSE
       GROUP BY o.primary_goal ORDER BY count DESC
     `,
-    sql`SELECT count(*)::int as count FROM cycle_logs`,
-    sql`SELECT count(*)::int as count FROM pregnancy_visits`,
-    sql`SELECT count(*)::int as count FROM pregnancy_vitals`,
-    sql`SELECT count(*)::int as count FROM checklist_items WHERE status = 'done'`,
-    sql`SELECT count(*)::int as count FROM risk_quiz_results`,
-    sql`SELECT count(*)::int as count FROM referral_events`,
+    // ADMIN-ACTIVITY-02: quyidagi kontent hisoblarida `is_test_account`
+    // filtri YO'Q edi, foydalanuvchi hisoblarida esa BOR. Natijada panel
+    // o'zi bilan o'zi ziddiyatli edi: "155 foydalanuvchi" (test'siz) yonida
+    // "253 sikl yozuvi" (test bilan) turardi. O'lchandi: cycle_logs'ning
+    // 30 tasi, checklist'ning 9 tasi, risk-quiz'ning 2 tasi test
+    // hisoblariga tegishli edi.
+    sql`SELECT count(*)::int as count FROM cycle_logs x JOIN users u ON u.id = x.user_id AND u.is_test_account = FALSE`,
+    sql`SELECT count(*)::int as count FROM pregnancy_visits x JOIN users u ON u.id = x.user_id AND u.is_test_account = FALSE`,
+    sql`SELECT count(*)::int as count FROM pregnancy_vitals x JOIN users u ON u.id = x.user_id AND u.is_test_account = FALSE`,
+    sql`SELECT count(*)::int as count FROM checklist_items x JOIN users u ON u.id = x.user_id AND u.is_test_account = FALSE WHERE x.status = 'done'`,
+    sql`SELECT count(*)::int as count FROM risk_quiz_results x JOIN users u ON u.id = x.user_id AND u.is_test_account = FALSE`,
+    sql`SELECT count(*)::int as count FROM referral_events x JOIN users u ON u.id = x.user_id AND u.is_test_account = FALSE`,
     sql`SELECT count(*)::int as count FROM clinics`,
     sql`SELECT count(*)::int as count FROM articles`,
     // DATA-ACCURACY-05: kunlik ustunlar avval `now()::date`/`created_at::date`
@@ -3359,15 +3374,19 @@ export async function getCommunityStats(): Promise<CommunityStats> {
     // va deyarli barcha boshqa foydalanuvchi-soni so'rovlarida bu filtr
     // ALLAQACHON bor edi, faqat shu yerda unutilgan edi.
     sql`SELECT count(*)::int as count FROM users WHERE is_test_account = FALSE`,
-    sql`SELECT count(*)::int as count FROM community_posts`,
+    // ADMIN-ACTIVITY-02: a'zolar soni test hisoblarini chetlab o'tardi,
+    // POSTLAR soni esa yo'q — bir xil ekranda ikki xil qoida. Bu son
+    // FOYDALANUVCHIGA ko'rinadi (Jamiyat ekrani).
+    sql`SELECT count(*)::int as count FROM community_posts p JOIN users u ON u.id = p.user_id AND u.is_test_account = FALSE`,
     // DATA-ACCURACY-06: "Bugun N ta" (FOYDALANUVCHIGA ko'rinadigan Jamiyat
     // ekrani) KALENDAR kunini anglatadi, lekin `now() - interval '1 day'`
     // SO'NGGI 24 SOATLIK aylanuvchi oyna edi — DATA-ACCURACY-05'da
     // getAdminStats'da tuzatilgan bilan bir xil sinf xato, bu yerda ham bor
     // edi. Endi Toshkent mahalliy yarim tunidan hisoblanadi.
     sql`
-      SELECT count(*)::int as count FROM community_posts
-      WHERE (created_at)::timestamptz >= date_trunc('day', now() AT TIME ZONE 'Asia/Tashkent') AT TIME ZONE 'Asia/Tashkent'
+      SELECT count(*)::int as count FROM community_posts p
+      JOIN users u ON u.id = p.user_id AND u.is_test_account = FALSE
+      WHERE (p.created_at)::timestamptz >= date_trunc('day', now() AT TIME ZONE 'Asia/Tashkent') AT TIME ZONE 'Asia/Tashkent'
     `,
   ])) as unknown as [{ count: number }[], { count: number }[], { count: number }[]];
   return { totalMembers, totalPosts, postsToday };
