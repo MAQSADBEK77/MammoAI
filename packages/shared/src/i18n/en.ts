@@ -966,6 +966,7 @@ const en: Dictionary = {
     publishButton: "Post",
     publishing: "Posting...",
     anonymousAuthor: "Anonymous member",
+    noCommentsYet: "No comments yet — be the first to reply.",
     likeButton: "Like",
     commentButton: "Comment",
     shareButton: "Share",

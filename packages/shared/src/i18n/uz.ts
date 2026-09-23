@@ -1075,6 +1075,8 @@ const uz = {
     publishButton: "Joylash",
     publishing: "Joylanmoqda...",
     anonymousAuthor: "Anonim a'zo",
+    /** COMM-01: post ekranida izohlar bo'sh bo'lganda. */
+    noCommentsYet: "Hali izoh yo'q — birinchi bo'lib javob bering.",
     likeButton: "Yoqtirish",
     commentButton: "Izoh",
     shareButton: "Ulashish",

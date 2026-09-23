@@ -964,6 +964,7 @@ const ru: Dictionary = {
     publishButton: "Опубликовать",
     publishing: "Публикуется...",
     anonymousAuthor: "Аноним",
+    noCommentsYet: "Пока нет комментариев — ответьте первой.",
     likeButton: "Нравится",
     commentButton: "Комментарий",
     shareButton: "Поделиться",

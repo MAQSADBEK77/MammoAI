@@ -14,9 +14,11 @@ import {
   PersonOutlined as UserRound,
   VisibilityOffOutlined as VenetianMask,
   MoreVertOutlined as MoreVert,
+  Add,
 } from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
+import { CommunityPostSheet } from "@/components/screens/CommunityPostSheet";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, IconButton, LoadingSpinner, ErrorState, ScreenHeader } from "@/components/ui";
@@ -72,6 +74,8 @@ export default function CommunityPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
+  // COMM-01: ochilgan post — izohlar endi lentada emas, alohida ekranda.
+  const [openPostId, setOpenPostId] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerTag, setComposerTag] = useState<CommunityTag>("general");
   const [composerBody, setComposerBody] = useState("");
@@ -79,8 +83,6 @@ export default function CommunityPage() {
   const [composerError, setComposerError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
 
-  const [openComments, setOpenComments] = useState<Record<string, CommunityComment[] | undefined>>({});
-  const [commentDraft, setCommentDraft] = useState<Record<string, string>>({});
 
   // MOTION-APP-02: qisqa mikro-animatsiyalarni ishga tushirish uchun —
   // "layk" bosilganda yurak "pop"i, yangi post yuborilganda karta atrofida
@@ -245,28 +247,11 @@ export default function CommunityPage() {
     }
   }
 
-  async function toggleComments(post: CommunityPost) {
-    if (openComments[post.id] !== undefined) {
-      setOpenComments((prev) => ({ ...prev, [post.id]: undefined }));
-      return;
-    }
-    const comments = await api.community.listComments(post.id);
-    setOpenComments((prev) => ({ ...prev, [post.id]: comments }));
-  }
 
-  async function sendComment(post: CommunityPost) {
-    const text = (commentDraft[post.id] ?? "").trim();
-    if (!text) return;
-    const comment = await api.community.addComment(post.id, { body: text, isAnonymous: false });
-    setOpenComments((prev) => ({ ...prev, [post.id]: [...(prev[post.id] ?? []), comment] }));
-    setCommentDraft((prev) => ({ ...prev, [post.id]: "" }));
-    setPosts((prev) => (prev ? prev.map((p) => (p.id === post.id ? { ...p, commentsCount: p.commentsCount + 1 } : p)) : prev));
-  }
 
   async function removeComment(post: CommunityPost, comment: CommunityComment) {
     if (!window.confirm(dict.community.deleteCommentConfirm)) return;
     await api.community.deleteComment(post.id, comment.id);
-    setOpenComments((prev) => ({ ...prev, [post.id]: (prev[post.id] ?? []).filter((c) => c.id !== comment.id) }));
     setPosts((prev) => (prev ? prev.map((p) => (p.id === post.id ? { ...p, commentsCount: Math.max(0, p.commentsCount - 1) } : p)) : prev));
   }
 
@@ -319,7 +304,6 @@ export default function CommunityPage() {
     try {
       if (commentId) await api.community.blockCommentAuthor(postId, commentId);
       else await api.community.blockPostAuthor(postId);
-      setOpenComments({});
       loadPosts(tag);
       window.alert(dict.community.blockAuthorSuccess);
     } catch (err) {
@@ -416,9 +400,6 @@ export default function CommunityPage() {
         </div>
       )}
 
-      <Button className="w-full" onClick={() => setComposerOpen((v) => !v)}>
-        {dict.community.writePostButton}
-      </Button>
 
       {composerOpen && (
         <Card className="space-y-3">
@@ -482,7 +463,6 @@ export default function CommunityPage() {
       ) : (
         <div className="space-y-3">
           {posts.map((post, index) => {
-            const comments = openComments[post.id];
             return (
               // MOTION-APP-02: ro'yxat ekranga kirganda yengil "to'lqin"
               // (stagger) bilan paydo bo'lishi — index asosida (post soniga
@@ -552,7 +532,7 @@ export default function CommunityPage() {
                     {post.likesCount}
                   </button>
                   <button
-                    onClick={() => toggleComments(post)}
+                    onClick={() => setOpenPostId(post.id)}
                     className="tap-target flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-text-secondary transition hover:bg-surface-muted active:scale-95"
                   >
                     <MessageCircle sx={{ fontSize: 16 }} /> {post.commentsCount}
@@ -574,62 +554,6 @@ export default function CommunityPage() {
                   )}
                 </div>
 
-                {comments !== undefined && (
-                  <div className="space-y-2.5 border-t border-border pt-3">
-                    <p className="text-xs font-semibold text-text-secondary">{dict.community.commentsTitle}</p>
-                    {comments.length === 0 && <p className="text-xs text-text-muted">{dict.community.emptyComments}</p>}
-                    {comments.map((c) => (
-                      <div key={c.id} className="flex items-start gap-2">
-                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-muted text-text-secondary">
-                          {!c.isAnonymous && c.authorAvatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element -- kichik base64 avatar, next/image shart emas
-                            <img src={c.authorAvatarUrl} alt="" className="h-full w-full object-cover" />
-                          ) : c.isAnonymous ? (
-                            <VenetianMask sx={{ fontSize: 12 }} />
-                          ) : (
-                            <UserRound sx={{ fontSize: 12 }} />
-                          )}
-                        </span>
-                        <div className="min-w-0 flex-1 rounded-2xl bg-surface-muted px-3 py-2">
-                          <p className="text-[11px] font-semibold text-text-secondary">
-                            {c.isAnonymous ? dict.community.anonymousAuthor : (c.authorName ?? dict.profile.noNameFallback)}
-                          </p>
-                          <p className="text-sm text-text-primary">{c.body}</p>
-                        </div>
-                        {(c.isOwn || post.isOwn) && (
-                          <button
-                            onClick={() => removeComment(post, c)}
-                            className="tap-target mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-text-muted transition hover:bg-danger/10 hover:text-danger"
-                            aria-label={dict.community.deletePostButton}
-                          >
-                            <Trash2 sx={{ fontSize: 13 }} />
-                          </button>
-                        )}
-                        {!c.isOwn && (
-                          <button
-                            onClick={(e) => setMenuTarget({ el: e.currentTarget, postId: post.id, commentId: c.id })}
-                            className="tap-target mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-muted"
-                            aria-label={dict.community.moreOptionsLabel}
-                          >
-                            <MoreVert sx={{ fontSize: 14 }} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    <div className="flex gap-2">
-                      <input
-                        value={commentDraft[post.id] ?? ""}
-                        onChange={(e) => setCommentDraft((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                        onKeyDown={(e) => e.key === "Enter" && sendComment(post)}
-                        placeholder={dict.community.commentPlaceholder}
-                        className="tap-target flex-1 rounded-full border border-border bg-surface px-4 text-sm text-text-primary outline-none focus:border-primary"
-                      />
-                      <Button variant="secondary" className="px-4!" onClick={() => sendComment(post)} disabled={!commentDraft[post.id]?.trim()}>
-                        {dict.community.sendCommentButton}
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </Card>
               </Reveal>
             );
@@ -688,6 +612,37 @@ export default function CommunityPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* COMM-01: post va izohlar uchun alohida ekran. Izoh maydoni pastga
+          mahkamlangan — lentaning ichida ochilganda u ekran o'rtasida
+          qolib, klaviatura ostida yo'qolib ketardi. */}
+      {openPostId && posts?.find((p) => p.id === openPostId) && (
+        <CommunityPostSheet
+          post={posts.find((p) => p.id === openPostId)!}
+          onClose={() => setOpenPostId(null)}
+          onLike={() => toggleLike(posts.find((p) => p.id === openPostId)!)}
+          onCommented={() =>
+            setPosts((prev) =>
+              (prev ?? []).map((p) => (p.id === openPostId ? { ...p, commentsCount: p.commentsCount + 1 } : p))
+            )
+          }
+        />
+      )}
+
+      {/* COMM-01: yangi post tugmasi endi SUZUVCHI. Ilgari u lentaning
+          tepasida, to'liq kenglikdagi tugma edi — ayol pastga surilgach
+          uni umuman ko'rmasdi. Referensdagi ikkala ilovada ham u doim
+          ko'rinib turadi. Menyu balandligi HAQIQIY o'lchangan qiymatdan
+          olinadi (BottomNav `--bottom-nav-height`ga yozadi). */}
+      <button
+        type="button"
+        onClick={() => setComposerOpen(true)}
+        aria-label={dict.community.writePostButton}
+        className="tap-target fixed left-1/2 z-30 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition active:scale-95"
+        style={{ bottom: "calc(var(--bottom-nav-height) + 12px)" }}
+      >
+        <Add sx={{ fontSize: 28 }} />
+      </button>
     </div>
   );
 }
