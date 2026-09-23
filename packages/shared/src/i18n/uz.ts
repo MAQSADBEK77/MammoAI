@@ -694,6 +694,7 @@ const uz = {
     daysRemaining: (days: number) => `Tug'ilishga ${days} kun qoldi`,
     trimester: (t: number) => `${t}-trimestr`,
     sizeComparison: (size: string) => `Bolangiz hozir ${size} kattaligida`,
+    earlyWeekNote: "Hisob oxirgi hayzingizning birinchi kunidan boshlanadi — bu haftada urug'lanish hali sodir bo'lmagan",
     visitsTitle: "Tashrif va eslatmalar",
     addVisitButton: "Tashrif qo'shish",
     kickCounterTitle: "Tepki hisoblagich",
