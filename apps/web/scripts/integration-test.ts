@@ -54,6 +54,7 @@ import {
   revokePremium,
   removeStaleChecklistItems,
   listChecklistItems,
+  completeChecklistItem,
 } from "../src/server/repo";
 import { getChatAccess, FREE_MESSAGE_ALLOWANCE } from "../src/server/chat-access";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
@@ -610,6 +611,29 @@ async function main() {
     );
   } finally {
     await sql`DELETE FROM users WHERE id = ${qaUserId}`;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PAYWALL-01 — tekshiruvni "bajarildi" deb belgilash hammaga bepul.
+  //
+  // Nega test: bu QAYTA QO'YILIB QOLISHI oson bo'lgan to'siq edi va u
+  // mahsulotning asosiy halqasini bloklagan. Test uni qaytib kelishidan
+  // himoya qiladi.
+  // ══════════════════════════════════════════════════════════════════════
+  const paywallUserId = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${paywallUserId}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  try {
+    // `pelvic_ultrasound` — davlat dasturi qoplamaydigan (CHECKLIST_ITEM_IS_FREE
+    // = false) band. Ilgari AYNAN shunday bandlar Premium talab qilardi.
+    await ensureChecklistItem(paywallUserId, "pelvic_ultrasound", null);
+    const item = (await listChecklistItems(paywallUserId)).find((i) => i.type === "pelvic_ultrasound")!;
+    await completeChecklistItem(paywallUserId, item.id);
+    assert(
+      (await listChecklistItems(paywallUserId)).find((i) => i.type === "pelvic_ultrasound")?.status === "done",
+      "PAYWALL-01: pullik (davlat qoplamaydigan) tekshiruvni Premiumsiz ham 'bajarildi' deb belgilash mumkin"
+    );
+  } finally {
+    await sql`DELETE FROM users WHERE id = ${paywallUserId}`;
   }
 
   // ══════════════════════════════════════════════════════════════════════

@@ -1705,18 +1705,35 @@ export async function ensureChecklistItem(
 // o'zi hech qanday premium tekshiruvi qilmasdi, shuning uchun to'g'ridan-
 // to'g'ri POST /api/checklist/[id]/complete so'rovi bilan har qanday
 // (pullik) bandni bepul "bajarilgan" deb belgilash mumkin edi.
+/**
+ * PAYWALL-01: tekshiruvni "bajarildi" deb belgilash — HAMMAGA bepul.
+ *
+ * Ilgari bu yerda paywall bor edi va u `CHECKLIST_ITEM_IS_FREE` bayrog'iga
+ * tayanardi. Lekin o'sha bayroqning ma'nosi butunlay boshqa: u
+ * "DAVLAT POLIKLINIKASI shu tekshiruvni qoplaydimi" degan savolga javob
+ * beradi (ekrandagi "Bepul/Pullik" belgisi ham shundan). Uni paywall
+ * sifatida ishlatish quyidagi ma'noni bergan edi:
+ *
+ *   "Siz xususiy klinikaga o'z pulingizni to'lab UTT qildingiz —
+ *    endi buni belgilab qo'yish uchun BIZGA ham to'lang."
+ *
+ * Ya'ni sog'lig'i uchun eng ko'p harakat qilayotgan ayol jazolanardi.
+ *
+ * Production o'lchovi (2026-09-23) buni tasdiqladi:
+ *   • 74 ayolda jami 179 ta shunday to'sib qo'yilgan band bor edi;
+ *   • ularning NOL tasi "bajarildi" deb belgilangan;
+ *   • umuman belgilanganlar — 6 ta, hammasi bepul turdagi.
+ *
+ * Ya'ni to'siq daromad keltirmagan (2 ta obunachi ham boshqa sabab bilan),
+ * lekin mahsulotning ASOSIY halqasini — "tekshiruvni bajardim" deyishni —
+ * to'sib qo'ygan. Ustiga u bizdan eng qimmatli ma'lumotni olib qo'ygan:
+ * ayol tekshiruvni HAQIQATAN o'tkazdimi degan natija.
+ *
+ * `CHECKLIST_ITEM_IS_FREE` o'z asl vazifasida qoladi — ekranda klinika
+ * narxini ko'rsatish uchun.
+ */
 export async function completeChecklistItem(userId: string, id: string): Promise<void> {
   await ensureSchema();
-  const rows = (await sql`
-    SELECT type FROM checklist_items WHERE id = ${id} AND user_id = ${userId}
-  `) as unknown as { type: ChecklistItemType }[];
-  const item = rows[0];
-  // Topilmasa — avvalgidek jim o'tkaziladi (pastdagi UPDATE ham hech narsa
-  // qilmagan bo'lardi, xatti-harakat o'zgarmadi).
-  if (!item) return;
-  if (!CHECKLIST_ITEM_IS_FREE[item.type] && !(await hasPremiumAccess(userId))) {
-    throw new ApiError(402, "Bu tekshiruv turini bajarilgan deb belgilash Premium obuna talab qiladi", "premium_required");
-  }
   await sql`
     UPDATE checklist_items SET status = 'done', completed_at = ${now()} WHERE id = ${id} AND user_id = ${userId}
   `;
