@@ -760,6 +760,56 @@ const uz = {
     albumNotePlaceholder: "Masalan: bugun birinchi tepkini his qildim…",
   },
 
+  /** PROFILE-01: onboarding'dan KEYIN, tekshiruvlar ekranida so'raladigan
+   * savollar. Onboarding allaqachon uzun — bu savollar javobning foydasi
+   * ko'rinib turgan joyda beriladi. */
+  profileQuestions: {
+    cardTitle: "Ro'yxatingizni aniqlashtiring",
+    cardBody: "Bir nechta savol — javoblaringiz qaysi tekshiruvlar aynan sizga kerakligini aniqlaydi.",
+    cardCta: "Boshlash",
+    cardLater: "Keyinroq",
+    progress: (current: number, total: number) => `${current}/${total}`,
+    skip: "O'tkazib yuborish",
+    done: "Rahmat! Ro'yxatingiz yangilandi.",
+    questions: {
+      sexuallyActive: {
+        title: "Jinsiy hayot boshlanganmi?",
+        hint: "Bu savol bachadon bo'yni skrininggi va bir nechta boshqa tekshiruv sizga kerakmi-yo'qligini aniqlaydi. Javob bermasangiz ham bo'ladi.",
+      },
+      familyHistory: {
+        title: "Oilangizda ko'krak yoki tuxumdon saratoni bo'lganmi?",
+        hint: "Ona, opa-singil yoki qizda bo'lgan bo'lsa — mammografiya 40 emas, 30 yoshdan tavsiya etiladi.",
+      },
+      hpvVaccinated: {
+        title: "HPV (OPV) vaksinasini olganmisiz?",
+        hint: "Olgan bo'lsangiz, uni ro'yxatdan olib tashlaymiz — bajarilgan ishni qayta eslatmaymiz.",
+      },
+      hormonalContraception: {
+        title: "Gormonal kontratseptsiya ishlatasizmi?",
+        hint: "Tabletka, spiral, in'ektsiya va h.k. Ishlatsangiz, unumdor kunlar bashorati sizga to'g'ri kelmaydi — uni ko'rsatmaymiz.",
+      },
+      smokes: {
+        title: "Chekasizmi?",
+        hint: "Chekish bachadon bo'yni saratoni xavfini oshiradi — JSST buni tasdiqlangan omil deb belgilaydi.",
+      },
+      hasGivenBirth: {
+        title: "Tug'gansizmi?",
+        hint: "Tug'ish tarixi ko'krak va tuxumdon saratoni xavfiga ta'sir qiladi.",
+      },
+      chronicConditions: {
+        title: "Quyidagilardan biri bormi?",
+        hint: "Ginekologik bo'lmagan, lekin rejaga ta'sir qiladigan holatlar.",
+        options: {
+          diabetes: "Qandli diabet",
+          hypertension: "Yuqori qon bosimi",
+          thyroid: "Qalqonsimon bez kasalligi",
+          anemia: "Kamqonlik",
+          none: "Hech qaysi",
+        },
+      },
+    },
+  },
+
   checklist: {
     title: "Tekshiruv ro'yxati",
     // UX-01: ilgari bu holat shunchaki "—" belgisi bilan ko'rsatilardi.

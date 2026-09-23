@@ -823,16 +823,23 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
   await ensureSchema();
   const typicalSymptoms = JSON.stringify(profile.typicalSymptoms ?? []);
   const healthConditions = JSON.stringify(profile.healthConditions ?? []);
+  // PROFILE-01: `null` — "hali so'ralmagan". `?? []` QO'YILMAYDI: bo'sh
+  // massiv "so'radik, hech narsa tanlamadi" degani bo'lardi, bu esa boshqa
+  // holat va keyin savolni qayta bermay qo'yardi.
+  const chronicConditions = profile.chronicConditions ? JSON.stringify(profile.chronicConditions) : null;
   await sql`
     INSERT INTO onboarding_profiles (
       user_id, name, age, is_pregnant, cycle_regularity, family_history, sexually_active, last_checkup, primary_goal,
-      heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg, blood_type
+      heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg, blood_type,
+      hpv_vaccinated, hormonal_contraception, smokes, has_given_birth, chronic_conditions
     )
     VALUES (
       ${profile.userId}, ${profile.name}, ${profile.age}, ${profile.isPregnant}, ${profile.cycleRegularity},
       ${profile.familyHistory}, ${profile.sexuallyActive}, ${profile.lastCheckup}, ${profile.primaryGoal}, ${profile.heardAboutUs},
       ${typicalSymptoms}, ${profile.periodAttitude}, ${healthConditions}, ${profile.healthConditionsOther},
-      ${profile.heightCm}, ${profile.weightKg}, ${profile.bloodType}
+      ${profile.heightCm}, ${profile.weightKg}, ${profile.bloodType},
+      ${profile.hpvVaccinated}, ${profile.hormonalContraception}, ${profile.smokes},
+      ${profile.hasGivenBirth}, ${chronicConditions}
     )
     ON CONFLICT (user_id) DO UPDATE SET
       name = EXCLUDED.name, age = EXCLUDED.age, is_pregnant = EXCLUDED.is_pregnant,
@@ -842,7 +849,10 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
       heard_about_us = EXCLUDED.heard_about_us, typical_symptoms = EXCLUDED.typical_symptoms,
       period_attitude = EXCLUDED.period_attitude,
       health_conditions = EXCLUDED.health_conditions, health_conditions_other = EXCLUDED.health_conditions_other,
-      height_cm = EXCLUDED.height_cm, weight_kg = EXCLUDED.weight_kg, blood_type = EXCLUDED.blood_type
+      height_cm = EXCLUDED.height_cm, weight_kg = EXCLUDED.weight_kg, blood_type = EXCLUDED.blood_type,
+      hpv_vaccinated = EXCLUDED.hpv_vaccinated, hormonal_contraception = EXCLUDED.hormonal_contraception,
+      smokes = EXCLUDED.smokes, has_given_birth = EXCLUDED.has_given_birth,
+      chronic_conditions = EXCLUDED.chronic_conditions
   `;
 }
 
@@ -865,7 +875,26 @@ export async function updateOnboardingProfile(
   // foydalanuvchilar (onboarding'da "yo'q"/"bilmayman" deb belgilagan)
   // muhim tekshiruv bandlaridan (bachadon bo'yni skrininggi, JYI va h.k.)
   // hech qanday signalsiz doimiy mahrum qolaverardi.
-  patch: Partial<Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType" | "sexuallyActive">>
+  patch: Partial<
+    Pick<
+      OnboardingProfile,
+      | "primaryGoal"
+      | "isPregnant"
+      | "age"
+      | "heightCm"
+      | "weightKg"
+      | "bloodType"
+      | "sexuallyActive"
+      // PROFILE-01: onboarding'dan keyin so'raladigan javoblar shu yo'l
+      // orqali saqlanadi.
+      | "familyHistory"
+      | "hpvVaccinated"
+      | "hormonalContraception"
+      | "smokes"
+      | "hasGivenBirth"
+      | "chronicConditions"
+    >
+  >
 ): Promise<OnboardingProfile> {
   await ensureSchema();
   const current = await getOnboardingProfile(userId);

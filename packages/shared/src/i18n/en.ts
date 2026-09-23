@@ -663,6 +663,53 @@ const en: Dictionary = {
     albumNotePlaceholder: "E.g. felt the first kick today…",
   },
 
+  profileQuestions: {
+    cardTitle: "Refine your list",
+    cardBody: "A few questions — your answers decide which checkups you actually need.",
+    cardCta: "Start",
+    cardLater: "Later",
+    progress: (current: number, total: number) => `${current}/${total}`,
+    skip: "Skip",
+    done: "Thank you! Your list has been updated.",
+    questions: {
+      sexuallyActive: {
+        title: "Are you sexually active?",
+        hint: "This decides whether cervical cancer screening and a few other checkups apply to you. You can skip it.",
+      },
+      familyHistory: {
+        title: "Has anyone in your family had breast or ovarian cancer?",
+        hint: "If a mother, sister or daughter has, mammography is recommended from 30 rather than 40.",
+      },
+      hpvVaccinated: {
+        title: "Have you had the HPV vaccine?",
+        hint: "If you have, we will remove it from your list — no reminders for something already done.",
+      },
+      hormonalContraception: {
+        title: "Do you use hormonal contraception?",
+        hint: "Pill, IUD, injection and so on. If you do, the fertile-window forecast does not apply to you and we will not show it.",
+      },
+      smokes: {
+        title: "Do you smoke?",
+        hint: "Smoking raises the risk of cervical cancer — the WHO treats it as an established factor.",
+      },
+      hasGivenBirth: {
+        title: "Have you given birth?",
+        hint: "Birth history affects breast and ovarian cancer risk.",
+      },
+      chronicConditions: {
+        title: "Do you have any of these?",
+        hint: "Non-gynaecological conditions that still affect your plan.",
+        options: {
+          diabetes: "Diabetes",
+          hypertension: "High blood pressure",
+          thyroid: "Thyroid condition",
+          anemia: "Anaemia",
+          none: "None of these",
+        },
+      },
+    },
+  },
+
   checklist: {
     title: "Checkup checklist",
     emptyTitle: "No checkups yet",

@@ -241,7 +241,24 @@ export function createApiClient(config: ApiClientConfig) {
       /** Rejim almashtirish va shaxsiy ma'lumotlarni (yosh/bo'y/vazn/qon guruhi/
        * jinsiy faollik — FIX3-02) qisman yangilash. */
       update: (
-        patch: Partial<Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType" | "sexuallyActive">>
+        patch: Partial<
+          Pick<
+            OnboardingProfile,
+            | "primaryGoal"
+            | "isPregnant"
+            | "age"
+            | "heightCm"
+            | "weightKg"
+            | "bloodType"
+            | "sexuallyActive"
+            | "familyHistory"
+            | "hpvVaccinated"
+            | "hormonalContraception"
+            | "smokes"
+            | "hasGivenBirth"
+            | "chronicConditions"
+          >
+        >
       ) => request<{ onboardingProfile: OnboardingProfile }>("/api/onboarding", { method: "PATCH", body: JSON.stringify(patch) }),
     },
     me: {

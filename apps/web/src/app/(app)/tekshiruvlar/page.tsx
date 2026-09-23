@@ -7,6 +7,7 @@ import type { ChecklistCategory, ChecklistItem, ChecklistResponse } from "@mammo
 import { formatDateDisplay, CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { ProfileQuestionsCard } from "@/components/screens/ProfileQuestionsCard";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadingSpinner, ErrorState, EmptyState, ScreenHeader, StatTile } from "@/components/ui";
@@ -43,7 +44,7 @@ function groupByCategory(items: ChecklistItem[]): { category: ChecklistCategory;
 
 export default function ChecklistPage() {
   const { dict } = useI18n();
-  const { onboardingProfile } = useSession();
+  const { onboardingProfile, refresh } = useSession();
   const { resolve } = useIllustrations();
   const router = useRouter();
   const [data, setData] = useState<ChecklistResponse | null>(null);
@@ -148,6 +149,25 @@ export default function ChecklistPage() {
           <StatTile icon={<AccessTimeOutlined sx={{ fontSize: 16 }} />} label={statusLabel.pending} value={String(pendingCount)} tone="secondary" active />
           <StatTile icon={<ErrorOutlineOutlined sx={{ fontSize: 16 }} />} label={statusLabel.overdue} value={String(overdueCount)} tone="primary" active />
         </div>
+      )}
+
+      {/* PROFILE-01 — ro'yxatni aniqlashtiruvchi savollar. Aynan SHU YERDA,
+          ro'yxatning USTIDA: savolning foydasi ("quyidagi ro'yxat aniqroq
+          bo'ladi") darhol ko'rinib turadi. Onboarding'da so'ralsa, bu bog'
+          ko'rinmasdi va savol shunchaki yana bir to'siq bo'lardi.
+          Hamkorning ro'yxatini ko'rayotganda ko'rsatilmaydi — savollar
+          FOYDALANUVCHINING O'ZI haqida. */}
+      {!readOnly && onboardingProfile && (
+        <ProfileQuestionsCard
+          profile={onboardingProfile}
+          onSaved={() => {
+            // Javob ro'yxatni o'zgartiradi (server allaqachon qayta
+            // hisobladi), shuning uchun ikkalasi ham yangilanadi: sessiya —
+            // profil va menyudagi belgi uchun, `load` — ro'yxat uchun.
+            void refresh();
+            load();
+          }}
+        />
       )}
 
       {/* O'z-o'zini tekshirish testi — faqat o'zining checklist'i uchun,

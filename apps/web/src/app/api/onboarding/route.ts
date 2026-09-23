@@ -46,9 +46,31 @@ export async function PATCH(request: NextRequest) {
   try {
     const user = await requireUser(request);
     const patch = (await request.json()) as Partial<
-      Pick<OnboardingProfile, "primaryGoal" | "isPregnant" | "age" | "heightCm" | "weightKg" | "bloodType" | "sexuallyActive">
+      Pick<
+        OnboardingProfile,
+        | "primaryGoal"
+        | "isPregnant"
+        | "age"
+        | "heightCm"
+        | "weightKg"
+        | "bloodType"
+        | "sexuallyActive"
+        | "familyHistory"
+        | "hpvVaccinated"
+        | "hormonalContraception"
+        | "smokes"
+        | "hasGivenBirth"
+        | "chronicConditions"
+      >
     >;
     const onboardingProfile = await updateOnboardingProfile(user.id, patch);
+    // PROFILE-01: bu javoblar tekshiruvlar RO'YXATINI o'zgartiradi (masalan
+    // jinsiy faollik 4 ta bandni ochadi/yopadi, HPV vaksinasi bittasini
+    // olib tashlaydi). Ilgari PATCH ro'yxatni qayta hisoblamasdi — ayol
+    // javob berardi, lekin ro'yxat eski holicha qolardi va o'zgarish
+    // ko'rinmasdi. Xatosi jim o'tkaziladi: javob saqlangan, ro'yxat esa
+    // keyingi ochilishda baribir yangilanadi.
+    await syncChecklistForUser(user.id, onboardingProfile).catch(() => {});
     return NextResponse.json({ onboardingProfile });
   } catch (error) {
     return jsonError(error);
