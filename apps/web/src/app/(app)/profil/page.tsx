@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { BloodType, BlockedUserEntry, CycleResponse, Goal, Language } from "@mammoai/shared";
-import { BLOOD_TYPES, getModeAccentColors, resolvePet } from "@mammoai/shared";
+import { ApiError, BLOOD_TYPES, getModeAccentColors, resolvePet, translateApiError } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useConfirm } from "@/lib/confirm";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Card, ErrorState } from "@/components/ui";
+import { Card, ErrorState, Toast } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { AchievementsCard } from "@/components/AchievementsCard";
 import { PetArt } from "@/components/pets/PetArt";
@@ -96,7 +96,7 @@ export default function ProfilePage() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [logsCount, setLogsCount] = useState<number | null>(null);
   const [cycleSettings, setCycleSettings] = useState<CycleResponse["settings"] | null>(null);
-  const [actionFlash, setActionFlash] = useState<string | null>(null);
+  const [actionFlash, setActionFlash] = useState<{ message: string; tone: "info" | "error" } | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
   // COMM-001: "Bloklangan foydalanuvchilar" — jamiyatda bloklangan hisoblarni
@@ -143,11 +143,11 @@ export default function ProfilePage() {
       await refresh();
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 1500);
-    } catch {
+    } catch (err) {
       // UX-03: ilgari catch YO'Q edi — masalan tema/til/shrift o'zgartirilganda
       // so'rov muvaffaqiyatsiz bo'lsa, foydalanuvchi HECH NARSA ko'rmasdi
       // (na "saqlandi", na xato) — tugma "o'lik" his qilinardi.
-      flash(dict.common.errorGeneric);
+      flash(err instanceof ApiError ? translateApiError(err, dict) : dict.common.errorGeneric, "error");
     } finally {
       setSaving(false);
     }
@@ -180,10 +180,12 @@ export default function ProfilePage() {
     try {
       await api.onboarding.update({ primaryGoal: goal, isPregnant: goal === "pregnancy" });
       await refresh();
-    } catch {
+    } catch (err) {
       // UX-03: ilgari catch yo'q edi — muvaffaqiyatsiz bo'lsa rejim
       // o'zgarmasdan qolardi, lekin foydalanuvchiga sababi aytilmasdi.
-      flash(dict.common.errorGeneric);
+      // TOAST-01: endi HAQIQIY sabab ko'rsatiladi (umumiy "xato" emas) va
+      // u ekranning ko'rinadigan joyida, qizil rangda chiqadi.
+      flash(err instanceof ApiError ? translateApiError(err, dict) : dict.common.errorGeneric, "error");
     } finally {
       setSaving(false);
     }
@@ -201,10 +203,10 @@ export default function ProfilePage() {
       });
       await refresh();
       setEditingInfo(false);
-    } catch {
+    } catch (err) {
       // UX-03: ilgari catch yo'q edi — muvaffaqiyatsiz bo'lsa tahrirlash
       // rejimi ochiq qolardi-yu, lekin nima xato bo'lgani aytilmasdi.
-      flash(dict.common.errorGeneric);
+      flash(err instanceof ApiError ? translateApiError(err, dict) : dict.common.errorGeneric, "error");
     } finally {
       setSaving(false);
     }
@@ -256,9 +258,11 @@ export default function ProfilePage() {
     }
   }
 
-  function flash(message: string) {
-    setActionFlash(message);
-    setTimeout(() => setActionFlash(null), 2000);
+  // TOAST-01: xato va muvaffaqiyat endi FARQLANADI. Xato uzoqroq turadi —
+  // 2 soniya xato matnini o'qishga yetmaydi.
+  function flash(message: string, tone: "info" | "error" = "info") {
+    setActionFlash({ message, tone });
+    setTimeout(() => setActionFlash(null), tone === "error" ? 5000 : 2000);
   }
 
   function openBlockedList() {
@@ -708,9 +712,10 @@ export default function ProfilePage() {
       </div>
 
       {(saving || savedFlash || actionFlash) && (
-        <p className="text-center text-sm text-text-muted">
-          {actionFlash ?? (savedFlash ? dict.profile.savedMessage : dict.common.loading)}
-        </p>
+        <Toast
+          message={actionFlash?.message ?? (savedFlash ? dict.profile.savedMessage : dict.common.loading)}
+          tone={actionFlash?.tone === "error" ? "error" : savedFlash ? "success" : "info"}
+        />
       )}
 
       {/* COMM-001: bloklangan foydalanuvchilar ro'yxati + blokdan chiqarish. */}

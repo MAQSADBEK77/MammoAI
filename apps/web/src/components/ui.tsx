@@ -261,6 +261,41 @@ export function Badge({
   );
 }
 
+/**
+ * TOAST-01 — amal natijasi haqidagi qisqa xabar.
+ *
+ * Nega kerak: Profil sahifasida natija xabari sahifa OQIMINING oxirida,
+ * kulrang rangda va muvaffaqiyat bilan BIR XIL ko'rinishda chizilardi.
+ * Rejim tanlash kartalari esa sahifaning tepasida. Natijada server xatosi
+ * (rejim saqlanmadi) ekrandan tashqarida, ko'rinmas joyda paydo bo'lib,
+ * 2 soniyada yo'qolardi — foydalanuvchi "bosyapman, hech narsa
+ * bo'lmayapti" deb xabar berdi va sababi aynan shu edi.
+ *
+ * Endi u ekranga nisbatan qat'iy joylashadi (pastki navigatsiya ustida),
+ * xato qizil rangda va uzoqroq turadi — o'qishga ulguriladi.
+ */
+export function Toast({ message, tone = "info" }: { message: string; tone?: "info" | "success" | "error" }) {
+  const toneClass =
+    tone === "error"
+      ? "bg-danger text-white"
+      : tone === "success"
+        ? "bg-success text-white"
+        : "bg-nav text-white";
+  return (
+    <div
+      // `role="status"` + `aria-live` — skrin-rider ham xabarni o'qiydi.
+      role="status"
+      aria-live="polite"
+      className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4"
+      style={{ bottom: "calc(var(--bottom-nav-height) + 1rem)" }}
+    >
+      <p className={clsx("animate-fade-in-up max-w-sm rounded-full px-4 py-2.5 text-center text-sm font-semibold shadow-lg", toneClass)}>
+        {message}
+      </p>
+    </div>
+  );
+}
+
 /** Suzuvchi shisha-effekt yorliq — gradient qahramon banner ustiga qo'yiladigan statistika. */
 export function FloatingTag({ icon, value, label }: { icon?: ReactNode; value: string; label: string }) {
   return (
