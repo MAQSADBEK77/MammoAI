@@ -48,8 +48,20 @@ export default function AsosiyPage() {
   // ko'ra faqat shu ikki maqsad uchun. Qolgan sikl-asosidagi maqsadlar
   // (wellbeing, understand_body, skin, perimenopause) hozircha o'zgarishsiz
   // "classic" ko'rinishda qoladi.
+  // MODE-HONESTY-01: ilgari faqat "cycle" va "planning_pregnancy" yangi
+  // ekranni olardi. Qolgan sikl-asosidagi rejimlar (wellbeing, skin,
+  // understand_body, perimenopause, checkups) ESKI ko'rinishda qolardi —
+  // ya'ni "Umumiy salomatlik" ni tanlagan 33 ayol, bilmagan holda,
+  // kamroq sayqallangan ekranni olgan edi. Bu rejimlarning hech biri
+  // eski ekranga MUHTOJ emas — farq shunchaki e'tibordan chetda qolgan.
+  // Endi barcha sikl-asosidagi rejimlar bir xil, yangi ekranni oladi.
+  //
+  // `perimenopause` ATAYLAB chetda: u bashorat halqasi o'rniga o'z
+  // kartasini ko'rsatadigan qilib maxsus qurilgan ("necha kun qoldi"
+  // savolining o'zi u yerda ma'nosiz) va uni yangi ekranga ko'chirish
+  // alohida, ehtiyotkor ish — bu tuzatishning maqsadi emas.
   const useTodayVariant =
-    onboardingProfile.primaryGoal === "cycle" || onboardingProfile.primaryGoal === "planning_pregnancy";
+    goalToLandingTab(onboardingProfile.primaryGoal) === "cycle" && onboardingProfile.primaryGoal !== "perimenopause";
 
   return (
     <div className="space-y-8 pb-6">

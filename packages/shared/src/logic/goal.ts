@@ -18,8 +18,35 @@ export function goalToLandingTab(goal: Goal): LandingTab {
  * Hamkor orqali ulangan ayolini kuzatadi. `perimenopause` ham faqat 18+
  * ro'yxatida (yosh chegarasi qattiq tekshirilmaydi, lekin mazmuni 40+ uchun
  * mo'ljallangan — partner_tracking bilan bir xil yondashuv). */
-export const ADULT_GOALS: Goal[] = ["cycle", "pregnancy", "planning_pregnancy", "wellbeing", "checkups", "partner_tracking", "perimenopause"];
-export const MINOR_GOALS: Goal[] = ["cycle", "understand_body", "skin"];
+/**
+ * MODE-HONESTY-01 — onboarding'da taklif qilinadigan rejimlar.
+ *
+ * `wellbeing` va `skin` ro'yxatdan OLIB TASHLANDI. Sabab: ular hech
+ * qanday alohida tajriba bermasdi. O'lchandi — bu ikki rejim `cycle`dan
+ * FAQAT bitta narsa bilan farq qilardi: ular bosh ekranning ESKI
+ * ("classic") ko'rinishini olardi. Ya'ni "Umumiy salomatlik" yoki "Teri
+ * va soch" ni tanlagan ayol o'sha mavzu bo'yicha hech narsa olmasdi,
+ * ustiga kamroq sayqallangan ekranni olardi.
+ *
+ * Production'da bu 37 ayolga tegishli edi (wellbeing 33, skin 4) —
+ * foydalanuvchilarning deyarli uchdan biri bajarilmagan va'daga
+ * yozilgan.
+ *
+ * Bu qiymatlar TIPDAN o'chirilmadi: bazada allaqachon mavjud profillar
+ * bor va ular buzilmasligi kerak. Ular endi `cycle` kabi ishlaydi
+ * (asosiy/page.tsx), ya'ni eski ekran o'rniga yangisini oladi.
+ *
+ * `understand_body` faqat 18 yoshgacha bo'lganlar ro'yxatida qoladi: u
+ * o'smir uchun AYNAN SHU funksiyaning to'g'ri nomlanishi ("tanamni
+ * tushunaman"), ya'ni bajarilmagan va'da emas.
+ *
+ * Kelajakda "qiziqishlar" alohida KO'P TANLOVLI maydon sifatida
+ * qo'shiladi — teri, ovqatlanish, ruhiy holat kabi mavzular rejim emas,
+ * kontentni saralash uchun ishlatiladi (rejim — qaysi ekranga tushish,
+ * qiziqish — nima o'qish; ikkisi turli narsa).
+ */
+export const ADULT_GOALS: Goal[] = ["cycle", "pregnancy", "planning_pregnancy", "checkups", "partner_tracking", "perimenopause"];
+export const MINOR_GOALS: Goal[] = ["cycle", "understand_body"];
 
 export function isPregnancyGoal(goal: Goal): boolean {
   return goal === "pregnancy";
