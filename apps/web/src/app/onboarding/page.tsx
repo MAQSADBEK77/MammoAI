@@ -219,7 +219,10 @@ const INITIAL_SURVEY: SurveyState = {
 // Belgilar `currentColor`da chizilgani uchun bo'lim rangini (binafsha /
 // pushti / turkuaz) O'ZI oladi — emoji bilan bunday qilib bo'lmasdi.
 const STEP_ICON_NAME: Partial<Record<Step, OnboardingIconName>> = {
-  account_choice: "welcome",
+  // ONB-CHROME-01: `account_choice` bu yerdan OLIB TASHLANDI. Kirish
+  // ekranida brend belgisining O'ZI (LogoMark) vizual markaz vazifasini
+  // bajaradi — ikkinchi, binafsha halqali ikonka uning ustida turib,
+  // ekranda ikkita raqobatlashuvchi markaz hosil qilardi.
   privacy: "privacy",
   name: "name",
   age: "age",
@@ -293,9 +296,17 @@ const SECTIONS = [
 
 const STEP_SECTION: Partial<Record<Step, 0 | 1 | 2>> = {
   language: 0,
-  account_choice: 0,
-  account_identifier: 0,
-  phone_verify: 0,
+  // ONB-CHROME-01: kirish/tasdiqlash qadamlari ATAYLAB hech qaysi bo'limga
+  // kirmaydi ("welcome" va natija ekranlari kabi). Ular so'rovnoma emas —
+  // eshik. Ilgari ular "Siz haqingizda" bo'limiga kiritilgani uchun kirish
+  // ekranida "Siz haqingizda 2/7" progressi va BINAFSHA bo'lim rangi
+  // chiqardi. Natijada bitta ekranda uchta bog'liq bo'lmagan rang
+  // to'qnashardi: binafsha (bo'lim), pushti (brend belgisi), ko'k
+  // (Telegram). Foydalanuvchi buni "rang va dizayn chalkash" deb ko'rsatdi.
+  //
+  // Ustiga bu MANTIQAN ham noto'g'ri edi: hali tizimga kirmagan odamga
+  // "Siz haqingizda, 2/7" deb aytish — u hali hech qanday savolga javob
+  // bermagan.
   privacy: 0,
   name: 0,
   age: 0,
