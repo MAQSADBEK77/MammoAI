@@ -1215,6 +1215,11 @@ const uz = {
     premiumBenefit2: "Takrorlanuvchi simptomlarni avtomatik aniqlash",
     premiumBenefit3: "Chuqur sikl statistikasi va tendensiyalar",
     premiumCta: "Faollashtirish uchun murojaat qilish",
+    freeBannerBody: "Yordamchiga bemalol savol bering — javoblar sizning sikl va simptom tarixingizga asoslanadi.",
+    freeLeft: "{n} ta bepul xabar qoldi",
+    freeLastOne: "Oxirgi bepul xabaringiz",
+    premiumExhaustedTitle: "Bepul xabarlaringiz tugadi",
+    premiumExhaustedBody: "Yordamchi bilan suhbatni davom ettirish uchun Premium obuna kerak. Yozgan savollaringiz va javoblar saqlanib qoladi.",
     insightsEmpty: "Statistika ko'rish uchun hali yetarli ma'lumot yo'q — sikl kunlaringizni davom ettirib qayd eting.",
     cycleLengthChartTitle: "Sikl uzunligi tarixi",
     symptomFrequencyChartTitle: "Simptomlar chastotasi (so'nggi 6 oy)",
@@ -1572,6 +1577,7 @@ const uz = {
     premium_required: "Bu funksiya Premium obuna talab qiladi",
     message_too_long: "Xabar juda uzun",
     daily_chat_limit_reached: "Bugungi xabarlar limiti tugadi — ertaga davom eting",
+    ai_unavailable: "AI yordamchi hozir vaqtinchalik ishlamayapti — bu sizning savolingizda emas. Biroz keyinroq qayta urinib ko'ring.",
   },
 };
 

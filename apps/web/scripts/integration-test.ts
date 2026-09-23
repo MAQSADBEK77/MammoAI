@@ -49,7 +49,11 @@ import {
   incrementDailyChatUsage,
   decrementDailyChatUsage,
   getCommunityStats,
+  saveChatMessage,
+  grantPremium,
+  revokePremium,
 } from "../src/server/repo";
+import { getChatAccess, FREE_MESSAGE_ALLOWANCE } from "../src/server/chat-access";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
 import { tashkentDateStr } from "@mammoai/shared";
@@ -604,6 +608,55 @@ async function main() {
     );
   } finally {
     await sql`DELETE FROM users WHERE id = ${qaUserId}`;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // MONETIZE-01 — AI Yordamchining bepul tanishtiruv chegarasi.
+  //
+  // Nega test kerak: bu QATLAMLAR ORASIDAGI mantiq (chat_messages jadvali →
+  // hisoblagich → paywall qarori). Noto'g'ri ishlasa ikki xil zarar bo'ladi:
+  // yo hamma bepul cheksiz suhbat qiladi (daromad yo'q), yo hech kim
+  // yordamchini sinab ko'rolmaydi (aynan shu holat topilgan edi).
+  // ══════════════════════════════════════════════════════════════════════
+  const chatUserId = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${chatUserId}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  try {
+    const fresh = await getChatAccess(chatUserId);
+    assert(
+      !fresh.hasPremium && fresh.freeMessagesLeft === FREE_MESSAGE_ALLOWANCE && fresh.canSend,
+      "MONETIZE-01: yangi foydalanuvchi Premiumsiz ham yordamchiga yoza oladi (bepul chegara to'liq)"
+    );
+
+    // Assistant javoblari chegarani SARFLAMASLIGI kerak — aks holda har bir
+    // savol ikki barobar hisoblanardi.
+    await saveChatMessage(chatUserId, "assistant", "Salom!");
+    assert(
+      (await getChatAccess(chatUserId)).freeMessagesLeft === FREE_MESSAGE_ALLOWANCE,
+      "MONETIZE-01: yordamchining javobi bepul chegaradan yechilmaydi"
+    );
+
+    for (let i = 0; i < FREE_MESSAGE_ALLOWANCE; i++) {
+      await saveChatMessage(chatUserId, "user", `savol ${i}`);
+    }
+    const exhausted = await getChatAccess(chatUserId);
+    assert(
+      exhausted.freeMessagesLeft === 0 && !exhausted.canSend,
+      "MONETIZE-01: bepul xabarlar tugagach paywall yoqiladi"
+    );
+
+    await grantPremium(chatUserId, { durationDays: 30, note: "integratsiya testi" });
+    assert(
+      (await getChatAccess(chatUserId)).canSend,
+      "MONETIZE-01: Premium obuna bepul chegaradan qat'i nazar suhbatni ochadi"
+    );
+
+    await revokePremium(chatUserId);
+    assert(
+      !(await getChatAccess(chatUserId)).canSend,
+      "MONETIZE-01: obuna bekor qilinsa paywall qaytadi (chegara allaqachon sarflangan)"
+    );
+  } finally {
+    await sql`DELETE FROM users WHERE id = ${chatUserId}`;
   }
 
   const communityPost = await createCommunityPost(realAccountId, { tag: "general", body: "DATA-ACCURACY-06 test posti", isAnonymous: false });

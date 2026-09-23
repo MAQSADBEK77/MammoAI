@@ -7,11 +7,16 @@
 // ichida kontekst sifatida beradi. Shu tufayli AI "eslab qoladi": foydalanuvchi
 // oldin nima yozgan bo'lsa (cycle_logs orqali), keyingi suhbatda ham ko'rinadi.
 //
-// Model: bir nechta provayder qo'llab-quvvatlanadi (admin panelda tanlanadi,
-// `ai_provider` sozlamasi — "gemini" | "huawei_maas"). Ikkalasi ham OpenAI-mos
-// ("OpenAI compatibility") REST qatlamini ishlatadi — shu tufayli so'rov/javob
-// shakli standart OpenAI chat-completions bilan bir xil, boshqa provayderga
-// o'tish ham shu naqshga qo'shimcha funksiya yozish bilan cheklanadi.
+// Model: uchta provayder qo'llab-quvvatlanadi (admin panelda tanlanadi,
+// `ai_provider` sozlamasi — "gemini" | "huawei_maas" | "anthropic"). Birinchi
+// ikkitasi OpenAI-mos ("OpenAI compatibility") REST qatlamini ishlatadi — shu
+// tufayli so'rov/javob shakli standart OpenAI chat-completions bilan bir xil.
+//
+// AI-RELIABILITY-01: tanlangan provayder yiqilsa, qolganlari avtomatik
+// sinaladi (callActiveAiProvider). Sabab: production diagnostikasida UCHALA
+// provayder ham bir vaqtda ishlamayotgani aniqlangan va AI yordamchi
+// butunlay o'lik holatda edi — bitta provayderga bog'lanib qolish juda
+// mo'rt ekan.
 // - Gemini (https://ai.google.dev/gemini-api/docs/openai) — kalit bepul,
 //   https://aistudio.google.com/apikey'dan.
 // - Huawei Cloud MaaS (ModelArts Studio, https://api-ap-southeast-1.
@@ -21,6 +26,10 @@
 //   uchun so'rovga `thinking: {type: "disabled"}` qo'shiladi (sinovda:
 //   buni yoqib-o'chirib solishtirilgan, o'chirilganda javob sifati bir xil,
 //   token sarfi ~5x kam).
+// - Anthropic (Claude, https://api.anthropic.com/v1/messages) — OpenAI-mos
+//   EMAS, alohida so'rov/javob shakli. Kalit https://console.anthropic.com
+//   orqali olinadi va hisobda balans bo'lishi shart (balans tugasa API
+//   400 "credit balance is too low" qaytaradi).
 
 import { ApiError } from "./api-utils";
 import {
@@ -40,12 +49,32 @@ const SETTING_KEY = "gemini_api_key";
 // new users") — "-latest" taxallusi doim joriy tavsiya etilgan modelga
 // ishora qiladi, shu sabab bu muammo QAYTA takrorlanmasligi kerak.
 const GEMINI_MODEL = "gemini-flash-latest";
-export type AiProvider = "gemini" | "huawei_maas";
+export type AiProvider = "gemini" | "huawei_maas" | "anthropic";
+export const AI_PROVIDERS: AiProvider[] = ["gemini", "huawei_maas", "anthropic"];
 const PROVIDER_SETTING_KEY = "ai_provider";
 const HUAWEI_KEY_SETTING = "huawei_maas_api_key";
 const HUAWEI_MODEL_SETTING = "huawei_maas_model";
 const HUAWEI_DEFAULT_MODEL = "glm-5.2";
 const HUAWEI_BASE_URL = "https://api-ap-southeast-1.modelarts-maas.com/openai/v1/chat/completions";
+const ANTHROPIC_KEY_SETTING = "anthropic_api_key";
+const ANTHROPIC_MODEL_SETTING = "anthropic_model";
+// Haiku — chat uchun eng arzon va tez model; sifat farqi qisqa, suhbat
+// uslubidagi javoblarda sezilmaydi, narx esa bir necha barobar past.
+const ANTHROPIC_DEFAULT_MODEL = "claude-haiku-4-5-20251001";
+const ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_VERSION = "2023-06-01";
+// AI-RELIABILITY-01: javob byudjeti. Ilgari 1024 edi — bu "o'ylaydigan"
+// modellar (gemini-flash-latest, GLM) uchun YETARLI EMAS: model butun
+// byudjetni ichki fikrlashga sarflab, `finish_reason: "length"` va
+// `completion_tokens: 0` bilan BO'SH javob qaytarardi. Diagnostikada aynan
+// shu holat kuzatilgan.
+const MAX_TOKENS = 2048;
+// O'LCHANGAN (production kalitida, 4 ta ketma-ket sinov): Gemini
+// so'rovlarining ~25%i 503 qaytaradi — bu vaqtinchalik va TAKRORIY urinishda
+// o'tadi. Bitta urinishda ~25% nosozlik, 3 tada ~1.5%. Nosoz javob tez
+// keladi (~2s), ya'ni kutish qimmat emas.
+const MAX_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 1200;
 const CONTEXT_LOG_LIMIT = 6; // oxirgi N ta kunlik yozuv — system promptga to'liq tafsilot bilan
 const PATTERN_WINDOW_DAYS = 90;
 const PATTERN_MIN_OCCURRENCES = 3;
@@ -58,9 +87,13 @@ export async function setGeminiApiKey(key: string): Promise<void> {
   await setSetting(SETTING_KEY, key);
 }
 
+export function isAiProvider(value: unknown): value is AiProvider {
+  return typeof value === "string" && (AI_PROVIDERS as string[]).includes(value);
+}
+
 export async function getAiProvider(): Promise<AiProvider> {
   const value = await getSetting(PROVIDER_SETTING_KEY);
-  return value === "huawei_maas" ? "huawei_maas" : "gemini"; // standart — ORQAGA MOSLIK: eski o'rnatishlarda bu sozlama umuman yo'q
+  return isAiProvider(value) ? value : "gemini"; // standart — ORQAGA MOSLIK: eski o'rnatishlarda bu sozlama umuman yo'q
 }
 
 export async function setAiProvider(provider: AiProvider): Promise<void> {
@@ -81,6 +114,22 @@ export async function getHuaweiMaasModel(): Promise<string> {
 
 export async function setHuaweiMaasModel(model: string): Promise<void> {
   await setSetting(HUAWEI_MODEL_SETTING, model);
+}
+
+export async function getAnthropicApiKey(): Promise<string | null> {
+  return getSetting(ANTHROPIC_KEY_SETTING);
+}
+
+export async function setAnthropicApiKey(key: string): Promise<void> {
+  await setSetting(ANTHROPIC_KEY_SETTING, key);
+}
+
+export async function getAnthropicModel(): Promise<string> {
+  return (await getSetting(ANTHROPIC_MODEL_SETTING)) || ANTHROPIC_DEFAULT_MODEL;
+}
+
+export async function setAnthropicModel(model: string): Promise<void> {
+  await setSetting(ANTHROPIC_MODEL_SETTING, model);
 }
 
 /** Oxirgi ~90 kunlik cycle_logs'dan har bir simptom nechta alohida kunda
@@ -191,15 +240,83 @@ async function getSystemPrompt(user: User, context: string, patterns: SymptomPat
   return parts.join("\n\n");
 }
 
-interface GeminiChatChoice {
+interface OpenAiChatChoice {
   message?: { content?: string };
+  finish_reason?: string;
 }
 
-interface GeminiChatResponse {
-  choices?: GeminiChatChoice[];
-  // AI-PROVIDER-02: kunlik token sarfini kuzatish uchun — ikkala provayder
-  // ham (Gemini VA Huawei MaaS) OpenAI-mos shaklda shu maydonni qaytaradi.
+interface OpenAiChatResponse {
+  choices?: OpenAiChatChoice[];
+  // AI-PROVIDER-02: kunlik token sarfini kuzatish uchun — OpenAI-mos
+  // provayderlar (Gemini VA Huawei MaaS) shu maydonni qaytaradi.
   usage?: { total_tokens?: number };
+  error?: { message?: string };
+}
+
+interface AnthropicResponse {
+  content?: { type?: string; text?: string }[];
+  stop_reason?: string;
+  usage?: { input_tokens?: number; output_tokens?: number };
+  error?: { message?: string };
+}
+
+export type AiHistory = { role: "user" | "assistant"; content: string }[];
+
+/** AI-RELIABILITY-01: provayder O'ZI ishlamayapti (tarmoq uzilishi, 5xx,
+ * tugagan kvota/balans, yaroqsiz kalit, bo'sh javob). Bu xato
+ * `callActiveAiProvider` uchun signal: shu provayderni tashlab, KEYINGISIGA
+ * o'tish kerak. Foydalanuvchining savoliga aloqasi yo'q — shuning uchun
+ * hech qachon to'g'ridan-to'g'ri foydalanuvchiga ko'rsatilmaydi. */
+class ProviderDownError extends Error {
+  constructor(
+    readonly provider: AiProvider,
+    readonly detail: string
+  ) {
+    super(`${provider}: ${detail}`);
+    this.name = "ProviderDownError";
+  }
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** HTTP so'rovini yuboradi va vaqtinchalik xatolarda (429 — kvota bo'yicha
+ * cheklov, 5xx — provayder tarafidagi nosozlik) bir marta qayta uradi.
+ * Diagnostikada Gemini aynan 503 qaytargan, ya'ni bu holat nazariy emas. */
+async function postWithRetry(provider: AiProvider, url: string, init: RequestInit): Promise<Response> {
+  let lastStatus = 0;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, init);
+    } catch (error) {
+      // Tarmoq darajasidagi uzilish — javob umuman kelmadi.
+      if (attempt === MAX_ATTEMPTS) throw new ProviderDownError(provider, `tarmoq xatosi: ${String(error)}`);
+      await sleep(RETRY_DELAY_MS);
+      continue;
+    }
+    if (res.status !== 429 && res.status < 500) return res;
+    lastStatus = res.status;
+    if (attempt === MAX_ATTEMPTS) break;
+    await sleep(RETRY_DELAY_MS);
+  }
+  throw new ProviderDownError(provider, `HTTP ${lastStatus} (${MAX_ATTEMPTS} urinishdan keyin ham)`);
+}
+
+/** OpenAI-mos javobni o'qiydi (Gemini va Huawei MaaS bir xil shaklda
+ * qaytaradi). Bo'sh javobni ham NOSOZLIK deb hisoblaydi — chunki
+ * `finish_reason: "length"` + `completion_tokens: 0` aynan shunday
+ * ko'rinadi, va bunda boshqa provayderga o'tish kerak. */
+async function readOpenAiCompatible(provider: AiProvider, res: Response): Promise<{ text: string; tokens: number }> {
+  const json = (await res.json().catch(() => null)) as OpenAiChatResponse | null;
+  if (!res.ok || !json) {
+    throw new ProviderDownError(provider, json?.error?.message ?? `HTTP ${res.status}`);
+  }
+  const choice = json.choices?.[0];
+  const text = choice?.message?.content?.trim();
+  if (!text) {
+    throw new ProviderDownError(provider, `bo'sh javob (finish_reason: ${choice?.finish_reason ?? "noma'lum"})`);
+  }
+  return { text, tokens: json.usage?.total_tokens ?? 0 };
 }
 
 // Gemini'ning OpenAI-mos endpointi standart OpenAI chat-completions shaklida
@@ -208,39 +325,31 @@ interface GeminiChatResponse {
 // `choices[0].message.content`'da qaytadi (Anthropic'ning `content[].text`
 // blok-massividan farqli).
 // export qilingan — server/active-insights.ts (roadmap: "AI chatbotni to'liq
-// faol tahlil qiladigan qilish") xuddi shu Gemini chaqiruv infratuzilmasini
+// faol tahlil qiladigan qilish") xuddi shu chaqiruv infratuzilmasini
 // qayta ishlatadi, faqat boshqa system prompt/kontekst bilan (chat javobi
 // emas — foydalanuvchi so'ramasdan proaktiv tahlil).
-export async function callGemini(systemPrompt: string, history: { role: "user" | "assistant"; content: string }[]): Promise<string> {
+export async function callGemini(systemPrompt: string, history: AiHistory): Promise<string> {
   const apiKey = await getGeminiApiKey();
-  if (!apiKey) throw new ApiError(500, "AI yordamchi hali sozlanmagan — admin panelda Gemini API kalitini qo'shing");
+  if (!apiKey) throw new ProviderDownError("gemini", "API kaliti sozlanmagan");
 
-  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+  const res = await postWithRetry("gemini", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: GEMINI_MODEL,
-      max_tokens: 1024,
+      max_tokens: MAX_TOKENS,
+      // AI-RELIABILITY-01: `gemini-flash-latest` — "o'ylaydigan" model.
+      // Standart holda u javob byudjetining katta qismini ichki fikrlashga
+      // sarflaydi va oddiy suhbat savolida BO'SH javob qaytarishi mumkin.
+      // "none" — fikrlashni butunlay o'chiradi (Huawei'dagi
+      // `thinking: {type: "disabled"}`ning Gemini'dagi muqobili).
+      reasoning_effort: "none",
       messages: [{ role: "system", content: systemPrompt }, ...history],
     }),
   });
 
-  const json = (await res.json().catch(() => null)) as (GeminiChatResponse & { error?: { message?: string } }) | null;
-  if (!res.ok || !json) {
-    // OVERNIGHT-13: bu yerda ilgari `json?.error?.message`ni TO'G'RIDAN-TO'G'RI
-    // foydalanuvchiga ko'rsatardik — provayderning xom, INGLIZCHA xabari
-    // (masalan, kontent-filtr rad javobi "Output text may contain sensitive
-    // information...") ekranda chiqib qolardi. Endi xato server logiga
-    // yoziladi, foydalanuvchiga esa har doim tushunarli o'zbekcha xabar.
-    console.error("Gemini xatosi:", json?.error?.message ?? `HTTP ${res.status}`);
-    throw new ApiError(502, "AI yordamchidan javob olishda xatolik yuz berdi. Savolingizni biroz boshqacha yozib qayta urinib ko'ring.");
-  }
-  const text = json.choices?.[0]?.message?.content;
-  if (!text) throw new ApiError(502, "AI yordamchidan bo'sh javob keldi");
-  if (json.usage?.total_tokens) await recordAiUsage("gemini", json.usage.total_tokens).catch(() => {}); // hisoblash muvaffaqiyatsiz bo'lsa ham asosiy javob buzilmasin
+  const { text, tokens } = await readOpenAiCompatible("gemini", res);
+  if (tokens) await recordAiUsage("gemini", tokens).catch(() => {}); // hisoblash muvaffaqiyatsiz bo'lsa ham asosiy javob buzilmasin
   return text;
 }
 
@@ -248,20 +357,17 @@ export async function callGemini(systemPrompt: string, history: { role: "user" |
  * `callGemini` bilan bir xil so'rov/javob shakli. Javobda GLM modellarida
  * qo'shimcha `reasoning_content` maydoni bo'lishi mumkin — shuning uchun
  * ANIQ `content`ni o'qiymiz, `reasoning_content`ni emas. */
-export async function callHuaweiMaas(systemPrompt: string, history: { role: "user" | "assistant"; content: string }[]): Promise<string> {
+export async function callHuaweiMaas(systemPrompt: string, history: AiHistory): Promise<string> {
   const apiKey = await getHuaweiMaasApiKey();
-  if (!apiKey) throw new ApiError(500, "AI yordamchi hali sozlanmagan — admin panelda Huawei MaaS API kalitini qo'shing");
+  if (!apiKey) throw new ProviderDownError("huawei_maas", "API kaliti sozlanmagan");
   const model = await getHuaweiMaasModel();
 
-  const res = await fetch(HUAWEI_BASE_URL, {
+  const res = await postWithRetry("huawei_maas", HUAWEI_BASE_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model,
-      max_tokens: 1024,
+      max_tokens: MAX_TOKENS,
       // GLM modellari standart holda uzoq ichki fikrlash qiladi — chat
       // javobi uchun keraksiz, o'chiramiz (boshqa provayderlar bu maydonni
       // e'tiborsiz qoldiradi, xato bermaydi).
@@ -270,27 +376,114 @@ export async function callHuaweiMaas(systemPrompt: string, history: { role: "use
     }),
   });
 
-  const json = (await res.json().catch(() => null)) as (GeminiChatResponse & { error?: { message?: string } }) | null;
-  if (!res.ok || !json) {
-    // OVERNIGHT-13: quyidagi izohga qarang (callGemini) — xuddi shu tuzatish.
-    console.error("Huawei MaaS xatosi:", json?.error?.message ?? `HTTP ${res.status}`);
-    throw new ApiError(502, "AI yordamchidan javob olishda xatolik yuz berdi. Savolingizni biroz boshqacha yozib qayta urinib ko'ring.");
-  }
-  const text = json.choices?.[0]?.message?.content;
-  if (!text) throw new ApiError(502, "AI yordamchidan bo'sh javob keldi");
-  if (json.usage?.total_tokens) await recordAiUsage("huawei_maas", json.usage.total_tokens).catch(() => {});
+  const { text, tokens } = await readOpenAiCompatible("huawei_maas", res);
+  if (tokens) await recordAiUsage("huawei_maas", tokens).catch(() => {});
   return text;
 }
 
+/** Anthropic (Claude) — OpenAI-mos EMAS: system prompt alohida top-level
+ * maydon, autentifikatsiya `x-api-key` sarlavhasi orqali (Bearer emas),
+ * javob esa `content[]` blok-massivida keladi. Shu sabab yuqoridagi
+ * umumiy o'quvchini ishlatolmaydi. */
+export async function callAnthropic(systemPrompt: string, history: AiHistory): Promise<string> {
+  const apiKey = await getAnthropicApiKey();
+  if (!apiKey) throw new ProviderDownError("anthropic", "API kaliti sozlanmagan");
+  const model = await getAnthropicModel();
+
+  const res = await postWithRetry("anthropic", ANTHROPIC_BASE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": ANTHROPIC_VERSION,
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: MAX_TOKENS,
+      system: systemPrompt,
+      messages: history,
+    }),
+  });
+
+  const json = (await res.json().catch(() => null)) as AnthropicResponse | null;
+  if (!res.ok || !json) {
+    throw new ProviderDownError("anthropic", json?.error?.message ?? `HTTP ${res.status}`);
+  }
+  const text = (json.content ?? [])
+    .filter((block) => block.type === "text")
+    .map((block) => block.text ?? "")
+    .join("")
+    .trim();
+  if (!text) throw new ProviderDownError("anthropic", `bo'sh javob (stop_reason: ${json.stop_reason ?? "noma'lum"})`);
+
+  const tokens = (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0);
+  if (tokens) await recordAiUsage("anthropic", tokens).catch(() => {});
+  return text;
+}
+
+const PROVIDER_CALLERS: Record<AiProvider, (systemPrompt: string, history: AiHistory) => Promise<string>> = {
+  gemini: callGemini,
+  huawei_maas: callHuaweiMaas,
+  anthropic: callAnthropic,
+};
+
 /** Joriy tanlangan provayder (admin panelda sozlanadi) orqali chaqiradi —
  * `generateAssistantReply` VA `active-insights.ts` ikkalasi ham shu orqali
- * ishlaydi, provayder almashtirilganda ikkalasi ham birga o'zgaradi. */
-export async function callActiveAiProvider(
-  systemPrompt: string,
-  history: { role: "user" | "assistant"; content: string }[]
-): Promise<string> {
-  const provider = await getAiProvider();
-  return provider === "huawei_maas" ? callHuaweiMaas(systemPrompt, history) : callGemini(systemPrompt, history);
+ * ishlaydi, provayder almashtirilganda ikkalasi ham birga o'zgaradi.
+ *
+ * AI-RELIABILITY-01: ilgari BITTA provayder chaqirilardi va u yiqilsa AI
+ * butunlay ishlamay qolardi — production diagnostikasida aynan shu holat
+ * topilgan (Gemini 503, Huawei 401, Anthropic balans tugagan). Endi tanlangan
+ * provayder ishlamasa, kaliti bor QOLGAN provayderlar navbat bilan
+ * sinaladi. Faqat HAMMASI yiqilgandagina xato qaytariladi. */
+export async function callActiveAiProvider(systemPrompt: string, history: AiHistory): Promise<string> {
+  const active = await getAiProvider();
+  const order: AiProvider[] = [active, ...AI_PROVIDERS.filter((p) => p !== active)];
+
+  const failures: string[] = [];
+  for (const provider of order) {
+    try {
+      const text = await PROVIDER_CALLERS[provider](systemPrompt, history);
+      if (provider !== active) {
+        // Zaxira ishladi — bu vaqtinchalik holat, admin buni bilishi kerak.
+        console.warn(`AI: "${active}" ishlamadi, zaxira "${provider}" javob berdi. Sabablar: ${failures.join(" | ")}`);
+      }
+      return text;
+    } catch (error) {
+      if (!(error instanceof ProviderDownError)) throw error; // kutilmagan xato — yashirmaymiz
+      failures.push(error.message);
+    }
+  }
+
+  console.error(`AI: HAMMA provayder ishlamadi. ${failures.join(" | ")}`);
+  // AI-RELIABILITY-01: ilgari bu yerda "Savolingizni biroz boshqacha yozib
+  // qayta urinib ko'ring" deyilardi — ya'ni BIZNING nosozligimiz uchun
+  // foydalanuvchi o'z savolida aybdor qilib ko'rsatilardi. Endi halol:
+  // muammo bizda, va uning xabari yo'qolmadi (saqlanib qoldi).
+  throw new ApiError(
+    503,
+    "AI yordamchi hozir vaqtinchalik ishlamayapti — bu sizning savolingizda emas, bizning tarafimizdagi nosozlik. Biroz keyinroq qayta urinib ko'ring.",
+    "ai_unavailable"
+  );
+}
+
+/** Admin diagnostikasi uchun: har bir provayderni ALOHIDA sinab ko'radi va
+ * natijani qaytaradi. Hech narsani o'zgartirmaydi — faqat o'qiydi. */
+export async function probeAiProviders(): Promise<{ provider: AiProvider; ok: boolean; detail: string; ms: number }[]> {
+  const results: { provider: AiProvider; ok: boolean; detail: string; ms: number }[] = [];
+  for (const provider of AI_PROVIDERS) {
+    const startedAt = Date.now();
+    try {
+      const text = await PROVIDER_CALLERS[provider]("Siz test rejimidasiz. Faqat bitta so'z bilan javob bering.", [
+        { role: "user", content: "Salom" },
+      ]);
+      results.push({ provider, ok: true, detail: text.slice(0, 80), ms: Date.now() - startedAt });
+    } catch (error) {
+      const detail = error instanceof ProviderDownError ? error.detail : String(error);
+      results.push({ provider, ok: false, detail, ms: Date.now() - startedAt });
+    }
+  }
+  return results;
 }
 
 /** Foydalanuvchi xabariga AI javobini tayyorlaydi: kontekst+pattern quradi,

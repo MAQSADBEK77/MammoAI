@@ -1091,6 +1091,11 @@ const en: Dictionary = {
     premiumBenefit2: "Automatic detection of recurring symptoms",
     premiumBenefit3: "Deep cycle statistics and trends",
     premiumCta: "Contact us to activate",
+    freeBannerBody: "Ask the assistant anything — answers are based on your own cycle and symptom history.",
+    freeLeft: "{n} free messages left",
+    freeLastOne: "Your last free message",
+    premiumExhaustedTitle: "You've used your free messages",
+    premiumExhaustedBody: "A Premium subscription is needed to keep chatting with the assistant. Your questions and answers stay saved.",
     insightsEmpty: "Not enough data yet for statistics — keep logging your cycle days.",
     cycleLengthChartTitle: "Cycle length history",
     symptomFrequencyChartTitle: "Symptom frequency (last 6 months)",
@@ -1387,6 +1392,7 @@ const en: Dictionary = {
     premium_required: "This feature requires a Premium subscription",
     message_too_long: "Message is too long",
     daily_chat_limit_reached: "Daily message limit reached — continue tomorrow",
+    ai_unavailable: "The AI assistant is temporarily unavailable — this is not about your question. Please try again shortly.",
   },
 };
 

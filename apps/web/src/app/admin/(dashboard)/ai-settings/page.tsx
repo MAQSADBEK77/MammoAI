@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { adminApi, type AiProvider, type AiSettings } from "@/lib/admin-api";
+import { adminApi, type AiProbeResult, type AiProvider, type AiSettings } from "@/lib/admin-api";
 import { Card, Button, Badge, ErrorState } from "@/components/ui";
 import clsx from "clsx";
 
@@ -12,6 +12,7 @@ function inputClass() {
 const PROVIDERS: { value: AiProvider; label: string }[] = [
   { value: "gemini", label: "Google Gemini" },
   { value: "huawei_maas", label: "Huawei Cloud MaaS (GLM/DeepSeek)" },
+  { value: "anthropic", label: "Anthropic (Claude)" },
 ];
 
 // Ochiq manbalarga ko'ra (Huawei'ning o'zi API orqali aniq kvota qoldig'ini
@@ -37,7 +38,12 @@ export default function AdminAiSettingsPage() {
   const [geminiKeyInput, setGeminiKeyInput] = useState("");
   const [huaweiKeyInput, setHuaweiKeyInput] = useState("");
   const [huaweiModelInput, setHuaweiModelInput] = useState("");
+  const [anthropicKeyInput, setAnthropicKeyInput] = useState("");
+  const [anthropicModelInput, setAnthropicModelInput] = useState("");
   const [saving, setSaving] = useState(false);
+  // AI-RELIABILITY-01: jonli sinov natijalari.
+  const [probing, setProbing] = useState(false);
+  const [probeResults, setProbeResults] = useState<AiProbeResult[] | null>(null);
 
   const load = useCallback(() => {
     setLoadError(null);
@@ -47,6 +53,7 @@ export default function AdminAiSettingsPage() {
         setSettings(res);
         setProvider(res.provider);
         setHuaweiModelInput(res.huaweiModel);
+        setAnthropicModelInput(res.anthropicModel);
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Yuklashda xatolik"));
   }, []);
@@ -106,6 +113,40 @@ export default function AdminAiSettingsPage() {
       setError(err instanceof Error ? err.message : "Saqlashda xatolik");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveAnthropic() {
+    if (!anthropicKeyInput.trim() && !anthropicModelInput.trim()) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await adminApi.aiSettings.update({
+        anthropicApiKey: anthropicKeyInput.trim() || undefined,
+        anthropicModel: anthropicModelInput.trim() || undefined,
+      });
+      setAnthropicKeyInput("");
+      setSuccess("Anthropic sozlamalari saqlandi.");
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Saqlashda xatolik");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function runProbe() {
+    setProbing(true);
+    setError(null);
+    setProbeResults(null);
+    try {
+      const res = await adminApi.aiSettings.probe();
+      setProbeResults(res.results);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sinovda xatolik");
+    } finally {
+      setProbing(false);
     }
   }
 
@@ -175,6 +216,47 @@ export default function AdminAiSettingsPage() {
             );
           })}
         </div>
+      </Card>
+
+      {/* AI-RELIABILITY-01: ilgari provayder ishlayaptimi-yo'qmi bilishning
+          yagona yo'li foydalanuvchining shikoyati edi. Endi har bir
+          provayderga haqiqiy so'rov yuborib, holatini shu yerda ko'rish
+          mumkin. */}
+      <Card className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-bold text-text-primary">Holat tekshiruvi</h2>
+            <p className="mt-0.5 text-xs text-text-muted">
+              Har bir provayderga haqiqiy so&apos;rov yuboradi (oz miqdorda token sarflaydi).
+            </p>
+          </div>
+          <Button onClick={runProbe} disabled={probing} className="shrink-0 px-5!">
+            {probing ? "Tekshirilmoqda…" : "Tekshirish"}
+          </Button>
+        </div>
+        {probeResults && (
+          <div className="flex flex-col gap-2">
+            {probeResults.map((r) => (
+              <div key={r.provider} className="flex items-start justify-between gap-3 rounded-2xl border border-border bg-surface-muted px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-text-primary">
+                    {PROVIDERS.find((p) => p.value === r.provider)?.label ?? r.provider}
+                    {r.provider === settings.provider && <span className="ml-2 text-xs font-medium text-text-muted">(joriy)</span>}
+                  </p>
+                  <p className="mt-0.5 break-words text-xs text-text-secondary">{r.detail}</p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {r.ok ? <Badge tone="success">Ishlayapti</Badge> : <Badge tone="danger">Ishlamayapti</Badge>}
+                  <span className="text-[10px] text-text-muted">{(r.ms / 1000).toFixed(1)}s</span>
+                </div>
+              </div>
+            ))}
+            <p className="text-xs text-text-muted">
+              Joriy provayder ishlamasa, kaliti bor qolgan provayderlar avtomatik zaxira sifatida ishlatiladi — yordamchi
+              faqat HAMMASI yiqilgandagina to&apos;xtaydi.
+            </p>
+          </div>
+        )}
       </Card>
 
       <Card className="flex flex-col gap-4">
@@ -247,6 +329,40 @@ export default function AdminAiSettingsPage() {
           </Button>
           <p className="text-xs text-text-muted">
             ModelArts Studio (MaaS) konsolidan olinadi — modelga ruxsat berilgan bo&apos;lishi kerak (403 xatosi ruxsat yo&apos;qligini bildiradi).
+          </p>
+        </div>
+      </Card>
+
+      <Card className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-text-primary">Anthropic (Claude)</h2>
+          {settings.hasAnthropicKey ? <Badge tone="success">Sozlangan</Badge> : <Badge tone="warning">Sozlanmagan</Badge>}
+        </div>
+        <div className="flex flex-col gap-3">
+          {settings.maskedAnthropicKey && <p className="text-xs text-text-muted">Joriy kalit: {settings.maskedAnthropicKey}</p>}
+          <input
+            type="password"
+            value={anthropicKeyInput}
+            onChange={(e) => setAnthropicKeyInput(e.target.value)}
+            placeholder="sk-ant-..."
+            className={inputClass()}
+          />
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-semibold text-text-secondary">Model</p>
+            <input
+              type="text"
+              value={anthropicModelInput}
+              onChange={(e) => setAnthropicModelInput(e.target.value)}
+              placeholder="claude-haiku-4-5-20251001"
+              className={inputClass()}
+            />
+          </div>
+          <Button onClick={saveAnthropic} disabled={saving || (!anthropicKeyInput.trim() && !anthropicModelInput.trim())} className="self-start px-5!">
+            Saqlash
+          </Button>
+          <p className="text-xs text-text-muted">
+            <code className="rounded bg-surface-muted px-1">console.anthropic.com</code> orqali olinadi. Hisobda balans bo&apos;lishi SHART —
+            balans tugasa API &quot;credit balance is too low&quot; xatosini qaytaradi va provayder ishlamaydi.
           </p>
         </div>
       </Card>

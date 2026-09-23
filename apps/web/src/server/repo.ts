@@ -4116,6 +4116,21 @@ export async function listChatMessages(userId: string, limit = 50): Promise<Chat
   return rows.map(chatMessageFromRow);
 }
 
+/** MONETIZE-01: foydalanuvchi shu paytgacha jami nechta xabar yozgani
+ * (assistant javoblari sanalmaydi). "Bepul tanishtiruv" chegarasi shu
+ * songa qarab hisoblanadi — alohida jadval/ustun kerak emas, chunki
+ * chat_messages allaqachon aynan shu faktni saqlaydi.
+ *
+ * KUNLIK limitdan (chat_daily_usage) farqi: bu UMRBOD hisoblagich va
+ * hech qachon nolga qaytmaydi. */
+export async function countUserChatMessages(userId: string): Promise<number> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT count(*)::int AS count FROM chat_messages WHERE user_id = ${userId} AND role = 'user'
+  `) as unknown as { count: number }[];
+  return rows[0]?.count ?? 0;
+}
+
 export async function saveChatMessage(userId: string, role: "user" | "assistant", content: string): Promise<ChatMessage> {
   await ensureSchema();
   const id = randomUUID();

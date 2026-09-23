@@ -434,15 +434,23 @@ export function createApiClient(config: ApiClientConfig) {
         request<{ ok: true }>("/api/analytics/events", { method: "POST", body: JSON.stringify({ events }) }),
     },
     chat: {
-      /** Suhbat tarixi (eskidan yangiga). */
-      list: () => request<{ messages: ChatMessage[] }>("/api/chat/messages"),
+      /** Suhbat tarixi (eskidan yangiga) + kirish huquqi (MONETIZE-01:
+       * Premium holati va qolgan bepul xabarlar shu yerda keladi — mijoz
+       * uchun alohida so'rov kerak emas). */
+      list: () =>
+        request<{ messages: ChatMessage[]; hasPremium: boolean; freeMessagesLeft: number; freeAllowance: number }>(
+          "/api/chat/messages"
+        ),
       /** Xabar yuboradi — javob keladi (Claude chaqiruvi tugagunicha kutiladi,
        * websocket yo'q — foydalanuvchi "yozmoqda…" holatini ko'radi). */
       send: (content: string) =>
-        request<{ message: ChatMessage; patterns: SymptomPattern[] }>("/api/chat/message", {
-          method: "POST",
-          body: JSON.stringify({ content }),
-        }),
+        request<{ message: ChatMessage; patterns: SymptomPattern[]; hasPremium: boolean; freeMessagesLeft: number }>(
+          "/api/chat/message",
+          {
+            method: "POST",
+            body: JSON.stringify({ content }),
+          }
+        ),
     },
     insights: {
       /** AI Yordamchi ekranining "Statistika" segmenti — sikl uzunligi

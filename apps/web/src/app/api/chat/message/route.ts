@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, jsonError, requireUser } from "@/server/api-utils";
 import { generateAssistantReply } from "@/server/ai-chat";
-import { incrementDailyChatUsage, decrementDailyChatUsage, hasPremiumAccess, listChatMessages, saveChatMessage } from "@/server/repo";
+import { getChatAccess } from "@/server/chat-access";
+import { incrementDailyChatUsage, decrementDailyChatUsage, listChatMessages, saveChatMessage } from "@/server/repo";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const DAILY_MESSAGE_LIMIT = 100;
@@ -13,11 +14,12 @@ const HISTORY_LIMIT = 20; // Claude'ga yuboriladigan oxirgi xabarlar soni
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser(request);
-    // Premium: AI Yordamchi (foydalanuvchi so'roviga ko'ra) — 402 Payment
-    // Required, mijoz shu statusni ko'rib alohida paywall ko'rsatadi
-    // (oddiy xato emas).
-    if (!(await hasPremiumAccess(user.id))) {
-      throw new ApiError(402, "AI Yordamchi Premium funksiya", "premium_required");
+    // MONETIZE-01: Premium YOKI qolgan bepul xabar. Bepul xabarlar tugagach
+    // 402 Payment Required — mijoz shu statusni ko'rib alohida paywall
+    // ko'rsatadi (oddiy xato emas).
+    const access = await getChatAccess(user.id);
+    if (!access.canSend) {
+      throw new ApiError(402, "Bepul xabarlaringiz tugadi — davom etish uchun Premium kerak", "premium_required");
     }
     const body = (await request.json()) as { content?: string };
     const content = body.content?.trim();
@@ -39,7 +41,10 @@ export async function POST(request: NextRequest) {
       const history = await listChatMessages(user.id, HISTORY_LIMIT);
       const { reply, patterns } = await generateAssistantReply(user, history);
       const message = await saveChatMessage(user.id, "assistant", reply);
-      return NextResponse.json({ message, patterns });
+      // Mijoz har javobdan keyin qolgan bepul xabarlarni yangilab turadi —
+      // ayol paywallga TO'SATDAN urilmasligi uchun ogohlantirish ko'rsatiladi.
+      const freeMessagesLeft = access.hasPremium ? access.freeAllowance : Math.max(access.freeMessagesLeft - 1, 0);
+      return NextResponse.json({ message, patterns, hasPremium: access.hasPremium, freeMessagesLeft });
     } catch (error) {
       // DATA-ACCURACY-02: yuqoridagi hisoblagich (kunlik limit uchun) allaqachon
       // oshirilgan edi, lekin foydalanuvchi HECH QANDAY javob olmadi (AI

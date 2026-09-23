@@ -72,7 +72,15 @@ export interface AdminFeedbackEntry {
   userPhone: string | null;
 }
 
-export type AiProvider = "gemini" | "huawei_maas";
+export type AiProvider = "gemini" | "huawei_maas" | "anthropic";
+
+export interface AiProbeResult {
+  provider: AiProvider;
+  ok: boolean;
+  /** Muvaffaqiyatda — javob matnining boshi; xatoda — xato sababi. */
+  detail: string;
+  ms: number;
+}
 
 export interface AiUsageDay {
   day: string;
@@ -89,6 +97,9 @@ export interface AiSettings {
   hasHuaweiKey: boolean;
   maskedHuaweiKey: string | null;
   huaweiModel: string;
+  hasAnthropicKey: boolean;
+  maskedAnthropicKey: string | null;
+  anthropicModel: string;
   usageToday: number;
   usageHistory: AiUsageDay[];
 }
@@ -279,8 +290,16 @@ export const adminApi = {
   },
   aiSettings: {
     get: () => request<AiSettings>("/ai-settings"),
-    update: (patch: { provider?: AiProvider; geminiApiKey?: string; huaweiApiKey?: string; huaweiModel?: string }) =>
-      request<{ ok: true }>("/ai-settings", { method: "PATCH", body: JSON.stringify(patch) }),
+    update: (patch: {
+      provider?: AiProvider;
+      geminiApiKey?: string;
+      huaweiApiKey?: string;
+      huaweiModel?: string;
+      anthropicApiKey?: string;
+      anthropicModel?: string;
+    }) => request<{ ok: true }>("/ai-settings", { method: "PATCH", body: JSON.stringify(patch) }),
+    /** Har bir provayderni jonli sinaydi — haqiqiy API so'rovi yuboriladi. */
+    probe: () => request<{ results: AiProbeResult[] }>("/ai-settings/probe", { method: "POST" }),
   },
   yandexMetrika: {
     get: () => request<YandexMetrikaSettings>("/yandex-metrika"),

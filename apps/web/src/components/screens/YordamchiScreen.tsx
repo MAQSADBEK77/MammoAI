@@ -116,14 +116,22 @@ export function YordamchiScreen() {
   // noto'g'ri taassurot berishi mumkin edi. Endi alohida.
   const [chatLoadError, setChatLoadError] = useState(false);
 
+  // MONETIZE-01: kirish huquqi endi SERVERDAN keladi (sessiyadagi
+  // `hasPremium` faqat obuna holatini biladi, bepul xabarlar qoldig'ini
+  // emas). Yuklangunicha `null` — shu paytda paywall ham, chat ham
+  // ko'rsatilmaydi, faqat yuklanish holati.
+  const [access, setAccess] = useState<{ hasPremium: boolean; freeMessagesLeft: number; freeAllowance: number } | null>(null);
+
   const loadMessages = useCallback(() => {
-    if (!hasPremium) return;
     setChatLoadError(false);
     api.chat
       .list()
-      .then((res) => setMessages(res.messages))
+      .then((res) => {
+        setMessages(res.messages);
+        setAccess({ hasPremium: res.hasPremium, freeMessagesLeft: res.freeMessagesLeft, freeAllowance: res.freeAllowance });
+      })
       .catch(() => setChatLoadError(true));
-  }, [hasPremium]);
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(loadMessages, 0);
@@ -134,6 +142,10 @@ export function YordamchiScreen() {
     if (!hasPremium || tab !== "stats" || insights) return;
     api.insights.get().then(setInsights).catch(() => {});
   }, [hasPremium, tab, insights]);
+
+  // Chatdan foydalana oladimi: Premium YOKI bepul xabari qolgan.
+  const canUseChat = access === null ? true : access.hasPremium || access.freeMessagesLeft > 0;
+  const freeLeft = access && !access.hasPremium ? access.freeMessagesLeft : null;
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -156,6 +168,7 @@ export function YordamchiScreen() {
       const res = await api.chat.send(content);
       setMessages((prev) => [...(prev ?? []).filter((m) => !m.id.startsWith("pending-")), res.message]);
       setPatterns(res.patterns);
+      setAccess((prev) => (prev ? { ...prev, hasPremium: res.hasPremium, freeMessagesLeft: res.freeMessagesLeft } : prev));
       // Aslida yuborilgan xabar ham serverda saqlangan — ro'yxatni serverdan qayta yuklab, "pending" o'rniga haqiqiy id qo'yamiz.
       // FIX2-30: ilgari to'g'ridan-to'g'ri `setMessages(r.messages)` bilan
       // BUTUN ro'yxat almashtirilardi — agar foydalanuvchi shu orada
@@ -191,7 +204,10 @@ export function YordamchiScreen() {
     }
   }
 
-  if (!hasPremium) {
+  // MONETIZE-01: paywall endi FAQAT bepul xabarlar tugagach chiqadi —
+  // ilgari u birinchi xabardanoq chiqib, ayolga yordamchi qanday
+  // ishlashini ko'rsatmasdan pul so'rardi.
+  if (!canUseChat) {
     return (
       <div className="flex flex-col gap-4">
         <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
@@ -199,8 +215,8 @@ export function YordamchiScreen() {
           <div className="bg-aurora-cycle flex h-14 w-14 items-center justify-center rounded-full">
             <WorkspacePremiumRounded sx={{ fontSize: 26 }} className="text-white" />
           </div>
-          <h2 className="text-lg font-bold text-text-primary">{dict.chat.premiumTitle}</h2>
-          <p className="max-w-sm text-sm text-text-secondary">{dict.chat.premiumBody}</p>
+          <h2 className="text-lg font-bold text-text-primary">{dict.chat.premiumExhaustedTitle}</h2>
+          <p className="max-w-sm text-sm text-text-secondary">{dict.chat.premiumExhaustedBody}</p>
           <ul className="flex flex-col gap-1.5 self-start text-sm text-text-secondary">
             {[dict.chat.premiumBenefit1, dict.chat.premiumBenefit2, dict.chat.premiumBenefit3].map((b) => (
               <li key={b} className="flex items-center gap-2">
@@ -224,6 +240,17 @@ export function YordamchiScreen() {
     <>
       <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
       <p className="-mt-2 text-xs text-text-muted">{dict.chat.disclaimer}</p>
+
+      {/* MONETIZE-01: bepul xabarlar qoldig'i — ayol paywallga to'satdan
+          urilmasligi uchun oldindan ko'rinib turadi. */}
+      {freeLeft !== null && (
+        <div className="rounded-2xl border border-border bg-surface-muted px-4 py-3">
+          <p className="text-sm font-bold text-text-primary">
+            {freeLeft === 1 ? dict.chat.freeLastOne : dict.chat.freeLeft.replace("{n}", String(freeLeft))}
+          </p>
+          <p className="mt-0.5 text-xs text-text-secondary">{dict.chat.freeBannerBody}</p>
+        </div>
+      )}
 
       <div className="flex gap-2">
         {(["chat", "stats"] as const).map((t) => (
