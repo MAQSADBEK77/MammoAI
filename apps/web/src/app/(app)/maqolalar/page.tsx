@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "@mui/icons-material";
 import type { Article, ArticleCategory } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Card, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { Badge, Card, ErrorState, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 
 const CATEGORY_EMOJI: Record<ArticleCategory, string> = { cycle: "🩸", pregnancy: "🤰", checkups: "🩺" };
@@ -15,11 +15,25 @@ const CATEGORY_TINT: Record<ArticleCategory, string> = { cycle: "bg-primary/15",
 export default function ArticlesPage() {
   const { dict } = useI18n();
   const [articles, setArticles] = useState<Article[] | null>(null);
+  // UX-01: `.catch()` YO'Q edi — so'rov yiqilsa `articles` hech qachon
+  // to'lmasdi va sahifa ABADIY "yuklanmoqda" holatida qotib qolardi.
+  // Ilovaning boshqa ekranlarida bu sinf allaqachon tuzatilgan, bu sahifa
+  // esa e'tibordan chetda qolgan edi.
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    api.articles.list().then(setArticles);
+  const load = useCallback(() => {
+    setLoadError(false);
+    api.articles.list().then(setArticles).catch(() => setLoadError(true));
   }, []);
 
+  useEffect(() => {
+    const timeout = setTimeout(load, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
+
+  if (loadError) {
+    return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: load }} />;
+  }
   if (!articles) return <LoadingSpinner label={dict.common.loading} />;
 
   return (

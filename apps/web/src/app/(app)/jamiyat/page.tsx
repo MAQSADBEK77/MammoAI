@@ -22,7 +22,7 @@ import { useConfirm } from "@/lib/confirm";
 import { CommunityPostSheet } from "@/components/screens/CommunityPostSheet";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, IconButton, LoadingSpinner, ErrorState, ScreenHeader } from "@/components/ui";
+import { Badge, Button, Card, IconButton, LoadingSpinner, ErrorState, ScreenHeader, Toast } from "@/components/ui";
 import { Reveal } from "@/components/motion-primitives";
 
 const REPORT_REASONS: CommunityReportReason[] = ["spam", "harassment", "misinformation", "medical_emergency", "other"];
@@ -73,6 +73,7 @@ function FilterChip({ active, label, onClick }: { active: boolean; label: string
 export default function CommunityPage() {
   const { dict } = useI18n();
   const confirm = useConfirm();
+  const [shareFlash, setShareFlash] = useState<string | null>(null);
   const { onboardingProfile } = useSession();
 
   const [stats, setStats] = useState<CommunityStats | null>(null);
@@ -288,7 +289,16 @@ export default function CommunityPage() {
         // Foydalanuvchi bekor qildi.
       }
     } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
+      // CLIPBOARD-01: tutilmagan xato + hech qanday tasdiq yo'q edi —
+      // ayol "Ulashish"ni bosardi va NIMA bo'lganini umuman bilmasdi
+      // (nusxalandimi, yiqildimi).
+      try {
+        await navigator.clipboard.writeText(text);
+        setShareFlash(dict.profile.shareAppLinkCopied);
+      } catch {
+        setShareFlash(dict.common.errorGeneric);
+      }
+      setTimeout(() => setShareFlash(null), 2500);
     }
   }
 
@@ -468,6 +478,9 @@ export default function CommunityPage() {
       <div className="rounded-2xl bg-surface-muted px-4 py-3">
         <p className="text-xs leading-relaxed text-text-secondary">{dict.community.moderationNotice}</p>
       </div>
+
+      {/* CLIPBOARD-01: "Ulashish" natijasi — ilgari hech qanday tasdiq yo'q edi. */}
+      {shareFlash && <Toast message={shareFlash} tone={shareFlash === dict.common.errorGeneric ? "error" : "success"} />}
 
       {/* COMM-02: lenta yorliqlari. Ilgari faqat butun forum bor edi va ayol
           o'z savoliga javob kelganini bilish uchun uni qaytadan qidirishi
