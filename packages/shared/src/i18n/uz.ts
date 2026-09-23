@@ -1571,6 +1571,95 @@ const uz = {
   // Hozircha faqat community/posts va chat/message route'lari `key`
   // yuboradi — qolgan API route'lari hali xom o'zbekcha matn qaytaradi
   // (kelajakdagi bosqichma-bosqich ko'chirish uchun).
+  // CONCERN-01 — shifokor bergan 12 ta muammo yo'nalishi.
+  // Matnlar tibbiy jihatdan ehtiyotkor: tashxis qo'ymaydi, faqat mavzuni
+  // tushuntiradi va kerakli tekshiruv/mutaxassisga yo'naltiradi.
+  concerns: {
+    title: "Muammolar",
+    subtitle: "Sizni nima bezovta qilayotganidan boshlang — qaysi tekshiruv va qaysi shifokor kerakligini ko'rsatamiz",
+    disclaimer: "Bu ma'lumot tashxis qo'ymaydi. Maqsadi — kerakli tekshiruvni va to'g'ri mutaxassisni topishga yordam berish.",
+    highlightedLabel: "Sizga tegishli bo'lishi mumkin",
+    whatLabel: "Bu nima",
+    urgentLabel: "Kechiktirmasdan shifokorga murojaat qiling",
+    relatedCheckupsLabel: "Tegishli tekshiruvlar",
+    specialistLabel: "Mutaxassis",
+    askAssistantButton: "Yordamchidan so'rash",
+    findClinicButton: "Klinika topish",
+    openChecklistButton: "Tekshiruvlarim",
+    cardTitle: "Sizni nima bezovta qilyapti?",
+    cardBody: "Shifokorlar eng ko'p duch keladigan 12 ta yo'nalish — har biri bo'yicha nima qilish kerakligi yozilgan.",
+    specialists: {
+      gynecology: "Ginekolog",
+      oncology: "Onkolog",
+      radiology: "Radiolog",
+      general: "Umumiy amaliyot shifokori",
+      endocrinology: "Endokrinolog",
+      reproductology: "Reproduktolog",
+      laparoscopy: "Ginekolog-jarroh",
+    },
+    items: {
+      cycle_disorders: {
+        title: "Hayz buzilishlari",
+        what: "Sikl juda qisqa yoki uzun, hayz umuman kelmaydi, juda ko'p yoki og'riqli o'tadi. Ortida gormonal muvozanat, qalqonsimon bez faoliyati, polikistoz tuxumdon sindromi yoki uzoq stress turishi mumkin — sababni faqat tekshiruv aniqlaydi.",
+        urgent: "Hayz 3 oydan ortiq kelmasa; bir soatda prokladka to'lib ketadigan darajada ko'p qonash bo'lsa; hayzlar orasida qonash paydo bo'lsa; og'riq oddiy og'riq qoldiruvchi bilan bosilmasa.",
+      },
+      infertility: {
+        title: "Bepushtlik",
+        what: "Bir yil davomida (35 yoshdan keyin — olti oy) muntazam va himoyasiz jinsiy hayotda homiladorlik bo'lmasa, bu tekshirish uchun sabab. Sabablarning taxminan yarmi erkak tarafida bo'ladi, shuning uchun juftlik BIRGA tekshiriladi.",
+        urgent: "35 yoshdan kattasiz va olti oydan beri natija yo'q; hayz umuman kelmaydi yoki juda nomuntazam; ilgari chanoq a'zolarida jarrohlik yoki infeksiya bo'lgan — bu holatlarda bir yilni kutmang.",
+      },
+      hormonal_imbalance: {
+        title: "Gormonlar almashinuvining buzilishi",
+        what: "Gormonlar siklga, vaznga, teriga, sochga va kayfiyatga birdek ta'sir qiladi. Eng ko'p uchraydigan sabablar — qalqonsimon bez faoliyati, polikistoz tuxumdon sindromi (PCOS) va prolaktin darajasi. Bularning hammasi oddiy qon tahlili va UTT orqali aniqlanadi.",
+        urgent: "Tez va sababsiz vazn o'zgarishi; yuz va tanada kuchli tuklanish; homilador bo'lmasangiz ham ko'krakdan suyuqlik kelishi; doimiy holsizlik bilan birga yurak urishining tezlashishi.",
+      },
+      obesity: {
+        title: "Ortiqcha vazn va semizlik",
+        what: "Ortiqcha vazn ginekologiyada alohida o'rin tutadi: u ovulyatsiyani buzadi, homiladorlikni qiyinlashtiradi, bachadon shilliq qavati va ko'krak saratoni xavfini oshiradi. Ayni paytda bu — o'zgartirish MUMKIN bo'lgan omil, shuning uchun u bilan ishlashga arziydi.",
+        urgent: "Tana massasi indeksi 30 dan yuqori bo'lsa; vazn ortishi bilan birga hayz buzilsa; oilada qandli diabet yoki yuqori bosim bo'lsa — endokrinolog bilan reja tuzish kerak.",
+      },
+      endometriosis: {
+        title: "Endometrioz",
+        what: "Bachadonning ichki qavatiga o'xshash to'qima undan tashqarida o'sadi. Asosiy belgilari — kuchli hayz og'rig'i, jinsiy aloqada og'riq va homilador bo'lolmaslik. Tashxis o'rtacha 7-8 yil kechikadi, chunki og'riq ko'pincha \"normal\" deb qabul qilinadi. Og'riqqa chidash shart emas.",
+        urgent: "Og'riq sizni ishdan yoki o'qishdan qoldirsa; oddiy og'riq qoldiruvchi yordam bermasa; jinsiy aloqada, hojat yoki siyish paytida og'riq bo'lsa.",
+      },
+      contraception: {
+        title: "Kontratseptsiya (himoya) muammolari",
+        what: "Himoya usuli yoshga, sog'liq holatiga, tug'ish rejalariga va qanday yon ta'sirni ko'tara olishingizga qarab tanlanadi — hamma uchun yaroqli universal usul yo'q. Noto'g'ri tanlangan usul siklni buzadi va ishonchni yo'qotadi.",
+        urgent: "Tabletka fonida kuchli bosh og'rig'i, oyoqda shish yoki og'riq, nafas qisishi paydo bo'lsa — DARHOL shifokorga. Himoyasiz aloqadan keyin 72 soat ichida shoshilinch kontratseptsiya haqida maslahat oling.",
+      },
+      intimate_hygiene: {
+        title: "Jinsiy hayot gigiyenasi",
+        what: "Qin o'z mikroflorasi yordamida o'zini tozalaydi — ortiqcha yuvish, antiseptik va xushbo'y vositalar aynan shu muvozanatni buzadi. Ko'p ajralma, hid yoki qichishish gigiyena yetishmasligidan emas, ko'pincha infeksiyadan bo'ladi.",
+        urgent: "Hidli yoki rangi o'zgargan ajralma; qichishish va achishish; siyishda og'riq; yangi sherik bilan himoyasiz aloqadan keyin — tahlil topshiring.",
+      },
+      pregnancy_complications: {
+        title: "Homiladorlik patologiyalari",
+        what: "Bularga preeklampsiya (yuqori bosim), yo'ldosh muammolari, erta tug'ruq xavfi va homila rivojlanishining sekinlashuvi kiradi. Ularning deyarli hammasi VAQTIDA aniqlansa boshqariladi — shuning uchun navbatdagi ko'riklarni o'tkazib yubormaslik eng muhim himoya.",
+        urgent: "Qonash; suv ketishi; kuchli qorin og'rig'i; qattiq bosh og'rig'i va ko'z oldining xiralashuvi; qo'l va yuzning shishi; homila harakatining kamayishi — zudlik bilan tez yordamga murojaat qiling.",
+      },
+      pregnancy_comorbidity: {
+        title: "Homiladorlik davridagi hamroh kasalliklar",
+        what: "Qandli diabet (shu jumladan faqat homiladorlikda paydo bo'ladigan gestatsion diabet), qalqonsimon bez muammolari, kamqonlik, yuqori bosim va infeksiyalar. Ular homiladorlikdan oldin ham bo'lishi, shu davrda paydo bo'lishi ham mumkin.",
+        urgent: "Doimiy chanqoq va tez-tez siyish; bosim 140/90 dan yuqori; kuchli holsizlik va bosh aylanishi; isitma — tekshiruvni kechiktirmang.",
+      },
+      breastfeeding: {
+        title: "Emizish tartibi va qoidalari",
+        what: "Ko'krakka to'g'ri qo'yish texnikasi ko'pchilik muammoning oldini oladi: so'rg'ich yorilishi, sut turib qolishi (laktostaz), sut yetishmayotgandek tuyulishi. Birinchi haftalar eng qiyin kechadi va aynan o'sha paytda yordam so'rash kerak.",
+        urgent: "Ko'krakda qattiq og'riqli tugun bilan birga isitma (mastit belgisi); chaqaloq vazn yig'masa; emizish paytida o'tkir og'riq — vaqt o'tkazmang.",
+      },
+      early_menopause: {
+        title: "Erta va og'ir o'tuvchi klimaks",
+        what: "45 yoshgacha hayzning butunlay to'xtashi — erta klimaks (tuxumdonlar yetishmovchiligi). Bu faqat hayz masalasi emas: estrogen yetishmasligi suyak va yurak-qon tomir sog'lig'iga uzoq muddatli ta'sir qiladi, shuning uchun uni kuzatuvsiz qoldirib bo'lmaydi.",
+        urgent: "40 yoshgacha hayz 4 oydan ortiq kelmasa; issiqlik to'lqinlari, uyqusizlik va kayfiyat o'zgarishi kundalik hayotga jiddiy xalaqit bersa.",
+      },
+      menopause_later_life: {
+        title: "Klimaks va keksa yoshdagi kasalliklar",
+        what: "Klimaksdan keyin jinsiy a'zolar prolapsi (tushishi) va siydik tuta olmaslik keng tarqalgan. Lekin bular \"yoshga xos, chidash kerak\" narsa EMAS — chanoq tubi mashqlari, pessariy va jarrohlik davolash usullari mavjud.",
+        urgent: "Klimaksdan keyin HAR QANDAY qonash — bu har doim tekshirilishi shart; qinda bosim yoki tushish hissi; yo'talganda, kulganda yoki yugurganda siydik ketishi.",
+      },
+    },
+  },
   apiErrors: {
     invalid_tag: "Mavzu (tag) noto'g'ri",
     post_too_short: "Kamida bir necha so'z yozing",

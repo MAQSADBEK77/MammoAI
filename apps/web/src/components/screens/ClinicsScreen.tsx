@@ -42,11 +42,18 @@ export function ClinicsScreen() {
   const { dict } = useI18n();
   const searchParams = useSearchParams();
   const checklistItemId = searchParams.get("checklistItemId");
+  // CONCERN-01: "Muammolar" ekranidan kelganda kerakli mutaxassis oldindan
+  // tanlangan bo'ladi (`?specialty=gynecology`) — ayol 7 ta filtr ichidan
+  // qaysi birini bosishni o'zi topib o'tirmasin. Noto'g'ri/noma'lum qiymat
+  // e'tiborsiz qoldiriladi ("all"da qolinadi).
+  const specialtyParam = searchParams.get("specialty");
 
   const [clinics, setClinics] = useState<Clinic[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [view, setView] = useState<"list" | "map">("list");
-  const [filter, setFilter] = useState<ClinicSpecialty | "all">("all");
+  const [filter, setFilter] = useState<ClinicSpecialty | "all">(() =>
+    SPECIALTIES.includes(specialtyParam as ClinicSpecialty) ? (specialtyParam as ClinicSpecialty) : "all"
+  );
   const [search, setSearch] = useState("");
 
   // OVERNIGHT-18: "eng yaqinlarini topish" — brauzer geolokatsiyasi (foydalanuvchi

@@ -11,6 +11,7 @@ export * from "./logic/insights";
 export * from "./logic/pregnancy";
 export * from "./logic/public-calculators";
 export * from "./logic/checklist-rules";
+export * from "./logic/health-concerns";
 export * from "./logic/risk-quiz";
 export * from "./logic/goal";
 export * from "./logic/clinic-display";

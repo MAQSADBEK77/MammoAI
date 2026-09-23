@@ -1386,6 +1386,95 @@ const en: Dictionary = {
     goHomeButton: "Back to home",
   },
 
+  // CONCERN-01 — shifokor bergan 12 ta muammo yo'nalishi.
+  // Matnlar tibbiy jihatdan ehtiyotkor: tashxis qo'ymaydi, faqat mavzuni
+  // tushuntiradi va kerakli tekshiruv/mutaxassisga yo'naltiradi.
+  concerns: {
+    title: "Concerns",
+    subtitle: "Start with what worries you — we'll show which check-up and which doctor you need",
+    disclaimer: "This information does not diagnose. Its purpose is to help you find the right test and the right specialist.",
+    highlightedLabel: "May apply to you",
+    whatLabel: "What it is",
+    urgentLabel: "See a doctor without delay",
+    relatedCheckupsLabel: "Related check-ups",
+    specialistLabel: "Specialist",
+    askAssistantButton: "Ask the assistant",
+    findClinicButton: "Find a clinic",
+    openChecklistButton: "My check-ups",
+    cardTitle: "What is worrying you?",
+    cardBody: "The 12 areas doctors see most often — each one explains what to do next.",
+    specialists: {
+      gynecology: "Gynaecologist",
+      oncology: "Oncologist",
+      radiology: "Radiologist",
+      general: "General practitioner",
+      endocrinology: "Endocrinologist",
+      reproductology: "Fertility specialist",
+      laparoscopy: "Gynaecological surgeon",
+    },
+    items: {
+      cycle_disorders: {
+        title: "Menstrual cycle problems",
+        what: "Cycles that are too short or too long, periods that stop, or bleeding that is very heavy or painful. The cause may be hormonal imbalance, thyroid function, polycystic ovary syndrome or prolonged stress — only testing can tell which.",
+        urgent: "No period for more than 3 months; bleeding heavy enough to soak a pad within an hour; bleeding between periods; pain that ordinary painkillers do not control.",
+      },
+      infertility: {
+        title: "Infertility",
+        what: "If pregnancy does not happen after a year of regular unprotected sex (six months after age 35), it is worth investigating. About half of all causes are on the male side, so the couple is assessed TOGETHER.",
+        urgent: "You are over 35 and six months have passed; periods are absent or very irregular; you have had pelvic surgery or infection — in these cases do not wait a year.",
+      },
+      hormonal_imbalance: {
+        title: "Hormonal imbalance",
+        what: "Hormones affect your cycle, weight, skin, hair and mood all at once. The most common causes are thyroid function, polycystic ovary syndrome (PCOS) and prolactin levels. All of these are found with a simple blood test and an ultrasound.",
+        urgent: "Rapid unexplained weight change; marked hair growth on face and body; discharge from the breast when not pregnant; persistent fatigue together with a fast heartbeat.",
+      },
+      obesity: {
+        title: "Excess weight and obesity",
+        what: "Excess weight matters specifically in gynaecology: it disrupts ovulation, makes pregnancy harder, and raises the risk of womb-lining and breast cancer. It is also a factor you CAN change, which makes it worth working on.",
+        urgent: "Body mass index above 30; weight gain alongside a disrupted cycle; diabetes or high blood pressure in the family — make a plan with an endocrinologist.",
+      },
+      endometriosis: {
+        title: "Endometriosis",
+        what: "Tissue similar to the womb lining grows outside the womb. The main signs are severe period pain, pain during sex and difficulty conceiving. Diagnosis is delayed by 7–8 years on average because the pain is so often treated as \"normal\". You do not have to endure it.",
+        urgent: "Pain that makes you miss work or study; ordinary painkillers do not help; pain during sex, bowel movements or urination.",
+      },
+      contraception: {
+        title: "Contraception problems",
+        what: "A method is chosen around your age, health, plans for children and which side effects you can live with — there is no method that suits everyone. The wrong method disrupts your cycle and destroys your confidence in it.",
+        urgent: "Severe headache, leg swelling or pain, or breathlessness while on the pill — see a doctor IMMEDIATELY. After unprotected sex, ask about emergency contraception within 72 hours.",
+      },
+      intimate_hygiene: {
+        title: "Sexual health and hygiene",
+        what: "The vagina cleans itself through its own microflora — over-washing, antiseptics and scented products are exactly what disturb that balance. Heavy discharge, odour or itching usually point to infection rather than to poor hygiene.",
+        urgent: "Discharge with odour or changed colour; itching and burning; pain when urinating; after unprotected sex with a new partner — get tested.",
+      },
+      pregnancy_complications: {
+        title: "Pregnancy complications",
+        what: "These include pre-eclampsia (high blood pressure), placental problems, risk of preterm birth and restricted fetal growth. Nearly all are manageable when found IN TIME — which is why not missing scheduled visits is the strongest protection there is.",
+        urgent: "Bleeding; waters leaking; severe abdominal pain; intense headache with blurred vision; swelling of hands and face; reduced fetal movement — call emergency services at once.",
+      },
+      pregnancy_comorbidity: {
+        title: "Other conditions during pregnancy",
+        what: "Diabetes (including gestational diabetes, which appears only in pregnancy), thyroid problems, anaemia, high blood pressure and infections. These may exist before pregnancy or appear during it.",
+        urgent: "Constant thirst and frequent urination; blood pressure above 140/90; severe weakness and dizziness; fever — do not delay being checked.",
+      },
+      breastfeeding: {
+        title: "Breastfeeding",
+        what: "Correct latch technique prevents most problems: cracked nipples, blocked ducts, and the feeling of not having enough milk. The first weeks are the hardest, and that is exactly when to ask for help.",
+        urgent: "A hard painful lump in the breast together with fever (a sign of mastitis); the baby is not gaining weight; sharp pain while feeding — do not wait.",
+      },
+      early_menopause: {
+        title: "Early and difficult menopause",
+        what: "Periods stopping completely before age 45 is early menopause (ovarian insufficiency). It is not only about periods: lack of oestrogen has long-term effects on bone and heart health, so it should not be left unmonitored.",
+        urgent: "No period for more than 4 months before age 40; hot flushes, insomnia and mood changes that seriously disrupt daily life.",
+      },
+      menopause_later_life: {
+        title: "Menopause and later-life conditions",
+        what: "Pelvic organ prolapse and urinary incontinence are common after menopause. But they are NOT something that \"comes with age and must be endured\" — pelvic floor exercises, pessaries and surgery are all available.",
+        urgent: "ANY bleeding after menopause — this always needs investigating; a feeling of pressure or something coming down in the vagina; leaking urine when coughing, laughing or running.",
+      },
+    },
+  },
   apiErrors: {
     invalid_tag: "Invalid topic",
     post_too_short: "Write at least a few words",

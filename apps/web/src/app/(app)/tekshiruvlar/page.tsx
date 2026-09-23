@@ -170,6 +170,19 @@ export default function ChecklistPage() {
         />
       )}
 
+      {/* CONCERN-01 — "Muammolar" kirish nuqtasi. Aynan SHU YERDA, ro'yxat
+          ustida: ayol ko'pincha tekshiruv NOMINI bilmaydi, u muammo bilan
+          keladi ("hayzim kechikyapti"). Bu karta shu muammoni kerakli
+          tekshiruvga va shifokorga bog'laydi. */}
+      {!readOnly && (
+        <button onClick={() => router.push("/muammolar")} className="block w-full text-left">
+          <Card interactive className="space-y-1">
+            <p className="font-semibold text-text-primary">{dict.concerns.cardTitle}</p>
+            <p className="text-sm text-text-secondary">{dict.concerns.cardBody}</p>
+          </Card>
+        </button>
+      )}
+
       {/* O'z-o'zini tekshirish testi — faqat o'zining checklist'i uchun,
           hamkorining ro'yxatini ko'rayotganda ma'nosiz (bu shaxsiy xavf testi). */}
       {!readOnly && (
