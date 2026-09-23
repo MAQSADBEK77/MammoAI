@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { Avatar, Dialog, DialogTitle, DialogContent } from "@mui/material";
 import {
@@ -122,6 +122,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   const { onboardingProfile, user, applyMeResponse } = useSession();
   const { openDrawer } = useAppDrawer();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<CycleResponse | null>(null);
   const [streakDays, setStreakDays] = useState<number | null>(null);
   const [logging, setLogging] = useState(false);
@@ -220,6 +222,25 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
       .catch(() => {});
     return () => clearTimeout(timeout);
   }, [loadCycle]);
+
+  // DEEPLINK-01: bot eslatmasidagi "Belgilash" tugmasi ilovani TO'G'RIDAN
+  // qayd oynasida ochadi (`/asosiy?log=1`). Ilgari eslatma faqat matn edi —
+  // ayol xabarni o'qib, ilovani o'zi topib, keyin kerakli tugmani izlashi
+  // kerak edi. Har bir qo'shimcha qadam yo'lda odam yo'qotadi.
+  //
+  // Parametr bir marta ishlaydi va darhol URL'dan olib tashlanadi: aks holda
+  // sahifa yangilanganda yoki "orqaga" bosilganda oyna qayta-qayta ochilaverardi
+  // (PROMPT-FREQ-01 dagi bilan bir xil sinf xato).
+  const deepLinkLog = searchParams.get("log");
+  useEffect(() => {
+    if (!data || deepLinkLog !== "1") return;
+    const timeout = setTimeout(() => {
+      openLogging(today, data.logs.find((l) => l.date === today));
+      router.replace(pathname, { scroll: false });
+    }, 0);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, deepLinkLog]);
 
   // OVERNIGHT-20: foydalanuvchi so'roviga ko'ra ("kirganda so'rasin srazu",
   // Flo'ning proaktiv kunlik so'rovnomasi kabi) — bugun uchun hali hech

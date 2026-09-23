@@ -19,10 +19,21 @@ import {
   listCycleLogs,
   listUsersForDailyReminders,
 } from "./repo";
-import { sendTelegramMessage } from "./telegram-bot";
+import { miniAppInlineKeyboard, sendTelegramMessage } from "./telegram-bot";
 import { sendExpoPushNotification } from "./push-notifications";
 
 const REMINDER_PUSH_TITLE = "MammoAI 🌸";
+
+// DEEPLINK-01: eslatma ostidagi tugma ilovani TO'G'RIDAN qayd oynasida
+// ochadi. Ilgari eslatma faqat matn edi — ayol xabarni o'qib, ilovani o'zi
+// topib, keyin kerakli tugmani izlashi kerak edi. Har bir qo'shimcha qadam
+// yo'lda odam yo'qotadi, ayniqsa kunlik odat shakllantirmoqchi bo'lganda.
+//
+// Manzil `/tg` orqali o'tadi — Telegram `web_app` tugmasi Mini App
+// autentifikatsiya sahifasiga ishora qilishi kerak, u esa `?next=` bo'yicha
+// kerakli ekranga o'tkazadi.
+const MINI_APP_BASE_URL = "https://mammo.uz";
+const LOG_DEEP_LINK = `${MINI_APP_BASE_URL}/tg?next=${encodeURIComponent("/asosiy?log=1")}`;
 
 const PERIOD_SOON_DAYS_AHEAD = 2; // shuncha kun (yoki kamroq) qolganda "yaqinlashmoqda" xabari beriladi
 // Kechikish shundan ko'p kun davom etsa, endi "kechikayapti" deb tinimsiz
@@ -121,7 +132,11 @@ export async function runDailyReminders(): Promise<DailyReminderResult[]> {
     let deliveryError: string | undefined;
     if (user.telegramUserId) {
       try {
-        await sendTelegramMessage(user.telegramUserId, message);
+        await sendTelegramMessage(
+          user.telegramUserId,
+          message,
+          miniAppInlineKeyboard(dictionaries[user.language].reminders.logButton, LOG_DEEP_LINK)
+        );
         telegramSent = true;
       } catch (error) {
         deliveryError = error instanceof Error ? error.message : String(error);
