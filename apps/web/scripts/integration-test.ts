@@ -52,6 +52,8 @@ import {
   saveChatMessage,
   grantPremium,
   revokePremium,
+  removeStaleChecklistItems,
+  listChecklistItems,
 } from "../src/server/repo";
 import { getChatAccess, FREE_MESSAGE_ALLOWANCE } from "../src/server/chat-access";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
@@ -608,6 +610,48 @@ async function main() {
     );
   } finally {
     await sql`DELETE FROM users WHERE id = ${qaUserId}`;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // CHECKLIST-PRUNE-01 — eskirgan tekshiruv bandlarini olib tashlash.
+  //
+  // Nega test kerak: bu O'CHIRUVCHI mantiq, ya'ni xatosi qaytarib
+  // bo'lmaydigan zarar beradi. Chegaralari aniq qoplanishi shart.
+  // ══════════════════════════════════════════════════════════════════════
+  const pruneUserId = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${pruneUserId}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  try {
+    await ensureChecklistItem(pruneUserId, "gyn_annual_checkup", null);
+    await ensureChecklistItem(pruneUserId, "pregnancy_first_visit", null);
+    await ensureChecklistItem(pruneUserId, "flora_smear", null);
+
+    const removed = await removeStaleChecklistItems(pruneUserId, ["gyn_annual_checkup", "flora_smear"]);
+    const kept = (await listChecklistItems(pruneUserId)).map((i) => i.type).sort();
+    assert(
+      removed === 1 && kept.join(",") === "flora_smear,gyn_annual_checkup",
+      "CHECKLIST-PRUNE-01: ro'yxatdan chiqqan band o'chiriladi, qolganlariga tegilmaydi"
+    );
+
+    // "Bajarildi" — ayolning HAQIQIY tarixi, hech qachon o'chirilmaydi.
+    // Holat to'g'ridan-to'g'ri qo'yiladi: `completeChecklistItem` Premium
+    // tekshiruvi bilan bog'langan, bu test esa faqat PRUNE mantig'i haqida.
+    await sql`UPDATE checklist_items SET status = 'done' WHERE user_id = ${pruneUserId} AND type = 'flora_smear'`;
+    await removeStaleChecklistItems(pruneUserId, ["gyn_annual_checkup"]);
+    assert(
+      (await listChecklistItems(pruneUserId)).some((i) => i.type === "flora_smear" && i.status === "done"),
+      "CHECKLIST-PRUNE-01: 'bajarildi' bandi qoida o'zgarsa ham saqlanadi"
+    );
+
+    // Bo'sh ro'yxat — haqiqiy holatdan ko'ra ko'proq xatoga o'xshaydi,
+    // shuning uchun himoya sifatida HECH NARSA o'chirilmaydi.
+    const beforeGuard = (await listChecklistItems(pruneUserId)).length;
+    const removedByGuard = await removeStaleChecklistItems(pruneUserId, []);
+    assert(
+      removedByGuard === 0 && (await listChecklistItems(pruneUserId)).length === beforeGuard,
+      "CHECKLIST-PRUNE-01: bo'sh ro'yxat butun rejani supurib tashlamaydi"
+    );
+  } finally {
+    await sql`DELETE FROM users WHERE id = ${pruneUserId}`;
   }
 
   // ══════════════════════════════════════════════════════════════════════
