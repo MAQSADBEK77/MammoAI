@@ -137,6 +137,20 @@ export function PregnancyScreen() {
   // CONTENT-001: admin-tahrirlangan qiymat ustunlik qiladi, topilmasa eski
   // statik i18n ro'yxatiga tushiladi (izoh — weekContent state e'lonida).
   const sizeLabel = weekContent?.sizeLabel ?? dict.pregnancy.sizes[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizes];
+  // PREG-WEEK-01: 1-2 haftada HOMILA HALI YO'Q — tibbiy hisob oxirgi hayzning
+  // birinchi kunidan boshlanadi, urug'lanish esa taxminan 3-haftada sodir
+  // bo'ladi (bazadagi shu haftalarning matni ham aynan shuni yozadi).
+  //
+  // Shuning uchun "Bolangiz hozir ... kattaligida" jumlasi bu haftalarda
+  // ma'nosiz. Bazadagi 1-hafta yorlig'i "hali otalanmagan" bo'lgani uchun
+  // ekranda "Bolangiz hozir HALI OTALANMAGAN kattaligida" degan buzuq jumla
+  // chiqardi — foydalanuvchi buni ushladi.
+  //
+  // Bundan tashqari bu shunchaki grammatika emas: hali mavjud bo'lmagan
+  // homila haqida "bolangiz" deb yozish noto'g'ri va homiladorlikni
+  // kutayotgan ayol uchun og'riqli bo'lishi mumkin.
+  const SIZE_COMPARISON_FROM_WEEK = 3;
+  const showSizeComparison = status.currentWeek >= SIZE_COMPARISON_FROM_WEEK;
   const progressPct = (status.currentWeek / 40) * 100;
   const weeksRemaining = Math.max(0, 40 - status.currentWeek);
   const greeting = (
@@ -161,7 +175,9 @@ export function PregnancyScreen() {
         <div className="flex flex-col items-center gap-1">
           <PregnancyWeekImage week={status.currentWeek} icon={milestone.icon} />
           <h2 className="text-2xl font-extrabold text-white">{dict.pregnancy.weekLabel(status.currentWeek)}</h2>
-          <p className="max-w-[280px] text-white/85">{dict.pregnancy.sizeComparison(sizeLabel)}</p>
+          <p className="max-w-[280px] text-white/85">
+            {showSizeComparison ? dict.pregnancy.sizeComparison(sizeLabel) : dict.pregnancy.earlyWeekNote}
+          </p>
         </div>
 
         <div className="flex justify-center gap-3">

@@ -596,6 +596,7 @@ const ru: Dictionary = {
     daysRemaining: (days: number) => `До родов осталось ${days} дн.`,
     trimester: (t: number) => `${t}-й триместр`,
     sizeComparison: (size: string) => `Ваш малыш сейчас размером с ${size}`,
+    earlyWeekNote: "Отсчёт идёт от первого дня последней менструации — на этой неделе зачатие ещё не произошло",
     visitsTitle: "Визиты и напоминания",
     addVisitButton: "Добавить визит",
     kickCounterTitle: "Счётчик шевелений",

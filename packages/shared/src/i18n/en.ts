@@ -598,6 +598,7 @@ const en: Dictionary = {
     daysRemaining: (days: number) => `${days} days until due date`,
     trimester: (t: number) => `Trimester ${t}`,
     sizeComparison: (size: string) => `Your baby is now the size of a ${size}`,
+    earlyWeekNote: "Counting starts from the first day of your last period — conception has not happened yet this week",
     visitsTitle: "Visits and reminders",
     addVisitButton: "Add a visit",
     kickCounterTitle: "Kick counter",
