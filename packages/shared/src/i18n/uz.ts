@@ -1209,6 +1209,7 @@ const uz = {
     sendError: "Javob olishda xatolik yuz berdi — birozdan so'ng qayta urinib ko'ring",
     chatTab: "Suhbat",
     statisticsTab: "Statistika",
+    statisticsSubtitle: "Sikl uzunligi, simptomlar va bashorat aniqligi — o'z ma'lumotingiz asosida",
     premiumTitle: "AI Yordamchi — Premium",
     premiumBody: "Sikl/homiladorlik tarixingizni eslab qoladigan AI suhbat va chuqur statistika (simptom tahlili, tendensiyalar) Premium foydalanuvchilar uchun.",
     premiumBenefit1: "AI bilan cheksiz suhbat",

@@ -1112,6 +1112,18 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
         <SymptomPatternsCard patterns={symptomPatterns} onLogSymptom={() => openLogging(today, todayLog)} />
       )}
 
+      {/* STATS-MOVE-01 — chuqur statistika (sikl uzunligi grafigi, bashorat
+          aniqligi, simptomlarning fazalar bo'yicha taqsimoti). Ilgari AI
+          Yordamchi ekranining ichida turardi — sababi texnik edi (ikkalasi
+          ham Premium), foydalanuvchi mantig'i emas. Ayol o'z siklining
+          statistikasini AYNAN shu yerdan qidiradi. */}
+      <button onClick={() => router.push("/statistika")} className="block w-full text-left">
+        <Card interactive className="space-y-1">
+          <p className="font-semibold text-text-primary">{dict.chat.statisticsTab}</p>
+          <p className="text-sm text-text-secondary">{dict.chat.statisticsSubtitle}</p>
+        </Card>
+      </button>
+
       {/* OVERNIGHT-20: bu forma ILGARI oddiy inline <Card> edi — sahifada
           DailyInsightsCarousel'dan PASTDA render bo'lardi, ya'ni hero/tezkor
           amal tugmalaridan birortasi bosilganda forma HAQIQATAN ochilardi,

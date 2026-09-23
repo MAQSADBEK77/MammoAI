@@ -1085,6 +1085,7 @@ const en: Dictionary = {
     sendError: "Couldn't get a reply — please try again shortly",
     chatTab: "Chat",
     statisticsTab: "Statistics",
+    statisticsSubtitle: "Cycle length, symptoms and prediction accuracy — from your own data",
     premiumTitle: "AI Assistant — Premium",
     premiumBody: "An AI chat that remembers your cycle/pregnancy history, plus deep statistics (symptom analysis, trends), are available to Premium users.",
     premiumBenefit1: "Unlimited AI chat",
