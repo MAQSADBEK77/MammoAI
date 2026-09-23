@@ -296,8 +296,15 @@ export default function ProfilePage() {
         // Foydalanuvchi bekor qildi — hech narsa qilinmaydi.
       }
     } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(url);
-      flash(dict.profile.shareAppLinkCopied);
+      // CLIPBOARD-01: `writeText` Telegram webview'ida va HTTPS bo'lmagan
+      // kontekstda XATO TASHLAYDI — ilgari tutilmasdi, ya'ni tugma jim
+      // ishlamay qo'yardi.
+      try {
+        await navigator.clipboard.writeText(url);
+        flash(dict.profile.shareAppLinkCopied);
+      } catch {
+        flash(dict.common.errorGeneric, "error");
+      }
     }
   }
 
