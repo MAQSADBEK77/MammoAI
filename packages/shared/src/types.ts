@@ -454,6 +454,14 @@ export interface RiskQuizResult {
 
 export type ArticleCategory = "cycle" | "pregnancy" | "checkups";
 
+/** CONTENT-01: maqolaning manbasi — o'quvchi qayerdan olinganini ko'rishi
+ * uchun. Sog'liq kontentida bu bezak emas: ayol yozilganiga ishonishi uchun
+ * kimning so'zi ekanini bilishi kerak. */
+export interface ArticleSource {
+  label: string;
+  url: string | null;
+}
+
 export interface Article {
   id: string;
   slug: string;
@@ -461,8 +469,32 @@ export interface Article {
   title: string;
   excerpt: string;
   body: string;
-  /** Bu haqiqiy tibbiy kontent manbai emas — namunaviy/seed yozuv. */
-  isSeedData: true;
+  /** CONTENT-01: kim tekshirgani — ism va malakasi. `null` bo'lsa ekranda
+   * "tibbiy ko'rikdan o'tmagan" deb ochiq aytiladi, jim qoldirilmaydi. */
+  authorName: string | null;
+  authorCredential: string | null;
+  /** Rasmiy manbalar (SSV milliy protokollari, JSST va h.k.). */
+  sources: ArticleSource[];
+  /** Taxminiy o'qish vaqti — matn uzunligidan hisoblanadi. */
+  readingMinutes: number;
+  updatedAt: string | null;
+  /** CONTENT-01: ilgari bu `true` deb QATTIQ yozilgan edi — ya'ni har bir
+   * maqola, hatto shifokor yozgani ham, "namuna" deb belgilanardi. Endi
+   * haqiqiy bayroq. */
+  isSeedData: boolean;
+}
+
+/** CONTENT-02: maqola ostidagi izoh. Jamiyat postlaridan alohida: bu yerda
+ * savol KONTENTGA tegishli va moderatsiya qoidalari ham boshqacha. */
+export interface ArticleComment {
+  id: string;
+  articleId: string;
+  authorName: string | null;
+  isAnonymous: boolean;
+  body: string;
+  createdAt: string;
+  /** Joriy foydalanuvchi o'zi yozganmi — o'chirish tugmasi uchun. */
+  isMine: boolean;
 }
 
 // ---------------------------------------------------------------------------

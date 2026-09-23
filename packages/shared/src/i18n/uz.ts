@@ -1049,6 +1049,13 @@ const uz = {
     title: "Maqolalar",
     readMore: "Batafsil o'qish",
     seedDataNotice: "Kontent tez-tez yangilanib boradi.",
+    commentsTitle: "Izohlar",
+    commentPlaceholder: "Savolingiz yoki tajribangizni yozing...",
+    commentSend: "Yuborish",
+    commentsEmpty: "Hali izoh yo'q — birinchi bo'ling.",
+    readingTime: (min: number) => `${min} daqiqa o'qish`,
+    sourcesTitle: "Manbalar",
+    unreviewedNotice: "Bu matn hali shifokor ko'rigidan o'tmagan. Sog'lig'ingizga oid qaror qabul qilishdan oldin shifokor bilan maslahatlashing.",
     categories: {
       cycle: "Hayz sikli",
       pregnancy: "Homiladorlik",

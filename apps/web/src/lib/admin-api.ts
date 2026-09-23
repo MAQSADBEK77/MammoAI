@@ -243,9 +243,18 @@ export const adminApi = {
   },
   articles: {
     list: () => request<Article[]>("/articles"),
-    create: (data: { slug: string; category: ArticleCategory; title: string; excerpt: string; body: string }) =>
+    create: (data: {
+      slug: string;
+      category: ArticleCategory;
+      title: string;
+      excerpt: string;
+      body: string;
+      authorName?: string | null;
+      authorCredential?: string | null;
+      isSeedData?: boolean;
+    }) =>
       request<Article>("/articles", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: string, patch: Partial<Omit<Article, "id" | "isSeedData">>) =>
+    update: (id: string, patch: Partial<Omit<Article, "id" | "readingMinutes">>) =>
       request<{ ok: true }>(`/articles/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
     delete: (id: string) => request<{ ok: true }>(`/articles/${id}`, { method: "DELETE" }),
   },

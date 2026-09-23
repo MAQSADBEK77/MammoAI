@@ -44,7 +44,7 @@ import type {
   SymptomPattern,
   User,
   WellnessLog,
-} from "./types";
+  ArticleComment,} from "./types";
 import type { CyclePrediction, ForecastedCycle } from "./logic/cycle";
 import type { BadgeId } from "./logic/gamification";
 import type { PregnancyStatus } from "./logic/pregnancy";
@@ -355,6 +355,17 @@ export function createApiClient(config: ApiClientConfig) {
     articles: {
       list: () => request<Article[]>("/api/articles"),
       get: (slug: string) => request<Article>(`/api/articles/${slug}`),
+      /** CONTENT-02: maqola ostidagi izohlar. */
+      comments: (articleId: string) => request<{ comments: ArticleComment[] }>(`/api/articles/${articleId}/comments`),
+      addComment: (articleId: string, payload: { body: string; isAnonymous: boolean }) =>
+        request<{ comment: ArticleComment }>(`/api/articles/${articleId}/comments`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
+      deleteComment: (articleId: string, commentId: string) =>
+        request<{ ok: true }>(`/api/articles/${articleId}/comments?commentId=${encodeURIComponent(commentId)}`, {
+          method: "DELETE",
+        }),
     },
     community: {
       stats: () => request<CommunityStats>("/api/community/stats"),

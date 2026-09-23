@@ -13,9 +13,21 @@ const CATEGORIES: { value: ArticleCategory; label: string }[] = [
 
 const CATEGORY_LABELS = Object.fromEntries(CATEGORIES.map((c) => [c.value, c.label])) as Record<ArticleCategory, string>;
 
-type FormState = { slug: string; category: ArticleCategory; title: string; excerpt: string; body: string };
+// CONTENT-01: muallif va tibbiy ko'rik holati. Ular shunchaki qo'shimcha
+// maydon emas: ilovada maqola "shifokor ko'rigidan o'tmagan" deb
+// belgilanishi yoki muallif ismi bilan chiqishi shularga bog'liq.
+type FormState = {
+  slug: string;
+  category: ArticleCategory;
+  title: string;
+  excerpt: string;
+  body: string;
+  authorName: string;
+  authorCredential: string;
+  isSeedData: boolean;
+};
 
-const EMPTY_FORM: FormState = { slug: "", category: "cycle", title: "", excerpt: "", body: "" };
+const EMPTY_FORM: FormState = { slug: "", category: "cycle", title: "", excerpt: "", body: "" , authorName: "", authorCredential: "", isSeedData: true};
 
 function inputClass() {
   return "tap-target w-full rounded-2xl border border-border bg-surface px-4 text-sm text-text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
@@ -79,7 +91,16 @@ export default function AdminArticlesPage() {
 
   function openEdit(article: Article) {
     if (!confirmDiscardIfDirty()) return;
-    const next = { slug: article.slug, category: article.category, title: article.title, excerpt: article.excerpt, body: article.body };
+    const next = {
+      slug: article.slug,
+      category: article.category,
+      title: article.title,
+      excerpt: article.excerpt,
+      body: article.body,
+      authorName: article.authorName ?? "",
+      authorCredential: article.authorCredential ?? "",
+      isSeedData: article.isSeedData,
+    };
     setEditingId(article.id);
     setForm(next);
     setInitialForm(next);
@@ -106,6 +127,9 @@ export default function AdminArticlesPage() {
       title: form.title.trim(),
       excerpt: form.excerpt.trim(),
       body: form.body.trim(),
+      authorName: form.authorName.trim() || null,
+      authorCredential: form.authorCredential.trim() || null,
+      isSeedData: form.isSeedData,
     };
     try {
       if (editingId) {
@@ -183,6 +207,64 @@ export default function AdminArticlesPage() {
               className={`${inputClass()} h-auto! resize-y py-3`}
             />
             <div className="flex justify-end gap-2">
+              <input
+
+                placeholder="Muallif ismi (masalan: Dilnoza Karimova)"
+
+                value={form.authorName}
+
+                onChange={(e) => setForm({ ...form, authorName: e.target.value })}
+
+                className={inputClass()}
+
+              />
+
+              <input
+
+                placeholder="Malakasi (masalan: akusher-ginekolog, 12 yil tajriba)"
+
+                value={form.authorCredential}
+
+                onChange={(e) => setForm({ ...form, authorCredential: e.target.value })}
+
+                className={inputClass()}
+
+              />
+
+              {/* CONTENT-01: bu belgi olib tashlanmaguncha ilovada ochiq
+
+                  ogohlantirish chiqadi. Ataylab shunday: tibbiy matnni
+
+                  tekshiruvsiz "ishonchli" deb ko'rsatib bo'lmaydi. */}
+
+              <label className="flex items-start gap-2 text-sm text-text-secondary">
+
+                <input
+
+                  type="checkbox"
+
+                  checked={!form.isSeedData}
+
+                  onChange={(e) => setForm({ ...form, isSeedData: !e.target.checked })}
+
+                  className="mt-0.5 h-4 w-4 accent-primary"
+
+                />
+
+                <span>
+
+                  Shifokor ko&apos;rigidan o&apos;tgan
+
+                  <span className="block text-xs text-text-muted">
+
+                    Belgilanmasa, ilovada &quot;hali shifokor ko&apos;rigidan o&apos;tmagan&quot; ogohlantirishi ko&apos;rinadi.
+
+                  </span>
+
+                </span>
+
+              </label>
+
               <Button type="button" variant="ghost" onClick={() => setFormOpen(false)}>
                 Bekor qilish
               </Button>

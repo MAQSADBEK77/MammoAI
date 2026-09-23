@@ -940,6 +940,13 @@ const en: Dictionary = {
     title: "Articles",
     readMore: "Read more",
     seedDataNotice: "Content is updated regularly.",
+    commentsTitle: "Comments",
+    commentPlaceholder: "Write your question or experience...",
+    commentSend: "Send",
+    commentsEmpty: "No comments yet — be the first.",
+    readingTime: (min: number) => `${min} min read`,
+    sourcesTitle: "Sources",
+    unreviewedNotice: "This text has not yet been reviewed by a doctor. Talk to a doctor before making decisions about your health.",
     categories: {
       cycle: "Menstrual cycle",
       pregnancy: "Pregnancy",

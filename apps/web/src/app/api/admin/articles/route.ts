@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await requireAdmin(request);
-    const body = (await request.json()) as Omit<Article, "id" | "isSeedData">;
+    const body = (await request.json()) as Omit<Article, "id" | "readingMinutes" | "updatedAt">;
     if (!body.slug || !body.title || !body.body) {
       return NextResponse.json({ error: "Slug, sarlavha va matn kerak" }, { status: 400 });
     }
