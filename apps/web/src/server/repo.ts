@@ -2037,10 +2037,35 @@ export async function listUsersAdmin(params: { search?: string; limit?: number; 
   const rows = (await sql`
     SELECT u.*, o.primary_goal,
       (SELECT count(*) FROM cycle_logs c WHERE c.user_id = u.id)::int AS cycle_logs_count,
+      -- ADMIN-ACTIVITY-01: ilgari bu yerda FAQAT uchta manba bor edi —
+      -- sikl yozuvi, homiladorlik ko'rsatkichi va BAJARILGAN tekshiruv.
+      -- Ya'ni ilovani har kuni ochib, maqola o'qiyotgan, jamiyatda yozayotgan
+      -- yoki yordamchi bilan suhbatlashayotgan ayol admin panelda "hech qachon
+      -- faol bo'lmagan" deb ko'rinardi.
+      --
+      -- Haqiqiy misol (foydalanuvchi ko'rsatdi): bitta ayolda 201 ta
+      -- analitika hodisasi va 3 ta jamiyat posti bor, oxirgisi kecha —
+      -- lekin "Oxirgi faollik" ustuni BO'SH edi, chunki u sikl yozuvi
+      -- qilmagan.
+      --
+      -- Oqibati faqat kosmetik emas: admin panel mahsulot ishlayaptimi degan
+      -- savolga javob beradigan asosiy asbob, va u faollikni keskin KAM
+      -- ko'rsatib turardi.
+      --
+      -- Sanalar barcha jadvallarda bir xil ISO-8601 ("...Z") matn formatida
+      -- saqlanadi — tekshirildi — shuning uchun GREATEST leksikografik
+      -- solishtirishda ham to'g'ri ishlaydi (NULL'larni e'tiborsiz qoldiradi).
       GREATEST(
         (SELECT max(c.created_at) FROM cycle_logs c WHERE c.user_id = u.id),
+        (SELECT max(c.updated_at) FROM cycle_logs c WHERE c.user_id = u.id),
         (SELECT max(v.created_at) FROM pregnancy_vitals v WHERE v.user_id = u.id),
-        (SELECT max(k.completed_at) FROM checklist_items k WHERE k.user_id = u.id AND k.completed_at IS NOT NULL)
+        (SELECT max(k.completed_at) FROM checklist_items k WHERE k.user_id = u.id AND k.completed_at IS NOT NULL),
+        (SELECT max(a.created_at) FROM analytics_events a WHERE a.user_id = u.id),
+        (SELECT max(p.created_at) FROM community_posts p WHERE p.user_id = u.id),
+        (SELECT max(cc.created_at) FROM community_comments cc WHERE cc.user_id = u.id),
+        -- Faqat AYOLNING o'z xabarlari — yordamchining javobi uning
+        -- faolligi emas.
+        (SELECT max(m.created_at) FROM chat_messages m WHERE m.user_id = u.id AND m.role = 'user')
       ) AS last_active_at
     FROM users u
     LEFT JOIN onboarding_profiles o ON o.user_id = u.id
