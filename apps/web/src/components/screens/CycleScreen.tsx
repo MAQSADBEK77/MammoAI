@@ -223,20 +223,37 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
 
   // OVERNIGHT-20: foydalanuvchi so'roviga ko'ra ("kirganda so'rasin srazu",
   // Flo'ning proaktiv kunlik so'rovnomasi kabi) — bugun uchun hali hech
-  // narsa qayd etilmagan bo'lsa, ekran ochilishi bilan darhol (kutmasdan,
-  // qidirmasdan) belgilash oynasi o'zi ochiladi. Bir kunda BIR MARTA
-  // (sessionStorage) — sahifalar orasida bir necha marta o'tib-kelinganda
-  // zerikarli bo'lib qolmasligi uchun; ma'lumot allaqachon bo'lsa umuman
-  // ko'rsatilmaydi.
+  // narsa qayd etilmagan bo'lsa, ekran ochilishi bilan belgilash oynasi
+  // o'zi ochiladi. Ma'lumot allaqachon bo'lsa umuman ko'rsatilmaydi.
+  //
+  // PROMPT-FREQ-01: ilgari chegara `sessionStorage`da edi va bu "kuniga bir
+  // marta" EMAS, "har bir yangi tab/ilova sessiyasida bir marta" degani
+  // edi. Telegram Mini App har ochilishda yangi kontekst yaratadi, ya'ni
+  // ayol ilovani qayta ochgan yoki sahifani qayta yuklagan sayin oyna
+  // yuziga chiqib kelaverardi — foydalanuvchi aynan shundan shikoyat qildi.
+  //
+  // Ikkinchi xato: `catch` bloki bo'sh edi. Xotira bloklangan bo'lsa
+  // (xususiy rejim) chegara HECH QACHON yozilmasdi va oyna HAR SAFAR
+  // ochilardi — izohda "bir marta" deyilgan bo'lsa-da.
+  //
+  // Endi `localStorage` + sana kaliti: haqiqatan kuniga bir marta,
+  // qayta yuklash va ilovani yopib-ochishdan omon qoladi. Xotira ishlamasa
+  // — umuman ochilmaydi: bezovta qilgandan ko'ra o'tkazib yuborgan
+  // yaxshiroq.
   useEffect(() => {
     if (!data) return;
     if (data.logs.some((l) => l.date === today)) return;
+    const key = `mammoai_checkin_prompted_${today}`;
     try {
-      const key = `mammoai_checkin_prompted_${today}`;
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, "1");
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
+      // Eskirgan kunlarning kalitlari to'planib qolmasligi uchun tozalaymiz.
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k?.startsWith("mammoai_checkin_prompted_") && k !== key) localStorage.removeItem(k);
+      }
     } catch {
-      // Xususiy rejim va h.k. — baribir bir marta ko'rsatamiz.
+      return;
     }
     // setState effekt ICHIDA sinxron chaqirilmaydi (fayldagi boshqa
     // effektlar bilan bir xil naqsh — react-hooks/set-state-in-effect).
