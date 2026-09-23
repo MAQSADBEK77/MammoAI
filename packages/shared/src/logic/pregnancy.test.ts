@@ -3,6 +3,7 @@ import {
   dueDateFromLmp,
   lmpFromDueDate,
   getPregnancyStatus,
+  resolvePregnancyState,
   getMilestoneForWeek,
   getEmbryoImageWeek,
   getVitalTone,
@@ -100,5 +101,59 @@ describe("getVitalTone", () => {
     expect(getVitalTone("blood_pressure", "115/75")).toBe("normal");
     expect(getVitalTone("blood_pressure", "160/100")).toBe("attention");
     expect(getVitalTone("blood_pressure", "noto'g'ri-format")).toBeNull();
+  });
+});
+
+describe("resolvePregnancyState — PREG-STATE-01", () => {
+  // Kalkulyator kiritmasi: LMP bugundan 60 kun oldin → ~9-hafta.
+  const calculatorInput = { lastMenstrualPeriod: "2026-07-25", dueDate: "2027-05-01" };
+  const today = "2026-09-23";
+
+  it("kalkulyator to'ldirilgan, lekin ayol o'zini homilador deb belgilamagan — homilador EMAS", () => {
+    const state = resolvePregnancyState({ declaredPregnant: false, profile: calculatorInput }, today);
+    expect(state.isPregnant).toBe(false);
+    expect(state.status).toBeNull();
+  });
+
+  it("ayol o'zini homilador deb belgilagan — hafta hisoblanadi", () => {
+    const state = resolvePregnancyState({ declaredPregnant: true, profile: calculatorInput }, today);
+    expect(state.isPregnant).toBe(true);
+    expect(state.status?.currentWeek).toBe(9);
+  });
+
+  it("belgilagan, lekin kalkulyator bo'sh — homilador, ammo hafta noma'lum", () => {
+    const state = resolvePregnancyState({ declaredPregnant: true, profile: null }, today);
+    expect(state.isPregnant).toBe(true);
+    expect(state.status).toBeNull();
+  });
+
+  it("tug'ruqdan keyingi davr belgidan QAT'I NAZAR aniqlanadi", () => {
+    // Taxminiy sana 30 kun oldin o'tgan — sabr oynasidan (14) keyin,
+    // 42 kunlik oyna ichida. Ayol rejimini almashtirgan bo'lsa ham
+    // tug'ruqdan keyingi tekshiruvlar kerak bo'lib qolaveradi.
+    const afterBirth = { lastMenstrualPeriod: null, dueDate: "2026-08-24" };
+    const state = resolvePregnancyState({ declaredPregnant: false, profile: afterBirth }, today);
+    expect(state.isPostpartum).toBe(true);
+    expect(state.daysSinceDue).toBe(30);
+    expect(state.isPregnant).toBe(false);
+  });
+
+  it("tug'ruqdan keyingi davrda 'homilador' bayrog'i o'chadi", () => {
+    const afterBirth = { lastMenstrualPeriod: null, dueDate: "2026-08-24" };
+    const state = resolvePregnancyState({ declaredPregnant: true, profile: afterBirth }, today);
+    expect(state.isPostpartum).toBe(true);
+    expect(state.isPregnant).toBe(false);
+  });
+
+  it("taxminiy sanadan keyingi sabr oynasida hali homilador hisoblanadi", () => {
+    // 10 kun o'tgan — GRACE (14) ichida, hali tug'ruq bo'lmagan bo'lishi mumkin.
+    const state = resolvePregnancyState({ declaredPregnant: true, profile: { lastMenstrualPeriod: null, dueDate: "2026-09-13" } }, today);
+    expect(state.isPostpartum).toBe(false);
+    expect(state.isPregnant).toBe(true);
+  });
+
+  it("hech qanday ma'lumot yo'q — hech narsa taxmin qilinmaydi", () => {
+    const state = resolvePregnancyState({ declaredPregnant: false, profile: null }, today);
+    expect(state).toEqual({ isPregnant: false, isPostpartum: false, daysSinceDue: null, status: null });
   });
 });

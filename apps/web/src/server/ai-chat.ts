@@ -41,7 +41,7 @@ import {
   recordAiUsage,
   setSetting,
 } from "./repo";
-import { addDays, dictionaries, getPregnancyStatus, tashkentDateStr } from "@mammoai/shared";
+import { addDays, dictionaries, resolvePregnancyState, tashkentDateStr } from "@mammoai/shared";
 import type { ChatMessage, Language, Symptom, SymptomPattern, User } from "@mammoai/shared";
 
 const SETTING_KEY = "gemini_api_key";
@@ -182,9 +182,19 @@ async function buildUserContext(userId: string, language: Language): Promise<str
     }
   }
 
-  if (pregnancy) {
-    const status = getPregnancyStatus(pregnancy);
-    if (status) lines.push(`Hozir homilador — ${status.currentWeek}-hafta, ${status.trimester}-trimestr.`);
+  // PREG-STATE-01: ilgari shu yerda `pregnancy` qatorining MAVJUDLIGI
+  // "homilador" deb qabul qilinardi. Lekin u — tug'ilish sanasi
+  // kalkulyatorining kiritmasi, homiladorlik belgisi emas. Natijada AI
+  // yordamchi homilador BO'LMAGAN ayollarga (jumladan homiladorlikni
+  // rejalashtirayotganlarga) "siz homiladorsiz, 1-hafta" deb aytardi —
+  // bu foydalanuvchi tomonidan ushlangan haqiqiy xato.
+  const pregnancyState = resolvePregnancyState({
+    declaredPregnant: onboarding?.isPregnant ?? false,
+    profile: pregnancy,
+  });
+  if (pregnancyState.status) {
+    const { currentWeek, trimester } = pregnancyState.status;
+    lines.push(`Hozir homilador — ${currentWeek}-hafta, ${trimester}-trimestr.`);
   } else if (cycleSettings.lastPeriodStart) {
     lines.push(`Oxirgi hayz boshlanishi: ${cycleSettings.lastPeriodStart} (o'rtacha sikl ${cycleSettings.averageCycleLength} kun).`);
   }

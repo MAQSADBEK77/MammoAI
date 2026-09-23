@@ -25,7 +25,7 @@ import { Emoji } from "./Emoji";
 // tipografiya). Brend ranglari (pushti/binafsha/moviy-yashil) MUI temasi
 // orqali saqlanadi — lib/mui-theme.tsx'ga qarang.
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "dark";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "dark" | "danger";
 
 // MUI'ning standart `.Mui-disabled` uslubi background/matn rangini ikkalasini
 // ham mustaqil kulrang tusga almashtiradi — natijada ba'zi variantlarda ikkalasi
@@ -59,6 +59,16 @@ function buttonSx(variant: ButtonVariant) {
         color: "#1F2937",
         "&:hover": { filter: "brightness(0.97)" },
         "&.Mui-disabled": { backgroundColor: "var(--color-secondary-light)", color: "#1F2937", opacity: 0.5 },
+      };
+    // CONFIRM-01: qaytarib bo'lmaydigan amallar uchun (akkauntni o'chirish,
+    // postni o'chirish) — tasdiqlash oynasida oqibat rang orqali ham
+    // ko'rinib turishi kerak, faqat matn bilan emas.
+    case "danger":
+      return {
+        backgroundColor: "var(--color-danger)",
+        color: "#fff",
+        "&:hover": { filter: "brightness(1.05)" },
+        "&.Mui-disabled": { backgroundColor: "var(--color-danger)", color: "#fff", opacity: 0.45 },
       };
     case "dark":
       return {

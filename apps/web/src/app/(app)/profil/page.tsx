@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { BloodType, BlockedUserEntry, CycleResponse, Goal, Language } from "@mammoai/shared";
 import { BLOOD_TYPES, getModeAccentColors, resolvePet } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useConfirm } from "@/lib/confirm";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Card, ErrorState } from "@/components/ui";
@@ -68,6 +69,7 @@ function resizeImageToDataUri(file: File): Promise<string> {
 
 export default function ProfilePage() {
   const { dict, language, setLanguage } = useI18n();
+  const confirm = useConfirm();
   const { user, onboardingProfile, refresh } = useSession();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -173,7 +175,7 @@ export default function ProfilePage() {
 
   async function changeMode(goal: Goal) {
     if (goal === onboardingProfile?.primaryGoal) return;
-    if (!window.confirm(dict.profile.modeChangeConfirm)) return;
+    if (!(await confirm(dict.profile.modeChangeConfirm))) return;
     setSaving(true);
     try {
       await api.onboarding.update({ primaryGoal: goal, isPregnant: goal === "pregnancy" });
@@ -225,7 +227,7 @@ export default function ProfilePage() {
   }
 
   async function logout() {
-    if (!window.confirm(dict.profile.logoutConfirmMessage)) return;
+    if (!(await confirm(dict.profile.logoutConfirmMessage))) return;
     setLoggingOut(true);
     try {
       await api.auth.logout();
@@ -238,11 +240,11 @@ export default function ProfilePage() {
   }
 
   async function deleteAccount() {
-    if (!window.confirm(dict.profile.deleteAccountConfirmMessage)) return;
+    if (!(await confirm({ message: dict.profile.deleteAccountConfirmMessage, destructive: true }))) return;
     // FIX2-21: ikkinchi tasdiqda SAVOL o'rniga tugma matni ko'rsatilardi
     // (mantiqsiz native dialog) — dict.profile.deleteAccountConfirmTitle
     // e'lon qilingan edi, lekin hech qaerda ishlatilmagan edi.
-    if (!window.confirm(dict.profile.deleteAccountConfirmTitle)) return;
+    if (!(await confirm({ message: dict.profile.deleteAccountConfirmTitle, destructive: true }))) return;
     setDeleting(true);
     try {
       await api.me.deleteAccount();

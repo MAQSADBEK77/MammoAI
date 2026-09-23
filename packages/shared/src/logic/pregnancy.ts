@@ -41,6 +41,72 @@ export function getPregnancyStatus(
   return { dueDate, lastMenstrualPeriod: lmp, currentWeek, currentDay, trimester, daysRemaining };
 }
 
+// ---------------------------------------------------------------------------
+// PREG-STATE-01 — "Ayol hozir homiladormi?" savoliga YAGONA javob manbai.
+//
+// Topilgan xato: `pregnancy_profiles` jadvalidagi qator "homilador" degani
+// deb qabul qilinardi. Aslida u — tug'ilish sanasi KALKULYATORINING
+// saqlangan kiritmasi: homiladorlikni REJALASHTIRAYOTGAN ayol ham uni
+// to'ldiradi, keyin rejimni almashtirgan ayolda ham qatorlar qolib ketadi.
+//
+// Production o'lchovi (2026-09-23): 14 ta homiladorlik yozuvining 11 tasi
+// homilador BO'LMAGAN ayollarga tegishli edi (5 tasi — "homiladorlikni
+// rejalashtirish" rejimida). Oqibatlari uch joyda ko'rindi:
+//   1. AI yordamchi ularga "siz homiladorsiz, 1-hafta" deb aytardi;
+//   2. tekshiruvlar ro'yxatiga homiladorlik bandlari qo'shilardi;
+//   3. kundalik eslatmalar BUTUNLAY to'xtardi (jimgina).
+//
+// Yagona haqiqat manbai — ayolning O'ZI profilda belgilagan holati
+// (`onboarding_profiles.is_pregnant`, "Rejim" tanlovi bilan birga
+// o'rnatiladi). Production'da bu bayroq to'liq izchil: `true` faqat
+// `primary_goal = 'pregnancy'` bo'lganlarda.
+// ---------------------------------------------------------------------------
+
+/** Tug'ruqdan keyingi davr — taxminiy sanadan keyingi 42 kun. */
+export const POSTPARTUM_WINDOW_DAYS = 42;
+/** Taxminiy sanadan keyin homiladorlik bandlari darhol yo'qolmasligi uchun
+ * "sabr oynasi" — haqiqiy tug'ruq taxminiy sanadan bir necha kun/hafta
+ * kechikishi tabiiy hol. */
+export const POSTPARTUM_GRACE_DAYS = 14;
+
+export interface PregnancyStateInput {
+  /** Ayolning O'ZI belgilagan holat (profil/rejim tanlovi). */
+  declaredPregnant: boolean;
+  /** Tug'ilish sanasi kalkulyatorining saqlangan kiritmasi — bu O'Z-O'ZIDAN
+   * homiladorlik belgisi EMAS. */
+  profile: Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate"> | null;
+}
+
+export interface PregnancyState {
+  /** Homiladorlik bandlarini/kontekstini yoqadigan yagona bayroq. */
+  isPregnant: boolean;
+  isPostpartum: boolean;
+  /** Taxminiy sanadan o'tgan kunlar (manfiy — hali yetib kelmagan). */
+  daysSinceDue: number | null;
+  /** Hafta/trimestr — FAQAT `isPregnant` true bo'lganda to'ldiriladi. */
+  status: PregnancyStatus | null;
+}
+
+export function resolvePregnancyState(input: PregnancyStateInput, today: string = tashkentDateStr()): PregnancyState {
+  const { declaredPregnant, profile } = input;
+  const dueDate = profile?.dueDate ?? (profile?.lastMenstrualPeriod ? dueDateFromLmp(profile.lastMenstrualPeriod) : null);
+  const daysSinceDue = dueDate ? daysBetween(dueDate, today) : null;
+
+  // Tug'ruqdan keyingi davr ATAYLAB `declaredPregnant`ga bog'lanmagan:
+  // tug'ib bo'lgan ayol rejimini almashtirgan bo'lsa ham, unga tug'ruqdan
+  // keyingi tekshiruvlar (6-haftalik ko'rik, depressiya skrininggi) kerak
+  // bo'lib qolaveradi.
+  const isPostpartum = daysSinceDue !== null && daysSinceDue > POSTPARTUM_GRACE_DAYS && daysSinceDue <= POSTPARTUM_WINDOW_DAYS;
+
+  const isPregnant = declaredPregnant && !isPostpartum;
+  return {
+    isPregnant,
+    isPostpartum,
+    daysSinceDue,
+    status: isPregnant && profile ? getPregnancyStatus(profile, today) : null,
+  };
+}
+
 // Haftalik o'lcham taqqoslash — spec §3: "bolangiz hozir limon kattaligida" formati.
 // Har bir bosqich bir nechta haftani qamrab oladi (haqiqiy 40 ta noyob illyustratsiya
 // o'rniga ~12 ta bosqich — placeholder, keyin dizayner tomonidan almashtiriladi).

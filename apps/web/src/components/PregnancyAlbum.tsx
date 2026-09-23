@@ -15,12 +15,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PregnancyAlbumPhoto } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useConfirm } from "@/lib/confirm";
 import { api } from "@/lib/api";
 import { Card, Button, LoadingSpinner, ErrorState } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 
 export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
   const { dict } = useI18n();
+  const confirm = useConfirm();
   const [photos, setPhotos] = useState<PregnancyAlbumPhoto[] | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
   }
 
   async function remove(id: string) {
-    if (!window.confirm(dict.pregnancy.albumDeleteConfirm)) return;
+    if (!(await confirm({ message: dict.pregnancy.albumDeleteConfirm, destructive: true }))) return;
     setPhotos((cur) => (cur ?? []).filter((p) => p.id !== id));
     await api.pregnancy.album.remove(id).catch(() => {});
   }

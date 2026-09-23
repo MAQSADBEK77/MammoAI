@@ -7,6 +7,7 @@ import { SessionProvider } from "@/lib/session";
 import { MuiThemeProvider } from "@/lib/mui-theme";
 import { IllustrationsProvider } from "@/lib/illustrations";
 import { AnalyticsProvider } from "@/lib/analytics";
+import { ConfirmProvider } from "@/lib/confirm";
 import { TelegramFullscreenSetup } from "@/lib/telegram";
 import { FORCED_LIGHT_PREFIXES } from "@/lib/theme-routes";
 
@@ -151,7 +152,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SessionProvider>
             <IllustrationsProvider>
               <MuiThemeProvider>
-                <AnalyticsProvider>{children}</AnalyticsProvider>
+                <AnalyticsProvider>
+                  {/* CONFIRM-01: MuiThemeProvider ICHIDA — tasdiqlash oynasi
+                      ilovaning mavzusidan (rang, qorong'u rejim) foydalanadi. */}
+                  <ConfirmProvider>{children}</ConfirmProvider>
+                </AnalyticsProvider>
               </MuiThemeProvider>
             </IllustrationsProvider>
           </SessionProvider>

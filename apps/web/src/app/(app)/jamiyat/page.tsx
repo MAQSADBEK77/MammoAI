@@ -18,6 +18,7 @@ import {
 } from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
+import { useConfirm } from "@/lib/confirm";
 import { CommunityPostSheet } from "@/components/screens/CommunityPostSheet";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -71,6 +72,7 @@ function FilterChip({ active, label, onClick }: { active: boolean; label: string
 
 export default function CommunityPage() {
   const { dict } = useI18n();
+  const confirm = useConfirm();
   const { onboardingProfile } = useSession();
 
   const [stats, setStats] = useState<CommunityStats | null>(null);
@@ -265,13 +267,13 @@ export default function CommunityPage() {
 
 
   async function removeComment(post: CommunityPost, comment: CommunityComment) {
-    if (!window.confirm(dict.community.deleteCommentConfirm)) return;
+    if (!(await confirm({ message: dict.community.deleteCommentConfirm, destructive: true }))) return;
     await api.community.deleteComment(post.id, comment.id);
     setPosts((prev) => (prev ? prev.map((p) => (p.id === post.id ? { ...p, commentsCount: Math.max(0, p.commentsCount - 1) } : p)) : prev));
   }
 
   async function removePost(post: CommunityPost) {
-    if (!window.confirm(dict.community.deletePostConfirm)) return;
+    if (!(await confirm({ message: dict.community.deletePostConfirm, destructive: true }))) return;
     await api.community.deletePost(post.id);
     setPosts((prev) => (prev ? prev.filter((p) => p.id !== post.id) : prev));
     setTotal((t) => Math.max(0, t - 1));
@@ -315,7 +317,7 @@ export default function CommunityPage() {
     if (!menuTarget) return;
     const { postId, commentId } = menuTarget;
     closeMenu();
-    if (!window.confirm(dict.community.blockAuthorConfirm)) return;
+    if (!(await confirm({ message: dict.community.blockAuthorConfirm, destructive: true }))) return;
     try {
       if (commentId) await api.community.blockCommentAuthor(postId, commentId);
       else await api.community.blockPostAuthor(postId);

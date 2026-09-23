@@ -12,6 +12,7 @@ import {
 import type { PartnerShareSettings, PartnerStatusResponse } from "@mammoai/shared";
 import { MOOD_EMOJI, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useConfirm } from "@/lib/confirm";
 import { api } from "@/lib/api";
 import { Button, Card, LoadingSpinner, ErrorState, ScreenHeader, Badge } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
@@ -24,6 +25,7 @@ import { PartnerChatDialog } from "./PartnerChatDialog";
  */
 export function HamkorScreen() {
   const { dict } = useI18n();
+  const confirm = useConfirm();
   const [status, setStatus] = useState<PartnerStatusResponse | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
   const [codeInput, setCodeInput] = useState("");
@@ -99,7 +101,7 @@ export function HamkorScreen() {
   }
 
   async function disconnect() {
-    if (!window.confirm(dict.partner.disconnectConfirm) || disconnecting) return;
+    if (disconnecting || !(await confirm({ message: dict.partner.disconnectConfirm, destructive: true }))) return;
     setDisconnecting(true);
     // FIX-UX-10: ilgari try/catch yo'q edi va tugma so'rov davomida
     // o'chirilmasdi — xato bo'lganda foydalanuvchi hamkor hali ham ulangan

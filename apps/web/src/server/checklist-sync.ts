@@ -4,20 +4,18 @@ import {
   computeCycleLengths,
   daysBetween,
   generateChecklist,
-  getPregnancyStatus,
   isCycleIrregular,
   isPerimenopauseGoal,
   isTryingToConceiveGoal,
+  resolvePregnancyState,
   tashkentDateStr,
 } from "@mammoai/shared";
 import { ensureChecklistItem, getOnboardingProfile, getPregnancyProfile, listCycleLogs } from "./repo";
 
 // FIX-CHECKUPS: tug'ruqdan keyingi standart kuzatuv oynasi.
-const POSTPARTUM_WINDOW_DAYS = 42;
-// FIX3-01: taxminiy tug'ilish sanasidan darhol postpartum'ga o'tmaslik
-// uchun — pregnancy.ts#getPregnancyStatus bilan bir xil "hali homilador"
-// chegarasi (42-hafta = taxminiy sanadan 14 kun keyingacha).
-const POSTPARTUM_GRACE_DAYS = 14;
+// PREG-STATE-01: POSTPARTUM_* konstantalari endi packages/shared'da
+// (resolvePregnancyState bilan bir joyda) — bu yerdagi nusxalar olib
+// tashlandi, ikki joyda turishi ularning ajralib ketishiga olib kelardi.
 
 /**
  * Onboarding profiliga va joriy holatga qarab checklist bandlarini yaratadi/yangilaydi.
@@ -51,16 +49,17 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
   // — due_date hisob-kitobi ertalabki soatlarda bir kun orqada chiqishi mumkin edi.
   const today = tashkentDateStr();
 
-  // FIX-CHECKUPS/FIX3-01: tug'ruqdan keyingi ~42 kunlik oyna — bu davrda
-  // foydalanuvchi endi "homilador" emas, "postpartum" hisoblanadi. ILGARI
-  // `daysSinceDue > 0` edi — taxminiy sanadan ATIGI 1 kun o'tishi bilan
-  // homiladorlik bandlarini butunlay yo'qotardi, holbuki haqiqiy tug'ruq
-  // taxminiy sanadan bir necha kun/hafta kechikishi tabiiy hol —
-  // POSTPARTUM_GRACE_DAYS shu oynani hisobga oladi.
-  const daysSinceDue = pregnancy?.dueDate ? daysBetween(pregnancy.dueDate, today) : null;
-  const isPostpartum = daysSinceDue !== null && daysSinceDue > POSTPARTUM_GRACE_DAYS && daysSinceDue <= POSTPARTUM_WINDOW_DAYS;
-  const isPregnant = (profile.isPregnant || !!pregnancy?.dueDate) && !isPostpartum;
-  const pregnancyWeek = isPregnant && pregnancy ? (getPregnancyStatus(pregnancy, today)?.currentWeek ?? null) : null;
+  // PREG-STATE-01: ilgari shu yerda `profile.isPregnant || !!pregnancy?.dueDate`
+  // yozilgan edi — ya'ni tug'ilish sanasi KALKULYATORINI to'ldirgan ayol
+  // homilador deb hisoblanardi. Production'da 11 ta ayol (jumladan
+  // homiladorlikni REJALASHTIRAYOTGAN 5 tasi) shu sababli o'ziga tegishli
+  // bo'lmagan homiladorlik bandlarini olgan. Endi yagona manba —
+  // resolvePregnancyState (packages/shared), ayolning o'z belgisi.
+  const { isPregnant, isPostpartum, daysSinceDue, status: pregnancyStatus } = resolvePregnancyState(
+    { declaredPregnant: profile.isPregnant, profile: pregnancy },
+    today
+  );
+  const pregnancyWeek = pregnancyStatus?.currentWeek ?? null;
 
   const generated = generateChecklist({
     age: profile.age,

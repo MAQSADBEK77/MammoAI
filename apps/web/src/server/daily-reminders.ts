@@ -7,11 +7,12 @@
 // kelishilgan). Ustuvorlik: hayz/unumdor kun yaqinlashgani > bugun hali
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
-import { deriveAdaptiveCycleSettings, dictionaries, getPregnancyStatus, predictCycle, tashkentDateStr } from "@mammoai/shared";
+import { deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
 import {
   createSystemNotification,
   getCycleSettings,
+  getOnboardingProfile,
   getPregnancyProfile,
   hasLoggedToday,
   hasSentDailyReminderRecently,
@@ -39,8 +40,14 @@ async function buildReminderMessage(userId: string, language: Language): Promise
   // Homiladorlik uchun alohida eslatma matni hali yo'q — shuning uchun
   // bunday holatda shunchaki hech narsa yuborilmaydi (soxta/chalkash xabar
   // yuborishdan ko'ra yaxshiroq).
-  const pregnancyProfile = await getPregnancyProfile(userId);
-  if (pregnancyProfile && getPregnancyStatus(pregnancyProfile)) return null;
+  // PREG-STATE-01: ilgari pregnancy_profiles qatorining MAVJUDLIGI yetarli
+  // edi — natijada homilador bo'lmagan 11 ayol (jumladan homiladorlikni
+  // rejalashtirayotgan 5 tasi) kundalik eslatmalarni BUTUNLAY, jimgina
+  // olmay qolgan. Endi ayolning o'z belgisiga qaraymiz.
+  const [onboarding, pregnancyProfile] = await Promise.all([getOnboardingProfile(userId), getPregnancyProfile(userId)]);
+  if (resolvePregnancyState({ declaredPregnant: onboarding?.isPregnant ?? false, profile: pregnancyProfile }).isPregnant) {
+    return null;
+  }
 
   const [loggedToday, settings, logs] = await Promise.all([
     hasLoggedToday(userId),

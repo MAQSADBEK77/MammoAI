@@ -21,6 +21,7 @@ import {
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
 import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useConfirm } from "@/lib/confirm";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Button, Card, LoadingSpinner, ErrorState, EmptyState, IconChip, Badge, DateWheelPicker } from "@/components/ui";
@@ -117,6 +118,7 @@ export type CycleScreenVariant = "classic" | "today";
 export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVariant } = {}) {
   const isTodayVariant = variant === "today";
   const { dict } = useI18n();
+  const confirm = useConfirm();
   const { onboardingProfile, user, applyMeResponse } = useSession();
   const { openDrawer } = useAppDrawer();
   const router = useRouter();
@@ -652,11 +654,12 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
    * bosilgan sana) — faqat mavjud yozuv tahrirlanayotganda ko'rsatiladigan
    * tugma orqali chaqiriladi. */
   /** FIX-08: boshqa barcha yo'q qiluvchi amallar (post/comment o'chirish,
-   * muallifni bloklash — jamiyat/page.tsx) window.confirm bilan himoyalangan,
+   * muallifni bloklash — jamiyat/page.tsx) tasdiqlash bilan himoyalangan,
    * bu esa yo'q edi — tasodifiy bosish yozuvni qaytarib bo'lmas holda o'chirib
-   * yuborardi. */
+   * yuborardi. CONFIRM-01: tasdiqlash endi ilova ichidagi oyna orqali —
+   * `window.confirm` Telegram Mini App'da umuman ishlamaydi. */
   async function removeLog() {
-    if (!window.confirm(dict.cycle.deleteLogConfirm)) return;
+    if (!(await confirm({ message: dict.cycle.deleteLogConfirm, destructive: true }))) return;
     setDeletingLog(true);
     try {
       const res = await api.cycle.deleteLog(logDate);
