@@ -755,21 +755,40 @@ function OnboardingPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  // "Ha" bosilganda haqiqiy brauzer ruxsat so'rovi (Notification.requestPermission)
-  // chiqadi — avvalgi versiyada bu shunchaki ichki belgi (survey holati) edi,
-  // haqiqiy OS/brauzer ruxsati so'ralmasdan. Brauzer ruxsatni allaqachon rad etgan
-  // bo'lsa, dialog qayta chiqmaydi (brauzer xotirasi) — natija shunga qarab kelib,
-  // "Yo'q" tanlangandek ko'rinadi (implicit signal, alohida xabar shart emas).
+  /**
+   * NOTIF-01: eslatmalarni yoqish.
+   *
+   * ILGARIGI XATO: rozilik brauzerning `Notification.requestPermission()`
+   * natijasiga bog'langan edi. Lekin kunlik eslatmalar brauzer push'i
+   * orqali EMAS — TELEGRAM BOTI orqali yuboriladi
+   * (server/daily-reminders.ts), unga hech qanday brauzer ruxsati kerak
+   * emas.
+   *
+   * Telegram Mini App webview'ida `Notification` API ko'pincha UMUMAN
+   * mavjud emas yoki ruxsat so'rovi bloklanadi. Natijada ayol "Yoqish"ni
+   * bosardi, brauzer tarafi yiqilardi va u jimgina
+   * `notificationsEnabled = false` bo'lib qolardi — garchi haqiqiy
+   * yetkazish kanali (Telegram) mukammal ishlab tursa ham.
+   *
+   * O'lchandi: 140 ayolning Telegram'i bog'langan, lekin atigi 47 tasida
+   * bildirishnoma yoqilgan.
+   *
+   * Endi: "Yoqish" bosilishining O'ZI rozilik. Brauzer ruxsati esa
+   * qo'shimcha kanal — so'raladi, lekin uning natijasi foydalanuvchining
+   * aniq tanlovini BEKOR QILMAYDI.
+   */
   async function requestNotificationPermission(wantsEnabled: boolean) {
-    if (!wantsEnabled || typeof window === "undefined" || !("Notification" in window)) {
+    if (!wantsEnabled) {
       setSurvey((s) => ({ ...s, notificationsEnabled: false }));
       return;
     }
+    setSurvey((s) => ({ ...s, notificationsEnabled: true }));
     try {
-      const permission = await Notification.requestPermission();
-      setSurvey((s) => ({ ...s, notificationsEnabled: permission === "granted" }));
+      if (typeof window !== "undefined" && "Notification" in window) {
+        await Notification.requestPermission();
+      }
     } catch {
-      setSurvey((s) => ({ ...s, notificationsEnabled: false }));
+      // Brauzer push'i ishlamadi — Telegram kanali baribir ishlaydi.
     }
   }
 
