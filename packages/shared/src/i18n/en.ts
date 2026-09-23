@@ -1478,6 +1478,13 @@ const en: Dictionary = {
       },
     },
   },
+  // NOTIF-02: eslatmalarni yoqish taklifi (bosh ekranda, bir marta).
+  notificationsOptIn: {
+    title: "Turn on reminders?",
+    body: "We'll message you on Telegram when your period is close and when a check-up is due. No more than once a day.",
+    enable: "Turn on",
+    later: "Later",
+  },
   apiErrors: {
     invalid_tag: "Invalid topic",
     post_too_short: "Write at least a few words",

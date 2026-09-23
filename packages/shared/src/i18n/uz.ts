@@ -1663,6 +1663,13 @@ const uz = {
       },
     },
   },
+  // NOTIF-02: eslatmalarni yoqish taklifi (bosh ekranda, bir marta).
+  notificationsOptIn: {
+    title: "Eslatmalarni yoqasizmi?",
+    body: "Hayzingiz yaqinlashganda va tekshiruv muddati kelganda Telegram orqali xabar beramiz. Kuniga bittadan ko'p emas.",
+    enable: "Yoqish",
+    later: "Keyinroq",
+  },
   apiErrors: {
     invalid_tag: "Mavzu (tag) noto'g'ri",
     post_too_short: "Kamida bir necha so'z yozing",

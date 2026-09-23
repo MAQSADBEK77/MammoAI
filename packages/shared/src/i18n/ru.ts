@@ -1476,6 +1476,13 @@ const ru: Dictionary = {
       },
     },
   },
+  // NOTIF-02: eslatmalarni yoqish taklifi (bosh ekranda, bir marta).
+  notificationsOptIn: {
+    title: "Включить напоминания?",
+    body: "Сообщим в Telegram, когда приближается менструация и когда подходит срок обследования. Не чаще одного раза в день.",
+    enable: "Включить",
+    later: "Позже",
+  },
   apiErrors: {
     invalid_tag: "Неверная тема",
     post_too_short: "Напишите хотя бы несколько слов",
