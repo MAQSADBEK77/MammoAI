@@ -17,6 +17,8 @@ interface SessionContextValue {
   /** AI Yordamchi + chuqur Statistika — Premium. To'lov provayderi hali
    * ulanmagan, admin panel orqali qo'lda beriladi (server/repo.ts#grantPremium). */
   hasPremium: boolean;
+  /** ATTN-01: muddati o'tgan tekshiruvlar soni (pastki menyudagi belgi). */
+  overdueCheckups: number;
   /** `user.theme` "system" bo'lganda OS/brauzer afzalligiga qarab hal qilingan
    * aniq qiymat — MuiThemeProvider shundan o'qiydi (CSS o'zgaruvchilariga
    * bog'liq bo'lmagan MUI palette.mode uchun). */
@@ -34,6 +36,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
   const [hasPremium, setHasPremium] = useState(false);
+  const [overdueCheckups, setOverdueCheckups] = useState(0);
   // FIX-UX-02: boshlang'ich qiymat serverdagi bilan BIR XIL ("light") bo'lishi
   // shart — `systemPrefersDark()`ni to'g'ridan-to'g'ri shu yerda chaqirish
   // hydration mismatch'ga olib kelardi (server har doim "light" chiqaradi,
@@ -48,6 +51,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setUser(res.user);
       setOnboardingProfile(res.onboardingProfile);
       setHasPremium(res.hasPremium);
+      setOverdueCheckups(res.overdueCheckups ?? 0);
       setLanguage(res.user.language);
       setStatus(res.onboardingProfile ? "onboarded" : "anonymous");
     },
@@ -131,8 +135,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [onboardingProfile?.primaryGoal]);
 
   const value = useMemo<SessionContextValue>(
-    () => ({ status, user, onboardingProfile, hasPremium, resolvedTheme, refresh, applyMeResponse }),
-    [status, user, onboardingProfile, hasPremium, resolvedTheme, refresh, applyMeResponse]
+    () => ({ status, user, onboardingProfile, hasPremium, overdueCheckups, resolvedTheme, refresh, applyMeResponse }),
+    [status, user, onboardingProfile, hasPremium, overdueCheckups, resolvedTheme, refresh, applyMeResponse]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

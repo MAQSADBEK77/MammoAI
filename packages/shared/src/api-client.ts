@@ -80,6 +80,9 @@ export interface MeResponse {
   user: User;
   onboardingProfile: OnboardingProfile | null;
   hasPremium: boolean;
+  /** ATTN-01: muddati o'tgan tekshiruvlar soni — pastki menyudagi belgi
+   * uchun. Sessiya bilan birga bir marta keladi, alohida so'rov shart emas. */
+  overdueCheckups: number;
 }
 
 export interface PhoneCodeStartPayload {

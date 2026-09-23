@@ -1597,6 +1597,25 @@ export async function listChecklistItems(userId: string): Promise<ChecklistItem[
   return items;
 }
 
+/**
+ * ATTN-01 — muddati o'tgan tekshiruvlar SONI (pastki menyudagi belgi uchun).
+ *
+ * `listChecklistItems` dan ataylab alohida: u butun ro'yxatni o'qiydi VA
+ * yon ta'sir sifatida statuslarni yangilaydi. Bu esa HAR SAHIFADA
+ * chaqiriladi, shuning uchun faqat sanaydi — hech narsa yozmaydi.
+ */
+export async function countOverdueChecklistItems(userId: string): Promise<number> {
+  await ensureSchema();
+  const [{ n }] = (await sql`
+    SELECT count(*)::int AS n FROM checklist_items
+    WHERE user_id = ${userId}
+      AND status IN ('pending', 'overdue')
+      AND due_date IS NOT NULL
+      AND due_date < ${today()}
+  `) as unknown as { n: number }[];
+  return n;
+}
+
 export async function ensureChecklistItem(
   userId: string,
   type: ChecklistItemType,

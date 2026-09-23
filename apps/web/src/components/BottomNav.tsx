@@ -23,7 +23,7 @@ import { useAssistantPeek } from "@/lib/assistant-peek";
 export function BottomNav() {
   const pathname = usePathname();
   const { dict } = useI18n();
-  const { onboardingProfile } = useSession();
+  const { onboardingProfile, overdueCheckups } = useSession();
 
   // "Asosiy" — Tsikl/Homiladorlik (rejimga qarab) + Klinikalar birlashtirilgan
   // yagona bosh sahifa. Profil pastki menyuda emas — faqat chap burger menyusi
@@ -125,6 +125,11 @@ export function BottomNav() {
           // turadi.
           const highlighted = href === "/yordamchi" && peeking;
           const IconComponent = active || highlighted ? Icon : IconOutline;
+          // ATTN-01: muddati o'tgan tekshiruvlar soni. Bu shunchaki diqqatni
+          // tortish uchun emas — u AYTADI: "ikkita ish kechikkan". Ikonkani
+          // kattalashtirish bezak bo'lardi va foydalanuvchi unga ko'nikib
+          // qolardi; son esa har safar boshqacha, va unga sabab bor.
+          const badge = href === "/tekshiruvlar" ? overdueCheckups : 0;
           return (
             <Link
               key={href}
@@ -137,7 +142,7 @@ export function BottomNav() {
                   yubormaydi (font-size o'zgarsa qator qayta joylashardi). */}
               <span
                 className={clsx(
-                  "flex items-center justify-center transition-transform duration-300",
+                  "relative flex items-center justify-center transition-transform duration-300",
                   highlighted && "scale-[1.35]"
                 )}
                 style={{ transitionTimingFunction: "var(--motion-ease-brand)" }}
@@ -146,6 +151,11 @@ export function BottomNav() {
                   sx={{ fontSize: 24 }}
                   className={active || highlighted ? "text-accent" : "text-text-muted"}
                 />
+                {badge > 0 && (
+                  <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-white">
+                    {badge > 9 ? "9+" : badge}
+                  </span>
+                )}
               </span>
               <span className={clsx("leading-none", active || highlighted ? "text-accent" : "text-text-muted")}>
                 {label}

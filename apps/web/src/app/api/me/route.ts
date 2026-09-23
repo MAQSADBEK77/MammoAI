@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { deleteUser, getOnboardingProfile, hasPremiumAccess, updateUser } from "@/server/repo";
+import { countOverdueChecklistItems, deleteUser, getOnboardingProfile, hasPremiumAccess, updateUser } from "@/server/repo";
 import { ApiError, jsonError, requireUser } from "@/server/api-utils";
 import { SESSION_COOKIE } from "@/server/session";
 import { PET_IDS, type User } from "@mammoai/shared";
@@ -7,8 +7,12 @@ import { PET_IDS, type User } from "@mammoai/shared";
 export async function GET(request: NextRequest) {
   try {
     const user = await requireUser(request);
-    const [onboardingProfile, hasPremium] = await Promise.all([getOnboardingProfile(user.id), hasPremiumAccess(user.id)]);
-    return NextResponse.json({ user, onboardingProfile, hasPremium });
+    const [onboardingProfile, hasPremium, overdueCheckups] = await Promise.all([
+      getOnboardingProfile(user.id),
+      hasPremiumAccess(user.id),
+      countOverdueChecklistItems(user.id),
+    ]);
+    return NextResponse.json({ user, onboardingProfile, hasPremium, overdueCheckups });
   } catch (error) {
     return jsonError(error);
   }
