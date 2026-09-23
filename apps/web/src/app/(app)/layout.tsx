@@ -6,11 +6,11 @@ import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 import { BottomNav } from "@/components/BottomNav";
 import { AppDrawer, AppDrawerProvider } from "@/components/AppDrawer";
-import { LoadingSpinner } from "@/components/ui";
+import { ErrorState, LoadingSpinner } from "@/components/ui";
 import { PageTransition } from "@/components/PageTransition";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { status } = useSession();
+  const { status, refresh } = useSession();
   const { dict } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
@@ -57,6 +57,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     router.replace("/onboarding");
   }, [status, router, pathname]);
+
+  // SESSION-KEEP-01: "server javob bermadi" holati endi ALOHIDA. Ilgari u
+  // "anonymous"ga qo'shilib ketardi va ayol onboarding'ga otib yuborilardi
+  // — ya'ni vaqtinchalik nosozlik uni o'z hisobidan quvib chiqarardi.
+  // Endi qayta urinish taklif qilinadi, sessiya esa joyida qoladi.
+  if (status === "error") {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-background p-6">
+        <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: () => void refresh() }} />
+      </div>
+    );
+  }
 
   if (status !== "onboarded") {
     return (
