@@ -948,9 +948,9 @@ const en: Dictionary = {
   community: {
     title: "Community",
     subtitle: "Share experiences and thoughts with other women",
-    statsMembers: (n: number) => `${n} members`,
-    statsPosts: (n: number) => `${n} posts`,
-    statsToday: (n: number) => `${n} today`,
+    statsMembers: "members",
+    statsPosts: "posts",
+    statsToday: "today",
     filterAll: "All",
     tags: {
       cycle: "Periods and cycle",
@@ -972,8 +972,7 @@ const en: Dictionary = {
     anonymousAuthor: "Anonymous member",
     noCommentsYet: "No comments yet — be the first to reply.",
     tabForum: "Forum",
-    moderationNotice:
-      "Women share personal experience here — this is not medical advice. We remove inappropriate posts but do not verify whether answers are correct. If you are worried, see a doctor.",
+    moderationNotice: "Women's personal experience — not medical advice. If something worries you, see a doctor.",
     tabMyQuestions: "My questions",
     tabMyAnswers: "My answers",
     emptyMyQuestions: "You have not asked anything yet. If you have a question, ask — the community will answer.",

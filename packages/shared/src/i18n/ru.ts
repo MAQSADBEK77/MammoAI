@@ -946,9 +946,9 @@ const ru: Dictionary = {
   community: {
     title: "Сообщество",
     subtitle: "Делитесь опытом и советами с другими женщинами",
-    statsMembers: (n: number) => `${n} участниц`,
-    statsPosts: (n: number) => `${n} постов`,
-    statsToday: (n: number) => `Сегодня ${n}`,
+    statsMembers: "участниц",
+    statsPosts: "постов",
+    statsToday: "сегодня",
     filterAll: "Все",
     tags: {
       cycle: "Месячные и цикл",
@@ -970,8 +970,7 @@ const ru: Dictionary = {
     anonymousAuthor: "Аноним",
     noCommentsYet: "Пока нет комментариев — ответьте первой.",
     tabForum: "Форум",
-    moderationNotice:
-      "Здесь женщины делятся личным опытом — это не медицинская консультация. Мы удаляем неприемлемые записи, но не проверяем достоверность ответов. При беспокойстве обратитесь к врачу.",
+    moderationNotice: "Личный опыт женщин — не медицинский совет. Если что-то беспокоит, обратитесь к врачу.",
     tabMyQuestions: "Мои вопросы",
     tabMyAnswers: "Мои ответы",
     emptyMyQuestions: "Вы ещё не задавали вопросов. Есть вопрос — спросите, сообщество ответит.",

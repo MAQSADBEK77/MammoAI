@@ -400,20 +400,21 @@ export default function CommunityPage() {
         </Card>
       )}
 
+      {/* COMM-05: ilgari bu uchta baland karta edi va HAR BIRIDA raqam IKKI
+          MARTA chiqardi ("154" ustida "154 a'zo") — ekranning yuqori uchdan
+          biri hech qanday yangi ma'lumot bermaydigan matn bilan band edi.
+          Endi bitta ixcham qator: raqam + sof yorliq. */}
       {stats && (
-        <div className="animate-fade-in-up grid grid-cols-3 gap-3">
-          <Card variant="flat" className="p-3! text-center">
-            <p className="text-lg font-extrabold text-text-primary">{stats.totalMembers}</p>
-            <p className="text-[11px] text-text-secondary">{dict.community.statsMembers(stats.totalMembers)}</p>
-          </Card>
-          <Card variant="flat" className="p-3! text-center">
-            <p className="text-lg font-extrabold text-text-primary">{stats.totalPosts}</p>
-            <p className="text-[11px] text-text-secondary">{dict.community.statsPosts(stats.totalPosts)}</p>
-          </Card>
-          <Card variant="flat" className="p-3! text-center">
-            <p className="text-lg font-extrabold text-text-primary">{stats.postsToday}</p>
-            <p className="text-[11px] text-text-secondary">{dict.community.statsToday(stats.postsToday)}</p>
-          </Card>
+        <div className="animate-fade-in-up flex items-center justify-around rounded-2xl bg-surface-muted px-4 py-2.5">
+          {[
+            { value: stats.totalMembers, label: dict.community.statsMembers },
+            { value: stats.totalPosts, label: dict.community.statsPosts },
+            { value: stats.postsToday, label: dict.community.statsToday },
+          ].map(({ value, label }) => (
+            <p key={label} className="text-sm text-text-secondary">
+              <span className="font-extrabold text-text-primary">{value}</span> {label}
+            </p>
+          ))}
         </div>
       )}
 

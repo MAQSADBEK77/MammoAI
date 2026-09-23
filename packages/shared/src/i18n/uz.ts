@@ -1057,9 +1057,9 @@ const uz = {
   community: {
     title: "Jamiyat",
     subtitle: "Boshqa ayollar bilan tajriba va fikr almashing",
-    statsMembers: (n: number) => `${n} a'zo`,
-    statsPosts: (n: number) => `${n} post`,
-    statsToday: (n: number) => `Bugun ${n} ta`,
+    statsMembers: "a'zo",
+    statsPosts: "post",
+    statsToday: "bugun",
     filterAll: "Barchasi",
     tags: {
       cycle: "Hayz va sikl",
@@ -1086,8 +1086,7 @@ const uz = {
     /** COMM-04: lenta tepasidagi ogohlantirish. Sog'liq jamiyatida bu
      * bezak emas — savollar tibbiy va noto'g'ri javob zarar keltirishi
      * mumkin. */
-    moderationNotice:
-      "Bu yerda ayollar o'z tajribasini bo'lishadi — bu tibbiy maslahat emas. Biz nomaqbul yozuvlarni olib tashlaymiz, lekin javoblarning to'g'riligini tekshirmaymiz. Tashvishlansangiz shifokorga murojaat qiling.",
+    moderationNotice: "Ayollarning shaxsiy tajribasi — tibbiy maslahat emas. Tashvishlansangiz shifokorga murojaat qiling.",
     tabMyQuestions: "Savollarim",
     tabMyAnswers: "Javoblarim",
     emptyMyQuestions: "Hali savol bermabsiz. Savolingiz bo'lsa — so'rang, jamiyat javob beradi.",
