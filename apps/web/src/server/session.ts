@@ -13,6 +13,25 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 365; // 1 yil — anonim hisob uz
 function ensureSessionSecret(): string {
   if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
 
+  // SESSION-SECRET-01: production'da bu holat JIDDIY nosozlik, lekin ilgari
+  // butunlay jim o'tardi. Oqibati: har bir server nusxasi o'z TASODIFIY
+  // sirini yaratadi, ya'ni
+  //   • har deployda hamma foydalanuvchi tizimdan chiqib ketadi;
+  //   • deploysiz ham chiqib ketadi — bir nusxa imzolagan cookie'ni
+  //     boshqa nusxa rad etadi (yuklama bir necha nusxaga taqsimlanadi).
+  //
+  // ATAYLAB `throw` QILINMAYDI: agar o'zgaruvchi hozir qo'yilmagan bo'lsa,
+  // xato tashlash butun saytni darhol o'chirib qo'yardi — ya'ni tuzatish
+  // muammodan battar bo'lardi. Buning o'rniga baland ovozda log yoziladi
+  // va holat /api/version orqali tashqaridan ko'rinadi.
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "[SESSION-SECRET-01] JIDDIY: SESSION_SECRET muhit o'zgaruvchisi qo'yilmagan. " +
+        "Har bir server nusxasi tasodifiy sir yaratadi — foydalanuvchilar tizimdan " +
+        "o'z-o'zidan chiqib ketadi. Vercel → Settings → Environment Variables'ga qo'shing."
+    );
+  }
+
   const envPath = path.join(process.cwd(), ".env.local");
   const generated = randomBytes(48).toString("hex");
 

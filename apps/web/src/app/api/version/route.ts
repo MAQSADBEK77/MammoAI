@@ -14,6 +14,19 @@ import { NextResponse } from "next/server";
  *   • mos kelmasa → deploy o'tmagan yoki hali ketyapti.
  *
  * Maxfiy ma'lumot yo'q: commit SHA'si va vaqt allaqachon ochiq repoda.
+ *
+ * SESSION-SECRET-01: `config` bloki muhim muhit o'zgaruvchilari QO'YILGANMI
+ * yoki yo'qligini aytadi — QIYMATLARNI emas, faqat bor/yo'qligini.
+ *
+ * Nega kerak: `SESSION_SECRET` qo'yilmasa, kod har bir "cold start"da
+ * TASODIFIY sir yaratadi (server/session.ts). Oqibati — foydalanuvchilar
+ * o'z-o'zidan tizimdan chiqib ketadi: har deployda albatta, va hatto
+ * deploysiz ham, chunki turli server nusxalarida sir turlicha bo'ladi va
+ * bittasi imzolagan cookie'ni boshqasi rad etadi.
+ *
+ * Bu holat tashqaridan KO'RINMASDI — faqat foydalanuvchining "nega meni
+ * chiqarib yubordi?" degan shikoyati orqali bilinardi. Endi bir so'rov
+ * bilan aniqlanadi.
  */
 export const dynamic = "force-dynamic";
 
@@ -24,5 +37,12 @@ export function GET() {
     message: process.env.VERCEL_GIT_COMMIT_MESSAGE?.split("\n")[0] ?? null,
     deployedAt: process.env.VERCEL_DEPLOYMENT_ID ? new Date().toISOString() : null,
     env: process.env.VERCEL_ENV ?? "development",
+    config: {
+      // `true` = qo'yilgan. Qiymatning O'ZI hech qachon qaytarilmaydi.
+      sessionSecret: !!process.env.SESSION_SECRET,
+      adminSessionSecret: !!process.env.ADMIN_SESSION_SECRET,
+      cronSecret: !!process.env.CRON_SECRET,
+      databaseUrl: !!process.env.DATABASE_URL,
+    },
   });
 }
