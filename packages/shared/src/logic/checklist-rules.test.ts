@@ -12,6 +12,8 @@ const BASE: ChecklistRuleInput = {
   daysSinceDue: null,
   isPerimenopause: false,
   isTryingToConceive: false,
+  lastCheckup: "recent",
+  healthConditions: [],
 };
 
 function typesOf(input: Partial<ChecklistRuleInput>): string[] {
@@ -213,5 +215,55 @@ describe("CHECKUP-02: rasmiy manbalar bilan qo'shilgan bandlar", () => {
     for (const [type, sources] of Object.entries(CHECKUP_SOURCE)) {
       expect(sources.length, `${type} uchun manba ko'rsatilmagan`).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("PLAN-01: reja foydalanuvchiga moslashadi", () => {
+  const due = (type: string, input: Partial<ChecklistRuleInput>) =>
+    generateChecklist({ ...BASE, ...input }).find((i) => i.type === type)?.dueInDays;
+
+  it("yillar davomida tekshiruvdan o'tmagan ayolda yillik bandlar DARHOL kerak", () => {
+    // Bu onboarding'da so'ralardi, lekin javob tashlab yuborilardi: "hech
+    // qachon" degan ayol ham "365 kundan keyin" olardi.
+    expect(due("annual_preventive_exam", { lastCheckup: "recent" })).toBe(365);
+    expect(due("annual_preventive_exam", { lastCheckup: "over_year" })).toBe(0);
+    expect(due("annual_preventive_exam", { lastCheckup: "never" })).toBe(0);
+  });
+
+  it("eslay olmasa — yaqin muddat, lekin 'kechikkan' emas", () => {
+    expect(due("annual_preventive_exam", { lastCheckup: "unknown" })).toBe(30);
+  });
+
+  it("faqat KLINIKA bandlariga ta'sir qiladi", () => {
+    // O'z-o'zini tekshirish uyda, oyda bir marta — shifokorga borish bilan
+    // aloqasi yo'q, shuning uchun muddati o'zgarmaydi.
+    expect(due("breast_self_exam", { lastCheckup: "never", age: 30 })).toBe(30);
+    expect(due("hpv_vaccination", { lastCheckup: "never", age: 30 })).toBe(30);
+  });
+
+  it("muddatni faqat KAMAYTIRADI, orqaga surmaydi", () => {
+    // Tsikl tartibsizligi bandi 14 kun — "never" javobi uni 0 ga
+    // tushirmasligi kerak emas, lekin 30 ga ORQAGA ham surmasligi kerak.
+    const items = generateChecklist({ ...BASE, lastCheckup: "unknown", cycleIrregular: true });
+    expect(items.find((i) => i.type === "cycle_irregularity_followup")?.dueInDays).toBe(14);
+  });
+
+  it("PKOS belgilangan bo'lsa qalqonsimon bez tahlili qo'shiladi", () => {
+    // Milliy protokol "СПКЯ": qalqonsimon bez buzilishi PKOS belgilariga
+    // o'xshab ketadi va ularni chalkashtirishi mumkin.
+    const types = (hc: ChecklistRuleInput["healthConditions"]) =>
+      generateChecklist({ ...BASE, healthConditions: hc }).map((i) => i.type);
+    expect(types(["pcos"])).toContain("thyroid_function_test");
+    expect(types([])).not.toContain("thyroid_function_test");
+  });
+
+  it("PKOS + perimenopauzada band IKKI MARTA qo'shilmaydi", () => {
+    const items = generateChecklist({
+      ...BASE,
+      age: 48,
+      isPerimenopause: true,
+      healthConditions: ["pcos"],
+    }).filter((i) => i.type === "thyroid_function_test");
+    expect(items).toHaveLength(1);
   });
 });

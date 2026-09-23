@@ -12,7 +12,7 @@
 // "davlat dasturi" ma'lumoti faqat CHECKUP_OFFICIAL_TRACK orqali, UI'da alohida
 // belgi sifatida ko'rsatiladi, muddat hisobiga ta'sir qilmaydi.
 
-import type { ChecklistCategory, ChecklistItemType, Goal } from "../types";
+import type { ChecklistCategory, ChecklistItemType, Goal, HealthCondition, OnboardingProfile } from "../types";
 
 export interface ChecklistRuleInput {
   age: number;
@@ -36,6 +36,51 @@ export interface ChecklistRuleInput {
   isPerimenopause: boolean;
   /** FIX-CHECKUPS: primaryGoal === "planning_pregnancy". */
   isTryingToConceive: boolean;
+  /** PLAN-01: onboarding'dagi "oxirgi marta qachon tekshiruvdan o'tgansiz?"
+   * javobi. ILGARI BU SO'RALARDI, LEKIN ISHLATILMASDI — natijada "hech
+   * qachon" degan ayol ham, "o'tgan oy" degan ayol ham bir xil "365 kundan
+   * keyin" muddatini olardi. Aynan teskarisi bo'lishi kerak edi: yillar
+   * davomida tekshiruvdan o'tmagan ayol — eng zudlik bilan borishi
+   * kerak bo'lgan odam. */
+  lastCheckup: OnboardingProfile["lastCheckup"];
+  /** PLAN-01: onboarding'da tanlangan mavjud holatlar. Bu ham so'ralardi,
+   * lekin rejaga ta'sir qilmasdi. */
+  healthConditions: HealthCondition[];
+}
+
+/** PLAN-01: shifokor tashrifini talab qiladigan YILLIK bandlar. Faqat
+ * shularning boshlang'ich muddati `lastCheckup` javobiga qarab suriladi —
+ * masalan oyda bir marta uyda qilinadigan o'z-o'zini tekshirish yoki bir
+ * martalik vaktsinatsiya bunga kirmaydi. */
+const ANNUAL_CLINIC_VISIT_ITEMS: ReadonlySet<ChecklistItemType> = new Set([
+  "annual_preventive_exam",
+  "pelvic_exam_speculum",
+  "flora_smear",
+  "cervical_cancer_screening",
+  "pelvic_ultrasound",
+  "clinical_breast_exam",
+  "breast_cancer_screening_mammography",
+  "sti_panel",
+  "menopause_checkup",
+  "colorectal_cancer_screening",
+]);
+
+/** `lastCheckup` javobiga qarab yillik bandlarning BOSHLANG'ICH muddati.
+ * `null` — o'zgartirilmaydi (odatiy yillik davr). */
+function initialDueForLastCheckup(answer: OnboardingProfile["lastCheckup"]): number | null {
+  switch (answer) {
+    // Yaqinda bo'lgan — odatiy yillik davr o'z holicha to'g'ri.
+    case "recent":
+      return null;
+    // Bir yildan oshgan yoki umuman bo'lmagan — allaqachon KECHIKKAN.
+    case "over_year":
+    case "never":
+      return 0;
+    // Eslay olmaydi. "Kechikkan" deb belgilash ham, bir yil kutish ham
+    // noto'g'ri bo'lardi — yaqin muddat qo'yib, aniqlashtirishga undaymiz.
+    case "unknown":
+      return 30;
+  }
 }
 
 export interface GeneratedChecklistItem {
@@ -213,10 +258,34 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
     items.push({ type: "colorectal_cancer_screening", dueInDays: 365, recurrenceDays: 365 });
   }
 
+  // PLAN-01: mavjud holatlarga qarab qo'shimcha band. PKOS baholashda
+  // qalqonsimon bez funktsiyasi standart tekshiriladi — uning buzilishi
+  // PKOS belgilariga o'xshab ketadi va ularni chalkashtirib yuborishi
+  // mumkin. Milliy protokol: "Синдром поликистозных яичников" (uzaig.uz).
+  // Boshqa holatlar (endometrioz, mioma) uchun bizda mavjud bandlardan
+  // tashqari YANGI tekshiruv qo'shilmadi — mos keladigan skrining bandimiz
+  // yo'q va o'ylab topish tibbiy jihatdan noto'g'ri bo'lardi.
+  if (input.healthConditions.includes("pcos") && !items.some((i) => i.type === "thyroid_function_test")) {
+    items.push({ type: "thyroid_function_test", dueInDays: 30, recurrenceDays: 365 });
+  }
+
   // Tsikl 3+ oy tartibsiz — checklist'ga ko'prik (spec §2) — bu bandning
   // o'ziga xos ilova-ichi mantig'i, gov.uz/uzaig manbalarida yo'q, o'zgarishsiz qoladi.
   if (input.cycleIrregular) {
     items.push({ type: "cycle_irregularity_followup", dueInDays: 14 });
+  }
+
+  // PLAN-01: yillik klinika bandlarining BOSHLANG'ICH muddati ayolning
+  // "oxirgi marta qachon tekshiruvdan o'tgansiz?" javobiga qarab suriladi.
+  // Faqat KAMAYTIRADI: agar qoida allaqachon tezroq muddat bergan bo'lsa
+  // (masalan homiladorlik oynasi), uni orqaga surmaydi.
+  const seeded = initialDueForLastCheckup(input.lastCheckup);
+  if (seeded !== null) {
+    return items.map((item) =>
+      ANNUAL_CLINIC_VISIT_ITEMS.has(item.type) && item.dueInDays !== null && item.dueInDays > seeded
+        ? { ...item, dueInDays: seeded }
+        : item
+    );
   }
 
   return items;

@@ -75,6 +75,10 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
     daysSinceDue,
     isPerimenopause: isPerimenopauseGoal(profile.primaryGoal),
     isTryingToConceive: isTryingToConceiveGoal(profile.primaryGoal),
+    // PLAN-01: bu ikkalasi onboarding'da SO'RALARDI, lekin rejaga umuman
+    // ta'sir qilmasdi — qarang: checklist-rules.ts izohlari.
+    lastCheckup: profile.lastCheckup,
+    healthConditions: profile.healthConditions,
   });
 
   await Promise.all(
