@@ -10,7 +10,7 @@ import { ErrorState, LoadingSpinner } from "@/components/ui";
 import { PageTransition } from "@/components/PageTransition";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { status, refresh } = useSession();
+  const { status, refresh, onboardingProfile } = useSession();
   const { dict } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
@@ -18,7 +18,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // O'ZINING yuqori qatorida (profil-avatar) ochadi — global panel bu yerda
   // ikki marta ko'rsatilmasligi uchun shu bitta sahifada yashiriladi
   // (boshqa hamma ekranda o'zgarishsiz qoladi).
-  const showGlobalDrawerBar = pathname !== "/asosiy";
+  //
+  // DRAWER-01: shart YO'LGA qarab qo'yilgan edi, lekin /asosiy HAR DOIM
+  // CycleScreen emas — homiladorlik rejimida u PregnancyScreen'ni
+  // ko'rsatadi (asosiy/page.tsx), va unda o'z tugmasi YO'Q. Natijada
+  // homilador foydalanuvchida menyuga kirishning BIRORTA yo'li qolmasdi:
+  // na profil, na til, na maxfiylik, na fikr bildirish, na chiqish.
+  // Foydalanuvchi buni ushladi.
+  //
+  // Endi shart EKRANGA qarab: global panel faqat o'z tugmasi bor
+  // CycleScreen ko'rsatilayotgandagina yashiriladi.
+  const homeShowsOwnDrawerButton = pathname === "/asosiy" && onboardingProfile?.primaryGoal !== "pregnancy";
+  const showGlobalDrawerBar = !homeShowsOwnDrawerButton;
 
   useEffect(() => {
     if (status !== "anonymous") return;
