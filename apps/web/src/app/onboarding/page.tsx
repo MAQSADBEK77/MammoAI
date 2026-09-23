@@ -35,7 +35,7 @@ import {
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useTelegram } from "@/lib/telegram";
-import { LogoMark } from "@/components/LogoMark";
+import { LogoBadge } from "@/components/LogoMark";
 import { useAbVariant } from "@/lib/ab";
 import { useTelegramStartLink } from "@/lib/telegram-link";
 import { useSession } from "@/lib/session";
@@ -1654,9 +1654,9 @@ function LoginStep({ telegramHref }: { telegramHref: string }) {
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-        {/* LOGO-01: `logo.svg` rangi qattiq OQ yozilgan — och fonda
-            ko'rinmasdi. Endi brend rangini meros qiladi. */}
-        <LogoMark className="animate-hero-badge h-[78px] w-[140px] text-primary" />
+        {/* LOGO-02: ilovaning o'z ikonkasi bilan bir xil to'liq belgi —
+            pushti doira ichida krem "m". */}
+        <LogoBadge className="animate-hero-badge h-28 w-28" />
         <h1 className="animate-hero-title mt-2 text-3xl font-extrabold text-text-primary">{dict.auth.loginTitle}</h1>
         <p className="animate-hero-subtitle text-text-secondary">{dict.auth.loginSubtitle}</p>
 
