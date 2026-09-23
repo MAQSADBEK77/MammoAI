@@ -113,6 +113,7 @@ const uz = {
     loginTitle: "Kirish",
     loginSubtitle: "O'zingizga qulay usulni tanlang",
     telegramLogin: "Telegram orqali kirish",
+    continueInTelegram: "Davom etish",
     googleLogin: "Google orqali kirish",
     phoneLogin: "Telefon raqam bilan kirish",
     comingSoon: "Tez kunda",

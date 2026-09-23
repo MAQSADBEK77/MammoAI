@@ -100,6 +100,7 @@ const ru: Dictionary = {
     loginTitle: "Вход",
     loginSubtitle: "Выберите удобный способ",
     telegramLogin: "Войти через Telegram",
+    continueInTelegram: "Продолжить",
     googleLogin: "Войти через Google",
     phoneLogin: "Войти по номеру телефона",
     comingSoon: "Скоро",

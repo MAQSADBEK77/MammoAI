@@ -34,6 +34,8 @@ import {
   ApiError,
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useTelegram } from "@/lib/telegram";
+import { LogoMark } from "@/components/LogoMark";
 import { useAbVariant } from "@/lib/ab";
 import { useTelegramStartLink } from "@/lib/telegram-link";
 import { useSession } from "@/lib/session";
@@ -47,7 +49,6 @@ import { Lottie } from "lottie-react";
 import {
   LockOutlined,
   SendOutlined,
-  SmsOutlined,
 } from "@mui/icons-material";
 import clsx from "clsx";
 
@@ -910,13 +911,7 @@ function OnboardingPageInner() {
           // savolga javob berishga majbur bo'lardi. Aslida bu farq KERAK EMAS:
           // server telefon bo'yicha o'zi aniqlaydi (`isNewAccount`) va mavjud
           // akkaunt bo'lsa to'g'ridan-to'g'ri ilovaga kiritadi.
-          <LoginStep
-            telegramHref={telegramLink}
-            onPhone={() => {
-              setSurvey((s) => ({ ...s, accountChoice: "create" }));
-              goNext();
-            }}
-          />
+          <LoginStep telegramHref={telegramLink} />
         )}
 
         {step === "account_identifier" && (
@@ -1637,26 +1632,48 @@ function SectionProgress({
  * (raqam → Telegram bot kodi). Haqiqiy SMS provayderi hozircha yo'q va u
  * har xabar uchun pul talab qiladi, shuning uchun nomi ham "SMS" emas.
  */
-function LoginStep({ telegramHref, onPhone }: { telegramHref: string; onPhone: () => void }) {
+function LoginStep({ telegramHref }: { telegramHref: string }) {
   const { dict } = useI18n();
+  // ONB-TG-01: Mini App ICHIDA ekanimizni aniqlaymiz. Bu `?fromTelegram=1`
+  // parametriga tayanmaydi — parametr qayta yuklashda yoki ichki
+  // navigatsiyada YO'QOLADI, va aynan shundan keyin ayol Telegram ichida
+  // "Telegram'da ochish" tugmasini ko'rib qolardi.
+  const { isTelegram, status: telegramStatus } = useTelegram();
 
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-        <Image src="/logo.svg" alt="" width={140} height={78} priority className="animate-hero-badge" />
+        {/* LOGO-01: `logo.svg` rangi qattiq OQ yozilgan — och fonda
+            ko'rinmasdi. Endi brend rangini meros qiladi. */}
+        <LogoMark className="animate-hero-badge h-[78px] w-[140px] text-primary" />
         <h1 className="animate-hero-title mt-2 text-3xl font-extrabold text-text-primary">{dict.auth.loginTitle}</h1>
         <p className="animate-hero-subtitle text-text-secondary">{dict.auth.loginSubtitle}</p>
 
         <div className="animate-fade-in-up mt-8 w-full space-y-3" style={{ animationDelay: "0.25s" }}>
-          {/* Asosiy usul — Telegram brend rangida (referensdagidek), chunki
-              u eng tez va foydalanuvchi uchun tanish. */}
-          <a
-            href={telegramHref}
-            className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-[#229ED9] px-6 py-4 text-base font-bold text-white transition active:scale-[0.98]"
-          >
-            <TelegramIcon />
-            {dict.auth.telegramLogin}
-          </a>
+          {/* ONB-TG-01: Telegram Mini App ICHIDA "Telegram'da ochish"
+              havolasi ma'nosiz — ayol allaqachon Telegram ichida va bu uni
+              ilovadan CHIQARIB yuborardi. Bunday holatda kirish shu yerda,
+              /tg orqali tugallanadi (Mini App autentifikatsiya sahifasi).
+              Telegram aniqlanmaguncha tugma o'chirilgan turadi — noto'g'ri
+              yo'lni ko'rsatib qo'ymaslik uchun. */}
+          {isTelegram ? (
+            <Link
+              href="/tg"
+              className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-[#229ED9] px-6 py-4 text-base font-bold text-white transition active:scale-[0.98]"
+            >
+              <TelegramIcon />
+              {dict.auth.continueInTelegram}
+            </Link>
+          ) : (
+            <a
+              href={telegramHref}
+              aria-disabled={telegramStatus === "checking"}
+              className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-[#229ED9] px-6 py-4 text-base font-bold text-white transition active:scale-[0.98] aria-disabled:pointer-events-none aria-disabled:opacity-60"
+            >
+              <TelegramIcon />
+              {dict.auth.telegramLogin}
+            </a>
+          )}
 
           <button
             type="button"
@@ -1670,20 +1687,11 @@ function LoginStep({ telegramHref, onPhone }: { telegramHref: string; onPhone: (
             </span>
           </button>
 
-          <div className="flex items-center gap-3 py-1">
-            <span className="h-px flex-1 bg-border" />
-            <span className="text-sm text-text-muted">{dict.auth.orDivider}</span>
-            <span className="h-px flex-1 bg-border" />
-          </div>
-
-          <button
-            type="button"
-            onClick={onPhone}
-            className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-surface-muted px-6 py-4 text-base font-semibold text-text-primary transition active:scale-[0.98]"
-          >
-            <SmsOutlined sx={{ fontSize: 20 }} />
-            {dict.auth.phoneLogin}
-          </button>
+          {/* ONB-PHONE-01: "Telefon raqami bilan kirish" olib tashlandi —
+              bu yo'l hali tayyor emas edi, lekin ekranda to'liq ishlaydigan
+              variant kabi turardi. Ishlamaydigan yo'lni taklif qilgandan
+              ko'ra ko'rsatmaslik to'g'riroq. Backend (SMS kod) o'z joyida
+              qoladi, faqat kirish ekranida taklif qilinmaydi. */}
         </div>
       </div>
 

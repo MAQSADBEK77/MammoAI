@@ -102,6 +102,7 @@ const en: Dictionary = {
     loginTitle: "Sign in",
     loginSubtitle: "Choose what works for you",
     telegramLogin: "Continue with Telegram",
+    continueInTelegram: "Continue",
     googleLogin: "Continue with Google",
     phoneLogin: "Continue with phone number",
     comingSoon: "Coming soon",
