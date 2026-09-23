@@ -21,6 +21,7 @@ import {
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
 import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { trackEvent } from "@/lib/analytics";
 import { useConfirm } from "@/lib/confirm";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -232,15 +233,21 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // sahifa yangilanganda yoki "orqaga" bosilganda oyna qayta-qayta ochilaverardi
   // (PROMPT-FREQ-01 dagi bilan bir xil sinf xato).
   const deepLinkLog = searchParams.get("log");
+  // CAMPAIGN-01: `?c=<kampaniya>` — xabar qaysi yuborishdan kelganini
+  // o'lchash uchun. Busiz "xabar yubordik, nima o'zgardi?" degan savolga
+  // javob bera olmaymiz: ilova ochilishlari umumiy oqimga qo'shilib ketadi.
+  const campaign = searchParams.get("c");
   useEffect(() => {
     if (!data || deepLinkLog !== "1") return;
     const timeout = setTimeout(() => {
+      // Tugma bosilgani — parametr URL'dan o'chirilishidan OLDIN yoziladi.
+      if (campaign) trackEvent(`campaign:${campaign}`, "/asosiy");
       openLogging(today, data.logs.find((l) => l.date === today));
       router.replace(pathname, { scroll: false });
     }, 0);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, deepLinkLog]);
+  }, [data, deepLinkLog, campaign]);
 
   // OVERNIGHT-20: foydalanuvchi so'roviga ko'ra ("kirganda so'rasin srazu",
   // Flo'ning proaktiv kunlik so'rovnomasi kabi) — bugun uchun hali hech
