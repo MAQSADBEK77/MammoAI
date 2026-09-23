@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jsonError, requireUser, ApiError } from "@/server/api-utils";
 import { createCommunityPost, listCommunityPosts } from "@/server/repo";
-import type { CommunityTag } from "@mammoai/shared";
+import type { CommunityFeedScope, CommunityTag } from "@mammoai/shared";
 
 const VALID_TAGS: CommunityTag[] = ["cycle", "pregnancy", "checkups", "general"];
 
@@ -13,7 +13,13 @@ export async function GET(request: NextRequest) {
     const tag = tagParam && (VALID_TAGS as string[]).includes(tagParam) ? (tagParam as CommunityTag) : undefined;
     const limit = Number(searchParams.get("limit") ?? 20);
     const offset = Number(searchParams.get("offset") ?? 0);
-    return NextResponse.json(await listCommunityPosts(user.id, { tag, limit, offset }));
+    // COMM-02: "Savollarim" / "Javoblarim" yorliqlari. Noma'lum qiymat
+    // jim `undefined`ga aylanadi — ya'ni butun forum ko'rsatiladi,
+    // xato qaytarilmaydi (bu faqat ko'rinish filtri).
+    const scopeParam = searchParams.get("scope");
+    const scope: CommunityFeedScope | undefined =
+      scopeParam === "mine" || scopeParam === "answered" ? scopeParam : undefined;
+    return NextResponse.json(await listCommunityPosts(user.id, { tag, limit, offset, scope }));
   } catch (error) {
     return jsonError(error);
   }

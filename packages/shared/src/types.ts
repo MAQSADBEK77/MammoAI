@@ -474,6 +474,14 @@ export interface Article {
 
 export type CommunityTag = "cycle" | "pregnancy" | "checkups" | "general";
 
+/** COMM-02: jamiyat lentasining ko'rinishi.
+ *  • `all` — butun forum;
+ *  • `mine` — ayolning O'Z savollari;
+ *  • `answered` — u izoh yozgan postlar ("Javoblarim").
+ * Ilgari faqat `all` bor edi va ayol o'z savoliga javob kelganini bilish
+ * uchun butun lentani qaytadan varaqlashi kerak edi. */
+export type CommunityFeedScope = "all" | "mine" | "answered";
+
 export interface CommunityPost {
   id: string;
   tag: CommunityTag;

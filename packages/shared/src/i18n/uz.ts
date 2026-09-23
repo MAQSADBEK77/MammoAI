@@ -1077,6 +1077,12 @@ const uz = {
     anonymousAuthor: "Anonim a'zo",
     /** COMM-01: post ekranida izohlar bo'sh bo'lganda. */
     noCommentsYet: "Hali izoh yo'q — birinchi bo'lib javob bering.",
+    /** COMM-02: lenta yorliqlari. */
+    tabForum: "Forum",
+    tabMyQuestions: "Savollarim",
+    tabMyAnswers: "Javoblarim",
+    emptyMyQuestions: "Hali savol bermabsiz. Savolingiz bo'lsa — so'rang, jamiyat javob beradi.",
+    emptyMyAnswers: "Hali hech kimga javob bermabsiz. Bilganingizni bo'lishing — kimgadir juda asqotadi.",
     likeButton: "Yoqtirish",
     commentButton: "Izoh",
     shareButton: "Ulashish",

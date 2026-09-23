@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AppNotification, CommunityComment, CommunityPost, CommunityReportReason, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
+import type { AppNotification, CommunityComment, CommunityFeedScope, CommunityPost, CommunityReportReason, CommunityStats, CommunityTag, Dictionary } from "@mammoai/shared";
 import { detectsMedicalConcern, goalToDefaultCommunityTag, translateApiError } from "@mammoai/shared";
 import { Dialog, DialogTitle, DialogContent, Menu, MenuItem } from "@mui/material";
 import {
@@ -75,6 +75,8 @@ export default function CommunityPage() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // COMM-01: ochilgan post — izohlar endi lentada emas, alohida ekranda.
+  // COMM-02: lenta ko'rinishi — butun forum / o'z savollari / javob berganlari.
+  const [scope, setScope] = useState<CommunityFeedScope>("all");
   const [openPostId, setOpenPostId] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerTag, setComposerTag] = useState<CommunityTag>("general");
@@ -110,12 +112,12 @@ export default function CommunityPage() {
   // qolib ketardi.
   const [postsLoadError, setPostsLoadError] = useState(false);
 
-  const loadPosts = useCallback((currentTag: CommunityTag | "all") => {
+  const loadPosts = useCallback((currentTag: CommunityTag | "all", currentScope: CommunityFeedScope = "all") => {
     latestTagRef.current = currentTag;
     setPosts(null);
     setPostsLoadError(false);
     api.community
-      .listPosts({ tag: currentTag === "all" ? undefined : currentTag, limit: PAGE_SIZE, offset: 0 })
+      .listPosts({ tag: currentTag === "all" ? undefined : currentTag, scope: currentScope, limit: PAGE_SIZE, offset: 0 })
       .then((res) => {
         if (latestTagRef.current !== currentTag) return;
         setPosts(res.posts);
@@ -176,9 +178,9 @@ export default function CommunityPage() {
   }
 
   useEffect(() => {
-    const timeout = setTimeout(() => loadPosts(tag), 0);
+    const timeout = setTimeout(() => loadPosts(tag, scope), 0);
     return () => clearTimeout(timeout);
-  }, [tag, loadPosts]);
+  }, [tag, scope, loadPosts]);
 
   async function loadMore() {
     if (!posts) return;
@@ -304,7 +306,7 @@ export default function CommunityPage() {
     try {
       if (commentId) await api.community.blockCommentAuthor(postId, commentId);
       else await api.community.blockPostAuthor(postId);
-      loadPosts(tag);
+      loadPosts(tag, scope);
       window.alert(dict.community.blockAuthorSuccess);
     } catch (err) {
       // FIX2-22: qattiq yozilgan o'zbekcha "Xatolik" o'rniga dict'dan.
@@ -440,21 +442,63 @@ export default function CommunityPage() {
         </Card>
       )}
 
-      <div className="flex gap-2 overflow-x-auto pb-1 pt-2">
-        <FilterChip active={tag === "all"} label={dict.community.filterAll} onClick={() => setTag("all")} />
-        {TAGS.map((t) => (
-          <FilterChip key={t} active={tag === t} label={dict.community.tags[t]} onClick={() => setTag(t)} />
+      {/* COMM-02: lenta yorliqlari. Ilgari faqat butun forum bor edi va ayol
+          o'z savoliga javob kelganini bilish uchun uni qaytadan qidirishi
+          kerak edi — savol bir necha soatdan keyin pastga tushib ketardi.
+          Referensda ham aynan shu uchta yorliq bor. */}
+      <div className="flex rounded-2xl bg-surface-muted p-1">
+        {(
+          [
+            { id: "all", label: dict.community.tabForum },
+            { id: "mine", label: dict.community.tabMyQuestions },
+            { id: "answered", label: dict.community.tabMyAnswers },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setScope(t.id)}
+            className={clsx(
+              "tap-target flex-1 rounded-xl py-2 text-sm font-bold transition",
+              scope === t.id ? "bg-surface text-text-primary shadow-sm" : "text-text-secondary"
+            )}
+          >
+            {t.label}
+          </button>
         ))}
       </div>
 
+      {/* Mavzu filtri faqat BUTUN forumda ma'noli — "Savollarim"da ayolning
+          o'z postlari kam va ularni yana filtrlash bo'sh ro'yxatga olib
+          kelardi. */}
+      {scope === "all" && (
+        <div className="flex gap-2 overflow-x-auto pb-1 pt-2">
+          <FilterChip active={tag === "all"} label={dict.community.filterAll} onClick={() => setTag("all")} />
+          {TAGS.map((t) => (
+            <FilterChip key={t} active={tag === t} label={dict.community.tags[t]} onClick={() => setTag(t)} />
+          ))}
+        </div>
+      )}
+
       {postsLoadError ? (
-        <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: () => loadPosts(tag) }} />
+        <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: () => loadPosts(tag, scope) }} />
       ) : !posts ? (
         <LoadingSpinner label={dict.common.loading} />
       ) : posts.length === 0 ? (
         <Card className="space-y-3 text-center text-sm text-text-secondary">
-          <p>{tag === "all" ? dict.community.emptyFeed : dict.community.emptyFeedFiltered}</p>
-          {tag !== "all" && (
+          {/* COMM-02: har yorliqning o'z bo'sh holati. Umumiy "post yo'q"
+              matni "Savollarim"da noto'g'ri bo'lardi — forum to'la, shunchaki
+              ayolning o'z savoli yo'q. */}
+          <p>
+            {scope === "mine"
+              ? dict.community.emptyMyQuestions
+              : scope === "answered"
+                ? dict.community.emptyMyAnswers
+                : tag === "all"
+                  ? dict.community.emptyFeed
+                  : dict.community.emptyFeedFiltered}
+          </p>
+          {scope === "all" && tag !== "all" && (
             <Button variant="ghost" onClick={() => setTag("all")}>
               {dict.community.viewAllButton}
             </Button>

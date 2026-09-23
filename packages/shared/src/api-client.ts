@@ -14,6 +14,7 @@ import type {
   CommunityPost,
   CommunityReportReason,
   CommunityStats,
+  CommunityFeedScope,
   CommunityTag,
   ChatMessage,
   CycleLog,
@@ -357,9 +358,10 @@ export function createApiClient(config: ApiClientConfig) {
     },
     community: {
       stats: () => request<CommunityStats>("/api/community/stats"),
-      listPosts: (params?: { tag?: CommunityTag; limit?: number; offset?: number }) => {
+      listPosts: (params?: { tag?: CommunityTag; limit?: number; offset?: number; scope?: CommunityFeedScope }) => {
         const q = new URLSearchParams();
         if (params?.tag) q.set("tag", params.tag);
+        if (params?.scope && params.scope !== "all") q.set("scope", params.scope);
         if (params?.limit) q.set("limit", String(params.limit));
         if (params?.offset) q.set("offset", String(params.offset));
         const qs = q.toString();

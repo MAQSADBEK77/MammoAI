@@ -5,6 +5,7 @@ import type { CheckinResponse } from "@mammoai/shared";
 import { PET_IDS, type PetChoice } from "@mammoai/shared";
 import type {
   ChronicCondition,
+  CommunityFeedScope,
   AnalyticsEventInput,
   AnalyticsSummary,
   AnalyticsUserSummary,
@@ -3074,12 +3075,29 @@ function excludeBlockedAuthorsFilter(viewerId: string) {
 
 export async function listCommunityPosts(
   viewerId: string,
-  params: { tag?: CommunityTag; limit?: number; offset?: number }
+  params: { tag?: CommunityTag; limit?: number; offset?: number; scope?: CommunityFeedScope }
 ): Promise<{ posts: CommunityPost[]; total: number }> {
   await ensureSchema();
   const limit = params.limit ?? 20;
   const offset = params.offset ?? 0;
-  const conditions = params.tag ? sql`WHERE p.tag = ${params.tag} AND ${excludeBlockedAuthorsFilter(viewerId)}` : sql`WHERE ${excludeBlockedAuthorsFilter(viewerId)}`;
+  // COMM-02: "Savollarim" va "Javoblarim" yorliqlari uchun.
+  //
+  // Ayol savol berib, javob kelganini BILISH uchun butun lentani qaytadan
+  // varaqlashi kerak edi — savol bir necha soatdan keyin pastga tushib
+  // ketardi va u qaytib topa olmasdi. Shu sababli ko'pchilik bir marta
+  // savol berib, javobini umuman ko'rmasdi.
+  const scope = params.scope ?? "all";
+  const scopeFilter =
+    scope === "mine"
+      ? sql`p.user_id = ${viewerId}`
+      : scope === "answered"
+        ? // "Javoblarim" — ayol IZOH YOZGAN postlar. Muallif o'zi bo'lishi
+          // shart emas: u boshqaga javob bergan bo'lsa ham shu ro'yxatda
+          // ko'rinadi va suhbat davomini kuzatib boradi.
+          sql`EXISTS(SELECT 1 FROM community_comments c WHERE c.post_id = p.id AND c.user_id = ${viewerId})`
+        : sql`TRUE`;
+  const tagFilter = params.tag ? sql`p.tag = ${params.tag}` : sql`TRUE`;
+  const conditions = sql`WHERE ${tagFilter} AND ${scopeFilter} AND ${excludeBlockedAuthorsFilter(viewerId)}`;
   const rows = (await sql`
     SELECT p.*, u.name as author_name, u.avatar_url as author_avatar_url,
       EXISTS(SELECT 1 FROM community_post_likes l WHERE l.post_id = p.id AND l.user_id = ${viewerId}) as viewer_liked
