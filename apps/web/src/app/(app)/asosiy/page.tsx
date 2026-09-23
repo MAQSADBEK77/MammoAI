@@ -9,7 +9,6 @@ import { useSession } from "@/lib/session";
 import { Card, LoadingSpinner } from "@/components/ui";
 import { CycleScreen } from "@/components/screens/CycleScreen";
 import { PregnancyScreen } from "@/components/screens/PregnancyScreen";
-import { ClinicsScreen } from "@/components/screens/ClinicsScreen";
 
 /**
  * "Asosiy" — yagona bosh sahifa: rejimga qarab Tsikl yoki Homiladorlik
@@ -23,7 +22,6 @@ export default function AsosiyPage() {
   const { onboardingProfile } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [clinicsOpen, setClinicsOpen] = useState(() => Boolean(searchParams.get("checklistItemId")));
 
   // "Hamkorimni kuzataman" maqsadi tanlangan foydalanuvchida shaxsiy sikl/
   // homiladorlik ma'lumoti umuman yo'q — bosh sahifasi to'g'ridan-to'g'ri
@@ -57,22 +55,24 @@ export default function AsosiyPage() {
     <div className="space-y-8 pb-6">
       {isPregnancyMode ? <PregnancyScreen /> : <CycleScreen variant={useTodayVariant ? "today" : "classic"} />}
       <div className="border-t border-border pt-6">
-        {clinicsOpen ? (
-          <ClinicsScreen />
-        ) : (
-          <button type="button" className="w-full text-left" onClick={() => setClinicsOpen(true)}>
-            <Card interactive className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/10">
-                <PlaceOutlined sx={{ fontSize: 20 }} className="text-accent" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-bold text-text-primary">{dict.clinics.title}</p>
-                <p className="text-sm text-text-secondary">{dict.clinics.seedDataNotice}</p>
-              </div>
-              <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
-            </Card>
-          </button>
-        )}
+        {/* BRIDGE-01: karta endi bo'limni SHU YERDA ochmaydi, balki
+            `/klinikalar` sahifasiga olib boradi.
+            Ilgari ro'yxat shu yerda, bosh sahifaning eng pastida ochilardi —
+            va o'lchov bo'yicha unga deyarli hech kim yetib bormasdi
+            (30 kunda 1 foydalanuvchi). Bugun bosh sahifa yana beshta blokka
+            uzaydi, ya'ni holat yomonlashardi. */}
+        <button type="button" className="w-full text-left" onClick={() => router.push("/klinikalar")}>
+          <Card interactive className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/10">
+              <PlaceOutlined sx={{ fontSize: 20 }} className="text-accent" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-text-primary">{dict.clinics.title}</p>
+              <p className="text-sm text-text-secondary">{dict.clinics.seedDataNotice}</p>
+            </div>
+            <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
+          </Card>
+        </button>
       </div>
     </div>
   );

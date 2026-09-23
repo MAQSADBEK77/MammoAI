@@ -244,7 +244,11 @@ export default function ChecklistPage() {
                       </Button>
                       <Button
                         variant="ghost"
-                        onClick={() => router.push(`/asosiy?checklistItemId=${item.id}`)}
+                        // BRIDGE-01: endi HAQIQIY klinikalar sahifasiga.
+                        // Ilgari `/asosiy?checklistItemId=` edi — ayol bosh
+                        // sahifaning tepasiga tushardi, klinikalar esa pastda
+                        // ochilardi va sakrash yo'q edi.
+                        onClick={() => router.push(`/klinikalar?checklistItemId=${item.id}`)}
                       >
                         {dict.checklist.findClinicButton}
                       </Button>
