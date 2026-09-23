@@ -1722,6 +1722,40 @@ export async function completeChecklistItem(userId: string, id: string): Promise
   `;
 }
 
+/**
+ * CHECKLIST-PRUNE-01 — foydalanuvchiga ENDI tegishli bo'lmagan bandlarni
+ * ro'yxatdan olib tashlaydi.
+ *
+ * Nega kerak: `syncChecklistForUser` faqat QO'SHARDI, hech qachon olib
+ * tashlamasdi. Natijada holat o'zgargach eski bandlar abadiy qolib ketardi
+ * va ro'yxat YOLG'ON gapirardi. Production'da bu aniq zarar berdi: soxta
+ * homiladorlik belgisi tufayli 10 ayolga 23 ta homiladorlik tekshiruvi
+ * qo'shilgan, keyin belgi to'g'rilangandan keyin ham ular ro'yxatda
+ * qolavergan (PREG-STATE-01). Shu sinf xatosi yana takrorlanmasligi uchun.
+ *
+ * XAVFSIZLIK CHEGARALARI — nima O'CHIRILMAYDI:
+ *  - `done` bandlar. Ular ayolning HAQIQIY tarixi: "men buni qildim".
+ *    Qoida o'zgargani bu faktni bekor qilmaydi.
+ *  - `keepTypes` bo'sh bo'lsa — HECH NARSA. Bo'sh ro'yxat haqiqiy holatdan
+ *    ko'ra ko'proq xatoga o'xshaydi (masalan profil vaqtincha o'qilmagan),
+ *    va bunda butun ro'yxatni supurib tashlash og'ir zarar bo'lardi.
+ *
+ * Bog'langan `referral_events` qatorlari saqlanadi (FK endi SET NULL) —
+ * ayolning "klinika qidirdim" harakati yo'qolmaydi.
+ */
+export async function removeStaleChecklistItems(userId: string, keepTypes: ChecklistItemType[]): Promise<number> {
+  await ensureSchema();
+  if (keepTypes.length === 0) return 0;
+  const rows = (await sql`
+    DELETE FROM checklist_items
+    WHERE user_id = ${userId}
+      AND status IN ('pending', 'overdue')
+      AND NOT (type = ANY(${keepTypes}))
+    RETURNING id
+  `) as unknown as { id: string }[];
+  return rows.length;
+}
+
 // ---------------------------------------------------------------------------
 // Clinics + referrals
 // ---------------------------------------------------------------------------

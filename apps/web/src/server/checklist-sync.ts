@@ -10,7 +10,7 @@ import {
   resolvePregnancyState,
   tashkentDateStr,
 } from "@mammoai/shared";
-import { ensureChecklistItem, getOnboardingProfile, getPregnancyProfile, listCycleLogs } from "./repo";
+import { ensureChecklistItem, getOnboardingProfile, getPregnancyProfile, listCycleLogs, removeStaleChecklistItems } from "./repo";
 
 // FIX-CHECKUPS: tug'ruqdan keyingi standart kuzatuv oynasi.
 // PREG-STATE-01: POSTPARTUM_* konstantalari endi packages/shared'da
@@ -86,4 +86,12 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
       ensureChecklistItem(userId, item.type, item.dueInDays != null ? addDays(today, item.dueInDays) : null, item.recurrenceDays)
     )
   );
+
+  // CHECKLIST-PRUNE-01: ilgari bu funksiya faqat QO'SHARDI. Holat
+  // o'zgargach (homiladorlik tugadi, javob to'g'rilandi, yosh oshdi) eski
+  // bandlar abadiy qolib ketardi va ro'yxat yolg'on gapirardi —
+  // production'da 10 ayol o'ziga tegishli bo'lmagan homiladorlik
+  // tekshiruvlarini ko'rib yurgan (PREG-STATE-01). "Bajarildi" bandlarga
+  // tegilmaydi: ular ayolning haqiqiy tarixi (qarang: repo.ts izohi).
+  await removeStaleChecklistItems(userId, generated.map((item) => item.type));
 }

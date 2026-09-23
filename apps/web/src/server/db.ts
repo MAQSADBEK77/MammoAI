@@ -647,7 +647,12 @@ async function initSchema() {
         -- (deyarli barcha) klinikalarni o'chirib bo'lmay qolishining oldini
         -- oladi, referral tarixini saqlab qolgan holda.
         clinic_id TEXT REFERENCES clinics(id) ON DELETE SET NULL,
-        checklist_item_id TEXT REFERENCES checklist_items(id),
+        -- CHECKLIST-PRUNE-01: bu ham SET NULL. Endi ro'yxatdan chiqib
+        -- ketgan (foydalanuvchiga endi tegishli bo'lmagan) bandlar
+        -- o'chiriladi — lekin ayolning "klinika qidirdim" harakati
+        -- YO'QOLMASLIGI kerak: hodisa qatori qoladi, faqat bog'lanish
+        -- uziladi.
+        checklist_item_id TEXT REFERENCES checklist_items(id) ON DELETE SET NULL,
         action TEXT NOT NULL,
         created_at TEXT NOT NULL
       )
@@ -837,6 +842,18 @@ async function initSchema() {
     DO $$ BEGIN
       ALTER TABLE referral_events DROP CONSTRAINT IF EXISTS referral_events_clinic_id_fkey;
       ALTER TABLE referral_events ADD CONSTRAINT referral_events_clinic_id_fkey FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE SET NULL;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `;
+
+  // CHECKLIST-PRUNE-01: mavjud bazalarda `checklist_item_id` standart
+  // RESTRICT bilan yaratilgan — bu eskirgan bandni o'chirishga to'sqinlik
+  // qiladi (production'da aynan shu xato ushlandi). SET NULL bo'lsa,
+  // referral tarixi band o'chirilgandan keyin ham saqlanib qoladi.
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE referral_events DROP CONSTRAINT IF EXISTS referral_events_checklist_item_id_fkey;
+      ALTER TABLE referral_events ADD CONSTRAINT referral_events_checklist_item_id_fkey FOREIGN KEY (checklist_item_id) REFERENCES checklist_items(id) ON DELETE SET NULL;
     EXCEPTION WHEN duplicate_object THEN NULL;
     END $$;
   `;
