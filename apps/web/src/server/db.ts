@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { memoizeAsyncSuccess } from "@mammoai/shared";
 
 // Postgres (Supabase) — ilgari better-sqlite3 (lokal fayl) ishlatilgan, endi Vercel'ga
 // deploy qilish uchun Postgres'ga o'tkazildi (serverless funksiyalarda doimiy fayl
@@ -15,7 +16,7 @@ if (!DATABASE_URL) {
 
 declare global {
   var __mammoaiSql: ReturnType<typeof postgres> | undefined;
-  var __mammoaiSchemaReady: Promise<void> | undefined;
+  var __mammoaiSchemaReady: (() => Promise<void>) | undefined;
 }
 
 // QA-001: CI'dagi vaqtinchalik Postgres xizmat konteyneri (localhost, SSL
@@ -909,7 +910,34 @@ async function initSchema() {
 
 // Har bir sovuq-start (cold start)da bir marta ishga tushadi va idempotent
 // (`CREATE TABLE IF NOT EXISTS`) — shuning uchun serverless muhitda xavfsiz.
+//
+// SCHEMA-RESILIENCE-01: ilgari natija SHARTSIZ keshlanardi:
+//
+//     if (!global.__mammoaiSchemaReady) global.__mammoaiSchemaReady = initSchema();
+//
+// Muvaffaqiyatli natija uchun bu to'g'ri, lekin RAD ETILGAN va'da ham xuddi
+// shunday keshlanardi. Ya'ni migratsiyalardan bittasi bir marta yiqilsa
+// (tarmoq uzilishi, bir vaqtda ishga tushgan ikkinchi nusxa bilan
+// to'qnashuv, yoki yangi ALTER'dagi xato) — O'SHA Lambda nusxasi BUTUNLAY
+// o'lik qolardi: undan keyingi HAR BIR so'rov, ular sxemaga umuman
+// bog'liq bo'lmasa ham, xuddi shu keshlangan xato bilan tugardi. Nusxa
+// qayta ishga tushmaguncha tuzalmasdi.
+//
+// Bu faraziy emas: db.ts ichidagi OVERNIGHT-19 izohi aynan shu holatning
+// production'da ro'y berganini yozadi ("boshqa qurilmadan kirsam xato
+// chiqadi", "2-3 marta yangilagandan keyin ishlaydi" — foydalanuvchi
+// buzilmagan boshqa nusxaga tushib qolgani uchun).
+//
+// Endi faqat MUVAFFAQIYAT keshlanadi. Xato bo'lsa kesh tozalanadi va
+// keyingi so'rov qaytadan urinadi — bir martalik nosozlik o'z-o'zidan
+// tuzaladi. Bir vaqtda kelgan so'rovlar baribir BITTA urinishni
+// bo'lishadi (va'da hali `global`da turadi), ya'ni "migratsiya bo'roni"
+// xavfi yo'q.
 export function ensureSchema(): Promise<void> {
-  if (!global.__mammoaiSchemaReady) global.__mammoaiSchemaReady = initSchema();
-  return global.__mammoaiSchemaReady;
+  // Kesh `global`da — Next.js dev'dagi HMR va serverless nusxa ichidagi
+  // barcha modul qayta yuklanishlari bo'ylab saqlanishi uchun.
+  global.__mammoaiSchemaReady ??= memoizeAsyncSuccess(initSchema, (error) =>
+    console.error("initSchema muvaffaqiyatsiz tugadi (keyingi so'rovda qayta urinadi):", error)
+  );
+  return global.__mammoaiSchemaReady();
 }
