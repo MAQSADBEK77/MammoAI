@@ -3,7 +3,7 @@ import { jsonError, requireUser, ApiError } from "@/server/api-utils";
 import { createCommunityPost, listCommunityPosts } from "@/server/repo";
 import type { CommunityFeedScope, CommunityTag } from "@mammoai/shared";
 
-const VALID_TAGS: CommunityTag[] = ["cycle", "pregnancy", "checkups", "general"];
+const VALID_TAGS: CommunityTag[] = ["cycle", "pregnancy", "checkups", "general", "discharge", "ttc", "postpartum", "mental"];
 
 export async function GET(request: NextRequest) {
   try {

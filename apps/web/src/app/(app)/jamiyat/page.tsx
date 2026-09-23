@@ -26,7 +26,20 @@ import { Reveal } from "@/components/motion-primitives";
 
 const REPORT_REASONS: CommunityReportReason[] = ["spam", "harassment", "misinformation", "medical_emergency", "other"];
 
-const TAGS: CommunityTag[] = ["cycle", "pregnancy", "checkups", "general"];
+// COMM-03: ko'rinish tartibi — ayolning yo'li bo'yicha (hayzdan tug'ruqdan
+// keyingi davrgacha), oxirida umumiy bo'limlar. "Boshqa" har doim oxirida:
+// u tanlash oson bo'lgani uchun tepada tursa, ko'pchilik shuni tanlab
+// qo'yardi va guruhlarning ma'nosi yo'qolardi.
+const TAGS: CommunityTag[] = [
+  "cycle",
+  "discharge",
+  "ttc",
+  "pregnancy",
+  "postpartum",
+  "checkups",
+  "mental",
+  "general",
+];
 const PAGE_SIZE = 15;
 
 function formatRelativeTime(iso: string, dict: Dictionary): string {

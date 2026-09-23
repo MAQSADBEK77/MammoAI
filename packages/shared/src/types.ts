@@ -472,7 +472,30 @@ export interface Article {
 // bo'lgani uchun — Flo/Clue kabi ilovalarda ham bu odatiy amaliyot).
 // ---------------------------------------------------------------------------
 
-export type CommunityTag = "cycle" | "pregnancy" | "checkups" | "general";
+/**
+ * COMM-03 — jamiyat guruhlari.
+ *
+ * Referensdagi ilova ONALAR uchun va guruhlari chaqaloq yoshiga qurilgan
+ * ("0-3 oy", "1-2 yosh"). Bizning foydalanuvchilarimiz boshqacha: o'rtacha
+ * yosh 24, 120 profildan 85 tasi 18-24 yoshda, ya'ni ko'pchiligi hali ona
+ * emas — o'sha guruhlar bo'sh turardi.
+ *
+ * Shuning uchun guruhlar HAYOT BOSQICHI emas, SAVOL TURI bo'yicha. Ro'yxat
+ * production'dagi haqiqiy savollarga qarab tuzilgan: hayz va ajralmalar,
+ * "bu normalmi?", homiladorlik alomatlari, tahlil natijalari.
+ *
+ * Birinchi to'rttasi ESKI qiymatlar — o'zgartirilmadi, aks holda mavjud
+ * postlar guruhsiz qolardi.
+ */
+export type CommunityTag =
+  | "cycle"
+  | "pregnancy"
+  | "checkups"
+  | "general"
+  | "discharge"
+  | "ttc"
+  | "postpartum"
+  | "mental";
 
 /** COMM-02: jamiyat lentasining ko'rinishi.
  *  • `all` — butun forum;

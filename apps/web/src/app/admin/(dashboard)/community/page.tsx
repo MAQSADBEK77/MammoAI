@@ -131,11 +131,17 @@ function ReportsQueue({ onContentDeleted }: { onContentDeleted: () => void }) {
   );
 }
 
+// Admin paneli faqat o'zbekcha — i18n'ga bog'lanmagan (COMM-03'da yangi
+// guruhlar qo'shilganda TypeScript shu yerni ham ko'rsatdi).
 const TAG_LABELS: Record<CommunityTag, string> = {
-  cycle: "Tsikl",
+  cycle: "Hayz va sikl",
+  discharge: "Ajralmalar va infeksiya",
+  ttc: "Homilador bo'lish",
   pregnancy: "Homiladorlik",
+  postpartum: "Tug'ruqdan keyin",
   checkups: "Tekshiruvlar",
-  general: "Umumiy",
+  mental: "Ruhiy holat",
+  general: "Boshqa",
 };
 
 function formatDate(value: string): string {
