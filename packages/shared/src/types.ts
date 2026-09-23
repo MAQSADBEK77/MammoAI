@@ -299,6 +299,17 @@ export type ChecklistItemType =
   // skrininggi natijasi emas — shunga bog'lab qo'yish tibbiy jihatdan
   // noto'g'ri bo'lardi. Production'da hech qachon ishlab chiqarilmagan
   // (nol qator), shuning uchun to'liq olib tashlash xavfsiz.
+  // CHECKUP-02 (2026-09-23): rasmiy manbalar bilan tasdiqlangan qo'shimcha
+  // bandlar. Har birining manbasi CHECKUP_SOURCE jadvalida ko'rsatilgan.
+  // Faqat gating ma'lumoti BIZDA BOR bandlar qo'shildi — masalan
+  // `genetic_carrier_screening` ataylab qoldirilmadi, chunki manbaning o'zi
+  // uni "O'zbekistonda majburiy ekani tasdiqlanmagan" deb belgilaydi.
+  | "gestational_diabetes_screening"
+  | "postpartum_6week_checkup"
+  | "postpartum_depression_screening"
+  | "thyroid_function_test"
+  | "rubella_immunity_check"
+  | "colorectal_cancer_screening"
   | "pregnancy_patronage_visit"
   | "postpartum_home_visit"
   | "menopause_checkup"

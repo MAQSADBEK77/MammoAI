@@ -906,6 +906,30 @@ const uz = {
         title: "B guruh streptokokk (GBS) tekshiruvi",
         why: "GBS onaga zararsiz, lekin tug'ish paytida antibiotiksiz chaqaloqda jiddiy infeksiyaga sabab bo'lishi mumkin.",
       },
+      gestational_diabetes_screening: {
+        title: "Homiladorlik davridagi qandli diabet skrininggi (glyukoza tolerantlik testi)",
+        why: "Aniqlanmagan gestatsion diabet homilaning haddan tashqari kattalashishi, og'ir tug'ruq va onada keyinchalik 2-tur diabet xavfini oshiradi. Aynan shu oynada aniqlansa, parhez va kuzatuv bilan boshqarish mumkin.",
+      },
+      postpartum_6week_checkup: {
+        title: "Tug'ruqdan keyingi 6-haftalik tekshiruv",
+        why: "Rasmiy uy tashriflari 30-kunda tugaydi. Aynan shu tashrifda yangi homiladorlik xavfi (hayz tiklanishidan oldin), bitmagan asoratlar va ruhiy holat muammolari aniqlanadi — o'tkazib yuborilsa, ular ko'pincha umuman sezilmay qoladi.",
+      },
+      postpartum_depression_screening: {
+        title: "Tug'ruqdan keyingi depressiya skrininggi",
+        why: "Tug'ruqdan keyingi depressiya keng tarqalgan, lekin kam tan olinadi. Davolanmasa, u onaning o'z holatiga ham, chaqaloq bilan aloqasi va rivojlanishiga ham ta'sir qiladi. Buni ona o'zi aytishini kutmasdan, to'g'ridan-to'g'ri so'rash kerak.",
+      },
+      thyroid_function_test: {
+        title: "Qalqonsimon bez funktsiyasi tahlili (TSH)",
+        why: "Aniqlanmagan qalqonsimon bez buzilishi — tartibsiz sikl, homilador bo'lolmaslik va homila tushishining keng tarqalgan, DAVOLASA BO'LADIGAN sababi. Perimenopauzada ham ko'p uchraydi va belgilari menopauzaga o'xshab ketadi, ya'ni tekshirilmasa \"tabiiy o'zgarish\" deb o'tkazib yuboriladi.",
+      },
+      rubella_immunity_check: {
+        title: "Qizamiqchaga (rubella) qarshi immunitet tekshiruvi",
+        why: "Immunitet bo'lmasa va homiladorlikning erta davrida yuqsa — og'ir tug'ma nuqsonlar xavfi yuqori. Vaktsinani homilador bo'lgach QILIB BO'LMAYDI, shuning uchun bu faqat oldindan qilinadigan ish.",
+      },
+      colorectal_cancer_screening: {
+        title: "Yo'g'on ichak saratoni skrininggi",
+        why: "Ginekologik tekshiruv emas, lekin 45 yoshdan keyingi standart skrining. Erta bosqichda aniqlansa davolash ancha oson, kech bosqichda esa ancha og'ir.",
+      },
       bv_targeted_screening: {
         title: "Bakterial vaginoz uchun maqsadli tekshiruv",
         why: "Davolanmagan bakterial vaginoz muddatidan oldin tug'ilish va homiladorlik yo'qotilishi bilan bog'liq; ko'pincha belgisiz kechadi, shuning uchun faqat belgilarga tayanish ko'p holatlarni o'tkazib yuboradi.",

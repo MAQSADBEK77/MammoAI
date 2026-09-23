@@ -70,6 +70,9 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
     sexuallyActive: profile.sexuallyActive,
     pregnancyWeek,
     isPostpartum,
+    // CHECKUP-02: tug'ruqdan keyingi bandlar ANIQ kunlarga bog'langan
+    // (6-haftalik tekshiruv = 42-kun), shuning uchun bitta bayroq yetarli emas.
+    daysSinceDue,
     isPerimenopause: isPerimenopauseGoal(profile.primaryGoal),
     isTryingToConceive: isTryingToConceiveGoal(profile.primaryGoal),
   });

@@ -804,6 +804,30 @@ const en: Dictionary = {
         title: "Group B strep (GBS) screening",
         why: "GBS is harmless to the mother but can cause serious newborn infection at delivery if untreated with antibiotics during labor.",
       },
+      gestational_diabetes_screening: {
+        title: "Gestational diabetes screening (glucose tolerance test)",
+        why: "Undiagnosed gestational diabetes raises the risk of a very large baby, a difficult delivery, and type 2 diabetes for the mother later. Caught in this window, it is manageable with diet and monitoring.",
+      },
+      postpartum_6week_checkup: {
+        title: "Six-week postpartum checkup",
+        why: "The official home-visit schedule stops at day 30. This is the visit where a new pregnancy risk (before periods return), unhealed complications and mental health problems are found — skip it and they usually go unnoticed.",
+      },
+      postpartum_depression_screening: {
+        title: "Postpartum depression screening",
+        why: "Postpartum depression is common and under-recognised. Untreated it affects both the mother's wellbeing and her bond with the baby. It should be asked about directly, not left for her to raise.",
+      },
+      thyroid_function_test: {
+        title: "Thyroid function test (TSH)",
+        why: "Undiagnosed thyroid dysfunction is a common and TREATABLE cause of irregular cycles, difficulty conceiving and miscarriage. It also often emerges in perimenopause, where its symptoms look like menopause and get dismissed as a natural change.",
+      },
+      rubella_immunity_check: {
+        title: "Rubella immunity check",
+        why: "If you are not immune and are infected early in pregnancy, the risk of serious birth defects is high. The vaccine CANNOT be given once you are pregnant, so this only works beforehand.",
+      },
+      colorectal_cancer_screening: {
+        title: "Colorectal cancer screening",
+        why: "Not gynaecological, but a standard screening from age 45. Caught early it is far easier to treat than at a late stage.",
+      },
       bv_targeted_screening: {
         title: "Targeted bacterial vaginosis screening",
         why: "Untreated BV is linked to preterm birth and pregnancy loss; it's often asymptomatic, so relying on symptoms alone misses many cases.",

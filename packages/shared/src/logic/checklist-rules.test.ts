@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateChecklist, CHECKLIST_ITEM_IS_FREE, CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK, type ChecklistRuleInput } from "./checklist-rules";
+import { generateChecklist, CHECKLIST_ITEM_IS_FREE, CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK, CHECKUP_SOURCE, type ChecklistRuleInput } from "./checklist-rules";
 
 const BASE: ChecklistRuleInput = {
   age: 25,
@@ -9,6 +9,7 @@ const BASE: ChecklistRuleInput = {
   sexuallyActive: false,
   pregnancyWeek: null,
   isPostpartum: false,
+  daysSinceDue: null,
   isPerimenopause: false,
   isTryingToConceive: false,
 };
@@ -156,5 +157,61 @@ describe("CHECKLIST_ITEM_IS_FREE / CHECKUP_CATEGORY", () => {
   it("dual-track bandlar uchun rasmiy dastur ma'lumoti mavjud", () => {
     expect(CHECKUP_OFFICIAL_TRACK.cervical_cancer_screening).toEqual({ minAge: 35, maxAge: 55, frequency: "every_3_years" });
     expect(CHECKUP_OFFICIAL_TRACK.breast_cancer_screening_mammography).toBeDefined();
+  });
+});
+
+describe("CHECKUP-02: rasmiy manbalar bilan qo'shilgan bandlar", () => {
+  const types = (input: Partial<ChecklistRuleInput>) =>
+    generateChecklist({ ...BASE, ...input }).map((i) => i.type);
+
+  it("gestatsion diabet skrininggi 24-28 hafta oynasida chiqadi", () => {
+    // Milliy klinik protokol: "Гестационный сахарный диабет" (uzaig.uz).
+    expect(types({ isPregnant: true, pregnancyWeek: 25 })).toContain("gestational_diabetes_screening");
+    // Oynadan ancha oldin (lookahead 6 hafta) — hali chiqmaydi.
+    expect(types({ isPregnant: true, pregnancyWeek: 10 })).not.toContain("gestational_diabetes_screening");
+    // Oyna o'tib ketgan.
+    expect(types({ isPregnant: true, pregnancyWeek: 34 })).not.toContain("gestational_diabetes_screening");
+  });
+
+  it("tug'ruqdan keyingi bandlar ANIQ kunga rejalashtiriladi", () => {
+    // 20-kun: 6-haftalik tekshiruvgacha 22 kun, depressiya skriningigacha 10.
+    const items = generateChecklist({ ...BASE, isPostpartum: true, daysSinceDue: 20 });
+    expect(items.find((i) => i.type === "postpartum_6week_checkup")?.dueInDays).toBe(22);
+    expect(items.find((i) => i.type === "postpartum_depression_screening")?.dueInDays).toBe(10);
+  });
+
+  it("kun o'tib ketgan bo'lsa muddat manfiy emas, 0 bo'ladi", () => {
+    const items = generateChecklist({ ...BASE, isPostpartum: true, daysSinceDue: 50 });
+    expect(items.find((i) => i.type === "postpartum_6week_checkup")?.dueInDays).toBe(0);
+  });
+
+  it("qizamiqcha immuniteti FAQAT homiladorlikni rejalashtirishda", () => {
+    // Vaktsina homilador bo'lgach qilib bo'lmaydi — shuning uchun bu band
+    // ATAYLAB faqat oldingi bosqichda turadi.
+    expect(types({ isTryingToConceive: true })).toContain("rubella_immunity_check");
+    expect(types({ isPregnant: true, pregnancyWeek: 8 })).not.toContain("rubella_immunity_check");
+    expect(types({})).not.toContain("rubella_immunity_check");
+  });
+
+  it("qalqonsimon bez tahlili — rejalashtirishda (25+) va perimenopauzada", () => {
+    expect(types({ isTryingToConceive: true, age: 30 })).toContain("thyroid_function_test");
+    expect(types({ isTryingToConceive: true, age: 22 })).not.toContain("thyroid_function_test");
+    expect(types({ isPerimenopause: true, age: 48 })).toContain("thyroid_function_test");
+    // Oddiy profilaktikada emas — har yili hammaga TSH ortiqcha skrining bo'lardi.
+    expect(types({ age: 30 })).not.toContain("thyroid_function_test");
+  });
+
+  it("yo'g'on ichak skrininggi 45-75 yosh oralig'ida", () => {
+    expect(types({ age: 44 })).not.toContain("colorectal_cancer_screening");
+    expect(types({ age: 45 })).toContain("colorectal_cancer_screening");
+    expect(types({ age: 76 })).not.toContain("colorectal_cancer_screening");
+  });
+
+  it("HAR BIR bandning manbasi ko'rsatilgan", () => {
+    // "Faqat rasmiy manbalardan foydalaning" talabini tekshirib bo'ladigan
+    // qilish uchun: manbasiz band qolib ketmasligi kerak.
+    for (const [type, sources] of Object.entries(CHECKUP_SOURCE)) {
+      expect(sources.length, `${type} uchun manba ko'rsatilmagan`).toBeGreaterThan(0);
+    }
   });
 });

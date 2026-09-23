@@ -27,6 +27,11 @@ export interface ChecklistRuleInput {
   pregnancyWeek: number | null;
   /** FIX-CHECKUPS: tug'ruqdan keyingi ~42 kunlik oyna ichidami. */
   isPostpartum: boolean;
+  /** CHECKUP-02: taxminiy tug'ruq sanasidan necha kun o'tgani. Tug'ruqdan
+   * keyingi bandlar ANIQ kunlarga bog'langan (6-haftalik tekshiruv = 42-kun),
+   * shuning uchun bitta `isPostpartum` bayrog'i yetarli emas edi. `null` —
+   * homiladorlik sanasi ma'lum emas. */
+  daysSinceDue: number | null;
   /** FIX-CHECKUPS: primaryGoal === "perimenopause". */
   isPerimenopause: boolean;
   /** FIX-CHECKUPS: primaryGoal === "planning_pregnancy". */
@@ -73,6 +78,14 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
     if (isPregnancyWindowRelevant(week, 16, 20)) items.push({ type: "prenatal_screening_stage1b", dueInDays: week === null ? 0 : daysUntilPregnancyWeek(week, 16) });
     if (isPregnancyWindowRelevant(week, 28, 32)) items.push({ type: "prenatal_screening_stage1c", dueInDays: week === null ? 0 : daysUntilPregnancyWeek(week, 28) });
     if (isPregnancyWindowRelevant(week, 35, 37)) items.push({ type: "group_b_strep_screening", dueInDays: week === null ? 0 : daysUntilPregnancyWeek(week, 35) });
+    // CHECKUP-02: milliy klinik protokol "Гестационный сахарный диабет"
+    // (uzaig.uz) — 24-28 haftada glyukoza tolerantlik testi. Bu oyna
+    // o'tkazib yuborilsa, aniqlanmagan gestatsion diabet katta homila va
+    // og'ir tug'ruq xavfini oshiradi, holbuki oyna ichida parhez/kuzatuv
+    // bilan boshqarish mumkin.
+    if (isPregnancyWindowRelevant(week, 24, 28)) {
+      items.push({ type: "gestational_diabetes_screening", dueInDays: week === null ? 0 : daysUntilPregnancyWeek(week, 24) });
+    }
     // WEB3-04: ilgari 12-haftadan keyin maqsad 32-haftaga "sakrardi" —
     // dueInDays 11-haftada 7 (hozir kerak) dan 12-haftada BIRDANIGA 140ga
     // (~20 hafta keyin kerak) o'zgarardi, aynan shu bandning o'zi "hozir
@@ -95,6 +108,14 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
     // cheklovi sabab bitta band sifatida birlashtirilgan — izoh uchun
     // dict.checklist.items.postpartum_home_visit.
     items.push({ type: "postpartum_home_visit", dueInDays: 0 });
+    // CHECKUP-02: rasmiy uy tashriflari jadvali 30-kunda TUGAYDI. 6-haftalik
+    // tekshiruv va depressiya skrininggi esa aynan shundan keyin keladi —
+    // va manba bo'yicha bu ikkalasi eng ko'p o'tkazib yuboriladigan
+    // bandlar, chunki ona jismonan "tuzalib" qolgan bo'ladi.
+    const untilDay = (target: number) =>
+      input.daysSinceDue === null ? 0 : Math.max(0, target - input.daysSinceDue);
+    items.push({ type: "postpartum_6week_checkup", dueInDays: untilDay(42) });
+    items.push({ type: "postpartum_depression_screening", dueInDays: untilDay(30) });
   }
 
   // --- Homiladorlikni rejalashtirish ---
@@ -102,11 +123,21 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
     if (input.age >= 18 && input.age <= 45 && isSexuallyActive) items.push({ type: "preconception_checkup", dueInDays: 14 });
     if (input.age >= 18 && input.age <= 45) items.push({ type: "torch_panel", dueInDays: 14 });
     items.push({ type: "bv_targeted_screening", dueInDays: 14 });
+    // CHECKUP-02: qizamiqcha (rubella) immuniteti — bu band ATAYLAB
+    // homiladorlikdan OLDIN turadi: vaktsina homilador bo'lgach QILIB
+    // BO'LMAYDI, ya'ni keyin tuzatib bo'lmaydigan yagona band.
+    items.push({ type: "rubella_immunity_check", dueInDays: 14 });
+    if (input.age >= 25) items.push({ type: "thyroid_function_test", dueInDays: 30 });
   }
 
   // --- Perimenopauza/menopauza ---
   if (input.isPerimenopause && input.age >= 45) {
     items.push({ type: "menopause_checkup", dueInDays: 365, recurrenceDays: 365 });
+    // CHECKUP-02: qalqonsimon bez buzilishi perimenopauzada ko'p uchraydi va
+    // uning belgilari menopauza belgilariga O'XSHAB ketadi — tekshirilmasa,
+    // davolash mumkin bo'lgan holat "tabiiy o'zgarish" deb o'tkazib
+    // yuboriladi.
+    items.push({ type: "thyroid_function_test", dueInDays: 365, recurrenceDays: 365 });
   }
 
   // --- Umumiy profilaktika (general_prevention) — asosiy yosh-bog'liq jadval ---
@@ -175,6 +206,12 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
   if (input.age >= 15 && input.age <= 49 && isSexuallyActive) {
     items.push({ type: "contraception_counseling", dueInDays: 365, recurrenceDays: 365 });
   }
+  // CHECKUP-02: ginekologik emas, lekin 45+ uchun xalqaro standart skrining.
+  // Foydalanuvchi shu yoshdagi boshqa bandlar uchun allaqachon ilovada
+  // bo'lgani uchun uni shu ro'yxatga qo'shish tabiiy.
+  if (input.age >= 45 && input.age <= 75) {
+    items.push({ type: "colorectal_cancer_screening", dueInDays: 365, recurrenceDays: 365 });
+  }
 
   // Tsikl 3+ oy tartibsiz — checklist'ga ko'prik (spec §2) — bu bandning
   // o'ziga xos ilova-ichi mantig'i, gov.uz/uzaig manbalarida yo'q, o'zgarishsiz qoladi.
@@ -218,6 +255,15 @@ export const CHECKLIST_ITEM_IS_FREE: Record<ChecklistItemType, boolean> = {
   torch_panel: false,
   group_b_strep_screening: false,
   bv_targeted_screening: false,
+  // CHECKUP-02: homiladorlik davridagi bandlar milliy antenatal protokolga
+  // kiradi — davlat poliklinikasida qamraladi.
+  gestational_diabetes_screening: true,
+  postpartum_6week_checkup: true,
+  postpartum_depression_screening: true,
+  // Quyidagilar davlat dasturida alohida ko'rsatilmagan — xususiy/pullik.
+  thyroid_function_test: false,
+  rubella_immunity_check: false,
+  colorectal_cancer_screening: false,
 };
 
 // FIX-CHECKUPS: Tekshiruvlar ekranida bo'limlarga guruhlash uchun.
@@ -251,6 +297,88 @@ export const CHECKUP_CATEGORY: Record<ChecklistItemType, ChecklistCategory> = {
   torch_panel: "lab",
   group_b_strep_screening: "lab",
   bv_targeted_screening: "lab",
+  gestational_diabetes_screening: "lab",
+  postpartum_6week_checkup: "postpartum",
+  postpartum_depression_screening: "postpartum",
+  thyroid_function_test: "lab",
+  rubella_immunity_check: "lab",
+  colorectal_cancer_screening: "screening",
+};
+
+/**
+ * CHECKUP-02 — har bir bandning MANBASI.
+ *
+ * Loyiha egasining talabi: "faqat rasmiy manbalardan foydalaning". Buni
+ * tekshirib bo'ladigan qilish uchun manba kodda, har bandning yonida
+ * turadi — keyin kimdir "bu tavsiya qayerdan?" deb so'rasa, javob
+ * izlab yurish shart emas.
+ *
+ * Bu shunchaki hujjat emas: protokol yangilansa, qaysi bandlar qayta
+ * ko'rib chiqilishi kerakligi shu jadvaldan darhol ko'rinadi.
+ */
+export type CheckupSource =
+  /** gov.uz/oz/ssv — yosh guruhlari bo'yicha patronaj va skrining dasturi. */
+  | "uz_moh_women"
+  /** gov.uz/oz/ssv — uch bosqichli prenatal skrining. */
+  | "uz_moh_pregnancy"
+  /** uzaig.uz — RSNPMTsZMiR milliy klinik protokollari. */
+  | "uz_clinical_protocol"
+  /** JSST tavsiyalari. */
+  | "who"
+  /** Xalqaro standart amaliyot (milliy protokolda alohida yo'q). */
+  | "international_practice"
+  /** O'zbekistondagi xususiy klinika amaliyoti. */
+  | "private_clinic_practice";
+
+export const CHECKUP_SOURCE: Record<ChecklistItemType, CheckupSource[]> = {
+  // Eski (spec davridagi) turlar — yangi jadval bilan almashtirilgan,
+  // yangi foydalanuvchilarda ishlab chiqarilmaydi.
+  gyn_annual_checkup: ["private_clinic_practice"],
+  pap_test: ["uz_clinical_protocol"],
+  mammography_screening: ["uz_moh_women"],
+  free_mammography_45: ["uz_moh_women"],
+  cycle_irregularity_followup: ["private_clinic_practice"],
+  pregnancy_first_visit: ["uz_moh_pregnancy"],
+  pregnancy_trimester_checkup: ["uz_moh_pregnancy"],
+
+  annual_preventive_exam: ["uz_moh_women"],
+  first_gyn_visit: ["private_clinic_practice", "who"],
+  hpv_vaccination: ["private_clinic_practice", "who"],
+  pelvic_exam_speculum: ["private_clinic_practice"],
+  flora_smear: ["private_clinic_practice"],
+  // Milliy protokol: "Скрининг рака шейки матки, диагностика и тактика
+  // ведения интраэпителиальной цервикальной неоплазии".
+  cervical_cancer_screening: ["uz_clinical_protocol", "uz_moh_women", "private_clinic_practice"],
+  pelvic_ultrasound: ["private_clinic_practice"],
+  breast_self_exam: ["private_clinic_practice"],
+  clinical_breast_exam: ["private_clinic_practice"],
+  breast_cancer_screening_mammography: ["uz_moh_women", "private_clinic_practice"],
+  sti_panel: ["private_clinic_practice"],
+  // Milliy protokol: "Национальное клиническое руководство по планированию семьи".
+  contraception_counseling: ["uz_clinical_protocol"],
+  preconception_checkup: ["private_clinic_practice", "international_practice"],
+  prenatal_screening_stage1: ["uz_moh_pregnancy"],
+  prenatal_screening_stage1b: ["uz_moh_pregnancy"],
+  prenatal_screening_stage1c: ["uz_moh_pregnancy"],
+  pregnancy_patronage_visit: ["uz_moh_women"],
+  postpartum_home_visit: ["uz_moh_women"],
+  // Milliy protokol: "Менопаузальные и перименопаузальные расстройства".
+  menopause_checkup: ["uz_clinical_protocol", "private_clinic_practice"],
+  torch_panel: ["international_practice"],
+  group_b_strep_screening: ["international_practice"],
+  // Milliy protokol: "Бактериальный вагиноз".
+  bv_targeted_screening: ["uz_clinical_protocol", "private_clinic_practice"],
+
+  // Milliy protokol: "Гестационный сахарный диабет".
+  gestational_diabetes_screening: ["uz_clinical_protocol", "international_practice"],
+  // Milliy protokol: "Ведение нормального послеродового периода" —
+  // rasmiy uy tashriflari 30-kunda tugaydi, 6-haftalik tekshiruv esa
+  // xalqaro amaliyotdan.
+  postpartum_6week_checkup: ["uz_clinical_protocol", "international_practice"],
+  postpartum_depression_screening: ["who", "international_practice"],
+  thyroid_function_test: ["international_practice"],
+  rubella_immunity_check: ["international_practice"],
+  colorectal_cancer_screening: ["international_practice"],
 };
 
 /** UI'ning `dict.checklist.frequencyLabels`idan tarjima qilinadi — statik
