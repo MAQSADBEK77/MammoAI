@@ -183,6 +183,18 @@ export default function ChecklistPage() {
         </button>
       )}
 
+      {/* REPORT-01: shifokor uchun hisobot — aynan tekshiruvlar ekranida,
+          chunki ayol shu yerda "shifokorga borishim kerak" degan qarorga
+          keladi. Hisobot o'sha qabulga tayyorgarlik. */}
+      {!readOnly && (
+        <button onClick={() => router.push("/hisobot")} className="block w-full text-left">
+          <Card interactive className="space-y-1">
+            <p className="font-semibold text-text-primary">{dict.doctorReport.title}</p>
+            <p className="text-sm text-text-secondary">{dict.doctorReport.subtitle}</p>
+          </Card>
+        </button>
+      )}
+
       {/* O'z-o'zini tekshirish testi — faqat o'zining checklist'i uchun,
           hamkorining ro'yxatini ko'rayotganda ma'nosiz (bu shaxsiy xavf testi). */}
       {!readOnly && (

@@ -45,6 +45,7 @@ import type {
   User,
   WellnessLog,
   ArticleComment,} from "./types";
+import type { DoctorReport } from "./logic/doctor-report";
 import type { CyclePrediction, ForecastedCycle } from "./logic/cycle";
 import type { BadgeId } from "./logic/gamification";
 import type { PregnancyStatus } from "./logic/pregnancy";
@@ -462,6 +463,10 @@ export function createApiClient(config: ApiClientConfig) {
             body: JSON.stringify({ content }),
           }
         ),
+    },
+    /** REPORT-01: shifokor qabuliga olib boriladigan xulosa (Premium). */
+    doctorReport: {
+      get: () => request<{ report: DoctorReport; name: string | null }>("/api/doctor-report"),
     },
     insights: {
       /** AI Yordamchi ekranining "Statistika" segmenti — sikl uzunligi
