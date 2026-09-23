@@ -14,9 +14,39 @@
 //
 // `public/logo.svg` o'z joyida qoladi: u favicon/OG rasm kabi haqiqiy
 // FAYL kerak bo'lgan joylarda ishlatiladi.
-export function LogoMark({ className }: { className?: string }) {
+/**
+ * LOGO-02 — brendning TO'LIQ belgisi: pushti doira ichida krem rangli "m".
+ *
+ * `logo.svg`dagi rang (#FFFAF1) tasodifiy emas — belgi AYNAN pushti fon
+ * ustida turishi uchun chizilgan, ilovaning o'z ikonkasi ham (icon-512.png)
+ * shunday: pushti kvadrat + krem "m".
+ *
+ * Ilgari kirish ekranida faqat belgining o'zi, fonsiz chizilardi — oq fonda
+ * oq bo'lib ko'rinmasdi. Uni shunchaki pushtiga bo'yash ham to'g'ri emas:
+ * u holda brend o'z ikonkasidan boshqacha ko'rinadi. To'g'ri yechim —
+ * ikonkadagi kabi to'liq belgi.
+ */
+export function LogoBadge({ className }: { className?: string }) {
   return (
-    <svg viewBox="606 342 708 396" role="img" aria-hidden="true" className={className} fill="currentColor">
+    <span
+      className={className}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "9999px",
+        background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)",
+      }}
+    >
+      {/* Krem rang — ikonkadagi bilan bir xil (#FFFAF1). */}
+      <LogoMark className="h-[46%] w-[62%]" style={{ color: "#FFFAF1" }} />
+    </span>
+  );
+}
+
+export function LogoMark({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="606 342 708 396" role="img" aria-hidden="true" className={className} style={style} fill="currentColor">
       <path d="M648.57,614.61c-3.06-16.14-3.59-36.22-0.16-61.19c0.07-0.5,0.12-1,0.17-1.51
 	c1.21-13.14,28.7-231.25,228.01-114.3c11.19,6.57,25.19,6.04,35.79-1.44c43.86-30.96,163.49-91.38,228.61,96.53
 	c1.59,0.12,17.37,100.82,89.25,77.16c21.51-7.08,43.7,8.64,43.7,31.29v0c0,15.2-10.36,28.43-25.11,32.09
