@@ -499,8 +499,13 @@ function OnboardingPageInner() {
       "welcome",
       "language",
       "account_choice",
-      "account_identifier",
-      "phone_verify",
+      // ONB-PHONE-01: `account_identifier` va `phone_verify` ro'yxatdan
+      // olib tashlandi — kirish ekranida telefon varianti yo'q, ya'ni bu
+      // ikki qadamga boradigan yo'l qolmagan. Ro'yxatda qoldirilsa, ular
+      // "Orqaga" orqali tushib qolish mumkin bo'lgan o'lik ekranga
+      // aylanardi. Ekranlarning KODI va backend o'z joyida qoladi —
+      // telefon bilan kirish qayta yoqilsa, faqat shu ikki qatorni
+      // qaytarish kifoya.
       "privacy",
       "name",
       "age",
@@ -546,7 +551,19 @@ function OnboardingPageInner() {
         // Sana kiritilmagan bo'lsa bashorat hisoblanmaydi, shuning uchun
         // qadam ham qo'shilmaydi (bo'sh ekran ko'rsatmaymiz).
         if (showPreviewStep && previewPrediction) tail.push("preview");
-        tail.push("typical_symptoms", "period_attitude", "health_conditions");
+        // ONB-TRIM-01: `period_attitude` ("hayzga munosabatingiz") ro'yxatdan
+        // OLIB TASHLANDI. Audit natijasi: javob bazaga yoziladi, lekin
+        // HECH QAYERDA ishlatilmaydi — na kontent tanlashda, na bashoratda,
+        // na admin panelda. Ya'ni ayoldan bitta qadam vaqt olinardi va
+        // evaziga hech narsa berilmasdi.
+        //
+        // Production'da 112 ayol javob bergan (noqulay 41, qulay 30,
+        // o'rganmoqchi 23, yoqtirmayman 18) — bu qimmatli signal, lekin u
+        // hozir hech narsaga ulanmagan. Ustun va mavjud javoblar
+        // SAQLANADI: kelajakda kontent ohangini moslash uchun ishlatilsa,
+        // savol PROFILE-01 naqshi bo'yicha — foydasi ko'rinib turgan
+        // joyda — qayta so'raladi, onboardingda emas.
+        tail.push("typical_symptoms", "health_conditions");
       }
       if (needsPersonalHealthQuestions(goal)) {
         tail.push("family_history");
@@ -558,9 +575,7 @@ function OnboardingPageInner() {
       tail.push("notifications", "analyzing");
       return [...list, ...tail];
     }
-    const filtered = isFromTelegram
-      ? base.filter((s) => !["welcome", "account_choice", "account_identifier", "phone_verify"].includes(s))
-      : base;
+    const filtered = isFromTelegram ? base.filter((s) => !["welcome", "account_choice"].includes(s)) : base;
     return withTail(filtered);
   }, [survey.primaryGoal, isFromTelegram, age, showPreviewStep, previewPrediction]);
 
