@@ -16,12 +16,17 @@ import type { ChecklistCategory, ChecklistItemType, Goal, HealthCondition, Onboa
 
 export interface ChecklistRuleInput {
   age: number;
-  familyHistory: boolean;
+  /** GATE-01: `null` — "bilmayman". Mammografiya muddatiga ta'sir qiladi:
+   * oilaviy tarix bo'lsa 30 yoshdan, aks holda 40 dan. "Bilmayman" holatida
+   * odatiy 40 qoladi — bu standart, xavfsiz tanlov. */
+  familyHistory: boolean | null;
   isPregnant: boolean;
   cycleIrregular: boolean;
   /** FIX-CHECKUPS: yangi — `familyHistory` bilan bir xil naqsh (onboarding
    * "bilmayman" varianti saqlashda `false`ga yig'iladi). */
-  sexuallyActive: boolean;
+  /** GATE-01: `null` — "bilmayman"/javob bermagan. Bu `false` BILAN BIR XIL
+   * EMAS: qarang, quyida `isSexuallyActive` va bachadon bo'yni skrininggi. */
+  sexuallyActive: boolean | null;
   /** FIX-CHECKUPS: homiladorlik haftasi (getPregnancyStatus().currentWeek) —
    * homiladorlik skrininggi bosqichlari shunga qarab hisoblanadi. */
   pregnancyWeek: number | null;
@@ -112,7 +117,12 @@ function isPregnancyWindowRelevant(currentWeek: number | null, windowStart: numb
 
 export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklistItem[] {
   const items: GeneratedChecklistItem[] = [];
-  const isSexuallyActive = input.sexuallyActive;
+  // GATE-01: `=== true` ATAYLAB aniq yozilgan. Ilgari bu shunchaki
+  // `input.sexuallyActive` edi va `null` ("bilmayman") jim turib `false`
+  // kabi ishlardi.
+  const isSexuallyActive = input.sexuallyActive === true;
+  /** Ayol bu savolga javob bermagan (yoki "bilmayman" degan). */
+  const sexualActivityUnknown = input.sexuallyActive === null;
 
   // --- Homiladorlik: alohida oqim, umumiy profilaktikadan ustuvor ---
   // (eski pregnancy_first_visit/pregnancy_trimester_checkup o'rniga —
@@ -225,7 +235,20 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
   if (input.age >= 18 && input.age <= 65) {
     items.push({ type: "flora_smear", dueInDays: 365, recurrenceDays: 365 });
   }
-  if (input.age >= 18 && input.age <= 65 && isSexuallyActive) {
+  // GATE-01: bachadon bo'yni skrininggi — javob bermaganlarga HAM
+  // ko'rsatiladi.
+  //
+  // Bu boshqa "jinsiy faollik" bandlaridan farq qiladi va sabab xatoning
+  // NARXIDA: keraksiz skriningni ko'rsatish — ayol uni e'tiborsiz
+  // qoldiradi; keraklisini YASHIRISH esa aynan ilova oldini olish uchun
+  // mavjud bo'lgan natijaga olib keladi. Manba buni "bu ro'yxatdagi oldini
+  // olish mumkin bo'lgan eng katta o'lim xavfi" deb belgilaydi, va tavsiya
+  // etilgan bosqich 18 yoshdan boshlanadi.
+  //
+  // Bu savolga "bilmayman" deb javob berish mumkin emas — ayol o'z jinsiy
+  // hayotini biladi. Ya'ni bu javob amalda "aytishni xohlamayman" degani,
+  // uni "yo'q" deb talqin qilish esa taxmin bo'lardi.
+  if (input.age >= 18 && input.age <= 65 && (isSexuallyActive || sexualActivityUnknown)) {
     items.push({ type: "cervical_cancer_screening", dueInDays: 365, recurrenceDays: 365 });
   }
   if (input.age >= 18) {

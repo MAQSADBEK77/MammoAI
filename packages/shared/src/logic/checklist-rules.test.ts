@@ -267,3 +267,39 @@ describe("PLAN-01: reja foydalanuvchiga moslashadi", () => {
     expect(items).toHaveLength(1);
   });
 });
+
+describe("GATE-01: \"bilmayman\" javobi \"yo'q\" bilan bir xil emas", () => {
+  const types = (sexuallyActive: ChecklistRuleInput["sexuallyActive"]) =>
+    generateChecklist({ ...BASE, age: 25, sexuallyActive }).map((i) => i.type);
+
+  it("bachadon bo'yni skrininggi javob BERILMAGANDA ham ko'rsatiladi", () => {
+    // Xatoning narxi assimetrik: keraksiz skrining — e'tiborsiz
+    // qoldiriladi; keraklisini yashirish — aynan ilova oldini olish uchun
+    // mavjud bo'lgan natija. Manba buni "oldini olish mumkin bo'lgan eng
+    // katta o'lim xavfi" deb belgilaydi.
+    expect(types(true)).toContain("cervical_cancer_screening");
+    expect(types(null)).toContain("cervical_cancer_screening");
+    // Aniq "yo'q" degan bo'lsa — ko'rsatilmaydi (HPV jinsiy yo'l bilan
+    // yuqadi, ya'ni bu holatda skrining haqiqatan ma'nosiz).
+    expect(types(false)).not.toContain("cervical_cancer_screening");
+  });
+
+  it("boshqa jinsiy faollik bandlari javob berilmaganda ko'rsatilmaydi", () => {
+    // Bularda xatoning narxi teskari: spekulyum bilan ko'rik yoki JYYI
+    // tahlili — invaziv/xarajatli, va o'tkazib yuborilishining oqibati
+    // bachadon bo'yni saratonicha og'ir emas.
+    for (const t of ["pelvic_exam_speculum", "sti_panel", "contraception_counseling"]) {
+      expect(types(true)).toContain(t);
+      expect(types(null)).not.toContain(t);
+      expect(types(false)).not.toContain(t);
+    }
+  });
+
+  it("oilaviy tarix bilinmasa — mammografiya odatiy 40 yoshdan", () => {
+    const at = (age: number, familyHistory: ChecklistRuleInput["familyHistory"]) =>
+      generateChecklist({ ...BASE, age, familyHistory }).map((i) => i.type);
+    expect(at(32, true)).toContain("breast_cancer_screening_mammography");
+    expect(at(32, null)).not.toContain("breast_cancer_screening_mammography");
+    expect(at(42, null)).toContain("breast_cancer_screening_mammography");
+  });
+});

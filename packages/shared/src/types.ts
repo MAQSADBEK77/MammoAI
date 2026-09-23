@@ -115,13 +115,22 @@ export interface OnboardingProfile {
   age: number;
   isPregnant: boolean;
   cycleRegularity: CycleRegularity;
-  familyHistory: boolean;
+  /** GATE-01: `null` — foydalanuvchi "bilmayman" degan (yoki javob bermagan).
+   *
+   * ILGARI bu `boolean` edi va onboarding'dagi UCHTA javob (ha/yo'q/bilmayman)
+   * ikkitaga siqilardi: `survey.familyHistory === true`. Ya'ni "bilmayman"
+   * va "yo'q" bazada BIR XIL bo'lib qolardi va ularni ajratib bo'lmasdi. */
+  familyHistory: boolean | null;
   /** FIX-CHECKUPS: JYYI/kontratseptsiya/bachadon bo'yni skrininggi kabi bir
-   * nechta yangi tekshiruv turi shunga bog'liq. 15 yoshgacha so'ralmaydi
-   * (avtomatik `false`). `familyHistory` bilan bir xil naqsh — onboarding
-   * so'rovnomasida "bilmayman" varianti ham bor, lekin saqlashda `false`ga
-   * yig'iladi (xuddi familyHistory kabi). */
-  sexuallyActive: boolean;
+   * nechta yangi tekshiruv turi shunga bog'liq. 15 yoshgacha so'ralmaydi.
+   *
+   * GATE-01: `null` — "bilmayman" yoki javob bermagan. Bu AJRATILISHI shart.
+   * Ilgari u `false`ga yig'ilardi va ayol bachadon bo'yni skrininggidan
+   * BUTUNLAY chiqib ketardi — manba uni "oldini olish mumkin bo'lgan eng
+   * katta o'lim xavfi" deb belgilaydi. Production'da 120 tadan atigi 14
+   * tasi `true` edi, o'rtacha yosh esa 24 — ya'ni "yo'q" javoblarining
+   * katta qismi aslida "aytishni xohlamayman" bo'lishi ehtimoli yuqori. */
+  sexuallyActive: boolean | null;
   lastCheckup: "recent" | "over_year" | "never" | "unknown";
   primaryGoal: Goal;
   heardAboutUs: HeardAboutUs | null;

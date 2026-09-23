@@ -545,6 +545,12 @@ async function initSchema() {
     // FIX-CHECKUPS: bachadon bo'yni skrininggi/JYYI/kontratseptsiya kabi
     // bir nechta yangi tekshiruv turi shunga bog'liq (checklist-rules.ts).
     sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS sexually_active BOOLEAN NOT NULL DEFAULT FALSE`,
+    // GATE-01: "bilmayman" javobini "yo'q"dan ajratish uchun NULL ruxsat
+    // etiladi. Mavjud qatorlarga ta'sir qilmaydi (ular true/false bo'lib
+    // qoladi) va takroran bajarilishi xavfsiz — Postgres'da allaqachon
+    // nullable ustunda DROP NOT NULL xatolik bermaydi.
+    sql`ALTER TABLE onboarding_profiles ALTER COLUMN sexually_active DROP NOT NULL`,
+    sql`ALTER TABLE onboarding_profiles ALTER COLUMN family_history DROP NOT NULL`,
     // MUHIM: `notifications`ga tegishli ALTER'lar ATAYLAB bu yerda EMAS —
     // pastda, jadvalning o'zi ("2.5-bosqich") yaratilgandan KEYIN (qarang:
     // "2.6-bosqich"). Bu yerda turganda haqiqiy production'da hech qachon

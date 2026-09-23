@@ -765,8 +765,8 @@ interface OnboardingRow {
   age: number;
   is_pregnant: boolean;
   cycle_regularity: OnboardingProfile["cycleRegularity"];
-  family_history: boolean;
-  sexually_active: boolean;
+  family_history: boolean | null;
+  sexually_active: boolean | null;
   last_checkup: OnboardingProfile["lastCheckup"];
   primary_goal: OnboardingProfile["primaryGoal"];
   heard_about_us: HeardAboutUs | null;
@@ -786,8 +786,12 @@ function onboardingFromRow(row: OnboardingRow): OnboardingProfile {
     age: row.age,
     isPregnant: !!row.is_pregnant,
     cycleRegularity: row.cycle_regularity,
-    familyHistory: !!row.family_history,
-    sexuallyActive: !!row.sexually_active,
+    // GATE-01: `!!` ATAYLAB olib tashlandi — u `null`ni `false`ga
+    // aylantirib, "bilmayman" javobini "yo'q"dan ajratib bo'lmaydigan
+    // qilardi. Bu bazaga NULL yozish o'zgarishini butunlay behuda
+    // qilgan bo'lardi: yozilardi, lekin o'qishda yo'qolardi.
+    familyHistory: row.family_history,
+    sexuallyActive: row.sexually_active,
     lastCheckup: row.last_checkup,
     primaryGoal: row.primary_goal,
     heardAboutUs: row.heard_about_us,

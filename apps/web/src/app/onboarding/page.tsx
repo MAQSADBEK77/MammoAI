@@ -690,8 +690,9 @@ function OnboardingPageInner() {
         age,
         isPregnant: survey.primaryGoal === "pregnancy",
         cycleRegularity: survey.cycleRegularity ?? "unknown",
-        familyHistory: survey.familyHistory === true,
-        sexuallyActive: survey.sexuallyActive === true,
+        // GATE-01: "bilmayman" endi `null` — u "yo'q" bilan bir xil emas.
+        familyHistory: survey.familyHistory === "unknown" ? null : survey.familyHistory,
+        sexuallyActive: survey.sexuallyActive === "unknown" ? null : survey.sexuallyActive,
         lastCheckup: survey.lastCheckup ?? "unknown",
         primaryGoal: survey.primaryGoal!,
         heardAboutUs: survey.heardAboutUs ?? "other",

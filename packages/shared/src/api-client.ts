@@ -134,8 +134,9 @@ export interface OnboardingPayload {
   age: number;
   isPregnant: boolean;
   cycleRegularity: OnboardingProfile["cycleRegularity"];
-  familyHistory: boolean;
-  sexuallyActive: boolean;
+  // GATE-01: `null` — "bilmayman". Qarang: OnboardingProfile izohlari.
+  familyHistory: boolean | null;
+  sexuallyActive: boolean | null;
   lastCheckup: OnboardingProfile["lastCheckup"];
   primaryGoal: Goal;
   heardAboutUs: HeardAboutUs;
