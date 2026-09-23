@@ -9,6 +9,7 @@ import { useSession } from "@/lib/session";
 import { Card, LoadingSpinner } from "@/components/ui";
 import { CycleScreen } from "@/components/screens/CycleScreen";
 import { PregnancyScreen } from "@/components/screens/PregnancyScreen";
+import { NotificationsOptInCard } from "@/components/screens/NotificationsOptInCard";
 
 /**
  * "Asosiy" — yagona bosh sahifa: rejimga qarab Tsikl yoki Homiladorlik
@@ -65,6 +66,11 @@ export default function AsosiyPage() {
 
   return (
     <div className="space-y-8 pb-6">
+      {/* NOTIF-02: eslatmalarni yoqish taklifi — NOTIF-01 xatosi tufayli
+          jimgina o'chirilib qolgan ayollarga tanlovni qaytaradi. Faqat
+          bildirishnomasi o'chiq bo'lganlarga va bir marta ko'rinadi. */}
+      <NotificationsOptInCard />
+
       {isPregnancyMode ? <PregnancyScreen /> : <CycleScreen variant={useTodayVariant ? "today" : "classic"} />}
       <div className="border-t border-border pt-6">
         {/* BRIDGE-01: karta endi bo'limni SHU YERDA ochmaydi, balki
