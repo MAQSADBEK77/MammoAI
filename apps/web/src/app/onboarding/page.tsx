@@ -404,6 +404,57 @@ const PERIOD_ATTITUDE_ICON: Record<PeriodAttitude, string> = {
 // `useSearchParams()` (fromTelegram=1 aniqlash uchun) Next.js'ning statik
 // prerender qilishiga to'sqinlik qiladi — Suspense chegarasi shart (bug fixi:
 // apps/web/src/app/baholash/page.tsxdagi bilan bir xil sabab).
+/**
+ * ONB-DRAFT-01 — onboarding javoblarini qurilmada vaqtincha saqlash.
+ *
+ * Muammo: javoblar faqat React holatida yashardi. Sahifa qayta yuklansa,
+ * Telegram Mini App webview'i qayta ishga tushsa (bu tez-tez bo'ladi —
+ * tizim uni xotiradan chiqarib yuboradi), yoki ayol boshqa ilovaga o'tib
+ * qaytsa — O'N BESHTA javob ham yo'qolib, u birinchi qadamdan boshlardi.
+ *
+ * Production'da 155 foydalanuvchidan 36 tasi onboardingni tugatmagan.
+ * Buning qanchasi shu sabab ekanini aniq bilmaymiz, lekin yo'qotishning
+ * bu turi butunlay keraksiz.
+ *
+ * Saqlanadigan narsa ayolning o'zi hozir kiritayotgan va bir necha
+ * daqiqadan keyin bizga yuboradigan javoblari — ular faqat SHU qurilmada
+ * qoladi va onboarding tugashi bilan O'CHIRILADI. Bir kundan eski
+ * qoralama ham o'chiriladi: yarim tashlangan javoblarni keyinroq
+ * qaytarish chalkash bo'lardi.
+ */
+const DRAFT_KEY = "mammoai_onboarding_draft";
+const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+interface OnboardingDraft {
+  survey: SurveyState;
+  step: Step;
+  savedAt: number;
+}
+
+function readOnboardingDraft(): OnboardingDraft | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const draft = JSON.parse(raw) as OnboardingDraft;
+    if (!draft?.survey || !draft.step || Date.now() - draft.savedAt > DRAFT_MAX_AGE_MS) {
+      localStorage.removeItem(DRAFT_KEY);
+      return null;
+    }
+    return draft;
+  } catch {
+    // Buzuq yoki o'qib bo'lmaydigan qoralama — shunchaki e'tiborsiz.
+    return null;
+  }
+}
+
+function clearOnboardingDraft(): void {
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // Xotira bloklangan — saqlanmagan ham bo'lishi mumkin.
+  }
+}
+
 export default function OnboardingPage() {
   return (
     <Suspense fallback={<div className="min-h-dvh bg-background" />}>
@@ -421,6 +472,10 @@ function OnboardingPageInner() {
 
   const [survey, setSurvey] = useState<SurveyState>(INITIAL_SURVEY);
   const [stepIndex, setStepIndex] = useState(0);
+  // ONB-DRAFT-01: javoblar tiklanguncha saqlashni boshlamaymiz (pastdagi
+  // izohga qarang) — aks holda bo'sh boshlang'ich holat qoralamani
+  // o'chirib yuborardi.
+  const draftRestoredRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Telegram orqali telefon tasdiqlash — account_identifier'da yaratilgan
@@ -581,6 +636,37 @@ function OnboardingPageInner() {
 
   const step = steps[stepIndex];
 
+  // ONB-DRAFT-01 (tiklash) — mount'da BIR MARTA. Qadam INDEKS bilan emas,
+  // NOMI bilan tiklanadi: qadamlar ro'yxati maqsad va yoshga qarab
+  // o'zgaradi, ya'ni saqlangan indeks boshqa savolga to'g'ri kelib qolishi
+  // mumkin edi. Nom topilmasa — boshidan, lekin javoblar saqlanadi.
+  useEffect(() => {
+    const draft = readOnboardingDraft();
+    draftRestoredRef.current = true;
+    if (!draft) return;
+    const timeout = setTimeout(() => {
+      setSurvey(draft.survey);
+      setStepIndex((cur) => {
+        const restored = steps.indexOf(draft.step);
+        return restored >= 0 ? restored : cur;
+      });
+    }, 0);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ONB-DRAFT-01 (saqlash) — har javob o'zgarganda. "analyzing" bosqichida
+  // saqlamaymiz: u yerda yuborish allaqachon boshlangan va muvaffaqiyatli
+  // tugasa qoralama baribir o'chiriladi.
+  useEffect(() => {
+    if (!draftRestoredRef.current || step === "analyzing") return;
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ survey, step, savedAt: Date.now() }));
+    } catch {
+      // Xotira bloklangan (xususiy rejim) — qoralamasiz davom etamiz.
+    }
+  }, [survey, step]);
+
   /** ONB-04: joriy bo'lim va shu bo'lim ICHIDAGI o'rin. Hisob `steps`
    * massividan olinadi — ya'ni shartli qadamlar (masalan `sexually_active`
    * faqat 15+ uchun) avtomatik hisobga olinadi va "4 tadan 3-qadam" doim
@@ -733,6 +819,7 @@ function OnboardingPageInner() {
         notificationsEnabled: !!survey.notificationsEnabled,
       });
       applyMeResponse(res);
+      clearOnboardingDraft();
       await submitPendingQuizAnswersIfAny();
       router.replace(landingPath(survey.primaryGoal!));
     } catch {
