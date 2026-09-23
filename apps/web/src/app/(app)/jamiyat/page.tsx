@@ -455,6 +455,17 @@ export default function CommunityPage() {
         </Card>
       )}
 
+      {/* COMM-04: moderatsiya ogohlantirishi. Referensda (Flo) ham lentaning
+          tepasida turadi va sabab jiddiy: bu yerdagi savollar TIBBIY
+          ("17 haftada qimirlashini sezmayapman", "ich ketishi xavflimi") va
+          noto'g'ri javob zarar keltirishi mumkin. Ogohlantirish nima
+          qilishimizni ham, nima QILMASLIGIMIZNI ham aniq aytadi: nomaqbul
+          yozuvni olib tashlaymiz, lekin javoblarning to'g'riligini
+          tekshirmaymiz. */}
+      <div className="rounded-2xl bg-surface-muted px-4 py-3">
+        <p className="text-xs leading-relaxed text-text-secondary">{dict.community.moderationNotice}</p>
+      </div>
+
       {/* COMM-02: lenta yorliqlari. Ilgari faqat butun forum bor edi va ayol
           o'z savoliga javob kelganini bilish uchun uni qaytadan qidirishi
           kerak edi — savol bir necha soatdan keyin pastga tushib ketardi.
