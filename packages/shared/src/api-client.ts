@@ -107,6 +107,14 @@ export interface CycleResponse {
   settings: CycleSettings;
   logs: CycleLog[];
   prediction: CyclePrediction | null;
+  /** CYCLE-ALGO-13 / PROFILE-01: `true` bo'lsa unumdor oyna va ovulyatsiya
+   * KO'RSATILMASLIGI kerak.
+   *
+   * Gormonal kontratseptsiya ishlatuvchi ayolda "hayz" aslida dori
+   * sxemasiga bog'liq chekinish qonashi — tabiiy ovulyatsiya YO'Q. Unga
+   * unumdor oyna ko'rsatish homiladorlikdan himoya haqida noto'g'ri
+   * xotirjamlik berardi, ya'ni bu tibbiy jihatdan chalg'ituvchi bo'lardi. */
+  suppressFertility: boolean;
   isIrregular: boolean;
   /** CYCLE-ALGO-16: bir necha sikl OLDINGA bashorat (~1 yil) — kalendar
    * faqat keyingi oyni emas, kelgusi oylarni ham belgilashi uchun.

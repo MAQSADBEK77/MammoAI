@@ -119,7 +119,8 @@ export function PeriodCalendar({
     // faqat kalendarni xira kulrang qilib to'ldiradi (foydalanuvchi: "why
     // some dates are dark and some are grey"), va homiladorlikka
     // tayyorlanayotgan yoki aksincha saqlanayotgan ayolni chalg'itadi.
-    const showFertile = data.prediction?.confidence !== "insufficient";
+    // CYCLE-ALGO-13: gormonal kontratseptsiyada tabiiy ovulyatsiya yo'q.
+    const showFertile = data.prediction?.confidence !== "insufficient" && !data.suppressFertility;
     for (const c of data.forecast) {
       const uncertain = c.uncertaintyDays > FAINT_UNCERTAINTY_DAYS;
       push(predicted, c.periodStart, c.periodEnd, uncertain);
@@ -132,7 +133,7 @@ export function PeriodCalendar({
       }
     }
     return { predictedDates: predicted, fertileDates: fertile, ovulationDates: ovulation, faintDates: faint };
-  }, [data.forecast, data.prediction?.confidence]);
+  }, [data.forecast, data.prediction?.confidence, data.suppressFertility]);
 
   const months = useMemo(
     () =>

@@ -92,7 +92,13 @@ export async function buildCycleResponse(userId: string, today?: string): Promis
       )
     : [];
 
-  return { settings, logs, prediction, isIrregular, forecast };
+  // CYCLE-ALGO-13 / PROFILE-01: gormonal kontratseptsiya ishlatuvchi
+  // ayolda tabiiy ovulyatsiya yo'q — unumdor oyna ko'rsatish
+  // homiladorlikdan himoya haqida noto'g'ri xotirjamlik berardi.
+  const profile = await getOnboardingProfile(userId);
+  const suppressFertility = profile?.hormonalContraception === true;
+
+  return { settings, logs, prediction, isIrregular, forecast, suppressFertility };
 }
 
 /** Vazn — oldingi qayddan (yoki, birinchi qayd bo'lsa, onboarding vaznidan) farqi, kg. */

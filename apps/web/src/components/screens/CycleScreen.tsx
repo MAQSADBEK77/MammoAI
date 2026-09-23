@@ -376,7 +376,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     // Bashorat eskirgan bo'lsa (oxirgi hayz juda uzoq oldin qayd etilgan)
     // hech qanday bashorat belgisi qo'yilmaydi — aks holda chiziq allaqachon
     // o'tib ketgan "bashorat"larni ko'rsatib, xato ma'lumot berardi.
-    const showFertile = data.prediction?.confidence !== "insufficient";
+    // CYCLE-ALGO-13: gormonal kontratseptsiyada tabiiy ovulyatsiya yo'q.
+    const showFertile = data.prediction?.confidence !== "insufficient" && !data.suppressFertility;
     // CYCLE-ALGO-18: hali birorta sikl aniqlanmagan bo'lsa ("insufficient" —
     // odatda faqat onboarding'da bitta sana kiritilgan) unumdor oyna
     // KO'RSATILMAYDI. Sabab: bunday holatda noaniqlik ~6 kun, ya'ni oyna
@@ -572,6 +573,11 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
         },
       };
     }
+    // CYCLE-ALGO-13: gormonal kontratseptsiyada bu qatorni umuman
+    // ko'rsatmaymiz. "Ehtimol past" yozuvi to'g'ri ko'rinishi mumkin, lekin
+    // BIZNING hisobimiz uning sababi emas — u dori ta'siridan. O'z
+    // hisobimizni himoya kafolati kabi ko'rsatish chalg'ituvchi bo'lardi.
+    if (data.suppressFertility) return null;
     if (!data.prediction || data.prediction.isStale || hasNoCycleData) {
       return { label: dict.cycle.pregnancyChanceUnknown, onClick: () => openLogging(today, todayLog) };
     }

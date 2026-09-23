@@ -4,6 +4,7 @@ import { ApiError } from "./api-utils";
 import type { CheckinResponse } from "@mammoai/shared";
 import { PET_IDS, type PetChoice } from "@mammoai/shared";
 import type {
+  ChronicCondition,
   AnalyticsEventInput,
   AnalyticsSummary,
   AnalyticsUserSummary,
@@ -767,6 +768,11 @@ interface OnboardingRow {
   cycle_regularity: OnboardingProfile["cycleRegularity"];
   family_history: boolean | null;
   sexually_active: boolean | null;
+  hpv_vaccinated: boolean | null;
+  hormonal_contraception: boolean | null;
+  smokes: boolean | null;
+  has_given_birth: boolean | null;
+  chronic_conditions: string | null;
   last_checkup: OnboardingProfile["lastCheckup"];
   primary_goal: OnboardingProfile["primaryGoal"];
   heard_about_us: HeardAboutUs | null;
@@ -792,6 +798,14 @@ function onboardingFromRow(row: OnboardingRow): OnboardingProfile {
     // qilgan bo'lardi: yozilardi, lekin o'qishda yo'qolardi.
     familyHistory: row.family_history,
     sexuallyActive: row.sexually_active,
+    // PROFILE-01: `?? null` ATAYLAB — bu maydonlar eski qatorlarda umuman
+    // yo'q va `null` "hali so'ralmagan" degani (GATE-01: uni `false` ga
+    // aylantirish "yo'q" javobi bilan chalkashtirib yuborardi).
+    hpvVaccinated: row.hpv_vaccinated ?? null,
+    hormonalContraception: row.hormonal_contraception ?? null,
+    smokes: row.smokes ?? null,
+    hasGivenBirth: row.has_given_birth ?? null,
+    chronicConditions: row.chronic_conditions ? (JSON.parse(row.chronic_conditions) as ChronicCondition[]) : null,
     lastCheckup: row.last_checkup,
     primaryGoal: row.primary_goal,
     heardAboutUs: row.heard_about_us,

@@ -84,6 +84,10 @@ export type CycleRegularity = "regular" | "irregular" | "unknown";
 export type PeriodAttitude = "uncomfortable" | "dislike" | "want_to_learn" | "comfortable";
 
 // App.pdf §7 — kasalliklar tarixi (bir nechtasi tanlanishi mumkin).
+/** PROFILE-01: surunkali holatlar — ginekologik emas, lekin homiladorlikni
+ * rejalashtirish va umumiy skriningga ta'sir qiladi. */
+export type ChronicCondition = "diabetes" | "hypertension" | "thyroid" | "anemia" | "none";
+
 export type HealthCondition =
   | "yeast_infection"
   | "uti"
@@ -140,6 +144,32 @@ export interface OnboardingProfile {
   healthConditionsOther: string | null;
   heightCm: number | null;
   weightKg: number | null;
+  /* ------------------------------------------------------------------
+   * PROFILE-01 — onboarding'dan KEYIN, ishonch hosil bo'lgach so'raladigan
+   * savollar. Barchasi `null` bo'lishi mumkin: `null` = "hali so'ralmagan
+   * yoki javob berilmagan", ya'ni "yo'q" bilan BIR XIL EMAS (GATE-01 dagi
+   * xatoni takrorlamaslik uchun).
+   *
+   * Nega onboarding'da emas: onboarding allaqachon uzun (voronkada
+   * `phone_verify` da 17 kishi qotib qolgan). Bu savollar esa javobning
+   * FOYDASI ko'rinib turgan joyda — tekshiruvlar ekranida — beriladi.
+   * ------------------------------------------------------------------ */
+  /** HPV vaksinasi olinganmi. `true` bo'lsa vaksinatsiya bandi ro'yxatdan
+   * chiqariladi — bajarilgan ishni qayta-qayta eslatish ishonchni yo'qotadi. */
+  hpvVaccinated: boolean | null;
+  /** Gormonal kontratseptsiya (tabletka, spiral va h.k.) ishlatiladimi.
+   * MUHIM: `true` bo'lsa unumdor oyna va ovulyatsiya KO'RSATILMAYDI —
+   * bunday foydalanuvchida "hayz" aslida dori sxemasiga bog'liq chekinish
+   * qonashi, tabiiy ovulyatsiya yo'q. Ko'rsatish homiladorlikdan himoya
+   * haqida noto'g'ri xotirjamlik berardi (CYCLE-ALGO-13 eslatmasi). */
+  hormonalContraception: boolean | null;
+  /** Chekish — bachadon bo'yni saratoni uchun tasdiqlangan xavf omili
+   * (HPV infeksiyasining saqlanib qolishiga ta'sir qiladi, JSST). */
+  smokes: boolean | null;
+  /** Tug'ish tarixi — ko'krak va tuxumdon saratoni xavfiga ta'sir qiladi. */
+  hasGivenBirth: boolean | null;
+  /** Ginekologik bo'lmagan surunkali holatlar. */
+  chronicConditions: ChronicCondition[] | null;
   /** Ixtiyoriy — foydalanuvchi o'zi kiritadi, tibbiy tashxis manbai emas. */
   bloodType: BloodType | null;
 }

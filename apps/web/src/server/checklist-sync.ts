@@ -79,6 +79,7 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
     // ta'sir qilmasdi — qarang: checklist-rules.ts izohlari.
     lastCheckup: profile.lastCheckup,
     healthConditions: profile.healthConditions,
+    hpvVaccinated: profile.hpvVaccinated,
   });
 
   await Promise.all(

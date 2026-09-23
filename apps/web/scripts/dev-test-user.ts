@@ -67,6 +67,13 @@ async function main() {
       heightCm: 165,
       weightKg: 60,
       bloodType: null,
+    // PROFILE-01: test akkauntda hali so'ralmagan holat (null) — real
+    // foydalanuvchining boshlang'ich holati bilan bir xil.
+    hpvVaccinated: null,
+    hormonalContraception: null,
+    smokes: null,
+    hasGivenBirth: null,
+    chronicConditions: null,
     };
     await saveOnboardingProfile(profile);
     await syncChecklistForUser(user.id, profile);

@@ -551,6 +551,13 @@ async function initSchema() {
     // nullable ustunda DROP NOT NULL xatolik bermaydi.
     sql`ALTER TABLE onboarding_profiles ALTER COLUMN sexually_active DROP NOT NULL`,
     sql`ALTER TABLE onboarding_profiles ALTER COLUMN family_history DROP NOT NULL`,
+    // PROFILE-01: onboarding'dan KEYIN so'raladigan savollar. Barchasi
+    // nullable — `NULL` = "hali so'ralmagan", bu "yo'q" bilan bir xil emas.
+    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS hpv_vaccinated BOOLEAN`,
+    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS hormonal_contraception BOOLEAN`,
+    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS smokes BOOLEAN`,
+    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS has_given_birth BOOLEAN`,
+    sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS chronic_conditions TEXT`,
     // MUHIM: `notifications`ga tegishli ALTER'lar ATAYLAB bu yerda EMAS —
     // pastda, jadvalning o'zi ("2.5-bosqich") yaratilgandan KEYIN (qarang:
     // "2.6-bosqich"). Bu yerda turganda haqiqiy production'da hech qachon

@@ -14,6 +14,7 @@ const BASE: ChecklistRuleInput = {
   isTryingToConceive: false,
   lastCheckup: "recent",
   healthConditions: [],
+  hpvVaccinated: null,
 };
 
 function typesOf(input: Partial<ChecklistRuleInput>): string[] {
@@ -301,5 +302,23 @@ describe("GATE-01: \"bilmayman\" javobi \"yo'q\" bilan bir xil emas", () => {
     expect(at(32, true)).toContain("breast_cancer_screening_mammography");
     expect(at(32, null)).not.toContain("breast_cancer_screening_mammography");
     expect(at(42, null)).toContain("breast_cancer_screening_mammography");
+  });
+});
+
+describe("PROFILE-01: onboarding'dan keyin so'raladigan javoblar", () => {
+  const types = (patch: Partial<ChecklistRuleInput>) =>
+    generateChecklist({ ...BASE, age: 22, ...patch }).map((i) => i.type);
+
+  it("HPV vaksinasi olingan bo'lsa band ko'rsatilmaydi", () => {
+    // Bajarilgan ishni qayta-qayta eslatish ishonchni yo'qotadi va ayol
+    // butun ro'yxatga shubha bilan qaray boshlaydi.
+    expect(types({ hpvVaccinated: true })).not.toContain("hpv_vaccination");
+    expect(types({ hpvVaccinated: false })).toContain("hpv_vaccination");
+  });
+
+  it("hali so'ralmagan bo'lsa band QOLADI", () => {
+    // Vaksinani o'tkazib yuborish uni ortiqcha ko'rsatishdan qimmatroq —
+    // shuning uchun `null` holatida band saqlanadi.
+    expect(types({ hpvVaccinated: null })).toContain("hpv_vaccination");
   });
 });

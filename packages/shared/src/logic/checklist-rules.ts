@@ -51,6 +51,8 @@ export interface ChecklistRuleInput {
   /** PLAN-01: onboarding'da tanlangan mavjud holatlar. Bu ham so'ralardi,
    * lekin rejaga ta'sir qilmasdi. */
   healthConditions: HealthCondition[];
+  /** PROFILE-01: HPV vaksinasi olinganmi. `null` — hali so'ralmagan. */
+  hpvVaccinated: boolean | null;
 }
 
 /** PLAN-01: shifokor tashrifini talab qiladigan YILLIK bandlar. Faqat
@@ -217,7 +219,12 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
   if (input.age >= 14 && input.age <= 18) {
     items.push({ type: "first_gyn_visit", dueInDays: 30, recurrenceDays: 365 });
   }
-  if (input.age >= 9 && input.age <= 45) {
+  // PROFILE-01: vaksina allaqachon olingan bo'lsa bandni ko'rsatmaymiz.
+  // Bajarilgan ishni qayta-qayta eslatish — ishonchni yo'qotishning eng
+  // tez yo'li, va ayol butun ro'yxatga shubha bilan qaray boshlaydi.
+  // `null` ("so'ralmagan") holatida BAND QOLADI: vaksinani o'tkazib
+  // yuborish uni ortiqcha ko'rsatishdan ko'ra qimmatroq.
+  if (input.age >= 9 && input.age <= 45 && input.hpvVaccinated !== true) {
     items.push({ type: "hpv_vaccination", dueInDays: 30 });
   }
   // FIX3-06: ilgari `sexually_active_required: false`ni "cheklanmagan"
