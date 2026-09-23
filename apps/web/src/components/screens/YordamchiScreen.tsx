@@ -8,7 +8,6 @@ import type { ChatMessage, InsightsSummary, SymptomPattern } from "@mammoai/shar
 import { ApiError, detectsMedicalConcern, translateApiError } from "@mammoai/shared";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
-import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { ScreenHeader, LoadingSpinner, ErrorState, Card, Button } from "@/components/ui";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
@@ -48,7 +47,6 @@ function ChatBubbleEnter({ className, children }: { className?: string; children
  */
 export function YordamchiScreen() {
   const { dict } = useI18n();
-  const { hasPremium } = useSession();
   const router = useRouter();
   const [tab, setTab] = useState<"chat" | "stats">("chat");
 
@@ -139,9 +137,9 @@ export function YordamchiScreen() {
   }, [loadMessages]);
 
   useEffect(() => {
-    if (!hasPremium || tab !== "stats" || insights) return;
+    if (!access?.hasPremium || tab !== "stats" || insights) return;
     api.insights.get().then(setInsights).catch(() => {});
-  }, [hasPremium, tab, insights]);
+  }, [access?.hasPremium, tab, insights]);
 
   // Chatdan foydalana oladimi: Premium YOKI bepul xabari qolgan.
   const canUseChat = access === null ? true : access.hasPremium || access.freeMessagesLeft > 0;
@@ -290,7 +288,32 @@ export function YordamchiScreen() {
           <div className="flex shrink-0 flex-col gap-4">
             {headerBlock}
           </div>
-          {insights ? (
+          {access && !access.hasPremium ? (
+            // MONETIZE-01: bepul foydalanuvchi endi suhbatdan o'tib shu
+            // yergacha keladi (ilgari paywall uni ekranga umuman
+            // kiritmasdi). Statistika Premium bo'lib qoladi — lekin jim
+            // xato o'rniga NIMA olishini ko'rsatamiz. Bu ayol yordamchini
+            // allaqachon sinab ko'rgandan KEYINGI taklif, ya'ni eng
+            // ishonarli payt.
+            <Card className="flex flex-col items-center gap-3 py-8 text-center">
+              <div className="bg-aurora-cycle flex h-14 w-14 items-center justify-center rounded-full">
+                <WorkspacePremiumRounded sx={{ fontSize: 26 }} className="text-white" />
+              </div>
+              <h2 className="text-lg font-bold text-text-primary">{dict.chat.premiumTitle}</h2>
+              <p className="max-w-sm text-sm text-text-secondary">{dict.chat.premiumBody}</p>
+              <ul className="flex flex-col gap-1.5 self-start text-sm text-text-secondary">
+                {[dict.chat.premiumBenefit1, dict.chat.premiumBenefit2, dict.chat.premiumBenefit3].map((b) => (
+                  <li key={b} className="flex items-center gap-2">
+                    <Emoji e="✨" size={14} />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+              <Button className="mt-2" onClick={() => router.push("/fikr")}>
+                {dict.chat.premiumCta}
+              </Button>
+            </Card>
+          ) : insights ? (
             <InsightsPanel summary={insights.summary} patterns={insights.patterns} aiInsight={insights.aiInsight} />
           ) : (
             // UX-00: ilgari bu <div> markazlashtirishga urinardi, lekin

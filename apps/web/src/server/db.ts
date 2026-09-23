@@ -545,12 +545,6 @@ async function initSchema() {
     // FIX-CHECKUPS: bachadon bo'yni skrininggi/JYYI/kontratseptsiya kabi
     // bir nechta yangi tekshiruv turi shunga bog'liq (checklist-rules.ts).
     sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS sexually_active BOOLEAN NOT NULL DEFAULT FALSE`,
-    // GATE-01: "bilmayman" javobini "yo'q"dan ajratish uchun NULL ruxsat
-    // etiladi. Mavjud qatorlarga ta'sir qilmaydi (ular true/false bo'lib
-    // qoladi) va takroran bajarilishi xavfsiz — Postgres'da allaqachon
-    // nullable ustunda DROP NOT NULL xatolik bermaydi.
-    sql`ALTER TABLE onboarding_profiles ALTER COLUMN sexually_active DROP NOT NULL`,
-    sql`ALTER TABLE onboarding_profiles ALTER COLUMN family_history DROP NOT NULL`,
     // PROFILE-01: onboarding'dan KEYIN so'raladigan savollar. Barchasi
     // nullable — `NULL` = "hali so'ralmagan", bu "yo'q" bilan bir xil emas.
     sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS hpv_vaccinated BOOLEAN`,
@@ -619,6 +613,23 @@ async function initSchema() {
     // aniqlash uchun (cycle.ts#detectOvulationFromBbt).
     sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS basal_body_temp NUMERIC`,
   ]);
+
+  // 1.6-bosqich: NOT NULL cheklovini olib tashlash — ATAYLAB yuqoridagi
+  // `Promise.all`dan KEYIN, ketma-ket.
+  //
+  // CI-SCHEMA-01: ilgari bu ikki `ALTER ... DROP NOT NULL` o'sha
+  // `Promise.all` ichida, ustunni YARATADIGAN `ADD COLUMN IF NOT EXISTS`
+  // bilan YONMA-YON turardi. Promise.all tartibni KAFOLATLAMAYDI, shuning
+  // uchun bo'sh bazada (CI'ning vaqtinchalik Postgres'i) `DROP NOT NULL`
+  // ustun yaratilishidan OLDIN ishga tushib, butun initSchema()ni
+  // "column sexually_active does not exist" xatosi bilan yiqitardi. Bu
+  // poyga edi — ba'zan o'tib ketardi, ba'zan yo'q.
+  //
+  // Mavjud qatorlarga ta'sir qilmaydi (ular true/false bo'lib qoladi) va
+  // takroran bajarilishi xavfsiz — allaqachon nullable ustunda
+  // DROP NOT NULL xatolik bermaydi.
+  await sql`ALTER TABLE onboarding_profiles ALTER COLUMN sexually_active DROP NOT NULL`;
+  await sql`ALTER TABLE onboarding_profiles ALTER COLUMN family_history DROP NOT NULL`;
 
   // Eski qatorlarda `updated_at` hali NULL — `created_at`dan bir martalik
   // backfill (bo'lmasa ular har doim "o'zgargan" deb hisoblanib, keraksiz
