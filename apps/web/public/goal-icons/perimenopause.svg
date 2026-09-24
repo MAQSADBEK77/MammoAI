@@ -1,0 +1,12 @@
+<!-- Perimenopauza — ufqdan ko'tarilayotgan quyosh. ATAYLAB: bu davr
+     yo'qotish emas, yangi bosqich sifatida ko'rsatiladi. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="96" fill="#FBD3DD"/>
+  <g stroke="#FFD262" stroke-width="8" stroke-linecap="round">
+    <path d="M100 38v14"/><path d="M148 60l-10 10"/><path d="M52 60l10 10"/>
+    <path d="M36 112h14"/><path d="M164 112h-14"/>
+  </g>
+  <path d="M66 124a34 34 0 0 1 68 0z" fill="#FFD262"/>
+  <rect x="40" y="124" width="120" height="9" rx="4.5" fill="#F27C9B"/>
+  <rect x="58" y="144" width="84" height="8" rx="4" fill="#F27C9B" opacity=".55"/>
+</svg>
