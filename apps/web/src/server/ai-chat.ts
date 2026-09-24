@@ -48,7 +48,26 @@ const SETTING_KEY = "gemini_api_key";
 // gemini-2.5-flash butunlay eskirdi (Google 404: "no longer available to
 // new users") — "-latest" taxallusi doim joriy tavsiya etilgan modelga
 // ishora qiladi, shu sabab bu muammo QAYTA takrorlanmasligi kerak.
-const GEMINI_MODEL = "gemini-flash-latest";
+// AI-QUOTA-01: Gemini bepul tarifida kvota HAR BIR MODEL UCHUN ALOHIDA
+// hisoblanadi (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`) va u
+// juda kichik — o'lchandi: `gemini-3.8-flash` uchun KUNIGA 20 ta so'rov.
+//
+// Bitta modelga bog'lanib qolsak, yordamchi kuniga 20 ta xabardan keyin
+// butun ilova uchun o'lik bo'ladi — production'da aynan shu ro'y berdi
+// (foydalanuvchi "AI ishlamayapti" deb ko'rsatdi, kvota 429 bilan
+// tugagan edi).
+//
+// Kvota modellarga bo'lingani uchun ro'yxat bo'ylab o'tish sig'imni bir
+// necha barobar oshiradi. Tartib: eng yangi (sifatliroq) birinchi.
+// `-latest` taxallusi birinchi — u doim joriy tavsiya etilganga ishora
+// qiladi va model eskirganda ro'yxat o'z-o'zidan yangilanadi.
+const GEMINI_MODELS = [
+  "gemini-flash-latest",
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+];
 export type AiProvider = "gemini" | "huawei_maas" | "anthropic";
 export const AI_PROVIDERS: AiProvider[] = ["gemini", "huawei_maas", "anthropic"];
 const PROVIDER_SETTING_KEY = "ai_provider";
@@ -304,7 +323,11 @@ async function postWithRetry(provider: AiProvider, url: string, init: RequestIni
       await sleep(RETRY_DELAY_MS);
       continue;
     }
-    if (res.status !== 429 && res.status < 500) return res;
+    // AI-QUOTA-01: 429 endi QAYTA URINILMAYDI. Ilgari urinilardi, lekin
+    // o'lchov ko'rsatdiki bu KUNLIK kvota — bir necha soniyadan keyin
+    // qayta urinish befoyda, faqat foydalanuvchini kuttiradi. Chaqiruvchi
+    // buni ko'rib boshqa modelga/provayderga o'tadi.
+    if (res.status < 500) return res;
     lastStatus = res.status;
     if (attempt === MAX_ATTEMPTS) break;
     await sleep(RETRY_DELAY_MS);
@@ -342,11 +365,29 @@ export async function callGemini(systemPrompt: string, history: AiHistory): Prom
   const apiKey = await getGeminiApiKey();
   if (!apiKey) throw new ProviderDownError("gemini", "API kaliti sozlanmagan");
 
+  const failures: string[] = [];
+  for (const model of GEMINI_MODELS) {
+    try {
+      return await callGeminiModel(apiKey, model, systemPrompt, history);
+    } catch (error) {
+      if (!(error instanceof ProviderDownError)) throw error;
+      failures.push(`${model}: ${error.detail}`);
+    }
+  }
+  throw new ProviderDownError("gemini", `barcha modellar ishlamadi — ${failures.join(" | ")}`);
+}
+
+async function callGeminiModel(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  history: AiHistory
+): Promise<string> {
   const res = await postWithRetry("gemini", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: GEMINI_MODEL,
+      model,
       max_tokens: MAX_TOKENS,
       // AI-RELIABILITY-01: `gemini-flash-latest` — "o'ylaydigan" model.
       // Standart holda u javob byudjetining katta qismini ichki fikrlashga
