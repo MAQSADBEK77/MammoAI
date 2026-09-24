@@ -47,7 +47,13 @@ export async function GET(request: NextRequest) {
     const requestedNext = request.nextUrl.searchParams.get("next");
     const next = requestedNext && requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "/asosiy";
 
-    const response = NextResponse.redirect(new URL(next, request.url));
+    // Manzil ATAYLAB nisbiy. `NextResponse.redirect(new URL(next, request.url))`
+    // to'liq manzil quradi va u dev'da DOIM `localhost:3000` bo'lib chiqadi —
+    // ya'ni telefondan LAN orqali (`http://192.168.x.x:3000`) kirilganda
+    // brauzer telefonning O'ZIDAGI localhost'ga yo'naltirilib, sahifa
+    // ochilmasdi. Nisbiy `Location` esa so'rov kelgan xostda qoladi, shuning
+    // uchun ilovani haqiqiy telefonda sinash ishlaydi.
+    const response = new NextResponse(null, { status: 307, headers: { Location: next } });
     response.cookies.set(SESSION_COOKIE, signSession({ sub: user.id, tokenVersion: user.tokenVersion }), sessionCookieOptions);
     return response;
   } catch (error) {
