@@ -10,7 +10,6 @@ import type {
   Goal,
   HealthCondition,
   HeardAboutUs,
-  IllustrationSlotKey,
   OnboardingProfile,
   PeriodAttitude,
   Symptom,
@@ -48,7 +47,6 @@ import { trackEvent } from "@/lib/analytics";
 import { Button, IconChip, DateWheelPicker, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import { OnboardingIcon, type OnboardingIconName } from "@/components/onboarding/OnboardingIcon";
-import { Lottie } from "lottie-react";
 import {
   LockOutlined,
   SendOutlined,
@@ -259,39 +257,10 @@ const INITIAL_SURVEY: SurveyState = {
 //
 // Belgilar `currentColor`da chizilgani uchun bo'lim rangini (binafsha /
 // pushti / turkuaz) O'ZI oladi — emoji bilan bunday qilib bo'lmasdi.
-const STEP_ICON_NAME: Partial<Record<Step, OnboardingIconName>> = {
-  // ONB-CHROME-01: `account_choice` bu yerdan OLIB TASHLANDI. Kirish
-  // ekranida brend belgisining O'ZI (LogoMark) vizual markaz vazifasini
-  // bajaradi — ikkinchi, binafsha halqali ikonka uning ustida turib,
-  // ekranda ikkita raqobatlashuvchi markaz hosil qilardi.
-  privacy: "privacy",
-  name: "name",
-  age: "age",
-  cycle_regularity: "cycle",
-  typical_symptoms: "symptoms",
-  family_history: "family",
-  sexually_active: "intimacy",
-  height_weight: "measure",
-};
-
 // Har bir bosqich uchun to'liq illyustratsiya (unDraw, litsenziyasiz-erkin, tijorat
 // uchun ochiq — https://undraw.co) — mavjud bo'lsa, kichik emoji doira o'rniga shu
 // ko'rsatiladi. Haqiqiy odam fotosurati emas (roziliksiz/litsenziyasiz muammo
 // bo'lardi), lekin "quruq matn" o'rniga chizilgan sifatli vizual taassurot beradi.
-const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
-  account_identifier: "secure-login",
-  phone_verify: "secure-login",
-  // ONB-GOALS-01: `goal` bu yerdan OLIB TASHLANDI — endi har bir variant
-  // o'z belgisiga ega, tepadagi katta umumiy illyustratsiya esa ekranning
-  // yarmini egallab, to'qqizta variantni pastga surib yuborardi.
-  cycle_lengths: "calendar",
-  last_period: "calendar",
-  health_conditions: "medicine",
-  last_checkup: "doctor",
-  notifications: "notifications",
-  period_attitude: "meditation",
-};
-
 /** ONB-GOALS-01 — har bir maqsad uchun o'z belgisi. Ilgari ro'yxat faqat
  * MATN edi: to'qqizta uzun jumla ketma-ket, ularni ko'z bilan ajratib
  * bo'lmasdi. Belgi qo'shilgach ro'yxat bir qarashda o'qiladi. */
@@ -307,27 +276,6 @@ const GOAL_ICON: Record<Goal, OnboardingIconName> = {
   perimenopause: "goal_perimenopause",
 };
 
-const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
-  account_choice: colors.primary,
-  account_identifier: colors.primary,
-  phone_verify: colors.primary,
-  privacy: colors.primary,
-  name: colors.primary,
-  age: colors.primary,
-  goal: colors.primary,
-  cycle_regularity: colors.primary,
-  cycle_lengths: colors.primary,
-  last_period: colors.primary,
-  typical_symptoms: colors.primary,
-  period_attitude: colors.primary,
-  health_conditions: colors.accent,
-  family_history: colors.accent,
-  sexually_active: colors.accent,
-  last_checkup: colors.accent,
-  height_weight: colors.accent,
-  notifications: colors.primary,
-};
-
 /**
  * ONB-04 — so'rovnomaning UCHTA BO'LIMI.
  *
@@ -338,10 +286,9 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
  * Bo'limlarga bo'linganda ikkalasi ham yechiladi: foydalanuvchi "3 tadan
  * 2-bo'limda, 4 tadan 2-qadamda" degan ANIQ va QISQA holatni ko'radi.
  *
- * Bo'limlar `STEP_ICON_COLOR`dagi MAVJUD rang zonalariga mos — ya'ni yangi
- * dizayn tizimi o'ylab topilmadi, allaqachon borini ko'rinadigan qildik.
- * Yagona farq: `notifications` uchinchi bo'limga o'tdi (rangi pushti bo'lsa
- * ham) — u mantiqan oxirgi rozilik, siklga tegishli savol emas.
+ * Bo'limlar ilgari mavjud bo'lgan rang zonalariga mos edi. Yagona farq:
+ * `notifications` uchinchi bo'limga o'tdi — u mantiqan oxirgi rozilik,
+ * siklga tegishli savol emas.
  *
  * `welcome`, `preview` va `analyzing` hech qaysi bo'limga kirmaydi: birinchisi
  * so'rovnomadan oldin, qolgan ikkitasi — natija ekranlari.
@@ -390,13 +337,6 @@ const STEP_SECTION: Partial<Record<Step, 0 | 1 | 2>> = {
   height_weight: 2,
   notifications: 2,
 };
-
-/** STEP_ICON_COLOR'dagi rang qiymatini public/animations/aura-*.json fayl nomiga o'giradi. */
-function auraName(color: string): "primary" | "secondary" | "accent" {
-  if (color === colors.secondary) return "secondary";
-  if (color === colors.accent) return "accent";
-  return "primary";
-}
 
 function landingPath(goal: Goal): string {
   const tab = goalToLandingTab(goal);
@@ -1058,7 +998,13 @@ function OnboardingPageInner() {
         // sahifa esa iliq pushti gradientda. Yonma-yon qo'yilganda
         // onboarding boshqa ilovaga o'xshab ko'rinardi. "welcome" o'z
         // to'q pushti ekranida qoladi — u kirish pardasi.
-        step === "welcome" ? "h-dvh bg-aurora-cycle" : "h-dvh"
+        // ONB-PLAIN-01 (foydalanuvchi so'rovi, Flo referensi bilan):
+        // "rangbarang qilish shart emas". Savol qadamlari endi ODDIY,
+        // deyarli oq fonda. Bezak faqat kirish pardalarida qoladi:
+        // "welcome" (to'q pushti) va kirish ekrani (yumshoq gradient).
+        // Bu Flo'dagi bilan bir xil mantiq — onboarding bu SO'ROVNOMA,
+        // ilovaning ichki ekranlari esa boshqa janr.
+        step === "welcome" ? "h-dvh bg-aurora-cycle" : step === "account_choice" ? "h-dvh" : "h-dvh bg-background"
       )}
       // Telegram Mini App'da fullscreen sarlavha paneli shaffof holda tepada
       // qoladi (lib/telegram.ts) — oddiy brauzerda --tg-safe-area-top 0px.
@@ -1069,7 +1015,7 @@ function OnboardingPageInner() {
           yorug'lik dog'lari ilova ichidagisi bilan bir xil bo'lib qoladi,
           hatto fon keyinchalik o'zgartirilsa ham. `fixed inset-0` bo'lgani
           uchun u `px-6` chegarasidan tashqariga, butun ekranga yoyiladi. */}
-      {step !== "welcome" && <TodayBackdrop soft />}
+      {step === "account_choice" && <TodayBackdrop soft />}
 
       {sectionProgress && (
         // ONB-SKIN-01: `relative z-10` SHART — `TodayBackdrop` `fixed inset-0`
@@ -1085,46 +1031,21 @@ function OnboardingPageInner() {
         key={step}
         className={clsx("animate-fade-in-up relative z-10 flex flex-1 flex-col", step !== "welcome" && "overflow-y-auto")}
       >
-        {STEP_ILLUSTRATION[step] ? (
-          <div className="mb-4 flex justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-            <img
-              src={resolveIllustration(`onboarding.${step}` as IllustrationSlotKey)}
-              alt=""
-              className={clsx("w-auto", step === "last_period" ? "h-24" : "h-36")}
-            />
-          </div>
-        ) : (
-          STEP_ICON_NAME[step] && (
-            <div className="mb-5 flex justify-center">
-              <div className="relative flex h-44 w-44 items-center justify-center">
-                {/* O'zimiz yasagan Lottie ("nafas olayotgan" halqa) —
-                    generatori: apps/web/scripts/generate-onboarding-animations.py.
-                    Rang STEP_ICON_COLOR'ga mos. */}
-                {/* MUHIM: `className="absolute inset-0"` emas — lottie-react o'zining
-                    ".lottie-display{position:relative}" qoidasini Tailwind'ning
-                    ".absolute"idan KEYIN yuklaydi va uni bekor qiladi, natijada bu
-                    flex ichida ODDIY qatorga aylanib, belgini chetga surib yuborardi.
-                    Inline `style` har doim g'olib chiqadi — shuning uchun shu yerda. */}
-                <Lottie
-                  src={`/animations/aura-${auraName(STEP_ICON_COLOR[step]!)}.json`}
-                  loop
-                  autoplay
-                  style={{ position: "absolute", inset: 0 }}
-                />
-                {/* ONB-07: belgi oq doira ichida, bo'lim rangida. Aura
-                    radiatsiyasi tashqarida ko'rinib turadi — shu ikkisi
-                    birgalikda "nafas olayotgan" ta'sir beradi. */}
-                <span
-                  className="relative flex h-24 w-24 items-center justify-center rounded-full bg-surface shadow-lg"
-                  style={{ color: STEP_ICON_COLOR[step] }}
-                >
-                  <OnboardingIcon name={STEP_ICON_NAME[step]!} />
-                </span>
-              </div>
-            </div>
-          )
-        )}
+        {/* ONB-PLAIN-01: har bir qadam tepasidagi katta belgi (aura halqasi
+            ichidagi ikonka) va unDraw illyustratsiyalari OLIB TASHLANDI.
+            Foydalanuvchi so'rovi va referens: savol ekranida savolning
+            O'ZIDAN boshqa hech narsa bo'lmasligi kerak.
+
+            Ular nafaqat ortiqcha, balki zararli ham edi: ekranning yarmini
+            egallab, savol va javoblarni pastga surib yuborardi, ba'zi
+            illyustratsiyalar esa (qora sochli, to'q kontrastli figuralar)
+            palitraga umuman tushmasdi.
+
+            Ular bilan birga `STEP_ICON_NAME`, `STEP_ILLUSTRATION`,
+            `STEP_ICON_COLOR`, `auraName` va Lottie importi ham o'chirildi —
+            o'lik kod qoldirish keyingi o'quvchini chalg'itardi. Belgilar
+            to'plamining O'ZI (`OnboardingIcon`) joyida: maqsad ro'yxatidagi
+            kichik belgilar o'sha yerdan keladi. */}
         {step === "welcome" && (
           // Tugma endi logo/sarlavha bilan bitta markazlashgan ustunda emas — tepadagi
           // guruh flex-1 bilan qolgan bo'sh joyni egallab, o'zini o'rtaga tekislaydi,
@@ -1178,7 +1099,7 @@ function OnboardingPageInner() {
                 o'zgarardi. Endi u tanlov yo'q (server o'zi aniqlaydi), shuning
                 uchun sarlavha ham NEYTRAL — bu zamonaviy amaliyot: bitta
                 maydon, tizim yangi yoki mavjud ekanini o'zi hal qiladi. */}
-            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.auth.identifierTitle}</h2>
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.auth.identifierTitle}</h2>
             <div className="relative">
               <LockOutlined sx={{ fontSize: 18 }} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
@@ -1196,7 +1117,7 @@ function OnboardingPageInner() {
 
         {step === "phone_verify" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.auth.phoneVerifyTitle}</h2>
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.auth.phoneVerifyTitle}</h2>
             <p className="text-center text-sm leading-relaxed text-text-secondary">{dict.auth.phoneVerifyIntro}</p>
             {phoneDeepLink && (
               <a
@@ -1247,7 +1168,7 @@ function OnboardingPageInner() {
           // yo'qolmadi, u shu yerda, ochiladigan bo'limda.
           <div className="flex flex-1 flex-col justify-start gap-4">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-text-primary">{dict.privacy.consentTitle}</h2>
+              <h2 className="text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.privacy.consentTitle}</h2>
               <p className="mt-2 text-base leading-relaxed text-text-secondary">{dict.privacy.consentSubtitle}</p>
             </div>
 
@@ -1332,7 +1253,7 @@ function OnboardingPageInner() {
 
         {step === "name" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.nameQuestion}</h2>
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.nameQuestion}</h2>
             <input
               value={survey.name}
               onChange={(e) => setSurvey((s) => ({ ...s, name: e.target.value }))}
@@ -1344,7 +1265,7 @@ function OnboardingPageInner() {
 
         {step === "age" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.birthYearLabel}</h2>
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.birthYearLabel}</h2>
             <WheelPicker options={BIRTH_YEARS} value={survey.birthYear} onChange={(v) => setSurvey((s) => ({ ...s, birthYear: v }))} />
           </div>
         )}
@@ -1377,7 +1298,7 @@ function OnboardingPageInner() {
         {step === "cycle_lengths" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
             <div className={clsx(survey.cycleLengthsUnknown && "pointer-events-none opacity-50")}>
-              <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
+              <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
               <input
                 type="number"
                 inputMode="numeric"
@@ -1387,7 +1308,7 @@ function OnboardingPageInner() {
                 onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
                 className="tap-target mt-4 w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
-              <h2 className="text-center mt-4 text-2xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
+              <h2 className="mt-6 text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
               <input
                 type="number"
                 inputMode="numeric"
@@ -1447,7 +1368,7 @@ function OnboardingPageInner() {
 
         {step === "last_period" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
             <div className={clsx(survey.lastPeriodUnknown && "pointer-events-none opacity-50")}>
               <DateWheelPicker
                 value={survey.lastPeriodDate}
@@ -1510,7 +1431,7 @@ function OnboardingPageInner() {
 
         {step === "typical_symptoms" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</h2>
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</h2>
             <div className="grid grid-cols-2 gap-2">
               {symptomOptions.map((sym) => (
                 <IconChip
@@ -1548,7 +1469,7 @@ function OnboardingPageInner() {
 
         {step === "health_conditions" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.healthConditionsQuestion}</h2>
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.healthConditionsQuestion}</h2>
             <div className="grid grid-cols-2 gap-2">
               {HEALTH_CONDITION_OPTIONS.map((cond) => (
                 <IconChip
@@ -1610,7 +1531,7 @@ function OnboardingPageInner() {
 
         {step === "height_weight" && (
           <div className="flex flex-1 flex-col justify-start gap-5">
-            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
 
             {/* Metrik/Imperial birlik tanlovi — bosilganda joriy qiymat bir martagina
                 boshqa birlikka o'giriladi, keyin har bir tizim o'z holatini saqlaydi. */}
@@ -1913,8 +1834,8 @@ function ChoiceStep({
 }) {
   return (
     <div className="flex flex-1 flex-col justify-start gap-3">
-      <h2 className="mb-2 text-2xl font-bold text-text-primary">{title}</h2>
-      {description && <p className="-mt-1 mb-1 text-base leading-relaxed text-text-secondary">{description}</p>}
+      <h2 className="mb-4 text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{title}</h2>
+      {description && <p className="-mt-2 mb-3 text-center text-base leading-relaxed text-text-secondary">{description}</p>}
       {options.map((opt) => (
         <button
           key={opt.value}

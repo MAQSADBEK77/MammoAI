@@ -690,15 +690,21 @@ export function WheelPicker<T>({
 
   return (
     <div className={clsx("relative w-full", !compact && "mx-auto max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
-      {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida. */}
+      {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida.
+          ONB-PLAIN-01: ilgari band pushti RAMKA bilan chizilgan edi. Endi u
+          shunchaki yumshoq kulrang maydon: tanlangan qiymatning o'zi yirik va
+          qora bo'lgani uchun ramka ortiqcha bo'lib, ekranga shovqin qo'shardi. */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-1/2 z-10 -translate-y-1/2 rounded-2xl border-2 border-primary bg-primary-light/15"
+        className="pointer-events-none absolute inset-x-0 top-1/2 z-0 -translate-y-1/2 rounded-2xl bg-surface-muted"
         style={{ height: WHEEL_ITEM_HEIGHT }}
       />
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="tap-target h-full overflow-y-auto scroll-smooth"
+        // Band endi SHAFFOF EMAS (kulrang to'ldirilgan), shuning uchun
+        // ro'yxat undan YUQORIDA turishi shart — aks holda tanlangan
+        // qiymatning o'zi band ostida qolib ko'rinmay qoladi.
+        className="tap-target relative z-10 h-full overflow-y-auto scroll-smooth"
         style={{
           scrollSnapType: "y mandatory",
           WebkitMaskImage: "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
@@ -709,11 +715,16 @@ export function WheelPicker<T>({
         {options.map((opt, i) => (
           <div
             key={i}
-            className="flex items-center justify-center text-lg font-semibold text-text-primary"
+            className={clsx(
+              "flex items-center justify-center transition-colors",
+              // Tanlangan qiymat qolganlaridan ANIQ ajralib turadi (referens
+              // bo'yicha): yirik va qora, qolganlari kichik va och.
+              opt === value ? "text-3xl font-extrabold text-text-primary" : "text-xl font-semibold text-text-muted"
+            )}
             style={{ height: WHEEL_ITEM_HEIGHT, scrollSnapAlign: "center" }}
           >
             {label ? label(opt) : String(opt)}
-            {suffix && <span className="ml-1 text-sm font-normal text-text-muted">{suffix}</span>}
+            {suffix && <span className="ml-1 text-base font-normal text-text-muted">{suffix}</span>}
           </div>
         ))}
         <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
