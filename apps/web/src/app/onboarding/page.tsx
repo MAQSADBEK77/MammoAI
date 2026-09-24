@@ -28,6 +28,7 @@ import {
   predictCycle,
   getCyclePhase,
   formatDateDisplay,
+  localDateStr,
   colors,
   formatUzPhoneInput,
   extractUzPhoneDigits,
@@ -729,11 +730,21 @@ function OnboardingPageInner() {
       }
       if (needsPersonalHealthQuestions(goal)) {
         tail.push("family_history");
-        // FIX-CHECKUPS: 15 yoshdan kichiklarga so'ralmaydi.
-        if (age >= 15) tail.push("sexually_active");
+        // ONB-SA-01 (foydalanuvchi so'rovi): "jinsiy hayotingiz bormi?"
+        // onboardingdan OLIB TASHLANDI. U yerda bu savol kutilmagan va
+        // noqulay — ayol hali ilovaga ishonch hosil qilmagan, va savol
+        // NEGA so'ralayotgani ham ko'rinmaydi.
+        //
+        // Savol yo'qolmadi: u tekshiruvlar ekranidagi `ProfileQuestionsCard`
+        // ning BIRINCHI savoli (PROFILE-01) — ya'ni aynan javobning
+        // foydasi ko'rinib turgan joyda, ro'yxatning ustida so'raladi.
+        //
+        // Tibbiy jihatdan xavfsiz: `checklist-rules.ts` da javob
+        // berilmagan holat (`null`) "faol" bilan BIR XIL muomala qiladi,
+        // ya'ni bachadon bo'yni skriningi baribir tavsiya qilinadi.
         tail.push("last_checkup");
       }
-      if (needsHeightWeight(goal)) tail.push("height_weight");
+      tail.push("height_weight");
       tail.push("notifications", "analyzing");
       return [...list, ...tail];
     }
@@ -968,6 +979,21 @@ function OnboardingPageInner() {
       });
       applyMeResponse(res);
       clearOnboardingDraft();
+      // ONB-CHECKIN-01 (foydalanuvchi so'rovi): onboarding tugagan zahoti
+      // bosh ekranda KUNLIK NAZORAT oynasi ochilib ketardi. Ayol endigina
+      // o'n beshta savolga javob bergan — uni yana bir so'rov bilan
+      // kutib olish noto'g'ri; birinchi ko'rishi kerak bo'lgan narsa
+      // ILOVANING O'ZI.
+      //
+      // CycleScreen "bugun so'radikmi?" deb shu kalitga qaraydi, shuning
+      // uchun bu yerda uni oldindan belgilab qo'yamiz — yangi holat yoki
+      // bayroq kerak emas. Ertaga so'rov odatdagidek ishlaydi.
+      try {
+        localStorage.setItem(`mammoai_checkin_prompted_${localDateStr()}`, "1");
+      } catch {
+        // Xotira bloklangan — u holda so'rov baribir ochilmaydi
+        // (CycleScreen ham o'sha xotiraga tayanadi).
+      }
       await submitPendingQuizAnswersIfAny();
       router.replace(landingPath(survey.primaryGoal!));
     } catch {
