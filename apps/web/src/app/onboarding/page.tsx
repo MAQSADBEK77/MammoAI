@@ -443,16 +443,20 @@ const SYMPTOM_ICON: Record<Symptom, string> = {
   cervical_mucus_change: "💧", // CYCLE-ALGO-12 — xuddi shu sabab
 };
 
-const HEALTH_CONDITION_ICON: Record<HealthCondition, string> = {
-  yeast_infection: "🍄",
-  uti: "💧",
-  bacterial_vaginosis: "🦠",
-  pcos: "⭕",
-  endometriosis: "🔴",
-  fibroids: "🟣",
-  unknown: "🤷",
-  none: "✅",
+/** ONB-SYMICON-02 — sog'liq holatlari uchun foydalanuvchi chizib bergan
+ * rasmlar (`apps/web/public/condition-icons/`). Alomatlar bilan bir xil
+ * sabab: emoji begona va Twemoji to'plamida hamma belgi ham yo'q. */
+const CONDITION_SVG: Record<HealthCondition, string> = {
+  yeast_infection: "zamburug_infeksiyasi",
+  uti: "siydik_yollari_infeksiyasi",
+  bacterial_vaginosis: "bakterial_vaginoz",
+  pcos: "pcos",
+  endometriosis: "endometrioz",
+  fibroids: "fibromalar",
+  unknown: "bilmayman",
+  none: "birontasi_ham_emas",
 };
+
 
 // "Hayzingiz haqida qanday fikrdasiz?" javoblari oldida — til tanlash tugmalaridagi
 // bayroqlar kabi, har bir javobga mos emoji (foydalanuvchi so'rovi).
@@ -1687,8 +1691,13 @@ function OnboardingPageInner() {
               {HEALTH_CONDITION_OPTIONS.map((cond) => (
                 <IconChip
                   key={cond}
+                  size="lg"
+                  bare
                   label={dict.onboarding.healthConditions[cond]}
-                  icon={<Emoji e={HEALTH_CONDITION_ICON[cond]} />}
+                  icon={
+                    // eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas
+                    <img src={`/condition-icons/${CONDITION_SVG[cond]}.svg`} alt="" className="h-full w-full" />
+                  }
                   active={survey.healthConditions.includes(cond)}
                   onClick={() => setSurvey((s) => ({ ...s, healthConditions: toggleArrayValue(s.healthConditions, cond) }))}
                 />
