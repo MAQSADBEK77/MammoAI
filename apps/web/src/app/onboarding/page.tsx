@@ -1084,7 +1084,13 @@ function OnboardingPageInner() {
           uni orqa fondan ajratib turadi. */}
       <div
         className={clsx(
-          "relative z-10 flex flex-1 flex-col",
+          // `min-h-0` bu yerda ham SHART va sababi bir xil: flex elementining
+          // standart `min-height: auto` qiymati uni mazmunidan kichik
+          // bo'lishga qo'ymaydi. Oyna 776px bo'lib, 732px ekranga sig'may
+          // qolardi — pastdagi tugma ekran tashqarisida turardi. Buni
+          // faqat o'lchab bilish mumkin edi: ko'z bilan "kontent uzun"
+          // deb o'ylardim, aslida OYNANING o'zi ekrandan uzun edi.
+          "relative z-10 flex min-h-0 flex-1 flex-col",
           isSheet &&
             "mt-[22vh] rounded-t-[32px] bg-surface px-6 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-5 shadow-[0_-10px_40px_color-mix(in_srgb,var(--color-text-primary)_14%,transparent)]"
         )}
@@ -1140,7 +1146,17 @@ function OnboardingPageInner() {
 
       <div
         key={step}
-        className={clsx("animate-fade-in-up relative z-10 flex flex-1 flex-col", step !== "welcome" && "overflow-y-auto")}
+        className={clsx(
+          "animate-fade-in-up relative z-10 flex flex-1 flex-col",
+          // UI-SCROLL-01: `min-h-0` SHART. Flex elementining standart
+          // `min-height: auto` qiymati uni MAZMUNIDAN kichik bo'lishga
+          // qo'ymaydi, ya'ni `overflow-y-auto` umuman ishlamaydi va
+          // element cho'zilib ketadi. Natijada "Aniq bilmayman" bosilib
+          // dalda kartasi chiqqanda pastdagi "Davom etish" tugmasi
+          // ekrandan yarim chiqib qolardi (foydalanuvchi skrinshot bilan
+          // ko'rsatdi).
+          step !== "welcome" && "no-scrollbar min-h-0 overflow-y-auto"
+        )}
       >
         {/* ONB-PLAIN-01: har bir qadam tepasidagi katta belgi (aura halqasi
             ichidagi ikonka) va unDraw illyustratsiyalari OLIB TASHLANDI.

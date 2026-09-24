@@ -141,6 +141,19 @@ body {
 
 /* Har bir asosiy amal uchun katta, aniq teginish nishoni (spec: bitta qo'l bilan
    foydalanish qulay bo'lishi kerak). */
+/* UI-SCROLL-01 — scroll chizig'ini yashirish.
+   Foydalanuvchi: "shu scrollarni yo'qotish kerak, ancha UI buzib turibdi".
+   G'ildirak tanlagichlarda chiziq ayniqsa keraksiz: u tanlagichning bir
+   qismidek ko'rinadi va yon tomonda kulrang tayoqcha bo'lib turadi.
+   Scroll qilish imkoni O'ZGARMAYDI — faqat chiziq ko'rinmaydi. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .tap-target {
   min-height: 48px;
   min-width: 48px;
