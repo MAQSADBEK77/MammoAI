@@ -54,6 +54,8 @@ import {
   revokePremium,
   removeStaleChecklistItems,
   listChecklistItems,
+  saveOnboardingProfile,
+  getOnboardingProfile,
   completeChecklistItem,
 } from "../src/server/repo";
 import { getChatAccess, FREE_MESSAGE_ALLOWANCE } from "../src/server/chat-access";
@@ -611,6 +613,54 @@ async function main() {
     );
   } finally {
     await sql`DELETE FROM users WHERE id = ${qaUserId}`;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ONB-SAVE-01 — onboarding yakuni AYNAN route yuboradigan shaklda.
+  //
+  // Nega bu test bo'lmagani qimmatga tushdi: onboarding POST'i profilni
+  // `{ userId, ...body }` bilan quradi va `body` PROFILE-01 maydonlarini
+  // umuman yubormaydi. TypeScript buni ushlamaydi (`as` bilan majburlab
+  // tiplangan), unit testlar esa bazaga tegmaydi. Natijada production'da
+  // HECH KIM onboardingni tugata olmadi — ayollar hamma savolga javob
+  // berib, oxirgi ekranda xato olardi.
+  //
+  // Shuning uchun test AYNAN o'sha to'liq bo'lmagan shaklni yuboradi.
+  // ══════════════════════════════════════════════════════════════════════
+  const onbUserId = randomUUID();
+  await sql`INSERT INTO users (id, phone, created_at) VALUES (${onbUserId}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+  try {
+    // PROFILE-01 maydonlari ATAYLAB berilmagan — route ham shunday yuboradi.
+    await saveOnboardingProfile({
+      userId: onbUserId,
+      name: "Integratsiya testi",
+      age: 27,
+      isPregnant: false,
+      cycleRegularity: "regular",
+      familyHistory: null,
+      sexuallyActive: null,
+      lastCheckup: "unknown",
+      primaryGoal: "cycle",
+      heardAboutUs: "other",
+      typicalSymptoms: [],
+      periodAttitude: null,
+      healthConditions: [],
+      healthConditionsOther: null,
+      heightCm: null,
+      weightKg: null,
+      bloodType: null,
+      // `unknown` orqali — bu ATAYLAB to'liq bo'lmagan obyekt: route ham
+      // aynan shunday yuboradi va tuzatish shuni ko'tarishi kerak.
+    } as unknown as Parameters<typeof saveOnboardingProfile>[0]);
+
+    const saved = await getOnboardingProfile(onbUserId);
+    assert(saved !== null, "ONB-SAVE-01: to'liq bo'lmagan profil ham saqlanadi (undefined maydonlar null bo'ladi)");
+    assert(
+      saved?.hpvVaccinated === null && saved?.smokes === null && saved?.hasGivenBirth === null,
+      "ONB-SAVE-01: so'ralmagan PROFILE-01 maydonlari null bo'lib yoziladi, 'yo'q' emas"
+    );
+  } finally {
+    await sql`DELETE FROM users WHERE id = ${onbUserId}`;
   }
 
   // ══════════════════════════════════════════════════════════════════════
