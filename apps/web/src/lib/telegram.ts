@@ -71,10 +71,37 @@ declare global {
   }
 }
 
-/** SSR-xavfsiz — faqat brauzerda va faqat Telegram ichida ochilgan bo'lsa obyekt qaytaradi. */
+/** SSR-xavfsiz — SDK obyekti. DIQQAT: bu obyekt ODDIY BRAUZERDA HAM mavjud
+ * bo'ladi (skript yuklanishining o'zi kifoya), ya'ni uning borligi "Telegram
+ * ichidamiz" degani EMAS. Buning uchun `isTelegramContext()`ga qarang. */
 export function getTelegramWebApp(): TelegramWebApp | null {
   if (typeof window === "undefined") return null;
   return window.Telegram?.WebApp ?? null;
+}
+
+/**
+ * TG-DETECT-01 — HAQIQATAN Telegram Mini App ichidamizmi.
+ *
+ * Ilgari bu shunchaki `!!window.Telegram?.WebApp` edi va bu XATO: Telegram
+ * SDK skripti (`telegram-web-app.js`) har qanday sahifada yuklanadi va o'sha
+ * obyektni HAR DOIM yaratadi. Ya'ni oddiy brauzerda ham `isTelegram` true
+ * bo'lib chiqardi, natijada:
+ *   • kirish ekranida "Davom etish" chiqib, ayolni `/tg` ga yuborardi;
+ *   • `/tg` esa `initData`siz hech narsa qila olmay, MANGU aylanaverardi —
+ *     na xato, na tushuntirish (skrinshot bilan xabar qilindi).
+ * Ya'ni brauzerdan kelgan ayol umuman kira olmasdi va buning sababini
+ * hech qachon bilmasdi.
+ *
+ * To'g'ri belgi — imzolangan `initData`ning O'ZI: Telegram uni faqat haqiqiy
+ * Mini App kontekstida beradi, brauzerda u bo'sh satr. `initDataUnsafe.user`
+ * va Telegram WebView ko'prigi (`TelegramWebviewProxy`) qo'shimcha zaxira
+ * signal — biri bo'lmagan nodir holatlarda ham to'g'ri javob beradi.
+ */
+export function isTelegramContext(app: TelegramWebApp | null): boolean {
+  if (!app) return false;
+  if (app.initData) return true;
+  if (app.initDataUnsafe?.user) return true;
+  return typeof window !== "undefined" && "TelegramWebviewProxy" in window;
 }
 
 // WEB2-02: bu poll qancha urinishdan keyin "topilmadi" deb topshirishini
@@ -111,11 +138,26 @@ export function useTelegram() {
     const tryInit = () => {
       if (cancelled) return;
       const app = getTelegramWebApp();
+      // TG-DETECT-01: obyektning borligi yetarli EMAS — haqiqiy Mini App
+      // konteksti kerak. Aks holda poll birinchi urinishdayoq "found" deb
+      // to'xtardi va `not-found` holati hech qachon yuzaga kelmasdi.
       if (app) {
-        app.ready();
-        app.expand();
-        setWebApp(app);
-        setStatus("found");
+        if (isTelegramContext(app)) {
+          app.ready();
+          app.expand();
+          setWebApp(app);
+          setStatus("found");
+          return;
+        }
+        // SDK yuklandi, lekin kontekst yo'q — bu ANIQ javob, kutishning
+        // ma'nosi yo'q. `initData`ni SDK yuklanish payti, manzil hash'idan
+        // o'qib oladi; keyinroq "paydo bo'lmaydi". Poll esa faqat SKRIPT
+        // hali yetib kelmagan holat uchun.
+        //
+        // Buni kutish zararsiz emas edi: oddiy brauzerda kirish tugmasi
+        // 5.5 soniya o'chiq (oqargan) turib qolardi, ya'ni ayol ochilgan
+        // sahifada bosib bo'lmaydigan tugmani ko'rardi.
+        setStatus("not-found");
         return;
       }
       if (attempts++ < WEBAPP_MAX_ATTEMPTS) {

@@ -6,6 +6,7 @@ import { SendOutlined } from "@mui/icons-material";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useTelegram } from "@/lib/telegram";
+import { useTelegramStartLink } from "@/lib/telegram-link";
 import { api } from "@/lib/api";
 import { LoadingSpinner, Button } from "@/components/ui";
 
@@ -45,6 +46,7 @@ function TelegramMiniAppInner() {
   const rawNext = searchParams.get("next");
   const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
+  const telegramHref = useTelegramStartLink();
   const [phase, setPhase] = useState<Phase>("loading");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -55,13 +57,19 @@ function TelegramMiniAppInner() {
   // Endi bitta manba — useTelegram()'ning o'zi qaytaradigan `status`
   // ("checking" / "found" / "not-found", 5.5s'gacha kutadi) — ikkinchi,
   // mos kelmaydigan taймаут yo'q.
+  // TG-DETECT-01: shart "not-found" bilan CHEKLANMAYDI. Aniqlash tugagan,
+  // lekin imzolangan `initData` yo'q bo'lsa ham to'xtaymiz — quyidagi
+  // autentifikatsiya effekti `initData`siz umuman ishga tushmaydi, ya'ni
+  // bunday holatda ekran MANGU aylanaverardi (aynan shu xato skrinshot
+  // bilan xabar qilindi: brauzerda ochilgan `/tg` cheksiz spinner).
   useEffect(() => {
-    if (telegramStatus !== "not-found") return;
+    if (telegramStatus === "checking") return;
+    if (telegramStatus === "found" && initData) return;
     // FIX-07 bilan bir xil naqsh — setState effekt ICHIDA sinxron
     // chaqirilmaydi (kaskadli render'larni oldini olish uchun).
     const timeout = setTimeout(() => setPhase((p) => (p === "loading" ? "notTelegram" : p)), 0);
     return () => clearTimeout(timeout);
-  }, [telegramStatus]);
+  }, [telegramStatus, initData]);
 
   useEffect(() => {
     if (!initData) return;
@@ -138,8 +146,18 @@ function TelegramMiniAppInner() {
 
   if (phase === "notTelegram") {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-6 text-center">
+      // TG-DETECT-01: ilgari bu yerda faqat bitta jumla turardi — "bu sahifa
+      // Telegram ichida ochilishi kerak" — va BOSHQA hech narsa. Ayol nima
+      // qilishini bilmasdi. Endi shu yerning o'zidan botga o'tish mumkin.
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <p className="text-base font-semibold text-text-primary">{dict.auth.miniAppNotInTelegram}</p>
+        <a
+          href={telegramHref}
+          className="tap-target flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-br from-primary to-primary-dark px-6 py-4 text-base font-bold text-white shadow-[0_8px_20px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition active:scale-[0.98]"
+        >
+          <SendOutlined sx={{ fontSize: 20 }} />
+          {dict.auth.openTelegramButton}
+        </a>
       </div>
     );
   }
