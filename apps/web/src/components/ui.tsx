@@ -817,7 +817,7 @@ export function WheelPicker<T>({
         // Band endi SHAFFOF EMAS (kulrang to'ldirilgan), shuning uchun
         // ro'yxat undan YUQORIDA turishi shart — aks holda tanlangan
         // qiymatning o'zi band ostida qolib ko'rinmay qoladi.
-        className="tap-target relative z-10 h-full overflow-y-auto scroll-smooth"
+        className="no-scrollbar tap-target relative z-10 h-full overflow-y-auto scroll-smooth"
         style={{
           scrollSnapType: "y mandatory",
           WebkitMaskImage: "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
