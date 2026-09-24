@@ -1577,7 +1577,10 @@ function OnboardingPageInner() {
                 <span className="text-primary">
                   {(() => {
                     const d = new Date(`${previewPrediction.prediction.nextPeriodStart}T00:00:00`);
-                    return `${d.getDate()}-${dict.common.months[d.getMonth()]}`;
+                    // Oy nomi ro'yxatda bosh harf bilan ("Oktabr"), gap
+                    // o'rtasida esa kichik harf kerak: "8-oktabr".
+                    const month = dict.common.months[d.getMonth()];
+                    return `${d.getDate()}-${month.charAt(0).toLocaleLowerCase()}${month.slice(1)}`;
                   })()}
                 </span>
                 {dict.onboarding.previewHeadlineSuffix ? ` ${dict.onboarding.previewHeadlineSuffix}` : ""}
@@ -1587,29 +1590,6 @@ function OnboardingPageInner() {
               </p>
             </div>
 
-            {/* Ikkinchi darajali tafsilotlar — referensda ular yo'q, lekin
-                homiladorlikni rejalashtirayotgan ayol uchun unumli oyna
-                aynan shu ekranning qiymati. Shuning uchun ular qoldi,
-                faqat past ovozda. */}
-            <div className="space-y-2.5">
-              {previewPrediction.phase && (
-                <PreviewRow
-                  label={dict.onboarding.previewPhase}
-                  value={dict.cyclePhase[previewPrediction.phase].name}
-                />
-              )}
-              <PreviewRow
-                label={dict.onboarding.previewFertile}
-                value={`${formatDateDisplay(previewPrediction.prediction.fertileWindowStart)} – ${formatDateDisplay(
-                  previewPrediction.prediction.fertileWindowEnd
-                )}`}
-              />
-            </div>
-
-            {/* Halollik: bu bitta sikl asosidagi taxmin. Uni aniq sana
-                sifatida ko'rsatish tibbiy mazmundagi ilovada noto'g'ri
-                bo'lardi — shuning uchun izoh MAJBURIY. */}
-            <p className="text-center text-sm text-text-secondary">{dict.onboarding.previewNote}</p>
           </div>
         )}
 
@@ -2160,15 +2140,6 @@ function ReassureCard({ text }: { text: string }) {
   );
 }
 
-/** ONB-02: bashorat ekranidagi bitta qator — yorliq va qiymat. */
-function PreviewRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3.5 shadow-sm">
-      <span className="text-sm text-text-secondary">{label}</span>
-      <span className="text-right text-base font-bold text-text-primary">{value}</span>
-    </div>
-  );
-}
 
 /**
  * ONB-04 — uch bo'limli progress ko'rsatgichi.

@@ -262,11 +262,6 @@ const uz = {
     previewNotifTitle: "Hayzingiz yaqinlashmoqda",
     previewNotifBody: "Bir necha kundan keyin boshlanishi kutilmoqda — tayyor turing.",
     previewNotifNow: "hozir",
-    previewTitle: "Dastlabki bashoratingiz tayyor",
-    previewNextPeriod: "Keyingi hayz",
-    previewPhase: "Hozirgi faza",
-    previewFertile: "Unumdor kunlar",
-    previewNote: "Bu — bitta sikl asosidagi taxmin. Yana bir nechta savol va kunlik kuzatuv bilan ilova buni sezilarli aniqlashtiradi.",
     previewContinue: "Davom etamiz",
     // ONB-01: "bilmayman" tanlanganda dalda beruvchi javob. ATAYLAB raqamsiz —
     // o'ylab topilgan foiz ("ayollarning 40%i bilmaydi") yozish mumkin emas,
