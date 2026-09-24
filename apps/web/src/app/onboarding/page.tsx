@@ -34,6 +34,7 @@ import {
   ApiError,
   resolveRestoreStep,
 } from "@mammoai/shared";
+import { TodayBackdrop } from "@/components/screens/TodayBackdrop";
 import { useI18n } from "@/lib/i18n";
 import { useTelegram } from "@/lib/telegram";
 import { LogoBadge } from "@/components/LogoMark";
@@ -691,8 +692,10 @@ function OnboardingPageInner() {
   // xabar qilingan.
   useEffect(() => {
     const draft = readOnboardingDraft();
-    draftRestoredRef.current = true;
-    if (!draft) return;
+    if (!draft) {
+      draftRestoredRef.current = true;
+      return;
+    }
     let inner: ReturnType<typeof setTimeout> | undefined;
     const outer = setTimeout(() => {
       setSurvey(draft.survey);
@@ -700,6 +703,19 @@ function OnboardingPageInner() {
         const list = stepsRef.current;
         const restored = resolveRestoreStep(draft.step, list, CANONICAL_STEPS);
         if (restored) setStepIndex(list.indexOf(restored));
+        // ONB-DRAFT-02: saqlashga ruxsat FAQAT shu yerda beriladi — tiklash
+        // TUGAGANDAN keyin. Ilgari bayroq effekt boshida ko'tarilardi va
+        // saqlash effekti (u keyingi qatorda turadi, ya'ni O'SHA renderda
+        // ishlaydi) qoralamani `step: "welcome"` bilan ustiga yozib
+        // yuborardi — tiklash navbati hali kelmasdan.
+        //
+        // Dev'da bu xatoni KO'RSATADI: StrictMode effektni ikki marta
+        // ishga tushiradi, birinchi urinish bekor qilinadi va ikkinchisi
+        // allaqachon buzilgan qoralamani o'qiydi. Ya'ni dev'da tiklash
+        // UMUMAN ishlamasdi — men buni aynan shu ekranni tekshirayotib
+        // topdim. Prodda oyna yopilib qolgan tor holatda qoralama
+        // yo'qolardi.
+        draftRestoredRef.current = true;
       }, 0);
     }, 0);
     return () => {
@@ -999,19 +1015,32 @@ function OnboardingPageInner() {
         // hamma joydagi kabi "yopishgan" holda qoladi (avval min-h-dvh + justify-center
         // tugmani logo/sarlavha bilan bitta ustunga markazlashtirib, ekran o'rtasiga
         // olib chiqib qo'yardi).
-        step === "welcome" ? "h-dvh bg-aurora-cycle" : "h-dvh bg-background"
+        // ONB-LOOK-01: kirish ekranida fon `TodayBackdrop`dan keladi
+        // (bosh sahifadagi bilan AYNAN bir xil), shuning uchun bu yerda
+        // fon rangi berilmaydi — aks holda u gradientni yopib qo'yardi.
+        step === "welcome" ? "h-dvh bg-aurora-cycle" : step === "account_choice" ? "h-dvh" : "h-dvh bg-background"
       )}
       // Telegram Mini App'da fullscreen sarlavha paneli shaffof holda tepada
       // qoladi (lib/telegram.ts) — oddiy brauzerda --tg-safe-area-top 0px.
       style={{ paddingTop: "calc(var(--tg-safe-area-top) + 2rem)" }}
     >
+      {/* ONB-LOOK-01: bosh sahifaning ("Bugun") foni — nusxa emas, O'SHA
+          komponent. Shu sababli kirish ekranidagi gradient va sekin suzuvchi
+          yorug'lik dog'lari ilova ichidagisi bilan bir xil bo'lib qoladi,
+          hatto fon keyinchalik o'zgartirilsa ham. `fixed inset-0` bo'lgani
+          uchun u `px-6` chegarasidan tashqariga, butun ekranga yoyiladi. */}
+      {step === "account_choice" && <TodayBackdrop />}
+
       {sectionProgress && (
         <div className="mb-6 shrink-0">
           <SectionProgress {...sectionProgress} />
         </div>
       )}
 
-      <div key={step} className={clsx("animate-fade-in-up flex flex-1 flex-col", step !== "welcome" && "overflow-y-auto")}>
+      <div
+        key={step}
+        className={clsx("animate-fade-in-up relative z-10 flex flex-1 flex-col", step !== "welcome" && "overflow-y-auto")}
+      >
         {STEP_ILLUSTRATION[step] ? (
           <div className="mb-4 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
@@ -1616,7 +1645,7 @@ function OnboardingPageInner() {
       </div>
 
       {step !== "welcome" && step !== "analyzing" && (
-        <div className="mt-8 flex shrink-0 items-center justify-between gap-3">
+        <div className="relative z-10 mt-8 flex shrink-0 items-center justify-between gap-3">
           {stepIndex > 0 ? (
             <Button variant="ghost" onClick={goBack} disabled={submitting}>
               {dict.common.back}
@@ -1817,6 +1846,31 @@ function SectionProgress({
  * (raqam → Telegram bot kodi). Haqiqiy SMS provayderi hozircha yo'q va u
  * har xabar uchun pul talab qiladi, shuning uchun nomi ham "SMS" emas.
  */
+/**
+ * ONB-LOOK-01 — kirish ekrani bosh sahifa ("Bugun") bilan bir xil tilda.
+ *
+ * FOYDALANUVCHI SO'ROVI (2026-09-24, referens rasmlar bilan): "come up with
+ * the design that matches the main page of cycle tracker that we made, the
+ * vibe should be matched".
+ *
+ * Ilgari bu ekran ilovaning qolgan qismiga umuman o'xshamasdi: tekis OQ fon,
+ * ustida Telegram'ning KO'K slabi va Google'ning to'rt rangli belgisi. Ya'ni
+ * ayol ko'radigan BIRINCHI ekran — ilovaning o'zi emas, uchta begona
+ * brendning ranglari edi. Aynan shu "messy" deb ko'rsatilgan.
+ *
+ * Endi uchta narsa bosh sahifadan AYNAN ko'chirildi:
+ *   1. Fon — `TodayBackdrop`ning o'zi (nusxa emas, o'sha komponent), ya'ni
+ *      kirishdagi yumshoq pushti gradient va sekin suzuvchi yorug'lik
+ *      dog'lari bosh sahifadagi bilan piksel-bapiksel bir xil;
+ *   2. Logo atrofidagi "nafas olayotgan" shakllar — CycleScreen'dagi
+ *      HeroBlob bilan bir xil shakl, blur va ritm;
+ *   3. Harakatlar OQ "varaq" (sheet) ichida — ilovadagi Card bilan bir xil
+ *      radius (28-32px) va yumshoq soya.
+ *
+ * Telegram tugmasi endi KO'K emas, ilovaning o'z pushti gradientida. Brend
+ * tanilishi belgi (glyph) va yozuvning o'zida qoladi; rang esa ilovaniki
+ * bo'lishi kerak — bu ekranda uchinchi begona rangga o'rin yo'q.
+ */
 function LoginStep({ telegramHref }: { telegramHref: string }) {
   const { dict } = useI18n();
   // ONB-TG-01: Mini App ICHIDA ekanimizni aniqlaymiz. Bu `?fromTelegram=1`
@@ -1825,72 +1879,107 @@ function LoginStep({ telegramHref }: { telegramHref: string }) {
   // "Telegram'da ochish" tugmasini ko'rib qolardi.
   const { isTelegram, status: telegramStatus } = useTelegram();
 
+  // Ikkala holat ham AYNAN bir xil ko'rinadi — farq faqat manzilda va
+  // yozuvda. Shuning uchun uslub bir joyda saqlanadi: ilgari u ikki marta
+  // ko'chirib yozilgan edi va biri o'zgarganda ikkinchisi ortda qolardi.
+  const primaryButtonClass =
+    "tap-target group flex w-full items-center justify-center gap-2.5 rounded-full " +
+    "bg-gradient-to-br from-primary to-primary-dark px-6 py-4 text-base font-bold text-white " +
+    "shadow-[0_8px_20px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] " +
+    "transition active:scale-[0.98] aria-disabled:pointer-events-none aria-disabled:opacity-60";
+
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-        {/* LOGO-02: ilovaning o'z ikonkasi bilan bir xil to'liq belgi —
-            pushti doira ichida krem "m". */}
-        <LogoBadge className="animate-hero-badge h-28 w-28" />
-        <h1 className="animate-hero-title mt-2 text-3xl font-extrabold text-text-primary">{dict.auth.loginTitle}</h1>
-        <p className="animate-hero-subtitle text-text-secondary">{dict.auth.loginSubtitle}</p>
-
-        <div className="animate-fade-in-up mt-8 w-full space-y-3" style={{ animationDelay: "0.25s" }}>
-          {/* ONB-TG-01: Telegram Mini App ICHIDA "Telegram'da ochish"
-              havolasi ma'nosiz — ayol allaqachon Telegram ichida va bu uni
-              ilovadan CHIQARIB yuborardi. Bunday holatda kirish shu yerda,
-              /tg orqali tugallanadi (Mini App autentifikatsiya sahifasi).
-              Telegram aniqlanmaguncha tugma o'chirilgan turadi — noto'g'ri
-              yo'lni ko'rsatib qo'ymaslik uchun. */}
-          {isTelegram ? (
-            <Link
-              href="/tg"
-              className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-[#229ED9] px-6 py-4 text-base font-bold text-white transition active:scale-[0.98]"
-            >
-              <TelegramIcon />
-              {dict.auth.continueInTelegram}
-            </Link>
-          ) : (
-            <a
-              href={telegramHref}
-              aria-disabled={telegramStatus === "checking"}
-              className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-[#229ED9] px-6 py-4 text-base font-bold text-white transition active:scale-[0.98] aria-disabled:pointer-events-none aria-disabled:opacity-60"
-            >
-              <TelegramIcon />
-              {dict.auth.telegramLogin}
-            </a>
-          )}
-
-          <button
-            type="button"
-            disabled
-            className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full bg-surface-muted px-6 py-4 text-base font-semibold text-text-muted"
-          >
-            <GoogleIcon />
-            {dict.auth.googleLogin}
-            <span className="rounded-full bg-border px-2 py-0.5 text-[10px] font-bold uppercase">
-              {dict.auth.comingSoon}
-            </span>
-          </button>
-
-          {/* ONB-PHONE-01: "Telefon raqami bilan kirish" olib tashlandi —
-              bu yo'l hali tayyor emas edi, lekin ekranda to'liq ishlaydigan
-              variant kabi turardi. Ishlamaydigan yo'lni taklif qilgandan
-              ko'ra ko'rsatmaslik to'g'riroq. Backend (SMS kod) o'z joyida
-              qoladi, faqat kirish ekranida taklif qilinmaydi. */}
+    // Belgi va harakatlar BITTA markazlashgan guruh. Ilgari belgi yuqori
+    // yarmiga, varaq esa pastga "yopishtirilgan" edi — orada 300px bo'sh
+    // joy qolib, ekran ikkiga bo'linib ko'rinardi.
+    <div className="flex flex-1 flex-col justify-center gap-7">
+      {/* 1. Yuqori maydon — fon gradienti ustida, hech qanday kartasiz.
+          Referensdagi kabi: belgi, sarlavha, bitta qator izoh. */}
+      <div className="flex flex-col items-center gap-1.5 text-center">
+        <div className="relative mb-1 flex items-center justify-center">
+          {/* CycleScreen'dagi HeroBlob bilan bir xil shakl va ritm —
+              logo "nafas olayotgan" yumshoq nur ichida turadi.
+              IKKALASI HAM pushti: CycleScreen'da ikkinchi shakl turkuaz
+              (accent), lekin u yerda katta maydonga yoyiladi. Bu yerda,
+              kichik doira ortida, turkuaz pushti bilan qo'shilib KULRANG
+              dog' berardi — skrinshotda aniq ko'rindi. */}
+          <span
+            aria-hidden
+            className="motion-breathe pointer-events-none absolute h-44 w-44 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] bg-primary/25 blur-2xl"
+          />
+          <span
+            aria-hidden
+            className="motion-breathe pointer-events-none absolute h-32 w-32 -translate-x-[30%] translate-y-[12%] rotate-45 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] bg-primary-light/45 blur-2xl"
+            style={{ animationDelay: "-3.5s" }}
+          />
+          {/* LOGO-02: ilovaning o'z ikonkasi bilan bir xil to'liq belgi —
+              pushti doira ichida krem "m". */}
+          {/* Soya ATAYLAB yo'q — ustidagi ikki shakl allaqachon yumshoq nur
+              beradi, soya esa ular bilan qo'shilib kulrang dog'ga aylanardi. */}
+          <LogoBadge className="animate-hero-badge relative h-24 w-24" />
         </div>
+        <h1 className="animate-hero-title text-[2rem] font-extrabold leading-tight text-text-primary">
+          {dict.auth.loginTitle}
+        </h1>
+        <p className="animate-hero-subtitle max-w-[16rem] text-text-secondary">{dict.auth.loginSubtitle}</p>
       </div>
 
-      {/* Huquqiy eslatma. DIQQAT: bu aniq rozilikni ALMASHTIRMAYDI —
-          `privacy` qadamidagi belgilash (checkbox) o'z joyida qoladi.
-          Sog'liq ma'lumoti uchun passiv "bosish orqali rozi bo'ldingiz"
-          yetarli emas. */}
-      <p className="shrink-0 pt-6 text-center text-xs leading-relaxed text-text-muted">
-        {dict.auth.legalNoticePrefix}
-        <Link href="/maxfiylik" className="underline">
-          {dict.auth.legalNoticeLink}
-        </Link>
-        {dict.auth.legalNoticeSuffix}
-      </p>
+      {/* 2. Pastki oq "varaq" — ilovadagi Card bilan bir xil radius va soya.
+          Harakatlar SHU YERDA to'planadi: gradient ustida suzib turgan
+          tugmalar tarqoq ko'rinardi, referenslarda ham hammasi bitta oq
+          maydon ichida. */}
+      <div
+        className="animate-fade-in-up shrink-0 space-y-3 rounded-[32px] bg-surface p-4 shadow-[0_8px_32px_color-mix(in_srgb,var(--color-text-primary)_9%,transparent)]"
+        style={{ animationDelay: "0.25s" }}
+      >
+        {/* ONB-TG-01: Telegram Mini App ICHIDA "Telegram'da ochish"
+            havolasi ma'nosiz — ayol allaqachon Telegram ichida va bu uni
+            ilovadan CHIQARIB yuborardi. Bunday holatda kirish shu yerda,
+            /tg orqali tugallanadi (Mini App autentifikatsiya sahifasi).
+            Telegram aniqlanmaguncha tugma o'chirilgan turadi — noto'g'ri
+            yo'lni ko'rsatib qo'ymaslik uchun. */}
+        {isTelegram ? (
+          <Link href="/tg" className={primaryButtonClass}>
+            <TelegramIcon />
+            {dict.auth.continueInTelegram}
+          </Link>
+        ) : (
+          <a href={telegramHref} aria-disabled={telegramStatus === "checking"} className={primaryButtonClass}>
+            <TelegramIcon />
+            {dict.auth.telegramLogin}
+          </a>
+        )}
+
+        <button
+          type="button"
+          disabled
+          className="tap-target flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-surface px-6 py-4 text-base font-semibold text-text-muted"
+        >
+          <GoogleIcon />
+          {dict.auth.googleLogin}
+          <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold uppercase text-text-secondary">
+            {dict.auth.comingSoon}
+          </span>
+        </button>
+
+        {/* ONB-PHONE-01: "Telefon raqami bilan kirish" olib tashlandi —
+            bu yo'l hali tayyor emas edi, lekin ekranda to'liq ishlaydigan
+            variant kabi turardi. Ishlamaydigan yo'lni taklif qilgandan
+            ko'ra ko'rsatmaslik to'g'riroq. Backend (SMS kod) o'z joyida
+            qoladi, faqat kirish ekranida taklif qilinmaydi. */}
+
+        {/* Huquqiy eslatma. DIQQAT: bu aniq rozilikni ALMASHTIRMAYDI —
+            `privacy` qadamidagi belgilash (checkbox) o'z joyida qoladi.
+            Sog'liq ma'lumoti uchun passiv "bosish orqali rozi bo'ldingiz"
+            yetarli emas. */}
+        <p className="px-2 pt-1 text-center text-xs leading-relaxed text-text-muted">
+          {dict.auth.legalNoticePrefix}
+          <Link href="/maxfiylik" className="underline">
+            {dict.auth.legalNoticeLink}
+          </Link>
+          {dict.auth.legalNoticeSuffix}
+        </p>
+      </div>
     </div>
   );
 }
