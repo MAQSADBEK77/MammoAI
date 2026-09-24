@@ -253,8 +253,9 @@ const ru: Dictionary = {
       other: "Другое",
     },
 
-    nameQuestion: "Как вас зовут?",
-    namePlaceholder: "Ваше имя",
+    nameIntro: "Давайте познакомимся поближе!",
+    nameQuestion: "Как к вам обращаться?",
+    namePlaceholder: "Введите ваше имя",
 
     ageLabel: "Ваш возраст",
     birthYearLabel: "Год рождения",

@@ -254,8 +254,9 @@ const en: Dictionary = {
       other: "Other",
     },
 
-    nameQuestion: "What's your name?",
-    namePlaceholder: "Your name",
+    nameIntro: "Let's get to know each other!",
+    nameQuestion: "How should we address you?",
+    namePlaceholder: "Enter your name",
 
     ageLabel: "Your age",
     birthYearLabel: "Your birth year",
