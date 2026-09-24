@@ -52,8 +52,23 @@ export function isPregnancyGoal(goal: Goal): boolean {
   return goal === "pregnancy";
 }
 
-export function needsHeightWeight(goal: Goal): boolean {
-  return goal === "pregnancy" || goal === "planning_pregnancy";
+/**
+ * ONB-HW-01 (foydalanuvchi so'rovi: "nega ba'zilarda bu parametrlar
+ * so'raladi? hammaga bir xil qilish kerak").
+ *
+ * Ilgari bo'y va vazn FAQAT homiladorlik va uni rejalashtirish
+ * maqsadlarida so'ralardi. Bu haqiqiy nomuvofiqlik edi va faqat
+ * ko'rinish masalasi emas: TVI (BMI) `ConcernsScreen`da — "Muammolar"
+ * sahifasida — sog'liq xavflarini saralashda ishlatiladi, u esa BARCHA
+ * foydalanuvchilarga ochiq. Ya'ni ayollarning ko'pchiligida bu saralash
+ * jimgina TVIsiz ishlab, kamroq aniq natija berardi.
+ *
+ * Funksiya saqlanib qoldi (o'rniga `true` yozib qo'yish kelajakda
+ * "nega hammaga?" degan savolga javob bermasdi) — lekin endi u har doim
+ * rost qaytaradi.
+ */
+export function needsHeightWeight(): boolean {
+  return true;
 }
 
 /** `perimenopause` uchun ham FALSE — sikl uzunligi/oxirgi hayz sanasi kabi

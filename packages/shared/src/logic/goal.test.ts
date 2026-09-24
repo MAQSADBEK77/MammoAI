@@ -48,8 +48,12 @@ describe("perimenopause (roadmap: 40+ yosh ayollar uchun rejim)", () => {
     expect(needsPersonalHealthQuestions("perimenopause")).toBe(true);
   });
 
-  it("bo'y-vazn so'ralmaydi", () => {
-    expect(needsHeightWeight("perimenopause")).toBe(false);
+  // ONB-HW-01: ilgari bu yerda "bo'y-vazn so'ralmaydi" deb yozilgandi.
+  // Endi u HAMMA maqsadda so'raladi (TVI "Muammolar" sahifasidagi
+  // saralashda ishlatiladi va u hammaga ochiq), shuning uchun
+  // perimenopauza ham istisno emas.
+  it("bo'y-vazn ham so'raladi", () => {
+    expect(needsHeightWeight()).toBe(true);
   });
 
   it("o'ziga xos, boshqa rejimlardan farqli rangga ega", () => {
@@ -69,10 +73,10 @@ describe("isPregnancyGoal", () => {
 });
 
 describe("needsHeightWeight", () => {
-  it("homiladorlik/tayyorgarlik maqsadlarida bo'y-vazn so'raladi", () => {
-    expect(needsHeightWeight("pregnancy")).toBe(true);
-    expect(needsHeightWeight("planning_pregnancy")).toBe(true);
-    expect(needsHeightWeight("cycle")).toBe(false);
+  // ONB-HW-01: endi bu savol HAMMA maqsadda so'raladi — TVI "Muammolar"
+  // sahifasidagi saralashda ishlatiladi va u hammaga ochiq.
+  it("har qanday maqsadda so'raladi", () => {
+    expect(needsHeightWeight()).toBe(true);
   });
 });
 
