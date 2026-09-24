@@ -281,7 +281,9 @@ const STEP_ICON_NAME: Partial<Record<Step, OnboardingIconName>> = {
 const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
   account_identifier: "secure-login",
   phone_verify: "secure-login",
-  goal: "goal",
+  // ONB-GOALS-01: `goal` bu yerdan OLIB TASHLANDI — endi har bir variant
+  // o'z belgisiga ega, tepadagi katta umumiy illyustratsiya esa ekranning
+  // yarmini egallab, to'qqizta variantni pastga surib yuborardi.
   cycle_lengths: "calendar",
   last_period: "calendar",
   health_conditions: "medicine",
@@ -290,13 +292,28 @@ const STEP_ILLUSTRATION: Partial<Record<Step, string>> = {
   period_attitude: "meditation",
 };
 
+/** ONB-GOALS-01 — har bir maqsad uchun o'z belgisi. Ilgari ro'yxat faqat
+ * MATN edi: to'qqizta uzun jumla ketma-ket, ularni ko'z bilan ajratib
+ * bo'lmasdi. Belgi qo'shilgach ro'yxat bir qarashda o'qiladi. */
+const GOAL_ICON: Record<Goal, OnboardingIconName> = {
+  cycle: "goal_cycle",
+  pregnancy: "goal_pregnancy",
+  planning_pregnancy: "goal_planning",
+  wellbeing: "goal_wellbeing",
+  checkups: "goal_checkups",
+  understand_body: "goal_body",
+  skin: "goal_skin",
+  partner_tracking: "goal_partner",
+  perimenopause: "goal_perimenopause",
+};
+
 const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
-  account_choice: colors.secondary,
-  account_identifier: colors.secondary,
-  phone_verify: colors.secondary,
-  privacy: colors.secondary,
-  name: colors.secondary,
-  age: colors.secondary,
+  account_choice: colors.primary,
+  account_identifier: colors.primary,
+  phone_verify: colors.primary,
+  privacy: colors.primary,
+  name: colors.primary,
+  age: colors.primary,
   goal: colors.primary,
   cycle_regularity: colors.primary,
   cycle_lengths: colors.primary,
@@ -329,8 +346,15 @@ const STEP_ICON_COLOR: Partial<Record<Step, string>> = {
  * `welcome`, `preview` va `analyzing` hech qaysi bo'limga kirmaydi: birinchisi
  * so'rovnomadan oldin, qolgan ikkitasi — natija ekranlari.
  */
+// ONB-BRAND-01 (foydalanuvchi so'rovi: "o'zimiznikiga moslashtirish zarur"):
+// birinchi bo'lim BINAFSHA (#7c3aed) edi. Bu rang ilovada faqat bitta joyda —
+// homiladorlik rejimining fonida — uchraydi, ya'ni onboardingda u hech
+// nimani anglatmasdi va brendga begona ko'rinardi. Endi onboarding faqat
+// ikki rangda: brend pushtisi va turkuaz. Bo'lim qaysiligini progress
+// chizig'ining o'zi allaqachon ko'rsatib turadi, rang buni yolg'iz
+// ko'tarib turishi shart emas.
 const SECTIONS = [
-  { key: "about", color: colors.secondary },
+  { key: "about", color: colors.primary },
   { key: "cycle", color: colors.primary },
   { key: "health", color: colors.accent },
 ] as const;
@@ -1321,6 +1345,7 @@ function OnboardingPageInner() {
             options={goalOptions.map((g) => ({
               label: dict.onboarding.goals[g],
               value: g,
+              iconName: GOAL_ICON[g],
               onClick: () => setSurvey((s) => ({ ...s, primaryGoal: g })),
             }))}
             selected={survey.primaryGoal}
@@ -1857,8 +1882,10 @@ function ChoiceStep({
   title: string;
   /** Ixtiyoriy — savol nima uchun muhimligini tushuntiruvchi qo'shimcha matn (masalan bildirishnomalar bosqichida). */
   description?: string;
-  /** `icon` — ixtiyoriy emoji, til tanlash tugmalaridagi bayroq kabi yorliq oldida ko'rsatiladi. */
-  options: { label: string; value: string; icon?: string; onClick: () => void }[];
+  /** `icon` — ixtiyoriy emoji, til tanlash tugmalaridagi bayroq kabi yorliq oldida ko'rsatiladi.
+   * `iconName` — ONB-GOALS-01: ilovaning O'Z belgilar to'plamidan (emoji emas,
+   * ya'ni rangni bo'limdan oladi va boshqa ilovalarga o'xshamaydi). */
+  options: { label: string; value: string; icon?: string; iconName?: OnboardingIconName; onClick: () => void }[];
   selected: string | null;
 }) {
   return (
@@ -1876,8 +1903,20 @@ function ChoiceStep({
               : "border-border bg-surface text-text-primary hover:border-primary-light"
           )}
         >
+          {opt.iconName && (
+            // Belgi YORLIQ rangini oladi (`currentColor`), shuning uchun
+            // tanlanganda u ham pushtiga o'tadi — alohida holat kerak emas.
+            <span
+              className={clsx(
+                "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition",
+                selected === opt.value ? "bg-surface/70" : "bg-primary-light/25 text-primary"
+              )}
+            >
+              <OnboardingIcon name={opt.iconName} size={30} />
+            </span>
+          )}
           {opt.icon && <Emoji e={opt.icon} />}
-          {opt.label}
+          <span className="min-w-0 flex-1">{opt.label}</span>
         </button>
       ))}
     </div>

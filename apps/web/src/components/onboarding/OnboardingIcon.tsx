@@ -37,7 +37,17 @@ export type OnboardingIconName =
   | "symptoms"
   | "family"
   | "intimacy"
-  | "measure";
+  | "measure"
+  // ONB-GOALS-01 — maqsad ro'yxati uchun.
+  | "goal_cycle"
+  | "goal_pregnancy"
+  | "goal_planning"
+  | "goal_wellbeing"
+  | "goal_checkups"
+  | "goal_body"
+  | "goal_skin"
+  | "goal_partner"
+  | "goal_perimenopause";
 
 const S = { fill: "none", stroke: "currentColor", strokeWidth: 2.6, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
@@ -53,12 +63,22 @@ function Welcome() {
   );
 }
 
-/** Maxfiylik — qalqon, ichida yurak. Himoya + g'amxo'rlik, sovuq "qulf" emas. */
+/** Maxfiylik — qalqon, ichida BRENDNING O'Z belgisi.
+ *
+ * ONB-BRAND-01 (foydalanuvchi so'rovi): ilgari qalqon ichida oddiy yurak
+ * bor edi — chiroyli, lekin uni istalgan ilovada uchratish mumkin. Endi
+ * ichida "m" belgisi turadi, ya'ni ekran "sizning ma'lumotingizni MAMMOAI
+ * himoya qiladi" deb aytadi, "kimdir himoya qiladi" deb emas. */
 function Privacy() {
   return (
     <>
       <path d="M24 6l14 5v12c0 9-6 15.5-14 18-8-2.5-14-9-14-18V11l14-5z" {...S} />
-      <path d="M24 30s-6-3.8-6-8a3.5 3.5 0 0 1 6-2.3A3.5 3.5 0 0 1 30 22c0 4.2-6 8-6 8z" fill="currentColor" opacity="0.28" />
+      {/* Ichma-ich SVG — brend belgisining o'z viewBox'i boshqa, shuning
+          uchun uni shu yerda qayta o'lchaymiz. `currentColor` saqlanadi,
+          ya'ni belgi bo'lim rangini oladi. */}
+      <svg x="14" y="17" width="20" height="11" viewBox="606 342 708 396" fill="currentColor" opacity="0.85">
+        <path d="M648.57,614.61c-3.06-16.14-3.59-36.22-0.16-61.19c0.07-0.5,0.12-1,0.17-1.51c1.21-13.14,28.7-231.25,228.01-114.3c11.19,6.57,25.19,6.04,35.79-1.44c43.86-30.96,163.49-91.38,228.61,96.53c1.59,0.12,17.37,100.82,89.25,77.16c21.51-7.08,43.7,8.64,43.7,31.29v0c0,15.2-10.36,28.43-25.11,32.09c-46.98,11.64-146.06,15.92-175.39-141.64c-0.52-2.82-1.38-5.56-2.6-8.15c-7.76-16.56-40.83-80.09-105.01-48.04c-3.09,1.54-5.92,3.55-8.39,5.96c-7.95,7.78-31.44,31.94-29.91,78.62c0.71,21.54,0.88,44.01,0.82,63.65c-0.11,37.21-52.51,46-64.29,10.7c-0.73-2.19-1.4-4.49-1.98-6.9c-0.73-2.99-0.96-6.06-0.8-9.13c3.02-57.81,11.14-159.99-83.77-150.83c-2.8,0.27-5.56,0.9-8.21,1.84c-10.45,3.72-60.73,16.66-55.3,107.51c0.04,0.63,0.06,1.26,0.06,1.89v29.59C714.08,648.36,656.02,653.95,648.57,614.61z" />
+      </svg>
     </>
   );
 }
@@ -142,6 +162,147 @@ function Measure() {
   );
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MAQSAD BELGILARI — ONB-GOALS-01.
+
+   Foydalanuvchi oltita tayyor SVG yubordi va "yoki bizникiga moslashtir"
+   dedi. Moslashtirildi: g'oyalari olindi (kalendar-nuqtalar, homiladorlik
+   testi, qorin silueti), chizig'i esa shu to'plamning qoidalari bo'yicha
+   qayta chizildi. Sababi — yuborilgan fayllar bir-biriga ham mos emas edi:
+   uchta har xil fon doirasi (binafsha #E7D4EE, ko'k #D6E6F8, pushti
+   #FBD3DD), tarozi butunlay ko'k, hayz kosasi yashil, homiladorlik esa
+   anatomik chaqaloq. Ularni shundayligicha qo'yganda maqsad ro'yxati olti
+   xil ilovadan yig'ilgandek ko'rinardi.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/** Siklni kuzatish — kalendar va unda belgilangan kunlar. */
+function GoalCycle() {
+  return (
+    <>
+      <rect x="8" y="12" width="32" height="28" rx="5" {...S} />
+      <path d="M8 21h32" {...S} />
+      <path d="M17 8v7M31 8v7" {...S} />
+      <circle cx="17" cy="29" r="2.4" fill="currentColor" opacity="0.85" />
+      <circle cx="24" cy="29" r="2.4" fill="currentColor" opacity="0.55" />
+      <circle cx="31" cy="29" r="2.4" fill="currentColor" opacity="0.3" />
+      <circle cx="17" cy="35" r="2.4" fill="currentColor" opacity="0.2" />
+    </>
+  );
+}
+
+/** Homiladorman — homilador ayolning yon silueti.
+ *
+ * TO'PLAM QOIDASIDAN ATAYLAB CHEKINISH: bu belgi chiziqli emas,
+ * TO'LDIRILGAN. Sababi sinovda aniqlandi — to'rtta variant 30px'da
+ * yonma-yon chizilib solishtirildi:
+ *   • yon profil (orqa chizig'i + qorin yoyi) → "þ" harfi;
+ *   • doira ichidagi doira + quchoq yoyi → lupa yoki "Q";
+ *   • yurak ichidagi chaqaloq → shunchaki yurak, homiladorlik emas.
+ * Faqat to'ldirilgan siluet kichik o'lchamda ham bir qarashda o'qildi.
+ * Chiziqli shakl bu yerda ishlamaydi, chunki tananing egri chizig'i
+ * ingichka bo'lganda yopilib qoladi. */
+function GoalPregnancy() {
+  return (
+    <g transform="translate(24 24) scale(1.2) translate(-24 -24)">
+      <circle cx="20" cy="10" r="5" fill="currentColor" />
+      <path
+        d="M20 17c-4.6 0-7.6 3-7.6 7.6 0 3 .6 5.4.6 8.4 0 3-.6 5-.6 7h5c0-2 .4-4 .4-6.6 7-.6 12.2-5 12.2-10.2 0-4-3.4-6.2-10-6.2z"
+        fill="currentColor"
+      />
+    </g>
+  );
+}
+
+/** Homiladorlikni rejalashtiraman — kalendar va undagi yurak.
+ *
+ * Test tayoqchasi tashlandi: uning butun ma'nosi ikki INGICHKA chiziqda
+ * edi va 26px'da ular yo'qolib, belgi plastirga o'xshab qolardi.
+ * Kalendar esa `goal_cycle` bilan bitta oilada turadi va ikkalasi
+ * ICHIDAGI belgi bilan farq qiladi — nuqtalar va yurak. Bu mantiqan ham
+ * to'g'ri: rejalashtirish — bu ham kalendar, faqat boshqa maqsad bilan. */
+function GoalPlanning() {
+  return (
+    <>
+      <rect x="8" y="12" width="32" height="28" rx="5" {...S} />
+      <path d="M8 21h32" {...S} />
+      <path d="M17 8v7M31 8v7" {...S} />
+      <path d="M24 35s-7.5-4.6-7.5-9.1a3.7 3.7 0 0 1 7.5-1.7 3.7 3.7 0 0 1 7.5 1.7c0 4.5-7.5 9.1-7.5 9.1z" fill="currentColor" opacity="0.38" />
+    </>
+  );
+}
+
+/** Umumiy salomatlik — barg va yumshoq yorqinlik. */
+function GoalWellbeing() {
+  return (
+    <>
+      <path d="M38 11c0 13.5-8.6 21.5-20.5 21.5-2 0-3.9-.3-5.5-.9C11 19.6 20.4 11 33 11h5z" {...S} />
+      <path d="M11 39c2.6-6.4 7.4-11.4 13.5-14.6" {...S} />
+      <circle cx="35" cy="34" r="2.2" fill="currentColor" opacity="0.35" />
+    </>
+  );
+}
+
+/** Tekshiruvlarni o'tkazib yubormayman — ro'yxat va belgi. */
+function GoalCheckups() {
+  return (
+    <>
+      <rect x="11" y="10" width="26" height="30" rx="5" {...S} />
+      <path d="M20 8h8a2 2 0 0 1 2 2v3H18v-3a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.3" />
+      <path d="M18 26.5l4.2 4.2L31 21" {...S} />
+    </>
+  );
+}
+
+/** Tanamni tushunmoqchiman — lupa va uning ichida yurak. */
+function GoalBody() {
+  return (
+    <>
+      <circle cx="21" cy="21" r="12" {...S} />
+      <path d="M30 30l8.5 8.5" {...S} />
+      <path d="M21 27s-6-3.7-6-7.3A3 3 0 0 1 21 18.4a3 3 0 0 1 6 1.3c0 3.6-6 7.3-6 7.3z" fill="currentColor" opacity="0.32" />
+    </>
+  );
+}
+
+/** Teri — tomchi va yorqinlik. */
+function GoalSkin() {
+  return (
+    <>
+      <path d="M22 8c6.5 8.6 10.5 13.4 10.5 18.8A10.5 10.5 0 1 1 11.5 26.8C11.5 21.4 15.5 16.6 22 8z" {...S} />
+      <path d="M17 28c0 3.4 2.6 6 6 6.4" {...S} opacity="0.5" />
+      <path d="M37 9l1.2 3.4 3.4 1.2-3.4 1.2L37 18.2l-1.2-3.4-3.4-1.2 3.4-1.2L37 9z" fill="currentColor" opacity="0.4" />
+    </>
+  );
+}
+
+/** Hamkorimni kuzataman — ikki kishi va ular orasidagi yurak. */
+function GoalPartner() {
+  return (
+    <>
+      <circle cx="15" cy="20" r="5" {...S} />
+      <path d="M6 40c0-5.5 4-9.5 9-9.5s9 4 9 9.5" {...S} />
+      <circle cx="33" cy="22" r="4.4" {...S} opacity="0.6" />
+      <path d="M25 40c0-4.8 3.6-8.2 8-8.2s8 3.4 8 8.2" {...S} opacity="0.6" />
+      <path d="M24 15s-4.4-2.7-4.4-5.4A2.4 2.4 0 0 1 24 8.2a2.4 2.4 0 0 1 4.4 1.4c0 2.7-4.4 5.4-4.4 5.4z" fill="currentColor" opacity="0.4" />
+    </>
+  );
+}
+
+/** Perimenopauza — ufqdan ko'tarilayotgan quyosh: yangi bosqich,
+ * "tugadi" emas. Bu ATAYLAB: bu davr ayol uchun yo'qotish sifatida
+ * emas, o'tish sifatida ko'rsatilishi kerak. */
+function GoalPerimenopause() {
+  return (
+    <>
+      <path d="M8 34h32" {...S} />
+      <path d="M24 15a10 10 0 0 1 10 10H14a10 10 0 0 1 10-10z" fill="currentColor" opacity="0.28" />
+      <path d="M24 15a10 10 0 0 1 10 10H14a10 10 0 0 1 10-10z" {...S} />
+      <path d="M24 7v3.5M37.5 14.5L35 17M10.5 14.5L13 17M41 25h3.5M3.5 25H7" {...S} opacity="0.5" />
+    </>
+  );
+}
+
 const ICONS: Record<OnboardingIconName, () => React.ReactElement> = {
   welcome: Welcome,
   privacy: Privacy,
@@ -152,6 +313,15 @@ const ICONS: Record<OnboardingIconName, () => React.ReactElement> = {
   family: Family,
   intimacy: Intimacy,
   measure: Measure,
+  goal_cycle: GoalCycle,
+  goal_pregnancy: GoalPregnancy,
+  goal_planning: GoalPlanning,
+  goal_wellbeing: GoalWellbeing,
+  goal_checkups: GoalCheckups,
+  goal_body: GoalBody,
+  goal_skin: GoalSkin,
+  goal_partner: GoalPartner,
+  goal_perimenopause: GoalPerimenopause,
 };
 
 export function OnboardingIcon({ name, size = 52 }: { name: OnboardingIconName; size?: number }) {
