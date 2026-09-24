@@ -14,6 +14,7 @@ import {
   ToggleButton,
   Avatar,
 } from "@mui/material";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { Emoji } from "./Emoji";
 
 // Foydalanuvchi so'roviga ko'ra ("hamma joyga Material UI ishlat — iconlardan
@@ -889,6 +890,128 @@ function parseYMD(value: string): { year: number; month: number; day: number } |
 
 function formatYMD(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/**
+ * CAL-01 — oylik kalendar: sanani BOSIB tanlash.
+ *
+ * Foydalanuvchi so'rovi: "sanalarga bosganda birdaniga kalendar ochilib
+ * belgilash chiqishi kerak".
+ *
+ * Nega g'ildirakdan yaxshiroq (aynan SHU savol uchun): "oxirgi hayzingiz
+ * qachon boshlangan?" — bu yaqin o'tmishdagi sana va ayol uni ko'pincha
+ * "o'tgan juma edi", "oyning boshida" deb eslaydi, "24-sentabr" deb emas.
+ * Kalendar hafta kunlarini va bugundan qancha oldin ekanini KO'RSATADI,
+ * uchta g'ildirakni aylantirish esa buni yashiradi.
+ *
+ * Kelajakdagi kunlar o'chirilgan: hayz kelajakda boshlanmagan bo'ladi, va
+ * tasodifan bosilgan kelajak sanasi butun bashoratni buzardi.
+ */
+export function MonthCalendar({
+  value,
+  onChange,
+  monthLabels,
+  weekdayLabels,
+  /** Eng erta tanlash mumkin bo'lgan sana (YYYY-MM-DD). */
+  minDate,
+  /** Eng kech — odatda bugun. */
+  maxDate,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  monthLabels: string[];
+  weekdayLabels: string[];
+  minDate?: string;
+  maxDate?: string;
+}) {
+  const parsed = parseYMD(value);
+  const today = new Date();
+  const [view, setView] = useState(() => ({
+    year: parsed?.year ?? today.getFullYear(),
+    month: parsed?.month ?? today.getMonth() + 1,
+  }));
+
+  const daysInView = daysInMonth(view.year, view.month);
+  // Dushanbadan boshlanadigan hafta (O'zbekistonda odatiy). `getDay()` da
+  // yakshanba 0 bo'lgani uchun siljitamiz.
+  const firstWeekday = (new Date(view.year, view.month - 1, 1).getDay() + 6) % 7;
+
+  function shiftMonth(delta: number) {
+    setView((cur) => {
+      const d = new Date(cur.year, cur.month - 1 + delta, 1);
+      return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    });
+  }
+
+  const viewStart = formatYMD(view.year, view.month, 1);
+  const viewEnd = formatYMD(view.year, view.month, daysInView);
+  const canGoBack = !minDate || viewStart > minDate;
+  const canGoForward = !maxDate || viewEnd < maxDate;
+
+  return (
+    <div className="mx-auto w-full max-w-xs">
+      <div className="mb-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => shiftMonth(-1)}
+          disabled={!canGoBack}
+          aria-label="<"
+          className="tap-target flex h-10 w-10 items-center justify-center rounded-full text-text-primary transition active:scale-95 disabled:opacity-30"
+        >
+          <ChevronLeft />
+        </button>
+        <span className="text-base font-bold text-text-primary">
+          {monthLabels[view.month - 1]} {view.year}
+        </span>
+        <button
+          type="button"
+          onClick={() => shiftMonth(1)}
+          disabled={!canGoForward}
+          aria-label=">"
+          className="tap-target flex h-10 w-10 items-center justify-center rounded-full text-text-primary transition active:scale-95 disabled:opacity-30"
+        >
+          <ChevronRight />
+        </button>
+      </div>
+
+      <div className="mb-1 grid grid-cols-7 gap-1">
+        {Array.from({ length: 7 }, (_, i) => (
+          <span key={i} className="text-center text-xs font-semibold uppercase text-text-muted">
+            {/* Ustunlar dushanbadan, `weekdayLabels` esa yakshanbadan boshlanadi. */}
+            {weekdayLabels[(i + 1) % 7]}
+          </span>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: firstWeekday }, (_, i) => (
+          <span key={`pad${i}`} />
+        ))}
+        {Array.from({ length: daysInView }, (_, i) => {
+          const day = i + 1;
+          const date = formatYMD(view.year, view.month, day);
+          const disabled = (!!maxDate && date > maxDate) || (!!minDate && date < minDate);
+          const selected = date === value;
+          return (
+            <button
+              key={day}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(date)}
+              className={clsx(
+                "flex h-10 items-center justify-center rounded-full text-base font-semibold transition active:scale-95",
+                disabled && "text-text-muted/40",
+                !disabled && selected && "bg-primary text-white",
+                !disabled && !selected && "text-text-primary hover:bg-surface-muted"
+              )}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 /**
