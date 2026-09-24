@@ -335,8 +335,13 @@ const STEP_SECTION: Partial<Record<Step, 0 | 1 | 2>> = {
   privacy: 0,
   name: 0,
   age: 0,
+  // ONB-SHEET-02 (foydalanuvchi so'rovi): "maqsad" endi SIKL bo'limida
+  // emas, "Siz haqingizda"da. U ayolning o'zi haqida — nima uchun
+  // kelgani haqida — savol, siklning ma'lumoti emas. Shu ko'chirish
+  // tufayli sikl bo'limi FAQAT sikl savollaridan iborat bo'lib qoladi
+  // va pastdan chiquvchi oyna aynan o'sha yerda, aralashmasdan ishlaydi.
+  goal: 0,
 
-  goal: 1,
   cycle_regularity: 1,
   period_length: 1,
   cycle_length: 1,
@@ -1028,11 +1033,14 @@ function OnboardingPageInner() {
   // shu rejim tanlanganda qo'shiladi (boshqalar uchun ro'yxatni cheklamaslik).
   const symptomOptions = survey.primaryGoal === "perimenopause" ? [...SYMPTOM_OPTIONS, "hot_flashes" as const, "night_sweats" as const] : SYMPTOM_OPTIONS;
 
-  /** ONB-SHEET-01: savol ekranlari pastdan chiquvchi OYNA ko'rinishida —
-   * foydalanuvchi bergan referens bo'yicha. Kirish pardalari ("welcome",
-   * kirish ekrani) va yakuniy "analyzing" to'liq ekran bo'lib qoladi:
-   * ular savol emas. */
-  const isSheet = step !== "welcome" && step !== "account_choice" && step !== "analyzing";
+  /** ONB-SHEET-02: pastdan chiquvchi oyna FAQAT sikl bo'limida.
+   *
+   * Birinchi urinishda u butun onboardingga qo'llangan edi va maqsad
+   * tanlash ekranida yomon chiqdi: oltita kartali tarmoq oyna ichiga
+   * sig'may, pastki qatorlar kesilib qolardi (foydalanuvchi ko'rsatdi).
+   * Oyna referensda AYNAN sikl ma'lumotini so'rash uchun edi — qolgan
+   * savollar oddiy, to'liq ekranda qoladi. */
+  const isSheet = STEP_SECTION[step] === 1;
 
   return (
     <div
@@ -1066,11 +1074,7 @@ function OnboardingPageInner() {
           style={{ paddingTop: "calc(var(--tg-safe-area-top) + 3rem)" }}
         >
           <p className="text-xl font-extrabold leading-snug text-text-primary/70">
-            {sectionProgress
-              ? [dict.onboarding.backdropAbout, dict.onboarding.backdropCycle, dict.onboarding.backdropHealth][
-                  sectionProgress.sectionIndex
-                ]
-              : dict.onboarding.backdropLead}
+            {dict.onboarding.backdropCycle}
           </p>
           <p className="mt-1.5 text-sm text-text-muted">{dict.onboarding.backdropLead}</p>
         </div>
@@ -1094,7 +1098,14 @@ function OnboardingPageInner() {
           esa ortida hech narsa yo'q — yopib bo'lmaydi, shuning uchun
           ishlamaydigan tugma qo'yilmadi. */}
       {step !== "welcome" && step !== "analyzing" && (
-        <div className="relative z-10 mb-3 grid shrink-0 grid-cols-[2.75rem_1fr_2.75rem] items-center">
+        <div
+          className={clsx(
+            "relative z-10 mb-3 grid shrink-0 grid-cols-[2.75rem_1fr_2.75rem] items-center",
+            // Oyna bo'lmaganda tepadagi xavfsiz zonani hisobga olamiz —
+            // oyna holatida bu masofani oynaning o'zi beradi.
+            !isSheet && "pt-[var(--tg-safe-area-top)]"
+          )}
+        >
           {stepIndex > 0 ? (
             <button
               type="button"
