@@ -39,7 +39,7 @@ const PHASE_TINT: Record<CyclePhase, string> = {
   luteal: "var(--color-warning)",
 };
 
-export function TodayBackdrop({ phase }: { phase?: CyclePhase | null }) {
+export function TodayBackdrop({ phase, soft }: { phase?: CyclePhase | null; soft?: boolean }) {
   // CSS o'zgaruvchisi sifatida beriladi: gradient globals.css'da, shakllar esa
   // shu yerda — ikkalasi BITTA qiymatdan oziqlanishi kerak.
   const tint = phase ? PHASE_TINT[phase] : undefined;
@@ -49,7 +49,13 @@ export function TodayBackdrop({ phase }: { phase?: CyclePhase | null }) {
     <div
       aria-hidden
       style={tint ? ({ "--today-tint": tint } as React.CSSProperties) : undefined}
-      className="today-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className={clsx(
+        "today-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden",
+        // ONB-SOFT-01: onboardingda o'sha gradient, lekin uch barobar past
+        // ovozda — u yerda matn ko'p va to'yingan pushti o'qishga xalaqit
+        // berardi.
+        soft && "today-backdrop-soft"
+      )}
     >
       {/* Markaziy yorug' maydon — "Day 6" atrofidagi ochiq soha. Eng yirik
           va eng sezilarli shakl. */}
@@ -67,7 +73,7 @@ export function TodayBackdrop({ phase }: { phase?: CyclePhase | null }) {
           referensda eng to'q joy. */}
       <span
         className="today-blob bottom-[-35%] right-[-35%] h-[95vh] w-[95vh]"
-        style={{ animationDuration: "41s", animationDelay: "-13s", background: shade(14) }}
+        style={{ animationDuration: "41s", animationDelay: "-13s", background: shade(soft ? 5 : 14) }}
       />
     </div>
   );
