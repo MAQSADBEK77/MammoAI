@@ -234,6 +234,13 @@ const en: Dictionary = {
     sectionCycle: "Your cycle",
     sectionHealth: "Your health",
     sectionProgress: (current: number, total: number) => `${current}/${total}`,
+    previewHeadlinePrefix: "Your next period will start around",
+    previewHeadlineSuffix: "",
+    previewRemindLead:
+      "Want a heads up before your period starts? Allow notifications on the next screen.",
+    previewNotifTitle: "Your period is coming up",
+    previewNotifBody: "Expected in a few days — be prepared.",
+    previewNotifNow: "now",
     previewTitle: "Your first prediction is ready",
     previewNextPeriod: "Next period",
     previewPhase: "Current phase",

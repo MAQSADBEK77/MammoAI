@@ -255,6 +255,13 @@ const uz = {
     // ONB-02: so'rovnoma O'RTASIDA ko'rsatiladigan dastlabki bashorat.
     // Maqsad — qiymatni oldinga chiqarish: foydalanuvchi qolgan savollarga
     // javob berishdan OLDIN ilova nima berayotganini ko'radi.
+    previewHeadlinePrefix: "Keyingi hayzingiz taxminan",
+    previewHeadlineSuffix: "atrofida boshlanadi",
+    previewRemindLead:
+      "Hayzingiz boshlanishidan oldin ogohlantirishimizni xohlaysizmi? Keyingi ekranda ruxsat bering.",
+    previewNotifTitle: "Hayzingiz yaqinlashmoqda",
+    previewNotifBody: "Bir necha kundan keyin boshlanishi kutilmoqda — tayyor turing.",
+    previewNotifNow: "hozir",
     previewTitle: "Dastlabki bashoratingiz tayyor",
     previewNextPeriod: "Keyingi hayz",
     previewPhase: "Hozirgi faza",
