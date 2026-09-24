@@ -44,7 +44,7 @@ import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
-import { Button, IconChip, DateWheelPicker, WheelPicker } from "@/components/ui";
+import { Button, IconChip, MonthCalendar, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
 import {
   ArrowBackRounded,
@@ -173,6 +173,12 @@ interface SurveyState {
   weightLb: number;
   notificationsEnabled: boolean | null;
 }
+
+/** CAL-01: render paytida `Date.now()` chaqirish mumkin emas (u sof
+ * funksiya emas), shuning uchun chegaralar modul yuklanganda bir marta
+ * hisoblanadi. Kun aniqligida bu yetarli. */
+const TODAY_DATE = localDateStr();
+const EARLIEST_PERIOD_DATE = localDateStr(new Date(Date.now() - 365 * 86400000));
 
 const CURRENT_YEAR = new Date().getFullYear();
 /** ONB-02: bugungi sana modul yuklanganda BIR MARTA hisoblanadi.
@@ -750,7 +756,7 @@ function OnboardingPageInner() {
     }
     const filtered = isFromTelegram ? base.filter((s) => !["welcome", "account_choice"].includes(s)) : base;
     return withTail(filtered);
-  }, [survey.primaryGoal, isFromTelegram, age, showPreviewStep, previewPrediction]);
+  }, [survey.primaryGoal, isFromTelegram, showPreviewStep, previewPrediction]);
 
   const step = steps[stepIndex];
 
@@ -1591,12 +1597,20 @@ function OnboardingPageInner() {
           <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
             <div className={clsx(survey.lastPeriodUnknown && "pointer-events-none opacity-50")}>
-              <DateWheelPicker
+              {/* CAL-01: uchta g'ildirak o'rniga KALENDAR. "Oxirgi hayzingiz
+                  qachon boshlangan?" — bu yaqin o'tmishdagi sana va ayol uni
+                  ko'pincha "o'tgan juma edi" deb eslaydi, "24-sentabr" deb
+                  emas. Kalendar hafta kunlarini va bugundan qancha oldin
+                  ekanini ko'rsatadi, g'ildirak esa buni yashiradi. */}
+              <MonthCalendar
                 value={survey.lastPeriodDate}
                 onChange={(v) => setSurvey((s) => ({ ...s, lastPeriodDate: v }))}
                 monthLabels={dict.common.months}
-                minYear={CURRENT_YEAR - 1}
-                maxYear={CURRENT_YEAR}
+                weekdayLabels={dict.common.weekdaysShort}
+                // Bir yildan oldingi sana bu savolda ma'noli emas, kelajak esa
+                // umuman mumkin emas.
+                minDate={EARLIEST_PERIOD_DATE}
+                maxDate={TODAY_DATE}
               />
             </div>
             {/* ONB-CYCLE-01: "bilmayman" endi KARTA emas, tugma ostidagi
