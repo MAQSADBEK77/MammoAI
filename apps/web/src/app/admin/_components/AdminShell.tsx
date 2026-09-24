@@ -13,6 +13,9 @@ const NAV_ITEMS: { href: string; label: string; icon: string; exact?: boolean }[
   // OVERNIGHT-05: 🚀/💎/🤖'ning mahalliy Twemoji SVG fayli yo'q edi (87
   // fayllik to'plamda emas) — "buzuq rasm" belgisi ko'rinardi. Mavjud
   // to'plamdan almashtirildi (⭐/🔥/📱).
+  // LIVE-01: kampaniyadan keyin natijani jonli ko'rish uchun — tepaga
+  // yaqin, chunki eng tez-tez ochiladigan sahifalardan biri bo'ladi.
+  { href: "/admin/live", label: "Jonli faollik", icon: "🟢" },
   { href: "/admin/traction", label: "Traction", icon: "⭐" },
   { href: "/admin/subscriptions", label: "Obuna", icon: "🔥" },
   { href: "/admin/users", label: "Foydalanuvchilar", icon: "👥" },

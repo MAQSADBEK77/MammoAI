@@ -3170,6 +3170,108 @@ export async function getTractionSummary(days: number): Promise<TractionSummary>
   };
 }
 
+// ---------------------------------------------------------------------------
+// LIVE-01 — jonli faollik oqimi (admin panel).
+//
+// Nega kerak: kampaniya yuborilgandan keyin "kim kirdi va qanday kirdi"
+// degan savolga javob berish uchun har safar qo'lda SQL yozishga to'g'ri
+// kelardi. Endi admin panelda ko'rinadi.
+//
+// FAQAT O'QISH. Hech narsa o'zgartirmaydi.
+// ---------------------------------------------------------------------------
+
+export interface LiveActivityEvent {
+  id: string;
+  userId: string | null;
+  userName: string | null;
+  userPhone: string | null;
+  primaryGoal: string | null;
+  type: string;
+  path: string | null;
+  /** `campaign:c1` kabi yorliq — ayol kampaniya tugmasidan kelganini
+   * ko'rsatadi. Aynan shu "qanday kirdi" degan savolga javob beradi. */
+  label: string | null;
+  platform: string | null;
+  durationMs: number | null;
+  createdAt: string;
+}
+
+export interface LiveActivitySummary {
+  activeLast5Min: number;
+  activeLast15Min: number;
+  activeLastHour: number;
+  campaignClicksTotal: number;
+  eventsLastHour: number;
+}
+
+export async function getLiveActivity(limit = 80): Promise<{
+  summary: LiveActivitySummary;
+  events: LiveActivityEvent[];
+}> {
+  await ensureSchema();
+  const [rows, summaryRows] = await Promise.all([
+    sql`
+      SELECT e.id, e.user_id, e.type, e.path, e.label, e.platform, e.duration_ms, e.created_at,
+        u.name AS user_name, u.phone AS user_phone, o.primary_goal
+      FROM analytics_events e
+      LEFT JOIN users u ON u.id = e.user_id
+      LEFT JOIN onboarding_profiles o ON o.user_id = e.user_id
+      WHERE u.id IS NULL OR u.is_test_account = FALSE
+      ORDER BY e.created_at DESC
+      LIMIT ${limit}
+    `,
+    sql`
+      SELECT
+        count(DISTINCT e.user_id) FILTER (WHERE (e.created_at)::timestamptz >= now() - interval '5 minutes')::int AS a5,
+        count(DISTINCT e.user_id) FILTER (WHERE (e.created_at)::timestamptz >= now() - interval '15 minutes')::int AS a15,
+        count(DISTINCT e.user_id) FILTER (WHERE (e.created_at)::timestamptz >= now() - interval '1 hour')::int AS a60,
+        count(*) FILTER (WHERE e.label LIKE 'campaign:%')::int AS campaign_clicks,
+        count(*) FILTER (WHERE (e.created_at)::timestamptz >= now() - interval '1 hour')::int AS events_hour
+      FROM analytics_events e
+      LEFT JOIN users u ON u.id = e.user_id
+      WHERE u.id IS NULL OR u.is_test_account = FALSE
+    `,
+  ]);
+
+  const r = (summaryRows as unknown as { a5: number; a15: number; a60: number; campaign_clicks: number; events_hour: number }[])[0];
+  const typed = rows as unknown as {
+    id: string;
+    user_id: string | null;
+    type: string;
+    path: string | null;
+    label: string | null;
+    platform: string | null;
+    duration_ms: number | null;
+    created_at: string;
+    user_name: string | null;
+    user_phone: string | null;
+    primary_goal: string | null;
+  }[];
+
+  return {
+    summary: {
+      activeLast5Min: r.a5,
+      activeLast15Min: r.a15,
+      activeLastHour: r.a60,
+      campaignClicksTotal: r.campaign_clicks,
+      eventsLastHour: r.events_hour,
+    },
+    events: typed.map((row) => ({
+      id: row.id,
+      userId: row.user_id,
+      userName: row.user_name,
+      userPhone: row.user_phone,
+      primaryGoal: row.primary_goal,
+      type: row.type,
+      path: row.path,
+      label: row.label,
+      platform: row.platform,
+      durationMs: row.duration_ms,
+      createdAt: row.created_at,
+    })),
+  };
+}
+
 export async function listAnalyticsUsersAdmin(params: { search?: string; limit?: number; offset?: number }): Promise<{
   users: AnalyticsUserSummary[];
   total: number;
