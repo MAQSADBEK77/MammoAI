@@ -346,7 +346,17 @@ const STEP_SECTION: Partial<Record<Step, 0 | 1 | 2>> = {
   period_length: 1,
   cycle_length: 1,
   last_period: 1,
-  typical_symptoms: 1,
+
+  // ONB-SECTION-01 (foydalanuvchi so'rovi): "alomatlar" SIKL bo'limidan
+  // SOG'LIQ bo'limiga ko'chirildi. Ikki sabab:
+  //   • sikl bo'limi allaqachon to'lgan edi (5 qadam) va alomatlar
+  //     ro'yxati uzun — o'nta chip pastdan chiquvchi oynaga sig'may,
+  //     oxirgisi kesilib turardi (foydalanuvchi skrinshot bilan
+  //     ko'rsatdi);
+  //   • alomatlar mazmunan sog'liq ma'lumoti: ular sikl BASHORATIGA
+  //     ta'sir qilmaydi, kontent va tavsiyalarni tanlashda ishlatiladi.
+  // Ko'chirish tufayli u oyna ichida emas, to'liq ekranda chiziladi.
+  typical_symptoms: 2,
   period_attitude: 1,
 
   health_conditions: 2,
@@ -1585,9 +1595,6 @@ function OnboardingPageInner() {
                 </span>
                 {dict.onboarding.previewHeadlineSuffix ? ` ${dict.onboarding.previewHeadlineSuffix}` : ""}
               </h2>
-              <p className="mt-3 text-base leading-relaxed text-text-secondary">
-                {dict.onboarding.previewRemindLead}
-              </p>
             </div>
 
           </div>

@@ -257,8 +257,6 @@ const uz = {
     // javob berishdan OLDIN ilova nima berayotganini ko'radi.
     previewHeadlinePrefix: "Keyingi hayzingiz taxminan",
     previewHeadlineSuffix: "atrofida boshlanadi",
-    previewRemindLead:
-      "Hayzingiz boshlanishidan oldin ogohlantirishimizni xohlaysizmi? Keyingi ekranda ruxsat bering.",
     previewNotifTitle: "Hayzingiz yaqinlashmoqda",
     previewNotifBody: "Bir necha kundan keyin boshlanishi kutilmoqda — tayyor turing.",
     previewNotifNow: "hozir",

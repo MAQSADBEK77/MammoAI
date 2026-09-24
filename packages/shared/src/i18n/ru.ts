@@ -235,8 +235,6 @@ const ru: Dictionary = {
     sectionProgress: (current: number, total: number) => `${current}/${total}`,
     previewHeadlinePrefix: "Следующая менструация начнётся примерно",
     previewHeadlineSuffix: "",
-    previewRemindLead:
-      "Хотите предупреждение перед началом менструации? Разрешите уведомления на следующем экране.",
     previewNotifTitle: "Менструация приближается",
     previewNotifBody: "Ожидается через несколько дней — будьте готовы.",
     previewNotifNow: "сейчас",
