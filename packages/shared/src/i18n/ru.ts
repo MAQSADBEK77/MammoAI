@@ -225,6 +225,10 @@ const ru: Dictionary = {
   },
 
   onboarding: {
+    backdropAbout: "Сначала познакомимся",
+    backdropCycle: "Несколько вопросов о вашем цикле",
+    backdropHealth: "Последний шаг — о вашем здоровье",
+    backdropLead: "Ваши ответы делают прогноз точным.",
     sectionAbout: "О вас",
     sectionCycle: "Ваш цикл",
     sectionHealth: "Ваше здоровье",

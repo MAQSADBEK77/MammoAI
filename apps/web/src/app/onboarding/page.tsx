@@ -1028,41 +1028,24 @@ function OnboardingPageInner() {
   // shu rejim tanlanganda qo'shiladi (boshqalar uchun ro'yxatni cheklamaslik).
   const symptomOptions = survey.primaryGoal === "perimenopause" ? [...SYMPTOM_OPTIONS, "hot_flashes" as const, "night_sweats" as const] : SYMPTOM_OPTIONS;
 
+  /** ONB-SHEET-01: savol ekranlari pastdan chiquvchi OYNA ko'rinishida —
+   * foydalanuvchi bergan referens bo'yicha. Kirish pardalari ("welcome",
+   * kirish ekrani) va yakuniy "analyzing" to'liq ekran bo'lib qoladi:
+   * ular savol emas. */
+  const isSheet = step !== "welcome" && step !== "account_choice" && step !== "analyzing";
+
   return (
     <div
       className={clsx(
-        "mx-auto flex max-w-md flex-col px-6",
-        // Pastki masofa avvalgi py-8'dan (32px) ATAYLAB kattaroq — mobil brauzerning
-        // pastki asboblar paneli (Safari/Chrome) Orqaga/Keyingi tugmasiga "yopishib"
-        // qolmasligi uchun. env(safe-area-inset-bottom) PWA/notch'li qurilmada
-        // qo'shimcha real bo'shliq beradi, oddiy brauzerda 0 bo'lib, 3rem'ning o'zi qoladi.
-        "pb-[calc(env(safe-area-inset-bottom)+3rem)]",
-        // Balandlik hamma bosqichda (shu jumladan "welcome"da ham) viewport'ga QATʼIY
-        // tenglashtiriladi (h-dvh), ichkarida flex-1 orqali taqsimlanadi — shu orqali
-        // "Boshlaymiz"/"Keyingi" tugmasi doim ekranning eng pastida, ilova bo'ylab
-        // hamma joydagi kabi "yopishgan" holda qoladi (avval min-h-dvh + justify-center
-        // tugmani logo/sarlavha bilan bitta ustunga markazlashtirib, ekran o'rtasiga
-        // olib chiqib qo'yardi).
-        // ONB-LOOK-01: kirish ekranida fon `TodayBackdrop`dan keladi
-        // (bosh sahifadagi bilan AYNAN bir xil), shuning uchun bu yerda
-        // fon rangi berilmaydi — aks holda u gradientni yopib qo'yardi.
-        // ONB-SKIN-01: fon endi BUTUN onboarding bo'ylab bosh sahifadagi
-        // bilan bir xil (`TodayBackdrop`). Ilgari u `--color-background`
-        // (#f9fafb — Tailwind gray-50, ko'kimtir SOVUQ kulrang) edi, bosh
-        // sahifa esa iliq pushti gradientda. Yonma-yon qo'yilganda
-        // onboarding boshqa ilovaga o'xshab ko'rinardi. "welcome" o'z
-        // to'q pushti ekranida qoladi — u kirish pardasi.
-        // ONB-PLAIN-01 (foydalanuvchi so'rovi, Flo referensi bilan):
-        // "rangbarang qilish shart emas". Savol qadamlari endi ODDIY,
-        // deyarli oq fonda. Bezak faqat kirish pardalarida qoladi:
-        // "welcome" (to'q pushti) va kirish ekrani (yumshoq gradient).
-        // Bu Flo'dagi bilan bir xil mantiq — onboarding bu SO'ROVNOMA,
-        // ilovaning ichki ekranlari esa boshqa janr.
+        "relative mx-auto flex max-w-md flex-col overflow-hidden",
+        // DIQQAT: `px-6` ni asosiy ro'yxatga qo'yib, keyin `px-0` bilan
+        // bekor qilib bo'lmaydi — Tailwind'da qaysi klass g'olib chiqishini
+        // satrdagi TARTIB emas, CSS fayldagi tartib hal qiladi. Shuning
+        // uchun ular bir-birini ISTISNO qiladigan qilib yozilgan.
+        isSheet ? "" : "px-6 pb-[calc(env(safe-area-inset-bottom)+3rem)]",
         step === "welcome" ? "h-dvh bg-aurora-cycle" : step === "account_choice" ? "h-dvh" : "h-dvh bg-background"
       )}
-      // Telegram Mini App'da fullscreen sarlavha paneli shaffof holda tepada
-      // qoladi (lib/telegram.ts) — oddiy brauzerda --tg-safe-area-top 0px.
-      style={{ paddingTop: "calc(var(--tg-safe-area-top) + 2rem)" }}
+      style={{ paddingTop: isSheet ? 0 : "calc(var(--tg-safe-area-top) + 2rem)" }}
     >
       {/* ONB-LOOK-01: bosh sahifaning ("Bugun") foni — nusxa emas, O'SHA
           komponent. Shu sababli kirish ekranidagi gradient va sekin suzuvchi
@@ -1071,22 +1054,66 @@ function OnboardingPageInner() {
           uchun u `px-6` chegarasidan tashqariga, butun ekranga yoyiladi. */}
       {step === "account_choice" && <TodayBackdrop soft />}
 
-      {/* ONB-REF-01 (maket bo'yicha): "Orqaga" endi pastdagi matnli tugma
-          emas, TEPADAGI strelka. Ikki sabab: pastki qatorda u asosiy
-          harakat bilan bir xil og'irlikda turib, "davom etish"ni
-          kuchsizlantirardi; ikkinchidan, telefonda tepa-chap — orqaga
-          qaytishning odatiy joyi. */}
-      {step !== "welcome" && step !== "analyzing" && stepIndex > 0 && (
-        <div className="relative z-10 mb-2 shrink-0">
-          <button
-            type="button"
-            onClick={goBack}
-            disabled={submitting}
-            aria-label={dict.common.back}
-            className="tap-target -ml-3 flex h-11 w-11 items-center justify-center rounded-full text-text-primary transition active:scale-95 disabled:opacity-40"
-          >
-            <ArrowBackRounded />
-          </button>
+      {/* ONB-SHEET-01 — ORQA FON. Referensda oynaning ortida ilovaning
+          o'z ekrani turadi; onboardingda hali ilova yo'q, shuning uchun
+          bu yerda bo'lim haqida qisqa ma'lumot turadi. U ayolga
+          "hozir nima haqida so'ralyapti" degan kontekstni beradi va
+          oyna haqiqatan biror narsaning USTIDA turgandek ko'rinadi. */}
+      {isSheet && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 z-0 px-6 text-center"
+          style={{ paddingTop: "calc(var(--tg-safe-area-top) + 3rem)" }}
+        >
+          <p className="text-xl font-extrabold leading-snug text-text-primary/70">
+            {sectionProgress
+              ? [dict.onboarding.backdropAbout, dict.onboarding.backdropCycle, dict.onboarding.backdropHealth][
+                  sectionProgress.sectionIndex
+                ]
+              : dict.onboarding.backdropLead}
+          </p>
+          <p className="mt-1.5 text-sm text-text-muted">{dict.onboarding.backdropLead}</p>
+        </div>
+      )}
+
+      {/* ONB-SHEET-01 — oynaning o'zi. Yumaloq yuqori burchaklar va soya
+          uni orqa fondan ajratib turadi. */}
+      <div
+        className={clsx(
+          "relative z-10 flex flex-1 flex-col",
+          isSheet &&
+            "mt-[22vh] rounded-t-[32px] bg-surface px-6 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-5 shadow-[0_-10px_40px_color-mix(in_srgb,var(--color-text-primary)_14%,transparent)]"
+        )}
+      >
+      {/* ONB-SHEET-01: sarlavha qatori — chapda orqaga, O'RTADA qadam
+          hisoblagichi. Foydalanuvchi: "qaysi narsaga o'tdik shuni bilishimiz
+          juda muhim". Referensdagi "1/4" aynan shu.
+
+          O'ngdagi "yopish" belgisi ATAYLAB YO'Q: referensda oyna ilovaning
+          ustida turadi va yopilganda ortidagi ekranga qaytadi. Onboardingda
+          esa ortida hech narsa yo'q — yopib bo'lmaydi, shuning uchun
+          ishlamaydigan tugma qo'yilmadi. */}
+      {step !== "welcome" && step !== "analyzing" && (
+        <div className="relative z-10 mb-3 grid shrink-0 grid-cols-[2.75rem_1fr_2.75rem] items-center">
+          {stepIndex > 0 ? (
+            <button
+              type="button"
+              onClick={goBack}
+              disabled={submitting}
+              aria-label={dict.common.back}
+              className="tap-target -ml-3 flex h-11 w-11 items-center justify-center rounded-full text-text-primary transition active:scale-95 disabled:opacity-40"
+            >
+              <ArrowBackRounded />
+            </button>
+          ) : (
+            <span />
+          )}
+          {sectionProgress && (
+            <span className="text-center text-base font-bold text-text-primary">
+              {sectionProgress.current}/{sectionProgress.total}
+            </span>
+          )}
+          <span />
         </div>
       )}
 
@@ -1813,7 +1840,7 @@ function OnboardingPageInner() {
           )}
         </div>
       )}
-
+      </div>
     </div>
   );
 }
@@ -2083,12 +2110,10 @@ function SectionProgress({
           );
         })}
       </div>
-      <div className="flex items-baseline justify-between">
-        <p className="text-sm font-bold" style={{ color }}>
-          {names[sectionIndex]}
-        </p>
-        <p className="text-xs font-semibold text-text-muted">{dict.onboarding.sectionProgress(current, total)}</p>
-      </div>
+      {/* ONB-SHEET-01: bo'lim nomi va "2/6" hisoblagichi bu yerdan OLIB
+          TASHLANDI. Nom endi oynaning ORTIDAGI fonda, hisoblagich esa
+          oynaning sarlavha qatorida turadi — ilgari u ekranda IKKI MARTA
+          ko'rinardi. Bu yerda faqat chiziq qoladi. */}
     </div>
   );
 }

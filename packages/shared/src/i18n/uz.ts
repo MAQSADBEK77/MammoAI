@@ -244,6 +244,10 @@ const uz = {
     // ONB-04: so'rovnoma uchta nomlangan bo'limga bo'linadi. Bu 21 qadamni
     // "uchta qisqa bo'lim"ga aylantiradi va progress orqaga sakrashini
     // butunlay yo'q qiladi (bo'lim ichidagi qadam soni barqaror).
+    backdropAbout: "Avval siz bilan tanishamiz",
+    backdropCycle: "Siklingiz haqida bir necha savol",
+    backdropHealth: "Oxirgi bosqich — sog'lig'ingiz haqida",
+    backdropLead: "Javoblaringiz bashoratni aniq qiladi.",
     sectionAbout: "Siz haqingizda",
     sectionCycle: "Siklingiz",
     sectionHealth: "Sog'lig'ingiz",

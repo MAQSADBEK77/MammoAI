@@ -226,6 +226,10 @@ const en: Dictionary = {
   },
 
   onboarding: {
+    backdropAbout: "First, let's get to know you",
+    backdropCycle: "A few questions about your cycle",
+    backdropHealth: "Last step — about your health",
+    backdropLead: "Your answers make the prediction accurate.",
     sectionAbout: "About you",
     sectionCycle: "Your cycle",
     sectionHealth: "Your health",
