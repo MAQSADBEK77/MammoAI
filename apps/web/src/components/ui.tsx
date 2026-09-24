@@ -729,16 +729,27 @@ export function WheelPicker<T>({
   const parkedTop = (index >= 0 ? index : restAt) * WHEEL_ITEM_HEIGHT;
 
   // Boshlang'ich (va variantlar soni o'zgarganidagi) joylashuv.
+  //
+  // WHEEL-FIX-03 (foydalanuvchi: "no need for animation anymore"):
+  // joylashuv DARHOL, animatsiyasiz. Konteynerda `scroll-behavior: smooth`
+  // bor, ya'ni oddiy `scrollTop = x` bir soniyacha SIRG'ALIB boradi —
+  // ochilishda g'ildirak ro'yxat boshidan kerakli yilga "uchib" o'tardi.
+  // Bu nafaqat keraksiz, balki xavfli ham edi: sekin qurilmada animatsiya
+  // tugamasdan ayol ekranga tegib qolsa, g'ildirak yo'lda to'xtab,
+  // butunlay boshqa yil tanlangan bo'lardi. `behavior: "instant"` CSS
+  // qoidasini bekor qiladi.
+  //
+  // Ikki marta qo'yiladi: element hali o'lchamga ega bo'lmagan lahzada
+  // brauzer `scrollTop`ni 0 ga QIRQADI, keyingi kadrda esa u allaqachon
+  // o'lchamli bo'ladi. Bir marta qo'yish sekin qurilmada yetmasdi.
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    // rAF — element DOM'ga tushgan, lekin joylashuv hali yakunlanmagan
-    // bo'lishi mumkin. O'sha holatda `scrollTop` 0 ga qirqilib, g'ildirak
-    // ro'yxatning boshida turib qolardi (xabar qilingan xatoning ko'rinadigan
-    // tomoni — "animatsiya ishlamayapti").
-    requestAnimationFrame(() => {
-      if (containerRef.current) containerRef.current.scrollTop = parkedTop;
-    });
+    const park = () => {
+      const el = containerRef.current;
+      if (el) el.scrollTo({ top: parkedTop, behavior: "instant" });
+    };
+    park();
+    const raf = requestAnimationFrame(park);
+    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.length]);
 
@@ -747,7 +758,7 @@ export function WheelPicker<T>({
   const hadPlaceholder = useRef(showPlaceholder);
   useEffect(() => {
     if (hadPlaceholder.current && !showPlaceholder && index >= 0 && containerRef.current) {
-      containerRef.current.scrollTop = index * WHEEL_ITEM_HEIGHT;
+      containerRef.current.scrollTo({ top: index * WHEEL_ITEM_HEIGHT, behavior: "instant" });
     }
     hadPlaceholder.current = showPlaceholder;
   }, [showPlaceholder, index]);
