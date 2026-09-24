@@ -2159,8 +2159,15 @@ function ChoiceStep({
             // ekranni eskirgan ko'rsatardi (foydalanuvchi: "they seem old
             // stylish").
             "tap-target flex w-full items-center gap-3 rounded-3xl px-5 py-4 text-left text-lg font-medium transition active:scale-[0.98]",
+            // UI-SELECT-01 (foydalanuvchi so'rovi: "hammasi pushti
+            // bo'lmasin, fon ozgina boshqacha bo'lsa yetadi"): tanlangan
+            // variant endi TO'LIQ pushti emas. Fon zo'rg'a sezilarli
+            // pushti tus oladi, ajratib turadigan asosiy narsa esa
+            // ingichka pushti halqa va matn rangi. Ilgari karta butunlay
+            // `primary-light`ga bo'yalib, ekrandagi eng baland ovoz
+            // bo'lib qolardi.
             selected === opt.value
-              ? "bg-primary-light text-primary-dark shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+              ? "bg-primary-light/20 text-primary-dark ring-2 ring-primary/70 shadow-[0_4px_16px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
               : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
           )}
         >

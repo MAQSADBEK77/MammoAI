@@ -154,6 +154,23 @@ body {
   display: none;
 }
 
+/* UI-FOCUS-01 — klaviatura fokusi BRENDNING halqasida.
+   Foydalanuvchi skrinshotida tanlangan variant atrofida SARIQ kontur
+   ko'rindi — bu bizning uslubimiz emas, brauzerning standart fokus
+   chizig'i (Chrome ba'zi mavzularda uni to'q sariq chizadi). Bizda
+   umuman fokus qoidasi yo'q edi, shuning uchun har bir brauzer o'zi
+   bilganini chizardi.
+
+   `:focus-visible` ATAYLAB (`:focus` emas): halqa faqat klaviatura
+   bilan yurilganda chiqadi, sichqoncha yoki barmoq bilan bosilganda
+   emas. Ya'ni foydalanuvchi ko'rmaydi, lekin klaviatura bilan
+   ishlaydigan odam yo'qolib qolmaydi. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
 .tap-target {
   min-height: 48px;
   min-width: 48px;
