@@ -693,28 +693,71 @@ export function WheelPicker<T>({
   const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
   const index = value === null ? -1 : options.indexOf(value);
 
-  // Boshlang'ich (va tashqi `value` o'zgarganidagi) joylashuv.
+  const showPlaceholder = value === null && !!placeholder;
+  /** "Tanlang" qatori qaysi o'ringa QO'YILADI. */
+  const restAt = Math.min(Math.max(restIndex ?? Math.floor(options.length / 2), 0), options.length);
+
+  /**
+   * Ekranda ko'rinadigan qatorlar. "Tanlang" yilni YOPMAYDI, balki ular
+   * ORASIGA qo'shiladi — foydalanuvchi ko'rsatgan referensda ham shunday:
+   *   2003 / 2004 / [Select] / 2005 / 2006
+   * Birinchi urinishda u yilning USTIDA turardi va natijada bitta yil
+   * ko'rinmay qolardi (2000 dan keyin birdan 2002). Bu shunchaki chiroyli
+   * emas edi: ro'yxat uzluksiz ko'rinmasa, ayol qaysi yilda turganini
+   * noto'g'ri o'qiydi.
+   */
+  const rows: { key: string; option: T | null }[] = showPlaceholder
+    ? [
+        ...options.slice(0, restAt).map((o, i) => ({ key: `o${i}`, option: o })),
+        { key: "placeholder", option: null },
+        ...options.slice(restAt).map((o, i) => ({ key: `o${restAt + i}`, option: o })),
+      ]
+    : options.map((o, i) => ({ key: `o${i}`, option: o }));
+
+  /** Ko'rinadigan indeksdan HAQIQIY variant indeksiga. */
+  function toOptionIndex(rowIdx: number): number {
+    const raw = showPlaceholder && rowIdx >= restAt ? rowIdx - 1 : rowIdx;
+    return Math.min(Math.max(raw, 0), options.length - 1);
+  }
+
+  /** Boshlang'ich (dam olish) holatidagi scroll o'rni. */
+  const parkedTop = (index >= 0 ? index : restAt) * WHEEL_ITEM_HEIGHT;
+
+  // Boshlang'ich (va variantlar soni o'zgarganidagi) joylashuv.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const target = index >= 0 ? index : Math.min(Math.max(restIndex ?? Math.floor(options.length / 2), 0), options.length - 1);
     // rAF — element DOM'ga tushgan, lekin joylashuv hali yakunlanmagan
     // bo'lishi mumkin. O'sha holatda `scrollTop` 0 ga qirqilib, g'ildirak
     // ro'yxatning boshida turib qolardi (xabar qilingan xatoning ko'rinadigan
     // tomoni — "animatsiya ishlamayapti").
     requestAnimationFrame(() => {
-      if (containerRef.current) containerRef.current.scrollTop = target * WHEEL_ITEM_HEIGHT;
+      if (containerRef.current) containerRef.current.scrollTop = parkedTop;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.length]);
+
+  // "Tanlang" qatori ro'yxatdan chiqqan lahzada qatorlar bittaga siljiydi —
+  // tanlangan yil markazda qolishi uchun scrollni qayta tenglaymiz.
+  const hadPlaceholder = useRef(showPlaceholder);
+  useEffect(() => {
+    if (hadPlaceholder.current && !showPlaceholder && index >= 0 && containerRef.current) {
+      containerRef.current.scrollTop = index * WHEEL_ITEM_HEIGHT;
+    }
+    hadPlaceholder.current = showPlaceholder;
+  }, [showPlaceholder, index]);
 
   function settle() {
     const el = containerRef.current;
     // Foydalanuvchi tegmagan bo'lsa — bu dasturiy scroll, tanlov EMAS.
     if (!el || !touched.current) return;
-    const idx = Math.min(Math.max(Math.round(el.scrollTop / WHEEL_ITEM_HEIGHT), 0), options.length - 1);
-    el.scrollTo({ top: idx * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
-    const picked = options[idx];
+    // Hali hech narsa tanlanmagan bo'lsa, SHUNCHAKI TEGISH yetarli emas:
+    // g'ildirak haqiqatan SURILGAN bo'lishi kerak. Aks holda ekranga bir
+    // marta tegib qo'yish ham yilni tanlab yuborardi.
+    if (showPlaceholder && Math.abs(el.scrollTop - parkedTop) < 4) return;
+    const rowIdx = Math.min(Math.max(Math.round(el.scrollTop / WHEEL_ITEM_HEIGHT), 0), rows.length - 1);
+    const picked = options[toOptionIndex(rowIdx)];
+    if (!showPlaceholder) el.scrollTo({ top: rowIdx * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
     if (picked !== value) onChange(picked);
   }
 
@@ -735,8 +778,6 @@ export function WheelPicker<T>({
     return () => el.removeEventListener("scrollend", settle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
-
-  const showPlaceholder = value === null && !!placeholder;
 
   return (
     <div className={clsx("relative w-full", !compact && "mx-auto max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
@@ -766,34 +807,31 @@ export function WheelPicker<T>({
         }}
       >
         <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
-        {options.map((opt, i) => (
+        {rows.map((row) => (
           <div
-            key={i}
+            key={row.key}
             className={clsx(
               "flex items-center justify-center transition-colors",
-              // Tanlangan qiymat qolganlaridan ANIQ ajralib turadi (referens
-              // bo'yicha): yirik va qora, qolganlari kichik va och.
-              opt === value ? "text-3xl font-extrabold text-text-primary" : "text-xl font-semibold text-text-muted"
+              // Tanlangan qiymat (yoki "Tanlang") qolganlaridan ANIQ ajralib
+              // turadi: yirik va qora, qolganlari kichik va och.
+              row.option === null || row.option === value
+                ? "text-3xl font-extrabold text-text-primary"
+                : "text-xl font-semibold text-text-muted"
             )}
             style={{ height: WHEEL_ITEM_HEIGHT, scrollSnapAlign: "center" }}
           >
-            {label ? label(opt) : String(opt)}
-            {suffix && <span className="ml-1 text-base font-normal text-text-muted">{suffix}</span>}
+            {row.option === null ? (
+              <span className="text-2xl">{placeholder}</span>
+            ) : (
+              <>
+                {label ? label(row.option) : String(row.option)}
+                {suffix && <span className="ml-1 text-base font-normal text-text-muted">{suffix}</span>}
+              </>
+            )}
           </div>
         ))}
         <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
       </div>
-      {/* Hali hech narsa tanlanmagan — markazda qiymat emas, "Tanlang"
-          turadi. Ro'yxat ustida (z-20), chunki uning ostida haligacha
-          tasodifiy bir qiymat turadi va u tanlangandek ko'rinmasligi kerak. */}
-      {showPlaceholder && (
-        <div
-          className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 items-center justify-center rounded-2xl bg-surface-muted text-2xl font-extrabold text-text-primary"
-          style={{ height: WHEEL_ITEM_HEIGHT }}
-        >
-          {placeholder}
-        </div>
-      )}
     </div>
   );
 }
