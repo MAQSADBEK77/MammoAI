@@ -631,6 +631,31 @@ export function EmptyState({
 const WHEEL_ITEM_HEIGHT = 48;
 const WHEEL_VISIBLE_ROWS = 5;
 
+/**
+ * WHEEL-FIX-01 — g'ildirak tanlagich.
+ *
+ * XABAR QILINGAN XATO: "ba'zilarda animatsiya ishlamay qolyapti va
+ * ba'zilarda 1923 bo'lib qolgan". 1923 — bu tug'ilgan yillar ro'yxatining
+ * ENG BIRINCHI elementi, ya'ni ayol g'ildirakka umuman tegmasa ham unga
+ * yosh "tanlab" qo'yilgan bo'lardi.
+ *
+ * SABABI ikkita va ikkalasi ham tuzatildi:
+ *
+ *   1) `settle()` DASTURIY scrolldan ham ishga tushardi. Mount paytida
+ *      boshlang'ich `scrollTop` o'rnatiladi; agar o'sha lahzada element
+ *      hali o'lchamga ega bo'lmasa, brauzer qiymatni 0 ga QIRQADI
+ *      (`scrollTop`ni scroll qilib bo'lmaydigan elementga berib bo'lmaydi).
+ *      Keyin scroll hodisasi kelib, `settle()` 0-indeksni "foydalanuvchi
+ *      tanladi" deb hisoblab, `onChange(options[0])` chaqirardi — ya'ni
+ *      eng birinchi yil. Endi `settle()` HAQIQIY teginishdan keyingina
+ *      ishlaydi.
+ *
+ *   2) Qiymat OLDINDAN tanlangan turardi. Endi u bo'sh (`null`) bo'lishi
+ *      mumkin: markazda "Tanlang" yozuvi turadi va "Davom etish" o'chiq
+ *      bo'ladi. Shunda hatto scroll butunlay ishlamay qolsa ham, ilova
+ *      ayolga tegishli bo'lmagan sanani YOZIB QO'YMAYDI — eng yomoni,
+ *      u tanlashni so'raydi.
+ */
 export function WheelPicker<T>({
   options,
   value,
@@ -638,9 +663,12 @@ export function WheelPicker<T>({
   label,
   suffix,
   compact,
+  placeholder,
+  restIndex,
 }: {
   options: T[];
-  value: T;
+  /** `null` — hali hech narsa tanlanmagan (markazda `placeholder` turadi). */
+  value: T | null;
   onChange: (value: T) => void;
   /** Har bir qatorda ko'rsatiladigan matn — berilmasa, qiymatning o'zi (String()). */
   label?: (option: T) => ReactNode;
@@ -650,24 +678,40 @@ export function WheelPicker<T>({
    * markazlashtirilgan `max-w-xs` o'rniga to'liq enini egallaydi, tashqi flex
    * konteyner eni belgilaydi. */
   compact?: boolean;
+  /** `value` bo'sh bo'lganda markazda ko'rinadigan yozuv (masalan "Tanlang"). */
+  placeholder?: string;
+  /** `value` bo'sh bo'lganda g'ildirak qaysi qatordan boshlanishi. Bu TANLOV
+   * emas — shunchaki qulay boshlang'ich nuqta (masalan tug'ilgan yil uchun
+   * ro'yxatning eng chetidan ko'ra o'rtasi). */
+  restIndex?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const settleTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  /** Ayol g'ildirakka HAQIQATAN tegdimi. Shusiz hech qachon `onChange`
+   * chaqirilmaydi — yuqoridagi (1) izohga qarang. */
+  const touched = useRef(false);
   const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
-  const index = options.indexOf(value);
+  const index = value === null ? -1 : options.indexOf(value);
 
-  // Tashqi `value` o'zgarganda (masalan oy almashganda kun ustuni qayta
-  // hisoblanganda) ham mos qatorga scroll qilamiz — faqat birinchi renderdan
-  // tashqari, chunki foydalanuvchi hozir scroll qilayotgan bo'lishi mumkin.
+  // Boshlang'ich (va tashqi `value` o'zgarganidagi) joylashuv.
   useEffect(() => {
-    if (index === -1 || !containerRef.current) return;
-    containerRef.current.scrollTop = index * WHEEL_ITEM_HEIGHT;
+    const el = containerRef.current;
+    if (!el) return;
+    const target = index >= 0 ? index : Math.min(Math.max(restIndex ?? Math.floor(options.length / 2), 0), options.length - 1);
+    // rAF — element DOM'ga tushgan, lekin joylashuv hali yakunlanmagan
+    // bo'lishi mumkin. O'sha holatda `scrollTop` 0 ga qirqilib, g'ildirak
+    // ro'yxatning boshida turib qolardi (xabar qilingan xatoning ko'rinadigan
+    // tomoni — "animatsiya ishlamayapti").
+    requestAnimationFrame(() => {
+      if (containerRef.current) containerRef.current.scrollTop = target * WHEEL_ITEM_HEIGHT;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.length]);
 
   function settle() {
     const el = containerRef.current;
-    if (!el) return;
+    // Foydalanuvchi tegmagan bo'lsa — bu dasturiy scroll, tanlov EMAS.
+    if (!el || !touched.current) return;
     const idx = Math.min(Math.max(Math.round(el.scrollTop / WHEEL_ITEM_HEIGHT), 0), options.length - 1);
     el.scrollTo({ top: idx * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
     const picked = options[idx];
@@ -679,6 +723,10 @@ export function WheelPicker<T>({
     settleTimeout.current = setTimeout(settle, 120);
   }
 
+  function markTouched() {
+    touched.current = true;
+  }
+
   // Zamonaviy brauzerlarda `scrollend` — debounce'dan aniqroq va tezroq.
   useEffect(() => {
     const el = containerRef.current;
@@ -688,9 +736,11 @@ export function WheelPicker<T>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
+  const showPlaceholder = value === null && !!placeholder;
+
   return (
     <div className={clsx("relative w-full", !compact && "mx-auto max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
-      {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ustida.
+      {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ostida.
           ONB-PLAIN-01: ilgari band pushti RAMKA bilan chizilgan edi. Endi u
           shunchaki yumshoq kulrang maydon: tanlangan qiymatning o'zi yirik va
           qora bo'lgani uchun ramka ortiqcha bo'lib, ekranga shovqin qo'shardi. */}
@@ -701,6 +751,10 @@ export function WheelPicker<T>({
       <div
         ref={containerRef}
         onScroll={handleScroll}
+        onPointerDown={markTouched}
+        onTouchStart={markTouched}
+        onWheel={markTouched}
+        onKeyDown={markTouched}
         // Band endi SHAFFOF EMAS (kulrang to'ldirilgan), shuning uchun
         // ro'yxat undan YUQORIDA turishi shart — aks holda tanlangan
         // qiymatning o'zi band ostida qolib ko'rinmay qoladi.
@@ -729,6 +783,17 @@ export function WheelPicker<T>({
         ))}
         <div style={{ height: WHEEL_ITEM_HEIGHT * padCount }} />
       </div>
+      {/* Hali hech narsa tanlanmagan — markazda qiymat emas, "Tanlang"
+          turadi. Ro'yxat ustida (z-20), chunki uning ostida haligacha
+          tasodifiy bir qiymat turadi va u tanlangandek ko'rinmasligi kerak. */}
+      {showPlaceholder && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 items-center justify-center rounded-2xl bg-surface-muted text-2xl font-extrabold text-text-primary"
+          style={{ height: WHEEL_ITEM_HEIGHT }}
+        >
+          {placeholder}
+        </div>
+      )}
     </div>
   );
 }
