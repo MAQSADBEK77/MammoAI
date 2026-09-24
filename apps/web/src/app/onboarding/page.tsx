@@ -38,7 +38,6 @@ import { TodayBackdrop } from "@/components/screens/TodayBackdrop";
 import { useI18n } from "@/lib/i18n";
 import { useTelegram } from "@/lib/telegram";
 import { LogoBadge } from "@/components/LogoMark";
-import { useAbVariant } from "@/lib/ab";
 import { useTelegramStartLink } from "@/lib/telegram-link";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
@@ -48,6 +47,7 @@ import { Button, IconChip, DateWheelPicker, WheelPicker } from "@/components/ui"
 import { Emoji } from "@/components/Emoji";
 import {
   ArrowBackRounded,
+  NotificationsRounded,
   LockOutlined,
   SendOutlined,
 } from "@mui/icons-material";
@@ -584,8 +584,13 @@ function OnboardingPageInner() {
   // alohida saqlanmaydi va hech qachon bo'sh qaytmaydi.
   const telegramLink = useTelegramStartLink();
 
-  const previewVariant = useAbVariant("onboarding_preview");
-  const showPreviewStep = previewVariant === "on";
+  // ONB-PREVIEW-01: "onboarding_preview" A/B tajribasi YAKUNLANDI.
+  // Ilgari bu ekran foydalanuvchilarning yarmiga umuman ko'rsatilmasdi,
+  // ya'ni uni sinab ko'rish ham omadga bog'liq edi. Endi u referens
+  // bo'yicha qayta ishlangan va hammaga ko'rinadi: bu onboardingdagi
+  // yagona joy — ayol javoblari EVAZIGA nimadir oladi, va aynan shundan
+  // keyin bildirishnoma so'raladi.
+  const showPreviewStep = true;
 
   /** Shu paytgacha yig'ilgan javoblardan hisoblangan bashorat. Sof funksiya —
    * server so'rovi YO'Q, hammasi brauzerda (shuning uchun akkaunt ham,
@@ -1547,17 +1552,46 @@ function OnboardingPageInner() {
         )}
 
         {step === "preview" && previewPrediction && (
-          <div className="flex flex-1 flex-col justify-center gap-5">
+          // ONB-PREVIEW-01 — referens (Flo) bo'yicha: tepada haqiqiy
+          // bildirishnoma ko'rinishi, ostida BASHORAT SANASI yirik va
+          // brend rangida, keyin "keyingi ekranda ruxsat bering" qatori.
+          //
+          // Tuzilma ataylab shunday: ayol avval NIMA OLISHINI ko'radi,
+          // keyin undan ruxsat so'raladi. Ilgari bu ekran uchta quruq
+          // qatordan iborat edi va keyingi qadamdagi bildirishnoma
+          // so'rovi bilan hech qanday bog'lanmasdi.
+          <div className="flex flex-1 flex-col justify-center gap-6">
+            <NotificationPreviewCard
+              appName={dict.common.appName}
+              now={dict.onboarding.previewNotifNow}
+              title={dict.onboarding.previewNotifTitle}
+              body={dict.onboarding.previewNotifBody}
+            />
+
             <div className="text-center">
-              <Emoji e="🌸" size={44} />
-              <h2 className="mt-3 text-2xl font-bold text-text-primary">{dict.onboarding.previewTitle}</h2>
+              <h2 className="text-[1.75rem] font-extrabold leading-tight text-text-primary">
+                {dict.onboarding.previewHeadlinePrefix}{" "}
+                {/* Gap ICHIDA "08.10.2026" emas, "8-oktabr" — referensda ham
+                    oy nomi bilan. Raqamli format jadvalda yaxshi, jumlada esa
+                    o'qishni sekinlashtiradi. */}
+                <span className="text-primary">
+                  {(() => {
+                    const d = new Date(`${previewPrediction.prediction.nextPeriodStart}T00:00:00`);
+                    return `${d.getDate()}-${dict.common.months[d.getMonth()]}`;
+                  })()}
+                </span>
+                {dict.onboarding.previewHeadlineSuffix ? ` ${dict.onboarding.previewHeadlineSuffix}` : ""}
+              </h2>
+              <p className="mt-3 text-base leading-relaxed text-text-secondary">
+                {dict.onboarding.previewRemindLead}
+              </p>
             </div>
 
+            {/* Ikkinchi darajali tafsilotlar — referensda ular yo'q, lekin
+                homiladorlikni rejalashtirayotgan ayol uchun unumli oyna
+                aynan shu ekranning qiymati. Shuning uchun ular qoldi,
+                faqat past ovozda. */}
             <div className="space-y-2.5">
-              <PreviewRow
-                label={dict.onboarding.previewNextPeriod}
-                value={formatDateDisplay(previewPrediction.prediction.nextPeriodStart)}
-              />
               {previewPrediction.phase && (
                 <PreviewRow
                   label={dict.onboarding.previewPhase}
@@ -2000,6 +2034,46 @@ function CycleLengthStep({
         {notSureLabel}
       </button>
       {unknown && <ReassureCard text={reassure} />}
+    </div>
+  );
+}
+
+/**
+ * ONB-PREVIEW-01 — telefon bildirishnomasining maketi.
+ *
+ * Referensdagi kabi: qo'ng'iroq belgisi, ostida haqiqiy bildirishnomaga
+ * o'xshash oq karta. Maqsad — ayol ruxsat so'ralishidan OLDIN aynan
+ * nima ko'rishini bilsin. Bu maket, haqiqiy bildirishnoma emas; matni
+ * esa biz rostdan yuboradigan xabar bilan bir xil ohangda.
+ */
+function NotificationPreviewCard({
+  appName,
+  now,
+  title,
+  body,
+}: {
+  appName: string;
+  now: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="relative pt-7">
+      <div className="rounded-3xl bg-primary-light/25 px-4 pb-4 pt-9">
+        <div className="rounded-2xl bg-surface p-3.5 shadow-[0_6px_20px_color-mix(in_srgb,var(--color-text-primary)_10%,transparent)]">
+          <div className="flex items-center gap-2">
+            <LogoBadge className="h-5 w-5" />
+            <span className="text-xs font-semibold text-text-secondary">{appName}</span>
+            <span className="text-xs text-text-muted">· {now}</span>
+          </div>
+          <p className="mt-2 text-sm font-bold leading-snug text-text-primary">{title}</p>
+          <p className="mt-0.5 text-sm leading-snug text-text-secondary">{body}</p>
+        </div>
+      </div>
+      {/* Qo'ng'iroq — kartaning tepasida, yarmi tashqarida. */}
+      <span className="absolute left-1/2 top-0 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark shadow-[0_8px_20px_color-mix(in_srgb,var(--color-primary)_35%,transparent)]">
+        <NotificationsRounded sx={{ fontSize: 26 }} className="text-white" />
+      </span>
     </div>
   );
 }
