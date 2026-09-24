@@ -387,6 +387,33 @@ body {
     );
 }
 
+/* ONB-SOFT-01 — `today-backdrop`ning YUMSHOQ varianti (onboarding uchun).
+   Foydalanuvchi: "it seems overly pink".
+
+   Bosh sahifada to'yingan gradient ishlaydi, chunki u yerda ekranning
+   ko'p qismini katta oq kartalar egallaydi va matn kam. Onboarding esa
+   yigirmata savoldan iborat: matn ko'p, yuza ochiq. O'sha to'yinganlik
+   (29%gacha) bu yerda "hamma joy pushti" bo'lib chiqadi va matnni
+   o'qishni og'irlashtiradi.
+
+   Shuning uchun rang FORMULASI o'zgarmadi — faqat kuchi taxminan uch
+   barobar pasaytirildi (3/16/29% → 2/6/11%). Ya'ni bu boshqa palitra
+   emas, o'sha palitraning past ovozdagi varianti. */
+.today-backdrop-soft {
+  background:
+    radial-gradient(
+      64% 30% at 44% 46%,
+      color-mix(in srgb, var(--today-tint, var(--color-primary)) 3%, var(--color-background)) 0%,
+      transparent 75%
+    ),
+    linear-gradient(
+      158deg,
+      color-mix(in srgb, var(--today-tint, var(--color-primary)) 2%, var(--color-background)) 0%,
+      color-mix(in srgb, var(--today-tint, var(--color-primary)) 6%, var(--color-background)) 48%,
+      color-mix(in srgb, var(--today-tint, var(--color-primary)) 11%, var(--color-background)) 100%
+    );
+}
+
 /* TODAY-05: yordamchi oynasining ochilishi va yopilishi.
    FOYDALANUVCHI SO'ROVI (2026-09-22): "look at the how it is not smooth how it
    is appearing in message icon and how the this block is not smoothly merged".

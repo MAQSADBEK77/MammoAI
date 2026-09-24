@@ -1069,7 +1069,7 @@ function OnboardingPageInner() {
           yorug'lik dog'lari ilova ichidagisi bilan bir xil bo'lib qoladi,
           hatto fon keyinchalik o'zgartirilsa ham. `fixed inset-0` bo'lgani
           uchun u `px-6` chegarasidan tashqariga, butun ekranga yoyiladi. */}
-      {step !== "welcome" && <TodayBackdrop />}
+      {step !== "welcome" && <TodayBackdrop soft />}
 
       {sectionProgress && (
         // ONB-SKIN-01: `relative z-10` SHART — `TodayBackdrop` `fixed inset-0`
@@ -1154,7 +1154,7 @@ function OnboardingPageInner() {
 
         {step === "language" && (
           <div className="flex flex-1 flex-col items-center justify-start gap-4">
-            <h2 className="text-center mb-2 text-xl font-bold text-text-primary">{dict.onboarding.languageTitle}</h2>
+            <h2 className="text-center mb-2 text-2xl font-bold text-text-primary">{dict.onboarding.languageTitle}</h2>
             <LangOption flag="🇺🇿" label="O'zbekcha (lotin)" active={language === "uz"} onClick={() => setLanguage("uz")} />
             <LangOption flag="🇺🇿" label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onClick={() => setLanguage("uz-cyrl")} />
             <LangOption flag="🇷🇺" label="Русский" active={language === "ru"} onClick={() => setLanguage("ru")} />
@@ -1178,7 +1178,7 @@ function OnboardingPageInner() {
                 o'zgarardi. Endi u tanlov yo'q (server o'zi aniqlaydi), shuning
                 uchun sarlavha ham NEYTRAL — bu zamonaviy amaliyot: bitta
                 maydon, tizim yangi yoki mavjud ekanini o'zi hal qiladi. */}
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.auth.identifierTitle}</h2>
+            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.auth.identifierTitle}</h2>
             <div className="relative">
               <LockOutlined sx={{ fontSize: 18 }} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
@@ -1196,7 +1196,7 @@ function OnboardingPageInner() {
 
         {step === "phone_verify" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.auth.phoneVerifyTitle}</h2>
+            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.auth.phoneVerifyTitle}</h2>
             <p className="text-center text-sm leading-relaxed text-text-secondary">{dict.auth.phoneVerifyIntro}</p>
             {phoneDeepLink && (
               <a
@@ -1247,8 +1247,8 @@ function OnboardingPageInner() {
           // yo'qolmadi, u shu yerda, ochiladigan bo'limda.
           <div className="flex flex-1 flex-col justify-start gap-4">
             <div className="text-center">
-              <h2 className="text-xl font-bold text-text-primary">{dict.privacy.consentTitle}</h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{dict.privacy.consentSubtitle}</p>
+              <h2 className="text-2xl font-bold text-text-primary">{dict.privacy.consentTitle}</h2>
+              <p className="mt-2 text-base leading-relaxed text-text-secondary">{dict.privacy.consentSubtitle}</p>
             </div>
 
             <div className="space-y-4 px-1">
@@ -1298,7 +1298,7 @@ function OnboardingPageInner() {
                 onClick={() =>
                   setSurvey((s) => ({ ...s, agreedToOffer: true, agreedToPrivacy: true, agreedToHealthData: true }))
                 }
-                className="tap-target self-center rounded-full px-4 text-sm font-bold text-primary underline underline-offset-2"
+                className="tap-target self-center rounded-full px-4 text-base font-bold text-primary underline underline-offset-2"
               >
                 {dict.privacy.acceptAll}
               </button>
@@ -1332,7 +1332,7 @@ function OnboardingPageInner() {
 
         {step === "name" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.nameQuestion}</h2>
+            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.nameQuestion}</h2>
             <input
               value={survey.name}
               onChange={(e) => setSurvey((s) => ({ ...s, name: e.target.value }))}
@@ -1344,7 +1344,7 @@ function OnboardingPageInner() {
 
         {step === "age" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.birthYearLabel}</h2>
+            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.birthYearLabel}</h2>
             <WheelPicker options={BIRTH_YEARS} value={survey.birthYear} onChange={(v) => setSurvey((s) => ({ ...s, birthYear: v }))} />
           </div>
         )}
@@ -1377,7 +1377,7 @@ function OnboardingPageInner() {
         {step === "cycle_lengths" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
             <div className={clsx(survey.cycleLengthsUnknown && "pointer-events-none opacity-50")}>
-              <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
+              <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
               <input
                 type="number"
                 inputMode="numeric"
@@ -1387,7 +1387,7 @@ function OnboardingPageInner() {
                 onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
                 className="tap-target mt-4 w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
-              <h2 className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
+              <h2 className="text-center mt-4 text-2xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
               <input
                 type="number"
                 inputMode="numeric"
@@ -1433,7 +1433,7 @@ function OnboardingPageInner() {
                 )
               }
               className={clsx(
-                "tap-target w-full rounded-2xl px-5 py-3 text-center text-base font-medium transition",
+                "tap-target w-full rounded-2xl px-5 py-3 text-center text-lg font-medium transition",
                 survey.cycleLengthsUnknown
                   ? "bg-primary-light text-primary-dark shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
                   : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
@@ -1447,7 +1447,7 @@ function OnboardingPageInner() {
 
         {step === "last_period" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
+            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.lastPeriodQuestion}</h2>
             <div className={clsx(survey.lastPeriodUnknown && "pointer-events-none opacity-50")}>
               <DateWheelPicker
                 value={survey.lastPeriodDate}
@@ -1463,7 +1463,7 @@ function OnboardingPageInner() {
                 setSurvey((s) => ({ ...s, lastPeriodUnknown: !s.lastPeriodUnknown, lastPeriodDate: s.lastPeriodUnknown ? s.lastPeriodDate : "" }))
               }
               className={clsx(
-                "tap-target w-full rounded-2xl px-5 py-3 text-center text-base font-medium transition",
+                "tap-target w-full rounded-2xl px-5 py-3 text-center text-lg font-medium transition",
                 survey.lastPeriodUnknown
                   ? "bg-primary-light text-primary-dark shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
                   : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
@@ -1479,7 +1479,7 @@ function OnboardingPageInner() {
           <div className="flex flex-1 flex-col justify-center gap-5">
             <div className="text-center">
               <Emoji e="🌸" size={44} />
-              <h2 className="mt-3 text-xl font-bold text-text-primary">{dict.onboarding.previewTitle}</h2>
+              <h2 className="mt-3 text-2xl font-bold text-text-primary">{dict.onboarding.previewTitle}</h2>
             </div>
 
             <div className="space-y-2.5">
@@ -1510,7 +1510,7 @@ function OnboardingPageInner() {
 
         {step === "typical_symptoms" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</h2>
+            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.typicalSymptomsQuestion}</h2>
             <div className="grid grid-cols-2 gap-2">
               {symptomOptions.map((sym) => (
                 <IconChip
@@ -1548,7 +1548,7 @@ function OnboardingPageInner() {
 
         {step === "health_conditions" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.healthConditionsQuestion}</h2>
+            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.healthConditionsQuestion}</h2>
             <div className="grid grid-cols-2 gap-2">
               {HEALTH_CONDITION_OPTIONS.map((cond) => (
                 <IconChip
@@ -1610,7 +1610,7 @@ function OnboardingPageInner() {
 
         {step === "height_weight" && (
           <div className="flex flex-1 flex-col justify-start gap-5">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
+            <h2 className="text-center text-2xl font-bold text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
 
             {/* Metrik/Imperial birlik tanlovi — bosilganda joriy qiymat bir martagina
                 boshqa birlikka o'giriladi, keyin har bir tizim o'z holatini saqlaydi. */}
@@ -1738,7 +1738,7 @@ function OnboardingPageInner() {
             <img src={resolveIllustration("onboarding.analyzing")} alt="" className={clsx("h-40 w-auto", !finishError && "animate-pulse")} />
             {finishError ? (
               <>
-                <h2 className="text-xl font-bold text-text-primary">{finishError}</h2>
+                <h2 className="text-2xl font-bold text-text-primary">{finishError}</h2>
                 <Button
                   onClick={() => {
                     finishStartedRef.current = true;
@@ -1750,7 +1750,7 @@ function OnboardingPageInner() {
               </>
             ) : (
               <>
-                <h2 className="text-xl font-bold text-text-primary">{dict.onboarding.analyzingTitle}</h2>
+                <h2 className="text-2xl font-bold text-text-primary">{dict.onboarding.analyzingTitle}</h2>
                 <p className="text-text-secondary">{dict.onboarding.analyzingSubtitle}</p>
               </>
             )}
@@ -1862,7 +1862,7 @@ function ConsentCheckbox({
         </svg>
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium leading-relaxed text-text-primary">
+        <p className="text-base font-medium leading-relaxed text-text-primary">
           {prefix && (
             <label htmlFor={id} className="cursor-pointer">
               {prefix}
@@ -1875,7 +1875,7 @@ function ConsentCheckbox({
             </label>
           )}
         </p>
-        {note && <p className="mt-1 text-xs leading-relaxed text-text-secondary">{note}</p>}
+        {note && <p className="mt-1 text-sm leading-relaxed text-text-secondary">{note}</p>}
       </div>
     </div>
   );
@@ -1913,8 +1913,8 @@ function ChoiceStep({
 }) {
   return (
     <div className="flex flex-1 flex-col justify-start gap-3">
-      <h2 className="mb-2 text-xl font-bold text-text-primary">{title}</h2>
-      {description && <p className="-mt-1 mb-1 text-sm leading-relaxed text-text-secondary">{description}</p>}
+      <h2 className="mb-2 text-2xl font-bold text-text-primary">{title}</h2>
+      {description && <p className="-mt-1 mb-1 text-base leading-relaxed text-text-secondary">{description}</p>}
       {options.map((opt) => (
         <button
           key={opt.value}
@@ -1925,7 +1925,7 @@ function ChoiceStep({
             // oq yuza va yumshoq soyadan keladi. Kulrang kontur esa
             // ekranni eskirgan ko'rsatardi (foydalanuvchi: "they seem old
             // stylish").
-            "tap-target flex w-full items-center gap-3 rounded-3xl px-5 py-4 text-left text-base font-medium transition active:scale-[0.98]",
+            "tap-target flex w-full items-center gap-3 rounded-3xl px-5 py-4 text-left text-lg font-medium transition active:scale-[0.98]",
             selected === opt.value
               ? "bg-primary-light text-primary-dark shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
               : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
