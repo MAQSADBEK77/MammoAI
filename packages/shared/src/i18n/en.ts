@@ -28,6 +28,7 @@ const en: Dictionary = {
     paid: "Paid",
     continueButton: "Continue",
     selectPlaceholder: "Select",
+    daysShort: "days",
     greeting: (name: string | null, hour: number) => {
       const time =
         hour >= 5 && hour < 11 ? "Good morning" : hour >= 11 && hour < 17 ? "Good afternoon" : hour >= 17 && hour < 23 ? "Good evening" : "Hello";
@@ -286,6 +287,9 @@ const en: Dictionary = {
     checkupOverYear: "More than a year ago",
     checkupNever: "Never",
 
+    periodLengthHint: "A period usually lasts 4–7 days.",
+    cycleLengthHint: "The time between the start of two periods — usually 23–35 days.",
+    notSure: "I'm not sure",
     averageCycleLengthQuestion: "How many days does your cycle usually last?",
     averagePeriodLengthQuestion: "How many days does your period usually last?",
     cycleLengthsRangeHint: (cMin: number, cMax: number, pMin: number, pMax: number) =>

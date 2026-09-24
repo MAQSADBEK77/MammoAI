@@ -26,6 +26,7 @@ const ru: Dictionary = {
     paid: "Платно",
     continueButton: "Продолжить",
     selectPlaceholder: "Выберите",
+    daysShort: "дн.",
     greeting: (name: string | null, hour: number) => {
       const time =
         hour >= 5 && hour < 11 ? "Доброе утро" : hour >= 11 && hour < 17 ? "Добрый день" : hour >= 17 && hour < 23 ? "Добрый вечер" : "Привет";
@@ -285,6 +286,9 @@ const ru: Dictionary = {
     checkupOverYear: "Более года назад",
     checkupNever: "Никогда",
 
+    periodLengthHint: "Обычно менструация длится 4–7 дней.",
+    cycleLengthHint: "Время между началом двух менструаций — обычно 23–35 дней.",
+    notSure: "Точно не знаю",
     averageCycleLengthQuestion: "Сколько дней обычно длится ваш цикл?",
     averagePeriodLengthQuestion: "Сколько дней обычно длится менструация?",
     cycleLengthsRangeHint: (cMin: number, cMax: number, pMin: number, pMax: number) =>

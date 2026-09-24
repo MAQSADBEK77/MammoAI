@@ -665,6 +665,7 @@ export function WheelPicker<T>({
   compact,
   placeholder,
   restIndex,
+  bandless,
 }: {
   options: T[];
   /** `null` — hali hech narsa tanlanmagan (markazda `placeholder` turadi). */
@@ -680,6 +681,10 @@ export function WheelPicker<T>({
   compact?: boolean;
   /** `value` bo'sh bo'lganda markazda ko'rinadigan yozuv (masalan "Tanlang"). */
   placeholder?: string;
+  /** Markaziy kulrang bandni chizmaslik. `DateWheelPicker` uchun: u uchta
+   * ustun uchun BITTA uzluksiz band chizadi, aks holda ekranda uchta
+   * alohida to'rtburchak paydo bo'lardi, sana esa yaxlit bir narsa. */
+  bandless?: boolean;
   /** `value` bo'sh bo'lganda g'ildirak qaysi qatordan boshlanishi. Bu TANLOV
    * emas — shunchaki qulay boshlang'ich nuqta (masalan tug'ilgan yil uchun
    * ro'yxatning eng chetidan ko'ra o'rtasi). */
@@ -785,10 +790,12 @@ export function WheelPicker<T>({
           ONB-PLAIN-01: ilgari band pushti RAMKA bilan chizilgan edi. Endi u
           shunchaki yumshoq kulrang maydon: tanlangan qiymatning o'zi yirik va
           qora bo'lgani uchun ramka ortiqcha bo'lib, ekranga shovqin qo'shardi. */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-1/2 z-0 -translate-y-1/2 rounded-2xl bg-surface-muted"
-        style={{ height: WHEEL_ITEM_HEIGHT }}
-      />
+      {!bandless && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-1/2 z-0 -translate-y-1/2 rounded-2xl bg-surface-muted"
+          style={{ height: WHEEL_ITEM_HEIGHT }}
+        />
+      )}
       <div
         ref={containerRef}
         onScroll={handleScroll}
@@ -825,7 +832,12 @@ export function WheelPicker<T>({
             ) : (
               <>
                 {label ? label(row.option) : String(row.option)}
-                {suffix && <span className="ml-1 text-base font-normal text-text-muted">{suffix}</span>}
+                {/* Birlik ("kun") FAQAT tanlangan qatorda — referensda ham
+                    shunday. Har bir qatorda takrorlanganda ro'yxat shovqinli
+                    bo'lib, raqamlarning o'zi ko'zga tashlanmay qolardi. */}
+                {suffix && row.option === value && (
+                  <span className="ml-1.5 text-lg font-semibold text-text-secondary">{suffix}</span>
+                )}
               </>
             )}
           </div>
@@ -901,10 +913,26 @@ export function DateWheelPicker({
   }, []);
 
   return (
-    <div className="mx-auto flex w-full max-w-xs gap-2">
-      <WheelPicker compact options={days} value={day} onChange={(d) => update({ day: d })} />
-      <WheelPicker compact options={months} value={month} label={(m) => monthLabels[m - 1]} onChange={(m) => update({ month: m })} />
-      <WheelPicker compact options={years} value={year} onChange={(y) => update({ year: y })} />
+    // ONB-CYCLE-01: bitta UZLUKSIZ band uchala ustun ostida — referensdagi
+    // kabi. Ilgari har bir ustun o'z bandini chizardi va ekranda uchta
+    // ajralgan to'rtburchak paydo bo'lardi, sana esa yaxlit bir narsa.
+    <div className="relative mx-auto w-full max-w-xs" style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
+      <div
+        className="pointer-events-none absolute inset-x-0 top-1/2 z-0 -translate-y-1/2 rounded-2xl bg-surface-muted"
+        style={{ height: WHEEL_ITEM_HEIGHT }}
+      />
+      <div className="relative z-10 flex h-full gap-2">
+        <WheelPicker bandless compact options={days} value={day} onChange={(d) => update({ day: d })} />
+        <WheelPicker
+          bandless
+          compact
+          options={months}
+          value={month}
+          label={(m) => monthLabels[m - 1]}
+          onChange={(m) => update({ month: m })}
+        />
+        <WheelPicker bandless compact options={years} value={year} onChange={(y) => update({ year: y })} />
+      </div>
     </div>
   );
 }

@@ -29,6 +29,7 @@ const uz = {
     paid: "Pullik",
     continueButton: "Davom etish",
     selectPlaceholder: "Tanlang",
+    daysShort: "kun",
     // Kunning vaqtiga qarab shaxsiylashtirilgan salomlashuv (Figma "Make" manbasi:
     // "Salom, {Ism}" / "Xayrli tong, {Ism}"). `name` bo'sh bo'lsa ismisiz qaytadi.
     greeting: (name: string | null, hour: number) => {
@@ -312,7 +313,10 @@ const uz = {
     checkupOverYear: "1 yildan ko'proq oldin",
     checkupNever: "Hech qachon",
 
-    averageCycleLengthQuestion: "Sikllingiz odatda necha kun davom etadi?",
+    periodLengthHint: "Hayz odatda 4–7 kun davom etadi.",
+    cycleLengthHint: "Ikki hayz boshlanishi orasidagi davr — odatda 23–35 kun.",
+    notSure: "Aniq bilmayman",
+    averageCycleLengthQuestion: "Siklingiz odatda necha kun davom etadi?",
     averagePeriodLengthQuestion: "Hayzingiz odatda necha kun davom etadi?",
     /** VALIDATE-01: tugma o'chiq bo'lsa, NEGA o'chiqligi aytilishi kerak —
      * aks holda foydalanuvchi qotib qoladi. */
