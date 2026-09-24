@@ -25,6 +25,7 @@ const ru: Dictionary = {
     free: "Бесплатно",
     paid: "Платно",
     continueButton: "Продолжить",
+    selectPlaceholder: "Выберите",
     greeting: (name: string | null, hour: number) => {
       const time =
         hour >= 5 && hour < 11 ? "Доброе утро" : hour >= 11 && hour < 17 ? "Добрый день" : hour >= 17 && hour < 23 ? "Добрый вечер" : "Привет";

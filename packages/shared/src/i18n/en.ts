@@ -27,6 +27,7 @@ const en: Dictionary = {
     free: "Free",
     paid: "Paid",
     continueButton: "Continue",
+    selectPlaceholder: "Select",
     greeting: (name: string | null, hour: number) => {
       const time =
         hour >= 5 && hour < 11 ? "Good morning" : hour >= 11 && hour < 17 ? "Good afternoon" : hour >= 17 && hour < 23 ? "Good evening" : "Hello";

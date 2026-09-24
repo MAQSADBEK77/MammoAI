@@ -122,7 +122,13 @@ interface SurveyState {
   heardAboutUs: HeardAboutUs | null;
   name: string;
   /** Foydalanuvchi endi yosh emas, tug'ilgan yilni tanlaydi (wheel-picker) — yosh shundan hisoblanadi. */
-  birthYear: number;
+  /** WHEEL-FIX-01: `null` — ayol hali yilni TANLAMAGAN. Ilgari bu yerda
+   * 2005 turardi, ya'ni u hech narsa qilmasa ham profilga yosh yozilardi
+   * (g'ildirak sirg'alishi ishlamay qolganda esa — ro'yxatning eng
+   * birinchi yili, 1923). Yoshga qarab savollar filtrlanadi va
+   * perimenopauza rejimi aniqlanadi, shuning uchun bu shunchaki noto'g'ri
+   * raqam emas — butun so'rovnoma yo'lini buzadi. */
+  birthYear: number | null;
   primaryGoal: Goal | null;
   cycleRegularity: CycleRegularity | null;
   averageCycleLength: string;
@@ -223,7 +229,7 @@ const INITIAL_SURVEY: SurveyState = {
   agreedToHealthData: false,
   heardAboutUs: null,
   name: "",
-  birthYear: 2005,
+  birthYear: null,
   primaryGoal: null,
   cycleRegularity: null,
   averageCycleLength: "28",
@@ -505,7 +511,9 @@ function OnboardingPageInner() {
   const finishStartedRef = useRef(false);
   const [finishError, setFinishError] = useState<string | null>(null);
 
-  const age = CURRENT_YEAR - survey.birthYear;
+  // Yil tanlanmaguncha yosh NOMA'LUM (0 emas) — 0 bo'lsa, "yoshi kichik"
+  // shartlari noto'g'ri ishga tushardi.
+  const age = survey.birthYear === null ? 0 : CURRENT_YEAR - survey.birthYear;
   const isMinor = age > 0 && age < 18;
 
   // FIX-07 — apps/mobile/src/app/onboarding.tsx bilan bir xil, izoh o'sha yerda.
@@ -832,6 +840,16 @@ function OnboardingPageInner() {
   }
 
   async function finish() {
+    // WHEEL-FIX-01 — himoya qatlami. Yosh qadami `canProceed` bilan
+    // to'silgan, ya'ni bu yerga yil tanlanmasdan kelib bo'lmaydi. Lekin
+    // agar biror yo'l bilan kelinsa, `age` 0 bo'lib KETADI va profilga
+    // shu holicha yozilardi. Sog'liq ilovasida noto'g'ri yoshni jimgina
+    // saqlagandan ko'ra, ayolni o'sha savolga qaytargan ma'qul.
+    if (survey.birthYear === null) {
+      const ageStep = stepsRef.current.indexOf("age");
+      if (ageStep >= 0) setStepIndex(ageStep);
+      return;
+    }
     setSubmitting(true);
     setFinishError(null);
     try {
@@ -938,7 +956,7 @@ function OnboardingPageInner() {
       case "name":
         return survey.name.trim().length > 0;
       case "age":
-        return age >= 13 && age <= 100;
+        return survey.birthYear !== null && age >= 13 && age <= 100;
       case "goal":
         // FIX-07: shunchaki null emasligini emas, joriy (yosh bo'yicha
         // to'g'ri) ro'yxatda haqiqatan mavjudligini tekshiradi.
@@ -1293,7 +1311,16 @@ function OnboardingPageInner() {
         {step === "age" && (
           <div className="flex flex-1 flex-col justify-start gap-4">
             <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.birthYearLabel}</h2>
-            <WheelPicker options={BIRTH_YEARS} value={survey.birthYear} onChange={(v) => setSurvey((s) => ({ ...s, birthYear: v }))} />
+            <WheelPicker
+              options={BIRTH_YEARS}
+              value={survey.birthYear}
+              placeholder={dict.common.selectPlaceholder}
+              // Bo'sh holatda g'ildirak taxminan 25 yoshda turadi — bu
+              // TANLOV emas, shunchaki qulay boshlang'ich nuqta
+              // (ro'yxatning eng chetidan ko'ra o'rtasiga yaqin).
+              restIndex={BIRTH_YEARS.indexOf(CURRENT_YEAR - 25)}
+              onChange={(v) => setSurvey((s) => ({ ...s, birthYear: v }))}
+            />
           </div>
         )}
 

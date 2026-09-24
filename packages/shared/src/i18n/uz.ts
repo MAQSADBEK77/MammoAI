@@ -28,6 +28,7 @@ const uz = {
     free: "Bepul",
     paid: "Pullik",
     continueButton: "Davom etish",
+    selectPlaceholder: "Tanlang",
     // Kunning vaqtiga qarab shaxsiylashtirilgan salomlashuv (Figma "Make" manbasi:
     // "Salom, {Ism}" / "Xayrli tong, {Ism}"). `name` bo'sh bo'lsa ismisiz qaytadi.
     greeting: (name: string | null, hour: number) => {
