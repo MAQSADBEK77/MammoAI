@@ -433,6 +433,7 @@ export function IconChip({
   active,
   onClick,
   size = "md",
+  bare,
 }: {
   label: string;
   icon?: ReactNode;
@@ -443,6 +444,11 @@ export function IconChip({
    * sikl ekranida esa chiplar kundalik yozuvning bir qismi va uch
    * ustunda turadi — u yerda "md" o'z o'rnida. */
   size?: "md" | "lg";
+  /** ONB-SYMICON-01: belgi O'Z rangli doirasi bilan kelganda (rasm fayli)
+   * chipning kulrang doirasi ortiqcha — u rasmning ortida ikkinchi halqa
+   * bo'lib ko'rinardi. Bunday holatda tanlanganlik pushti HALQA bilan
+   * ko'rsatiladi. */
+  bare?: boolean;
 }) {
   const circle = size === "lg" ? 76 : 56;
   return (
@@ -473,11 +479,15 @@ export function IconChip({
     >
       {icon && (
         <span
-          className={clsx("flex items-center justify-center rounded-full leading-none", size === "lg" ? "text-3xl" : "text-xl")}
+          className={clsx(
+            "flex items-center justify-center overflow-hidden rounded-full leading-none transition",
+            size === "lg" ? "text-3xl" : "text-xl",
+            bare && active && "ring-[3px] ring-primary"
+          )}
           style={{
             width: circle,
             height: circle,
-            backgroundColor: active ? "var(--color-primary)" : "var(--color-surface-muted)",
+            backgroundColor: bare ? "transparent" : active ? "var(--color-primary)" : "var(--color-surface-muted)",
           }}
         >
           {icon}

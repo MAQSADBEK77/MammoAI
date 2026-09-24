@@ -397,6 +397,25 @@ const HEALTH_CONDITION_OPTIONS: HealthCondition[] = [
 ];
 
 // Har bir alomat/holat chipiga tezkor vizual belgi ("juda quruq matn" fikridan keyin).
+/** ONB-SYMICON-01 — foydalanuvchi chizib bergan alomat rasmlari
+ * (`apps/web/public/symptom-icons/`). Emoji o'rniga ular ishlatiladi:
+ * emoji har qanday ilovada bor va brend hissini bermaydi, ustiga
+ * Twemoji to'plamimizda hamma belgi ham yo'q.
+ *
+ * Ro'yxatda YO'Q alomatlar (perimenopauza rejimidagi "issiq bosishi" va
+ * "tungi terlash") eski emoji bilan qoladi — ular uchun rasm chizilmagan,
+ * va bo'sh joy qoldirgandan ko'ra emoji ma'qul. */
+const SYMPTOM_SVG: Partial<Record<Symptom, string>> = {
+  cramps: "qorin_ogrigi",
+  headache: "bosh_ogrigi",
+  fatigue: "charchoq",
+  irritability: "asabiylashish",
+  difficulty_concentrating: "diqqat",
+  bloating: "shishish",
+  back_pain: "bel_ogrigi",
+  nausea: "kongil_aynishi",
+};
+
 const SYMPTOM_ICON: Record<Symptom, string> = {
   cramps: "🤕",
   headache: "🤯",
@@ -1609,7 +1628,15 @@ function OnboardingPageInner() {
                   key={sym}
                   size="lg"
                   label={dict.cycle.symptoms[sym]}
-                  icon={<Emoji e={SYMPTOM_ICON[sym]} size={34} />}
+                  bare={!!SYMPTOM_SVG[sym]}
+                  icon={
+                    SYMPTOM_SVG[sym] ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas
+                      <img src={`/symptom-icons/${SYMPTOM_SVG[sym]}.svg`} alt="" className="h-full w-full" />
+                    ) : (
+                      <Emoji e={SYMPTOM_ICON[sym]} size={34} />
+                    )
+                  }
                   active={survey.typicalSymptoms.includes(sym)}
                   onClick={() =>
                     setSurvey((s) => ({ ...s, typicalSymptoms: toggleArrayValue(s.typicalSymptoms, sym), typicalSymptomsUnknown: false }))
@@ -1619,7 +1646,11 @@ function OnboardingPageInner() {
               <IconChip
                 size="lg"
                 label={dict.common.dontKnow}
-                icon={<Emoji e="🤷" size={34} />}
+                bare
+                icon={
+                  // eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas
+                  <img src="/symptom-icons/bilmayman.svg" alt="" className="h-full w-full" />
+                }
                 active={survey.typicalSymptomsUnknown}
                 onClick={() => setSurvey((s) => ({ ...s, typicalSymptomsUnknown: !s.typicalSymptomsUnknown, typicalSymptoms: [] }))}
               />
