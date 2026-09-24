@@ -313,10 +313,19 @@ const GOAL_ICON: Record<Goal, string> = {
 // ikki rangda: brend pushtisi va turkuaz. Bo'lim qaysiligini progress
 // chizig'ining o'zi allaqachon ko'rsatib turadi, rang buni yolg'iz
 // ko'tarib turishi shart emas.
+// ONB-BAR-01 (foydalanuvchi so'rovi): progress chizig'i endi BITTA rangda —
+// brend pushtisida. Ilgari uchinchi bo'lim turkuaz edi va sog'liq
+// savollarida chiziq birdan yashilga aylanib, ekrandagi yagona begona
+// rang bo'lib qolardi (ONB-BRAND-01'da binafshani olib tashlaganimda
+// turkuazni e'tibordan chetda qoldiribman).
+//
+// Bo'lim qaysiligini chiziqning nechta bo'lagi to'lganligi va tepadagi
+// "1/6" hisoblagichi allaqachon ko'rsatib turadi — rang buni yolg'iz
+// ko'tarishi shart emas.
 const SECTIONS = [
   { key: "about", color: colors.primary },
   { key: "cycle", color: colors.primary },
-  { key: "health", color: colors.accent },
+  { key: "health", color: colors.primary },
 ] as const;
 
 const STEP_SECTION: Partial<Record<Step, 0 | 1 | 2>> = {
