@@ -175,6 +175,21 @@ const uz = {
       "Ushbu ilova tibbiy tashxis qo'ymaydi va shifokor maslahati o'rnini bosmaydi — sog'lig'ingiz bo'yicha qaror qabul qilishdan oldin har doim malakali shifokorga murojaat qiling.",
     notForChildren:
       "Ilova 18 yoshdan katta foydalanuvchilar uchun mo'ljallangan va bolalar (13 yoshgacha)dan ongli ravishda ma'lumot yig'maydi.",
+    // ONB-CONSENT-01: alohida-alohida rozilik (Clue/Flo naqshi).
+    consentTitle: "Maxfiylik — birinchi o'rinda",
+    consentSubtitle:
+      "Ma'lumotlaringiz sizniki. Davom etishdan oldin nimaga rozilik berayotganingizni bilib oling.",
+    consentOfferPrefix: "",
+    consentOfferLink: "Ommaviy oferta",
+    consentOfferSuffix: " shartlarini qabul qilaman.",
+    consentPrivacyPrefix: "",
+    consentPrivacyLink: "Maxfiylik siyosatini",
+    consentPrivacySuffix: " o'qib chiqdim.",
+    consentHealthLabel:
+      "Sog'lig'im haqidagi ma'lumotlarni — hayz sikli, simptomlar, tekshiruvlar — ilova xizmatini ko'rsatish uchun qayta ishlashga roziman.",
+    consentHealthNote: "Bu ma'lumotlar sotilmaydi va reklama uchun ishlatilmaydi.",
+    acceptAll: "Hammasiga roziman",
+    hideOffer: "Matnni yopish",
     offerTitle: "Ommaviy oferta",
     offerIntro:
       "Ushbu hujjat O'zbekiston Respublikasi Fuqarolik Kodeksining 369-moddasiga muvofiq ommaviy oferta hisoblanadi va \"Ayollar salomatligi\" (MammoAI) ilovasidan (\"Ilova\") foydalanish shartlarini belgilaydi. Ilovadan ro'yxatdan o'tish yoki undan foydalanishni boshlash ushbu shartlarni to'liq va so'zsiz qabul qilish (aksept) hisoblanadi.",

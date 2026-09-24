@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -113,7 +114,12 @@ interface SurveyState {
   accountChoice: "create" | "login" | null;
   identifier: string;
   /** Ommaviy oferta shartlariga rozilik — "privacy" bosqichidagi katagcha. */
+  /** ONB-CONSENT-01: rozilik endi BITTA emas, uchta alohida. Sog'liq
+   * ma'lumoti uchun "hammasiga bitta belgi" yetarli emas — ayol aynan
+   * nimaga rozi bo'layotganini ko'rishi kerak (Clue/Flo ham shunday). */
   agreedToOffer: boolean;
+  agreedToPrivacy: boolean;
+  agreedToHealthData: boolean;
   heardAboutUs: HeardAboutUs | null;
   name: string;
   /** Foydalanuvchi endi yosh emas, tug'ilgan yilni tanlaydi (wheel-picker) — yosh shundan hisoblanadi. */
@@ -214,6 +220,8 @@ const INITIAL_SURVEY: SurveyState = {
   accountChoice: null,
   identifier: "+998",
   agreedToOffer: false,
+  agreedToPrivacy: false,
+  agreedToHealthData: false,
   heardAboutUs: null,
   name: "",
   birthYear: 2005,
@@ -514,6 +522,8 @@ function OnboardingPageInner() {
    * ro'yxat allaqachon YANGILANGAN bo'lishi shart — closure'dagi eski
    * nusxa emas. */
   const stepsRef = useRef<Step[]>([]);
+  /** ONB-CONSENT-01: ommaviy oferta to'liq matni yopiq holatda boshlanadi. */
+  const [showOfferText, setShowOfferText] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Telegram orqali telefon tasdiqlash — account_identifier'da yaratilgan
@@ -1194,30 +1204,95 @@ function OnboardingPageInner() {
         )}
 
         {step === "privacy" && (
+          // ONB-CONSENT-01 — foydalanuvchi so'rovi (Clue va Flo skrinshotlari
+          // bilan): ilgari bu ekran ommaviy ofertaning TO'LIQ matnini devor
+          // qilib to'kib tashlardi va pastida bitta "roziman" belgisi bo'lardi.
+          // Amalda hech kim uni o'qimasdi — ya'ni bu "rozilik" emas, rasmiyatchilik
+          // edi. Endi uchta ANIQ rozilik alohida turadi, eng muhimi —
+          // sog'liq ma'lumotini qayta ishlash — o'z qatorida. To'liq matn
+          // yo'qolmadi, u shu yerda, ochiladigan bo'limda.
           <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-xl font-bold text-text-primary">{dict.privacy.offerTitle}</h2>
-            <p className="text-sm leading-relaxed text-text-secondary">{dict.privacy.offerIntro}</p>
-            <div className="space-y-4 rounded-2xl border border-border bg-surface p-4">
-              {dict.privacy.offerSections.map((section) => (
-                <div key={section.title}>
-                  <p className="mb-1 text-sm font-bold text-text-primary">{section.title}</p>
-                  {section.body.split("\n").map((line, i) => (
-                    <p key={i} className="text-sm leading-relaxed text-text-secondary">
-                      {line}
-                    </p>
-                  ))}
-                </div>
-              ))}
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-text-primary">{dict.privacy.consentTitle}</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{dict.privacy.consentSubtitle}</p>
             </div>
-            <label className="tap-target flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-border bg-surface px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-primary-light/30">
-              <input
-                type="checkbox"
+
+            <div className="space-y-2.5">
+              <ConsentCheckbox
+                id="consent-offer"
                 checked={survey.agreedToOffer}
-                onChange={(e) => setSurvey((s) => ({ ...s, agreedToOffer: e.target.checked }))}
-                className="mt-0.5 h-5 w-5 shrink-0 accent-primary"
+                onChange={(v) => setSurvey((s) => ({ ...s, agreedToOffer: v }))}
+                prefix={dict.privacy.consentOfferPrefix}
+                link={
+                  <button
+                    type="button"
+                    onClick={() => setShowOfferText((v) => !v)}
+                    className="font-bold text-primary underline underline-offset-2"
+                  >
+                    {dict.privacy.consentOfferLink}
+                  </button>
+                }
+                suffix={dict.privacy.consentOfferSuffix}
               />
-              <span className="text-sm font-medium text-text-primary">{dict.privacy.offerCheckboxLabel}</span>
-            </label>
+              <ConsentCheckbox
+                id="consent-privacy"
+                checked={survey.agreedToPrivacy}
+                onChange={(v) => setSurvey((s) => ({ ...s, agreedToPrivacy: v }))}
+                prefix={dict.privacy.consentPrivacyPrefix}
+                link={
+                  <Link href="/maxfiylik" target="_blank" className="font-bold text-primary underline underline-offset-2">
+                    {dict.privacy.consentPrivacyLink}
+                  </Link>
+                }
+                suffix={dict.privacy.consentPrivacySuffix}
+              />
+              <ConsentCheckbox
+                id="consent-health"
+                checked={survey.agreedToHealthData}
+                onChange={(v) => setSurvey((s) => ({ ...s, agreedToHealthData: v }))}
+                prefix={dict.privacy.consentHealthLabel}
+                note={dict.privacy.consentHealthNote}
+              />
+            </div>
+
+            {/* Flo'dagi "Accept all" — uchta belgini birdan qo'yadi. Bu
+                yorliq, rozilikni YASHIRMAYDI: uchta shart baribir ro'yxatda
+                ochiq turadi va belgilangani ko'rinib qoladi. */}
+            {!(survey.agreedToOffer && survey.agreedToPrivacy && survey.agreedToHealthData) && (
+              <button
+                type="button"
+                onClick={() =>
+                  setSurvey((s) => ({ ...s, agreedToOffer: true, agreedToPrivacy: true, agreedToHealthData: true }))
+                }
+                className="tap-target self-center rounded-full px-4 text-sm font-bold text-primary underline underline-offset-2"
+              >
+                {dict.privacy.acceptAll}
+              </button>
+            )}
+
+            {showOfferText && (
+              <div className="animate-fade-in-up space-y-4 rounded-2xl border border-border bg-surface p-4">
+                <p className="text-sm font-bold text-text-primary">{dict.privacy.offerTitle}</p>
+                <p className="text-sm leading-relaxed text-text-secondary">{dict.privacy.offerIntro}</p>
+                {dict.privacy.offerSections.map((section) => (
+                  <div key={section.title}>
+                    <p className="mb-1 text-sm font-bold text-text-primary">{section.title}</p>
+                    {section.body.split("\n").map((line, i) => (
+                      <p key={i} className="text-sm leading-relaxed text-text-secondary">
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setShowOfferText(false)}
+                  className="tap-target text-sm font-bold text-primary underline underline-offset-2"
+                >
+                  {dict.privacy.hideOffer}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1671,8 +1746,14 @@ function OnboardingPageInner() {
               {dict.common.continueButton}
             </Button>
           ) : step === "privacy" ? (
-            <Button onClick={goNext} disabled={!survey.agreedToOffer}>
-              {dict.privacy.agreeButton}
+            // ONB-CONSENT-01: rozilik endi belgilarning O'ZIDA, shuning uchun
+            // tugma yana bir marta "roziman" demaydi — uchalasi ham
+            // belgilanmaguncha shunchaki o'chiq turadi.
+            <Button
+              onClick={goNext}
+              disabled={!(survey.agreedToOffer && survey.agreedToPrivacy && survey.agreedToHealthData)}
+            >
+              {dict.common.next}
             </Button>
           ) : (
             <Button onClick={goNext} disabled={!canProceed()}>
@@ -1689,6 +1770,68 @@ function OnboardingPageInner() {
 // WheelPicker (yosh/bo'y/vazn/sana uchun) — @/components/ui.tsx'ga ko'chirildi,
 // shunda PregnancyScreen kabi boshqa fayllar ham (masalan DateWheelPicker
 // orqali) qayta ishlatishi mumkin.
+
+/** ONB-CONSENT-01 — bitta rozilik qatori.
+ *
+ * Havola matn ICHIDA, lekin `<label>`dan TASHQARIDA (`htmlFor` orqali
+ * bog'langan). Buning sababi bor: havola `<label>` ichida tursa, uni bosish
+ * brauzerda belgini HAM almashtiradi — ya'ni ayol shartni o'qish uchun
+ * bosganda, bilmagan holda rozilik bergan bo'lib qolardi. Rozilik faqat
+ * ongli harakat bilan berilishi kerak.
+ */
+function ConsentCheckbox({
+  id,
+  checked,
+  onChange,
+  prefix,
+  link,
+  suffix,
+  note,
+}: {
+  id: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  /** Gapning havoladan OLDINGI qismi. */
+  prefix: string;
+  /** Hujjat nomi — gapning o'zida havola bo'lib turadi (Clue naqshi). */
+  link?: ReactNode;
+  /** Gapning havoladan KEYINGI qismi. */
+  suffix?: string;
+  note?: string;
+}) {
+  return (
+    <div
+      className={clsx(
+        "flex items-start gap-3 rounded-2xl border-2 bg-surface px-4 py-3.5 transition",
+        checked ? "border-primary bg-primary-light/25" : "border-border"
+      )}
+    >
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-primary"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium leading-relaxed text-text-primary">
+          {prefix && (
+            <label htmlFor={id} className="cursor-pointer">
+              {prefix}
+            </label>
+          )}
+          {link}
+          {suffix && (
+            <label htmlFor={id} className="cursor-pointer">
+              {suffix}
+            </label>
+          )}
+        </p>
+        {note && <p className="mt-1 text-xs leading-relaxed text-text-secondary">{note}</p>}
+      </div>
+    </div>
+  );
+}
 
 function LangOption({ flag, label, active, onClick }: { flag: string; label: string; active: boolean; onClick: () => void }) {
   return (
