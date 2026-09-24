@@ -46,7 +46,6 @@ import { api } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { Button, IconChip, DateWheelPicker, WheelPicker } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
-import { OnboardingIcon, type OnboardingIconName } from "@/components/onboarding/OnboardingIcon";
 import {
   ArrowBackRounded,
   LockOutlined,
@@ -268,19 +267,29 @@ const INITIAL_SURVEY: SurveyState = {
 // uchun ochiq — https://undraw.co) — mavjud bo'lsa, kichik emoji doira o'rniga shu
 // ko'rsatiladi. Haqiqiy odam fotosurati emas (roziliksiz/litsenziyasiz muammo
 // bo'lardi), lekin "quruq matn" o'rniga chizilgan sifatli vizual taassurot beradi.
-/** ONB-GOALS-01 — har bir maqsad uchun o'z belgisi. Ilgari ro'yxat faqat
- * MATN edi: to'qqizta uzun jumla ketma-ket, ularni ko'z bilan ajratib
- * bo'lmasdi. Belgi qo'shilgach ro'yxat bir qarashda o'qiladi. */
-const GOAL_ICON: Record<Goal, OnboardingIconName> = {
-  cycle: "goal_cycle",
-  pregnancy: "goal_pregnancy",
-  planning_pregnancy: "goal_planning",
-  wellbeing: "goal_wellbeing",
-  checkups: "goal_checkups",
-  understand_body: "goal_body",
-  skin: "goal_skin",
-  partner_tracking: "goal_partner",
-  perimenopause: "goal_perimenopause",
+/**
+ * ONB-GRID-01 — har bir maqsad uchun rasm.
+ *
+ * Fayllar foydalanuvchining O'ZI chizib bergan to'plamdan
+ * (`apps/web/public/goal-icons/`). Men ularni avval monoxrom chiziqli
+ * belgilarga aylantirgandim va bu XATO edi: ular aynan shu — ikki
+ * ustunli, rangli doirali — tarmoq uchun chizilgan ekan. Doiralarning
+ * har xil rangda bo'lishi ham kamchilik emas, referensdagi kabi ataylab.
+ *
+ * Uchtasi (checkups, partner, perimenopause) to'plamda yo'q edi —
+ * ular o'sha uslubda (200×200, pastel doira, tekis shakllar) chizib
+ * qo'shildi.
+ */
+const GOAL_ICON: Record<Goal, string> = {
+  cycle: "track_period",
+  pregnancy: "track_pregnancy",
+  planning_pregnancy: "get_pregnant",
+  wellbeing: "manage_weight",
+  checkups: "checkups",
+  understand_body: "track_flow",
+  skin: "track_flow",
+  partner_tracking: "partner",
+  perimenopause: "perimenopause",
 };
 
 /**
@@ -437,7 +446,28 @@ const PERIOD_ATTITUDE_ICON: Record<PeriodAttitude, string> = {
 const DRAFT_KEY = "mammoai_onboarding_draft";
 const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * DRAFT-VERSION-01 — qoralama tuzilmasining versiyasi.
+ *
+ * Nega kerak: WHEEL-FIX-01'gacha `birthYear` STANDART qiymat bilan
+ * (2005) saqlanardi. Ya'ni brauzerida eski qoralama qolgan ayolda yosh
+ * "allaqachon tanlangan" bo'lib tiklanadi va yangi "Tanlang" holati
+ * umuman ko'rinmaydi — aynan shu xato tuzatilgandan keyin ham
+ * kuzatildi. Tanlangan bilan standart qiymatni qoralamaning o'zidan
+ * ajratib bo'lmaydi, shuning uchun eski tuzilmadagi qoralama butunlay
+ * e'tiborsiz qoldiriladi.
+ *
+ * Narxi: o'sha ayol bir necha javobni qayta beradi. Foydasi: u hech
+ * qachon o'zi tanlamagan tug'ilgan yil bilan davom etmaydi. Sog'liq
+ * ilovasida bu almashuv aniq.
+ *
+ * SurveyState tuzilmasi kelajakda o'zgarsa, bu raqamni oshiring.
+ */
+const DRAFT_VERSION = 2;
+
 interface OnboardingDraft {
+  /** Eski qoralamalarda YO'Q — shuning uchun ixtiyoriy. */
+  v?: number;
   survey: SurveyState;
   step: Step;
   savedAt: number;
@@ -448,7 +478,7 @@ function readOnboardingDraft(): OnboardingDraft | null {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return null;
     const draft = JSON.parse(raw) as OnboardingDraft;
-    if (!draft?.survey || !draft.step || Date.now() - draft.savedAt > DRAFT_MAX_AGE_MS) {
+    if (!draft?.survey || !draft.step || draft.v !== DRAFT_VERSION || Date.now() - draft.savedAt > DRAFT_MAX_AGE_MS) {
       localStorage.removeItem(DRAFT_KEY);
       return null;
     }
@@ -713,7 +743,7 @@ function OnboardingPageInner() {
   useEffect(() => {
     if (!draftRestoredRef.current || step === "analyzing") return;
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ survey, step, savedAt: Date.now() }));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ v: DRAFT_VERSION, survey, step, savedAt: Date.now() }));
     } catch {
       // Xotira bloklangan (xususiy rejim) — qoralamasiz davom etamiz.
     }
@@ -1082,8 +1112,9 @@ function OnboardingPageInner() {
             Ular bilan birga `STEP_ICON_NAME`, `STEP_ILLUSTRATION`,
             `STEP_ICON_COLOR`, `auraName` va Lottie importi ham o'chirildi —
             o'lik kod qoldirish keyingi o'quvchini chalg'itardi. Belgilar
-            to'plamining O'ZI (`OnboardingIcon`) joyida: maqsad ro'yxatidagi
-            kichik belgilar o'sha yerdan keladi. */}
+            `OnboardingIcon` to'plami ham o'chirildi: ONB-GRID-01'dan keyin
+            maqsad belgilarini u emas, `public/goal-icons/` dagi rasmlar
+            beradi, ya'ni to'plamni hech kim ishlatmay qoldi. */}
         {step === "welcome" && (
           // Tugma endi logo/sarlavha bilan bitta markazlashgan ustunda emas — tepadagi
           // guruh flex-1 bilan qolgan bo'sh joyni egallab, o'zini o'rtaga tekislaydi,
@@ -1325,16 +1356,44 @@ function OnboardingPageInner() {
         )}
 
         {step === "goal" && (
-          <ChoiceStep
-            title={dict.onboarding.goalTitle}
-            options={goalOptions.map((g) => ({
-              label: dict.onboarding.goals[g],
-              value: g,
-              iconName: GOAL_ICON[g],
-              onClick: () => setSurvey((s) => ({ ...s, primaryGoal: g })),
-            }))}
-            selected={survey.primaryGoal}
-          />
+          // ONB-GRID-01: maqsadlar endi ro'yxat emas, IKKI USTUNLI tarmoq —
+          // foydalanuvchi bergan referens bo'yicha. Rasm katta bo'lgani
+          // uchun variant bir qarashda tanib olinadi; ro'yxatda esa ular
+          // olti qator matn bo'lib cho'zilib ketardi.
+          <div className="flex flex-1 flex-col justify-start gap-4">
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">
+              {dict.onboarding.goalTitle}
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {goalOptions.map((g) => {
+                const selected = survey.primaryGoal === g;
+                return (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setSurvey((s) => ({ ...s, primaryGoal: g }))}
+                    className={clsx(
+                      "tap-target flex flex-col items-center gap-3 rounded-3xl px-3 py-5 text-center transition active:scale-[0.98]",
+                      selected
+                        ? "bg-primary-light/50 shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+                        : "bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
+                    )}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
+                    <img src={`/goal-icons/${GOAL_ICON[g]}.svg`} alt="" className="h-20 w-20" />
+                    <span
+                      className={clsx(
+                        "text-sm font-semibold leading-snug",
+                        selected ? "text-primary-dark" : "text-text-primary"
+                      )}
+                    >
+                      {dict.onboarding.goals[g]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {step === "cycle_regularity" && (
@@ -1875,10 +1934,8 @@ function ChoiceStep({
   title: string;
   /** Ixtiyoriy — savol nima uchun muhimligini tushuntiruvchi qo'shimcha matn (masalan bildirishnomalar bosqichida). */
   description?: string;
-  /** `icon` — ixtiyoriy emoji, til tanlash tugmalaridagi bayroq kabi yorliq oldida ko'rsatiladi.
-   * `iconName` — ONB-GOALS-01: ilovaning O'Z belgilar to'plamidan (emoji emas,
-   * ya'ni rangni bo'limdan oladi va boshqa ilovalarga o'xshamaydi). */
-  options: { label: string; value: string; icon?: string; iconName?: OnboardingIconName; onClick: () => void }[];
+  /** `icon` — ixtiyoriy emoji, til tanlash tugmalaridagi bayroq kabi yorliq oldida ko'rsatiladi. */
+  options: { label: string; value: string; icon?: string; onClick: () => void }[];
   selected: string | null;
 }) {
   return (
@@ -1901,18 +1958,6 @@ function ChoiceStep({
               : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
           )}
         >
-          {opt.iconName && (
-            // Belgi YORLIQ rangini oladi (`currentColor`), shuning uchun
-            // tanlanganda u ham pushtiga o'tadi — alohida holat kerak emas.
-            <span
-              className={clsx(
-                "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition",
-                selected === opt.value ? "bg-surface/70" : "bg-primary-light/25 text-primary"
-              )}
-            >
-              <OnboardingIcon name={opt.iconName} size={30} />
-            </span>
-          )}
           {opt.icon && <Emoji e={opt.icon} />}
           <span className="min-w-0 flex-1">{opt.label}</span>
         </button>
