@@ -11,6 +11,7 @@ import type {
   AnalyticsUserSummary,
   AppNotification,
   Article,
+  ArticleComment,
   ArticleCategory,
   BloodType,
   ChecklistItem,
@@ -1909,9 +1910,25 @@ interface ArticleRow {
   title: string;
   excerpt: string;
   body: string;
+  author_name: string | null;
+  author_credential: string | null;
+  sources: string | null;
+  updated_at: string | null;
+  is_seed_data: boolean;
 }
 
+/** O'rtacha o'qish tezligi — 180 so'z/daqiqa (o'zbek tili uchun ehtiyotkor
+ * baho; ingliz tilida odatda 200-250 deb olinadi, lekin tibbiy matn
+ * sekinroq o'qiladi). Eng kami 1 daqiqa. */
+const WORDS_PER_MINUTE = 180;
+
 function articleFromRow(row: ArticleRow): Article {
+  let sources: Article["sources"] = [];
+  try {
+    if (row.sources) sources = JSON.parse(row.sources) as Article["sources"];
+  } catch {
+    // Buzuq JSON — manbasiz ko'rsatamiz, maqola o'zi yo'qolmasin.
+  }
   return {
     id: row.id,
     slug: row.slug,
@@ -1919,7 +1936,12 @@ function articleFromRow(row: ArticleRow): Article {
     title: row.title,
     excerpt: row.excerpt,
     body: row.body,
-    isSeedData: true,
+    authorName: row.author_name,
+    authorCredential: row.author_credential,
+    sources,
+    readingMinutes: Math.max(1, Math.round(row.body.trim().split(/\s+/).length / WORDS_PER_MINUTE)),
+    updatedAt: row.updated_at,
+    isSeedData: row.is_seed_data,
   };
 }
 
@@ -1936,17 +1958,23 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
   return row ? articleFromRow(row) : null;
 }
 
-export async function createArticle(article: Omit<Article, "id" | "isSeedData">): Promise<Article> {
+type ArticleInput = Omit<Article, "id" | "readingMinutes">;
+
+export async function createArticle(article: Omit<ArticleInput, "isSeedData" | "updatedAt"> & { isSeedData?: boolean }): Promise<Article> {
   await ensureSchema();
   const id = randomUUID();
+  const updatedAt = now();
+  const isSeedData = article.isSeedData ?? true;
   await sql`
-    INSERT INTO articles (id, slug, category, title, excerpt, body)
-    VALUES (${id}, ${article.slug}, ${article.category}, ${article.title}, ${article.excerpt}, ${article.body})
+    INSERT INTO articles (id, slug, category, title, excerpt, body, author_name, author_credential, sources, updated_at, is_seed_data)
+    VALUES (${id}, ${article.slug}, ${article.category}, ${article.title}, ${article.excerpt}, ${article.body},
+      ${article.authorName}, ${article.authorCredential}, ${JSON.stringify(article.sources ?? [])}, ${updatedAt}, ${isSeedData})
   `;
-  return { id, ...article, isSeedData: true };
+  const rows = (await sql`SELECT * FROM articles WHERE id = ${id}`) as unknown as ArticleRow[];
+  return articleFromRow(rows[0]);
 }
 
-export async function updateArticle(id: string, patch: Partial<Omit<Article, "id" | "isSeedData">>): Promise<void> {
+export async function updateArticle(id: string, patch: Partial<ArticleInput>): Promise<void> {
   await ensureSchema();
   const current = (await sql`SELECT * FROM articles WHERE id = ${id}`) as unknown as ArticleRow[];
   const row = current[0];
@@ -1954,9 +1982,87 @@ export async function updateArticle(id: string, patch: Partial<Omit<Article, "id
   const merged = { ...articleFromRow(row), ...patch };
   await sql`
     UPDATE articles SET slug = ${merged.slug}, category = ${merged.category}, title = ${merged.title},
-      excerpt = ${merged.excerpt}, body = ${merged.body}
+      excerpt = ${merged.excerpt}, body = ${merged.body},
+      author_name = ${merged.authorName}, author_credential = ${merged.authorCredential},
+      sources = ${JSON.stringify(merged.sources ?? [])},
+      is_seed_data = ${merged.isSeedData},
+      updated_at = ${now()}
     WHERE id = ${id}
   `;
+}
+
+// ---------------------------------------------------------------------------
+// CONTENT-02 — maqola ostidagi izohlar.
+//
+// Nega jamiyat postlaridan alohida: bu yerdagi savol KONTENTGA tegishli
+// ("bu tekshiruvni qayerda qilsam bo'ladi?"), muallif esa javob berishi
+// mumkin. Jamiyat lentasi esa tajriba almashish uchun — aralashtirilsa
+// ikkalasi ham buziladi.
+// ---------------------------------------------------------------------------
+
+interface ArticleCommentRow {
+  id: string;
+  article_id: string;
+  user_id: string;
+  body: string;
+  is_anonymous: boolean;
+  created_at: string;
+  author_name: string | null;
+}
+
+export async function listArticleComments(articleId: string, viewerId: string | null): Promise<ArticleComment[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT c.*, u.name AS author_name
+    FROM article_comments c
+    JOIN users u ON u.id = c.user_id
+    WHERE c.article_id = ${articleId} AND u.is_blocked = FALSE
+    ORDER BY c.created_at ASC
+  `) as unknown as ArticleCommentRow[];
+  return rows.map((row) => ({
+    id: row.id,
+    articleId: row.article_id,
+    // Anonim bo'lsa ism SERVER TOMONDA olib tashlanadi — mijozga yuborilib,
+    // keyin yashirilmaydi (aks holda u tarmoq javobida ko'rinib qolardi).
+    authorName: row.is_anonymous ? null : row.author_name,
+    isAnonymous: row.is_anonymous,
+    body: row.body,
+    createdAt: row.created_at,
+    isMine: viewerId !== null && row.user_id === viewerId,
+  }));
+}
+
+export async function createArticleComment(
+  articleId: string,
+  userId: string,
+  input: { body: string; isAnonymous: boolean }
+): Promise<ArticleComment> {
+  await ensureSchema();
+  const exists = (await sql`SELECT 1 FROM articles WHERE id = ${articleId}`) as unknown as unknown[];
+  if (exists.length === 0) throw new ApiError(404, "Maqola topilmadi");
+  const id = randomUUID();
+  const createdAt = now();
+  await sql`
+    INSERT INTO article_comments (id, article_id, user_id, body, is_anonymous, created_at)
+    VALUES (${id}, ${articleId}, ${userId}, ${input.body}, ${input.isAnonymous}, ${createdAt})
+  `;
+  const userRows = (await sql`SELECT name FROM users WHERE id = ${userId}`) as unknown as { name: string | null }[];
+  return {
+    id,
+    articleId,
+    authorName: input.isAnonymous ? null : (userRows[0]?.name ?? null),
+    isAnonymous: input.isAnonymous,
+    body: input.body,
+    createdAt,
+    isMine: true,
+  };
+}
+
+/** Faqat O'Z izohini — shart SQL'ning o'zida, ya'ni boshqa birovning
+ * izohini o'chirish imkoni yo'q. */
+export async function deleteArticleComment(commentId: string, userId: string): Promise<void> {
+  await ensureSchema();
+  await sql`DELETE FROM article_comments WHERE id = ${commentId} AND user_id = ${userId}`;
 }
 
 export async function deleteArticle(id: string): Promise<void> {
@@ -3061,6 +3167,108 @@ export async function getTractionSummary(days: number): Promise<TractionSummary>
     revenue: {
       applicable: false,
     },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// LIVE-01 — jonli faollik oqimi (admin panel).
+//
+// Nega kerak: kampaniya yuborilgandan keyin "kim kirdi va qanday kirdi"
+// degan savolga javob berish uchun har safar qo'lda SQL yozishga to'g'ri
+// kelardi. Endi admin panelda ko'rinadi.
+//
+// FAQAT O'QISH. Hech narsa o'zgartirmaydi.
+// ---------------------------------------------------------------------------
+
+export interface LiveActivityEvent {
+  id: string;
+  userId: string | null;
+  userName: string | null;
+  userPhone: string | null;
+  primaryGoal: string | null;
+  type: string;
+  path: string | null;
+  /** `campaign:c1` kabi yorliq — ayol kampaniya tugmasidan kelganini
+   * ko'rsatadi. Aynan shu "qanday kirdi" degan savolga javob beradi. */
+  label: string | null;
+  platform: string | null;
+  durationMs: number | null;
+  createdAt: string;
+}
+
+export interface LiveActivitySummary {
+  activeLast5Min: number;
+  activeLast15Min: number;
+  activeLastHour: number;
+  campaignClicksTotal: number;
+  eventsLastHour: number;
+}
+
+export async function getLiveActivity(limit = 80): Promise<{
+  summary: LiveActivitySummary;
+  events: LiveActivityEvent[];
+}> {
+  await ensureSchema();
+  const [rows, summaryRows] = await Promise.all([
+    sql`
+      SELECT e.id, e.user_id, e.type, e.path, e.label, e.platform, e.duration_ms, e.created_at,
+        u.name AS user_name, u.phone AS user_phone, o.primary_goal
+      FROM analytics_events e
+      LEFT JOIN users u ON u.id = e.user_id
+      LEFT JOIN onboarding_profiles o ON o.user_id = e.user_id
+      WHERE u.id IS NULL OR u.is_test_account = FALSE
+      ORDER BY e.created_at DESC
+      LIMIT ${limit}
+    `,
+    sql`
+      SELECT
+        count(DISTINCT e.user_id) FILTER (WHERE (e.created_at)::timestamptz >= now() - interval '5 minutes')::int AS a5,
+        count(DISTINCT e.user_id) FILTER (WHERE (e.created_at)::timestamptz >= now() - interval '15 minutes')::int AS a15,
+        count(DISTINCT e.user_id) FILTER (WHERE (e.created_at)::timestamptz >= now() - interval '1 hour')::int AS a60,
+        count(*) FILTER (WHERE e.label LIKE 'campaign:%')::int AS campaign_clicks,
+        count(*) FILTER (WHERE (e.created_at)::timestamptz >= now() - interval '1 hour')::int AS events_hour
+      FROM analytics_events e
+      LEFT JOIN users u ON u.id = e.user_id
+      WHERE u.id IS NULL OR u.is_test_account = FALSE
+    `,
+  ]);
+
+  const r = (summaryRows as unknown as { a5: number; a15: number; a60: number; campaign_clicks: number; events_hour: number }[])[0];
+  const typed = rows as unknown as {
+    id: string;
+    user_id: string | null;
+    type: string;
+    path: string | null;
+    label: string | null;
+    platform: string | null;
+    duration_ms: number | null;
+    created_at: string;
+    user_name: string | null;
+    user_phone: string | null;
+    primary_goal: string | null;
+  }[];
+
+  return {
+    summary: {
+      activeLast5Min: r.a5,
+      activeLast15Min: r.a15,
+      activeLastHour: r.a60,
+      campaignClicksTotal: r.campaign_clicks,
+      eventsLastHour: r.events_hour,
+    },
+    events: typed.map((row) => ({
+      id: row.id,
+      userId: row.user_id,
+      userName: row.user_name,
+      userPhone: row.user_phone,
+      primaryGoal: row.primary_goal,
+      type: row.type,
+      path: row.path,
+      label: row.label,
+      platform: row.platform,
+      durationMs: row.duration_ms,
+      createdAt: row.created_at,
+    })),
   };
 }
 

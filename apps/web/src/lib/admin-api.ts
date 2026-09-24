@@ -74,6 +74,31 @@ export interface AdminFeedbackEntry {
 
 export type AiProvider = "gemini" | "huawei_maas" | "anthropic";
 
+export interface LiveActivityEvent {
+  id: string;
+  userId: string | null;
+  userName: string | null;
+  userPhone: string | null;
+  primaryGoal: string | null;
+  type: string;
+  path: string | null;
+  label: string | null;
+  platform: string | null;
+  durationMs: number | null;
+  createdAt: string;
+}
+
+export interface LiveActivityResponse {
+  summary: {
+    activeLast5Min: number;
+    activeLast15Min: number;
+    activeLastHour: number;
+    campaignClicksTotal: number;
+    eventsLastHour: number;
+  };
+  events: LiveActivityEvent[];
+}
+
 export interface AiProbeResult {
   provider: AiProvider;
   ok: boolean;
@@ -241,11 +266,24 @@ export const adminApi = {
       request<{ ok: true }>(`/clinics/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
     delete: (id: string) => request<{ ok: true }>(`/clinics/${id}`, { method: "DELETE" }),
   },
+  /** LIVE-01: jonli faollik oqimi. */
+  activity: {
+    get: (limit = 80) => request<LiveActivityResponse>(`/activity?limit=${limit}`),
+  },
   articles: {
     list: () => request<Article[]>("/articles"),
-    create: (data: { slug: string; category: ArticleCategory; title: string; excerpt: string; body: string }) =>
+    create: (data: {
+      slug: string;
+      category: ArticleCategory;
+      title: string;
+      excerpt: string;
+      body: string;
+      authorName?: string | null;
+      authorCredential?: string | null;
+      isSeedData?: boolean;
+    }) =>
       request<Article>("/articles", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: string, patch: Partial<Omit<Article, "id" | "isSeedData">>) =>
+    update: (id: string, patch: Partial<Omit<Article, "id" | "readingMinutes">>) =>
       request<{ ok: true }>(`/articles/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
     delete: (id: string) => request<{ ok: true }>(`/articles/${id}`, { method: "DELETE" }),
   },

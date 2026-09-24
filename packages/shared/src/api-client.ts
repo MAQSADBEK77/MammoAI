@@ -44,7 +44,8 @@ import type {
   SymptomPattern,
   User,
   WellnessLog,
-} from "./types";
+  ArticleComment,} from "./types";
+import type { DoctorReport } from "./logic/doctor-report";
 import type { CyclePrediction, ForecastedCycle } from "./logic/cycle";
 import type { BadgeId } from "./logic/gamification";
 import type { PregnancyStatus } from "./logic/pregnancy";
@@ -355,6 +356,17 @@ export function createApiClient(config: ApiClientConfig) {
     articles: {
       list: () => request<Article[]>("/api/articles"),
       get: (slug: string) => request<Article>(`/api/articles/${slug}`),
+      /** CONTENT-02: maqola ostidagi izohlar. */
+      comments: (slug: string) => request<{ comments: ArticleComment[] }>(`/api/articles/${slug}/comments`),
+      addComment: (slug: string, payload: { body: string; isAnonymous: boolean }) =>
+        request<{ comment: ArticleComment }>(`/api/articles/${slug}/comments`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
+      deleteComment: (slug: string, commentId: string) =>
+        request<{ ok: true }>(`/api/articles/${slug}/comments?commentId=${encodeURIComponent(commentId)}`, {
+          method: "DELETE",
+        }),
     },
     community: {
       stats: () => request<CommunityStats>("/api/community/stats"),
@@ -451,6 +463,10 @@ export function createApiClient(config: ApiClientConfig) {
             body: JSON.stringify({ content }),
           }
         ),
+    },
+    /** REPORT-01: shifokor qabuliga olib boriladigan xulosa (Premium). */
+    doctorReport: {
+      get: () => request<{ report: DoctorReport; name: string | null }>("/api/doctor-report"),
     },
     insights: {
       /** AI Yordamchi ekranining "Statistika" segmenti — sikl uzunligi

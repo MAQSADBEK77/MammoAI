@@ -566,6 +566,14 @@ async function initSchema() {
   // productionda avval yaratilgan jadvallar uchun alohida `ALTER TABLE` kerak.
   await runBatched([
     () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`,
+    // CONTENT-01: maqolalarga muallif, manba va yangilanish sanasi.
+    () => sql`ALTER TABLE articles ADD COLUMN IF NOT EXISTS author_name TEXT`,
+    () => sql`ALTER TABLE articles ADD COLUMN IF NOT EXISTS author_credential TEXT`,
+    () => sql`ALTER TABLE articles ADD COLUMN IF NOT EXISTS sources TEXT`,
+    () => sql`ALTER TABLE articles ADD COLUMN IF NOT EXISTS updated_at TEXT`,
+    // Standart TRUE — mavjud 6 ta namunaviy yozuv shunday belgilangan holda
+    // qoladi; haqiqiy kontent yozilganda admin panelda o'chiriladi.
+    () => sql`ALTER TABLE articles ADD COLUMN IF NOT EXISTS is_seed_data BOOLEAN NOT NULL DEFAULT TRUE`,
     // Admin panel — foydalanuvchini bloklash (App.pdf'dan tashqari, moderatsiya uchun).
     () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE`,
     () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS blood_type TEXT`,
@@ -680,6 +688,22 @@ async function initSchema() {
         -- uziladi.
         checklist_item_id TEXT REFERENCES checklist_items(id) ON DELETE SET NULL,
         action TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `,
+    // CONTENT-02: `articles` jadvaliga bog'liq — shuning uchun u
+    // YARATILGANDAN KEYINGI bosqichda. Ilgari `articles` bilan BIR
+    // bosqichda edi va bosqich ichidagi so'rovlar parallel ketgani
+    // uchun CI'da "relation articles does not exist" bilan yiqilardi
+    // (bu fayldagi asosiy qoida: bir bosqich ichidagi jadvallar
+    // bir-biriga bog'liq bo'lmasligi kerak).
+    () => sql`
+      CREATE TABLE IF NOT EXISTS article_comments (
+        id TEXT PRIMARY KEY,
+        article_id TEXT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        body TEXT NOT NULL,
+        is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TEXT NOT NULL
       )
     `,
@@ -934,6 +958,7 @@ async function initSchema() {
     // Postgres butun jadvalni skanerlab saralashga majbur bo'ladi.
     () => sql`CREATE INDEX IF NOT EXISTS idx_community_posts_created ON community_posts(created_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_article_comments_article ON article_comments(article_id, created_at ASC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_partner_invites_code ON partner_invites(code)`,
     () => sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_links_a_unique ON partner_links(user_a_id)`,

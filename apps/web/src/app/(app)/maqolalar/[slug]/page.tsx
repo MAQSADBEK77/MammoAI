@@ -6,6 +6,7 @@ import type { Article } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Card, LoadingSpinner, ErrorState } from "@/components/ui";
+import { ArticleComments } from "@/components/screens/ArticleComments";
 
 export default function ArticleDetailPage() {
   const { dict } = useI18n();
@@ -40,9 +41,54 @@ export default function ArticleDetailPage() {
     <div className="space-y-4 pb-6">
       <Badge>{dict.articles.categories[article.category]}</Badge>
       <h1 className="text-2xl font-bold text-text-primary">{article.title}</h1>
+
+      {/* CONTENT-01: kim tekshirgani va qancha vaqt olishi — sarlavha
+          ostida, matndan OLDIN. Sog'liq kontentida "kimning so'zi" degan
+          savol birinchi keladi; uni maqolaning oxiriga yashirish
+          ishonchni kamaytiradi. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted">
+        {article.authorName && (
+          <span className="font-semibold text-text-secondary">
+            {article.authorName}
+            {article.authorCredential && <span className="font-normal text-text-muted">, {article.authorCredential}</span>}
+          </span>
+        )}
+        <span>{dict.articles.readingTime(article.readingMinutes)}</span>
+      </div>
+
+      {/* Muallif ko'rsatilmagan bo'lsa buni JIM qoldirmaymiz — ayol
+          o'qiyotgan narsasi tibbiy ko'rikdan o'tgan-o'tmaganini bilishi
+          kerak. */}
+      {article.isSeedData && (
+        <div className="rounded-2xl border border-warning/20 bg-warning/5 px-4 py-3">
+          <p className="text-xs leading-relaxed text-text-secondary">{dict.articles.unreviewedNotice}</p>
+        </div>
+      )}
+
       <Card>
         <p className="whitespace-pre-line leading-relaxed text-text-secondary">{article.body}</p>
       </Card>
+
+      {article.sources.length > 0 && (
+        <Card className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{dict.articles.sourcesTitle}</p>
+          <ul className="space-y-1">
+            {article.sources.map((src) => (
+              <li key={src.label} className="text-sm text-text-secondary">
+                {src.url ? (
+                  <a href={src.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                    {src.label}
+                  </a>
+                ) : (
+                  src.label
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <ArticleComments slug={article.slug} />
     </div>
   );
 }

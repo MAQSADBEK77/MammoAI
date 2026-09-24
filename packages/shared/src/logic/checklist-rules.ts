@@ -494,6 +494,18 @@ export interface OfficialTrack {
 // uchun — davlat dasturi ma'lumoti (UI'da alohida belgi, muddat hisobiga
 // ta'sir qilmaydi — funksiya boshidagi izohga qarang).
 export const CHECKUP_OFFICIAL_TRACK: Partial<Record<ChecklistItemType, OfficialTrack>> = {
+  // RESEARCH-01 (2026-09-23) — TEKSHIRISH KERAK, O'ZGARTIRILMADI.
+  //
+  // Gavi'ning O'zbekiston skrining dasturi haqidagi materialida bachadon
+  // bo'yni skrininggi "30, 40 va 50 yoshda" (HPV testi + suyuq sitologiya)
+  // deb yozilgan, bu yerdagi 35-55/har 3 yil bilan mos kelmaydi:
+  // https://www.gavi.org/vaccineswork/vaccines-screenings-how-uzbekistan-transforming-cancer-care-women
+  //
+  // Farq muhim: u qaysi ayolga skrining tavsiya qilishimizni belgilaydi.
+  // Ikkala manba ham rasmiy ko'rinadi (biri protokol, biri dastur bayoni) —
+  // qaysi biri joriy amaliyot ekanini SHIFOKOR tasdiqlashi kerak.
+  // Tadqiqot asosida o'zboshimchalik bilan o'zgartirish tibbiy jihatdan
+  // xavfli bo'lardi. Batafsil: docs/bozor-tadqiqoti.md
   cervical_cancer_screening: { minAge: 35, maxAge: 55, frequency: "every_3_years" },
   breast_cancer_screening_mammography: { minAge: 45, maxAge: 65, frequency: "every_2_years" },
 };
