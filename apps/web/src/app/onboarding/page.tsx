@@ -32,6 +32,7 @@ import {
   formatUzPhoneInput,
   extractUzPhoneDigits,
   ApiError,
+  resolveRestoreStep,
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useTelegram } from "@/lib/telegram";
@@ -75,6 +76,37 @@ type Step =
   | "height_weight"
   | "notifications"
   | "analyzing";
+
+/** ONB-LANG-01: barcha qadamlar KANONIK tartibda — shartlarsiz, filtrsiz.
+ * Haqiqiy ro'yxat (`steps`) bundan qisqaroq bo'ladi: maqsad, yosh va
+ * Telegram orqali kirish ba'zi qadamlarni olib tashlaydi. Bu ro'yxat
+ * faqat bitta narsa uchun kerak — qoralamadan tiklashda saqlangan qadam
+ * endi ko'rsatilmasa, uning o'rnini bilib, undan KEYINGI qadamga o'tish.
+ * Yangi qadam qo'shsangiz, uni shu yerga ham qo'shing. */
+const CANONICAL_STEPS: Step[] = [
+  "welcome",
+  "language",
+  "account_choice",
+  "account_identifier",
+  "phone_verify",
+  "privacy",
+  "name",
+  "age",
+  "goal",
+  "cycle_regularity",
+  "cycle_lengths",
+  "last_period",
+  "preview",
+  "typical_symptoms",
+  "period_attitude",
+  "health_conditions",
+  "family_history",
+  "sexually_active",
+  "last_checkup",
+  "height_weight",
+  "notifications",
+  "analyzing",
+];
 
 interface SurveyState {
   accountChoice: "create" | "login" | null;
@@ -476,6 +508,11 @@ function OnboardingPageInner() {
   // izohga qarang) — aks holda bo'sh boshlang'ich holat qoralamani
   // o'chirib yuborardi.
   const draftRestoredRef = useRef(false);
+  /** ONB-LANG-01: eng oxirgi `steps` ro'yxati. Qoralamani tiklash ikki
+   * bosqichda ketadi (avval javoblar, keyin qadam) va ikkinchi bosqichda
+   * ro'yxat allaqachon YANGILANGAN bo'lishi shart — closure'dagi eski
+   * nusxa emas. */
+  const stepsRef = useRef<Step[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Telegram orqali telefon tasdiqlash — account_identifier'da yaratilgan
@@ -636,23 +673,39 @@ function OnboardingPageInner() {
 
   const step = steps[stepIndex];
 
+  useEffect(() => {
+    stepsRef.current = steps;
+  }, [steps]);
+
   // ONB-DRAFT-01 (tiklash) — mount'da BIR MARTA. Qadam INDEKS bilan emas,
   // NOMI bilan tiklanadi: qadamlar ro'yxati maqsad va yoshga qarab
   // o'zgaradi, ya'ni saqlangan indeks boshqa savolga to'g'ri kelib qolishi
-  // mumkin edi. Nom topilmasa — boshidan, lekin javoblar saqlanadi.
+  // mumkin edi.
+  //
+  // ONB-LANG-01: tiklash IKKI bosqichda. Avval javoblar, keyin — alohida
+  // navbatda — qadam. Sababi: qadamlar ro'yxati javoblarga bog'liq, ya'ni
+  // javoblar qo'yilmasdan turib to'g'ri ro'yxat yo'q. Ilgari ikkalasi bir
+  // vaqtda bo'lardi va `steps` eskicha qolardi: Telegramdan qaytgan
+  // ayolning saqlangan qadami (`account_choice`) ro'yxatda topilmasdi →
+  // 0-indeks → TIL savoli IKKINCHI marta chiqardi. Aynan shu xato
+  // xabar qilingan.
   useEffect(() => {
     const draft = readOnboardingDraft();
     draftRestoredRef.current = true;
     if (!draft) return;
-    const timeout = setTimeout(() => {
+    let inner: ReturnType<typeof setTimeout> | undefined;
+    const outer = setTimeout(() => {
       setSurvey(draft.survey);
-      setStepIndex((cur) => {
-        const restored = steps.indexOf(draft.step);
-        return restored >= 0 ? restored : cur;
-      });
+      inner = setTimeout(() => {
+        const list = stepsRef.current;
+        const restored = resolveRestoreStep(draft.step, list, CANONICAL_STEPS);
+        if (restored) setStepIndex(list.indexOf(restored));
+      }, 0);
     }, 0);
-    return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      clearTimeout(outer);
+      if (inner) clearTimeout(inner);
+    };
   }, []);
 
   // ONB-DRAFT-01 (saqlash) — har javob o'zgarganda. "analyzing" bosqichida
