@@ -829,6 +829,24 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
   // massiv "so'radik, hech narsa tanlamadi" degani bo'lardi, bu esa boshqa
   // holat va keyin savolni qayta bermay qo'yardi.
   const chronicConditions = profile.chronicConditions ? JSON.stringify(profile.chronicConditions) : null;
+  // ONB-SAVE-01: `undefined` ni `null` ga aylantiramiz.
+  //
+  // Nega kerak: onboarding POST'i profilni `{ userId, ...body }` bilan
+  // quradi va `body` PROFILE-01 maydonlarini (hpvVaccinated, smokes,
+  // hasGivenBirth va h.k.) UMUMAN yubormaydi — ular onboardingdan KEYIN
+  // so'raladi. TypeScript buni ushlamaydi, chunki body `as` bilan
+  // majburlab tiplangan. Natijada ular `undefined` bo'lib INSERT'ga
+  // tushardi va postgres.js "UNDEFINED_VALUE: Undefined values are not
+  // allowed" bilan yiqilardi.
+  //
+  // Oqibati production'da: onboardingni HECH KIM tugata olmadi. Ayollar
+  // hamma savolga javob berib, oxirgi ekranda "Nimadir xato ketdi"
+  // xabarini olardi va butun mehnati yo'qolardi.
+  //
+  // Tuzatish INSERT'ning O'ZIDA — shunda har qanday chaqiruvchi
+  // himoyalanadi, nafaqat bitta route. `null` to'g'ri ma'no beradi:
+  // "hali so'ralmagan" (GATE-01/PROFILE-01 izohlariga qarang).
+  const orNull = <T,>(value: T | undefined): T | null => value ?? null;
   await sql`
     INSERT INTO onboarding_profiles (
       user_id, name, age, is_pregnant, cycle_regularity, family_history, sexually_active, last_checkup, primary_goal,
@@ -836,12 +854,12 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
       hpv_vaccinated, hormonal_contraception, smokes, has_given_birth, chronic_conditions
     )
     VALUES (
-      ${profile.userId}, ${profile.name}, ${profile.age}, ${profile.isPregnant}, ${profile.cycleRegularity},
-      ${profile.familyHistory}, ${profile.sexuallyActive}, ${profile.lastCheckup}, ${profile.primaryGoal}, ${profile.heardAboutUs},
-      ${typicalSymptoms}, ${profile.periodAttitude}, ${healthConditions}, ${profile.healthConditionsOther},
-      ${profile.heightCm}, ${profile.weightKg}, ${profile.bloodType},
-      ${profile.hpvVaccinated}, ${profile.hormonalContraception}, ${profile.smokes},
-      ${profile.hasGivenBirth}, ${chronicConditions}
+      ${profile.userId}, ${orNull(profile.name)}, ${profile.age}, ${profile.isPregnant}, ${profile.cycleRegularity},
+      ${orNull(profile.familyHistory)}, ${orNull(profile.sexuallyActive)}, ${profile.lastCheckup}, ${profile.primaryGoal}, ${orNull(profile.heardAboutUs)},
+      ${typicalSymptoms}, ${orNull(profile.periodAttitude)}, ${healthConditions}, ${orNull(profile.healthConditionsOther)},
+      ${orNull(profile.heightCm)}, ${orNull(profile.weightKg)}, ${orNull(profile.bloodType)},
+      ${orNull(profile.hpvVaccinated)}, ${orNull(profile.hormonalContraception)}, ${orNull(profile.smokes)},
+      ${orNull(profile.hasGivenBirth)}, ${chronicConditions}
     )
     ON CONFLICT (user_id) DO UPDATE SET
       name = EXCLUDED.name, age = EXCLUDED.age, is_pregnant = EXCLUDED.is_pregnant,
