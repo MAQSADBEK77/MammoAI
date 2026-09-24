@@ -64,7 +64,8 @@ type Step =
   | "age"
   | "goal"
   | "cycle_regularity"
-  | "cycle_lengths"
+  | "period_length"
+  | "cycle_length"
   | "last_period"
   | "preview"
   | "typical_symptoms"
@@ -94,7 +95,8 @@ const CANONICAL_STEPS: Step[] = [
   "age",
   "goal",
   "cycle_regularity",
-  "cycle_lengths",
+  "period_length",
+  "cycle_length",
   "last_period",
   "preview",
   "typical_symptoms",
@@ -133,7 +135,11 @@ interface SurveyState {
   averageCycleLength: string;
   averagePeriodLength: string;
   /** "Bilmayman" bosilganda true — inputlar taxminiy standart (28/5) qiymatga qaytariladi va bloklanadi. */
-  cycleLengthsUnknown: boolean;
+  /** ONB-CYCLE-01: har bir savol o'z ekranida, shuning uchun "bilmayman"
+   * ham alohida. Ayol hayzi necha kunligini bilishi, lekin sikl
+   * uzunligini bilmasligi mumkin — bu juda keng tarqalgan holat. */
+  periodLengthUnknown: boolean;
+  cycleLengthUnknown: boolean;
   /** FIX-07: "Bilmayman" yoqilishidan OLDIN foydalanuvchi kiritgan qiymat —
    * o'chirilganda shu qaytariladi (aks holda "35" kabi kiritilgan qiymat
    * standart "28"ga almashtirilib, hech qachon qaytarilmasdi). */
@@ -174,6 +180,18 @@ const CURRENT_YEAR = new Date().getFullYear();
  * seansda tugaydi, sana o'rtada o'zgarmaydi. `CURRENT_YEAR` bilan bir xil naqsh. */
 const TODAY_MS = Date.now();
 // Yosh o'rniga tug'ilgan yil so'raladi (wheel-picker) — 13-100 yosh oralig'iga mos yillar.
+/** ONB-CYCLE-01: raqamli maydon o'rniga g'ildirak — telefonda kiritish
+ * osonroq va noto'g'ri qiymat kiritib bo'lmaydi. Chegaralar
+ * `packages/shared/src/logic/cycle.ts` dagi bilan bir xil. */
+const PERIOD_LENGTH_OPTIONS = Array.from(
+  { length: MAX_SANE_PERIOD_LENGTH - MIN_SANE_PERIOD_LENGTH + 1 },
+  (_, i) => String(MIN_SANE_PERIOD_LENGTH + i)
+);
+const CYCLE_LENGTH_OPTIONS = Array.from(
+  { length: MAX_SANE_CYCLE_LENGTH - MIN_SANE_CYCLE_LENGTH + 1 },
+  (_, i) => String(MIN_SANE_CYCLE_LENGTH + i)
+);
+
 const BIRTH_YEARS = Array.from({ length: 88 }, (_, i) => CURRENT_YEAR - 100 + i);
 
 // Bo'y/vazn wheel-picker'lari uchun qiymatlar oralig'i.
@@ -197,28 +215,6 @@ function lbToKg(lb: number): number {
   return Math.round(lb / 2.20462);
 }
 
-/** VALIDATE-01: "cycle_lengths" bosqichidagi qo'lda kiritilgan qiymat —
- * bo'sh/NaN/manfiy yoki mantiqsiz kattalikni (masalan 280) o'tkazmaydi.
- *
- * Ilgari bu bosqich `canProceed()`da UMUMAN yo'q edi (`default: return true`
- * shoxiga tushardi) va inputlarda `min`/`max` ham qo'yilmagandi. Qiymat
- * keyin ham hech qayerda ushlanmaydi: /api/cycle/settings uni tekshirmaydi,
- * repo.ts shundayligicha bazaga yozadi, `predictCycle` esa faqat
- * `|| DEFAULT_CYCLE_LENGTH` bilan himoyalangan — bu 0/NaN'ni tutadi, lekin
- * 999 yoki -5 ni EMAS. Mavjud MIN/MAX_SANE_* chegaralari esa faqat
- * LOG'LARDAN hisoblangan yo'lga qo'llanilardi, yangi foydalanuvchida log
- * yo'q, ya'ni u yo'l hech qachon ishga tushmaydi.
- *
- * Chegaralar logic/cycle.ts bilan BIR MANBADAN olinadi. */
-function isSaneCycleLengths(cycleLength: string, periodLength: string): boolean {
-  const c = Number(cycleLength);
-  const p = Number(periodLength);
-  if (!Number.isInteger(c) || !Number.isInteger(p)) return false;
-  if (c < MIN_SANE_CYCLE_LENGTH || c > MAX_SANE_CYCLE_LENGTH) return false;
-  if (p < MIN_SANE_PERIOD_LENGTH || p > MAX_SANE_PERIOD_LENGTH) return false;
-  // Hayz davri siklning o'zidan uzun bo'la olmaydi.
-  return p <= c;
-}
 
 const INITIAL_SURVEY: SurveyState = {
   accountChoice: null,
@@ -233,7 +229,8 @@ const INITIAL_SURVEY: SurveyState = {
   cycleRegularity: null,
   averageCycleLength: "28",
   averagePeriodLength: "5",
-  cycleLengthsUnknown: false,
+  periodLengthUnknown: false,
+  cycleLengthUnknown: false,
   savedCycleLength: "28",
   savedPeriodLength: "5",
   lastPeriodDate: "",
@@ -341,7 +338,8 @@ const STEP_SECTION: Partial<Record<Step, 0 | 1 | 2>> = {
 
   goal: 1,
   cycle_regularity: 1,
-  cycle_lengths: 1,
+  period_length: 1,
+  cycle_length: 1,
   last_period: 1,
   typical_symptoms: 1,
   period_attitude: 1,
@@ -463,7 +461,10 @@ const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
  *
  * SurveyState tuzilmasi kelajakda o'zgarsa, bu raqamni oshiring.
  */
-const DRAFT_VERSION = 2;
+// ONB-CYCLE-01 bilan 3 ga oshirildi: `cycleLengthsUnknown` ikkita alohida
+// bayroqqa bo'lindi va `cycle_lengths` qadami ikkiga ajraldi, ya'ni eski
+// qoralamadagi qadam nomi endi mavjud emas.
+const DRAFT_VERSION = 3;
 
 interface OnboardingDraft {
   /** Eski qoralamalarda YO'Q — shuning uchun ixtiyoriy. */
@@ -650,7 +651,10 @@ function OnboardingPageInner() {
         // rejim uchun eng muhimi, shuning uchun alohida qoldiriladi.
         tail.push("typical_symptoms", "health_conditions");
       } else if (needsCycleInfo(goal)) {
-        tail.push("cycle_regularity", "cycle_lengths", "last_period");
+        // ONB-CYCLE-01: ilgari sikl va hayz uzunligi BITTA ekranda ikkita
+        // raqamli maydon edi. Referens bo'yicha ular ajratildi — har bir
+        // savol o'z ekranida, o'z izohi bilan.
+        tail.push("cycle_regularity", "period_length", "cycle_length", "last_period");
         // Bashorat ekrani AYNAN shu yerda: `last_period`dan keyin yetarli
         // ma'lumot yig'ilgan (sikl uzunligi + oxirgi sana), qolgan savollar
         // esa hali oldinda — ya'ni qiymat ularni to'ldirishga undaydi.
@@ -979,10 +983,11 @@ function OnboardingPageInner() {
         return extractUzPhoneDigits(survey.identifier) !== null;
       case "phone_verify":
         return codeSent && verifyCode.trim().length === 6;
-      case "cycle_lengths":
-        // "Bilmayman" yoqilgan bo'lsa qiymatlar standartga (28/5) majburlab
-        // qo'yiladi — alohida tekshiruv shart emas.
-        return survey.cycleLengthsUnknown || isSaneCycleLengths(survey.averageCycleLength, survey.averagePeriodLength);
+      // ONB-CYCLE-01: ikkala ekranda ham g'ildirak doim haqiqiy qiymatda
+      // turadi (yoki "bilmayman" yoqilgan), shuning uchun to'siq kerak emas.
+      case "period_length":
+      case "cycle_length":
+        return true;
       case "name":
         return survey.name.trim().length > 0;
       case "age":
@@ -1408,75 +1413,51 @@ function OnboardingPageInner() {
           />
         )}
 
-        {step === "cycle_lengths" && (
-          <div className="flex flex-1 flex-col justify-start gap-4">
-            <div className={clsx(survey.cycleLengthsUnknown && "pointer-events-none opacity-50")}>
-              <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.averageCycleLengthQuestion}</h2>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={MIN_SANE_CYCLE_LENGTH}
-                max={MAX_SANE_CYCLE_LENGTH}
-                value={survey.averageCycleLength}
-                onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
-                className="tap-target mt-4 w-full rounded-2xl bg-surface-muted px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
-              />
-              <h2 className="mt-6 text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={MIN_SANE_PERIOD_LENGTH}
-                max={MAX_SANE_PERIOD_LENGTH}
-                value={survey.averagePeriodLength}
-                onChange={(e) => setSurvey((s) => ({ ...s, averagePeriodLength: e.target.value }))}
-                className="tap-target mt-4 w-full rounded-2xl bg-surface-muted px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
-              />
-              {/* VALIDATE-01: tugma o'chiq bo'lsa NEGA o'chiqligi aytiladi —
-                  aks holda foydalanuvchi sababini bilmay qotib qoladi. */}
-              {!survey.cycleLengthsUnknown &&
-                !isSaneCycleLengths(survey.averageCycleLength, survey.averagePeriodLength) && (
-                  <p className="mt-3 text-center text-sm text-text-secondary">
-                    {dict.onboarding.cycleLengthsRangeHint(
-                      MIN_SANE_CYCLE_LENGTH,
-                      MAX_SANE_CYCLE_LENGTH,
-                      MIN_SANE_PERIOD_LENGTH,
-                      MAX_SANE_PERIOD_LENGTH
-                    )}
-                  </p>
-                )}
-            </div>
-            <button
-              type="button"
-              onClick={() =>
-                setSurvey((s) =>
-                  s.cycleLengthsUnknown
-                    ? // FIX-07: o'chirilmoqda — foydalanuvchi avval kiritgan qiymatni qaytaramiz
-                      // (ilgari bu yerda standart "28"/"5" qolib ketardi, asl qiymat yo'qolardi).
-                      { ...s, cycleLengthsUnknown: false, averageCycleLength: s.savedCycleLength, averagePeriodLength: s.savedPeriodLength }
-                    : // Yoqilmoqda — joriy qiymatni saqlab, standart (populyatsiya o'rtachasi)
-                      // qiymatga tushiramiz. CycleScreen'da bu "taxminiy" (cyclesAnalyzed: 0)
-                      // sifatida ko'rsatiladi, haqiqiy shaxsiy ma'lumot sifatida emas.
-                      {
-                        ...s,
-                        cycleLengthsUnknown: true,
-                        savedCycleLength: s.averageCycleLength,
-                        savedPeriodLength: s.averagePeriodLength,
-                        averageCycleLength: "28",
-                        averagePeriodLength: "5",
-                      }
-                )
-              }
-              className={clsx(
-                "tap-target w-full rounded-2xl px-5 py-3 text-center text-lg font-medium transition",
-                survey.cycleLengthsUnknown
-                  ? "bg-primary-light text-primary-dark shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
-                  : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
-              )}
-            >
-              {dict.common.dontKnow}
-            </button>
-            {survey.cycleLengthsUnknown && <ReassureCard text={dict.onboarding.reassureCycleLengths} />}
-          </div>
+        {step === "period_length" && (
+          <CycleLengthStep
+            title={dict.onboarding.averagePeriodLengthQuestion}
+            hint={dict.onboarding.periodLengthHint}
+            options={PERIOD_LENGTH_OPTIONS}
+            suffix={dict.common.daysShort}
+            value={survey.averagePeriodLength}
+            unknown={survey.periodLengthUnknown}
+            notSureLabel={dict.onboarding.notSure}
+            reassure={dict.onboarding.reassureCycleLengths}
+            onChange={(v) => setSurvey((s) => ({ ...s, averagePeriodLength: v }))}
+            onToggleUnknown={() =>
+              setSurvey((s) =>
+                s.periodLengthUnknown
+                  ? // O'chirilmoqda — ayol avval kiritgan qiymatni qaytaramiz
+                    // (ilgari bu yerda standart "5" qolib ketardi).
+                    { ...s, periodLengthUnknown: false, averagePeriodLength: s.savedPeriodLength }
+                  : // Yoqilmoqda — joriy qiymatni saqlab, populyatsiya
+                    // o'rtachasiga tushiramiz. CycleScreen buni "taxminiy"
+                    // sifatida ko'rsatadi, shaxsiy ma'lumot sifatida emas.
+                    { ...s, periodLengthUnknown: true, savedPeriodLength: s.averagePeriodLength, averagePeriodLength: "5" }
+              )
+            }
+          />
+        )}
+
+        {step === "cycle_length" && (
+          <CycleLengthStep
+            title={dict.onboarding.averageCycleLengthQuestion}
+            hint={dict.onboarding.cycleLengthHint}
+            options={CYCLE_LENGTH_OPTIONS}
+            suffix={dict.common.daysShort}
+            value={survey.averageCycleLength}
+            unknown={survey.cycleLengthUnknown}
+            notSureLabel={dict.onboarding.notSure}
+            reassure={dict.onboarding.reassureCycleLengths}
+            onChange={(v) => setSurvey((s) => ({ ...s, averageCycleLength: v }))}
+            onToggleUnknown={() =>
+              setSurvey((s) =>
+                s.cycleLengthUnknown
+                  ? { ...s, cycleLengthUnknown: false, averageCycleLength: s.savedCycleLength }
+                  : { ...s, cycleLengthUnknown: true, savedCycleLength: s.averageCycleLength, averageCycleLength: "28" }
+              )
+            }
+          />
         )}
 
         {step === "last_period" && (
@@ -1491,19 +1472,21 @@ function OnboardingPageInner() {
                 maxYear={CURRENT_YEAR}
               />
             </div>
+            {/* ONB-CYCLE-01: "bilmayman" endi KARTA emas, tugma ostidagi
+                havola (referensdagi "I'm not sure"). Karta ko'rinishida u
+                javob variantidek turardi va asosiy harakat bilan
+                raqobatlashardi. */}
             <button
               type="button"
               onClick={() =>
                 setSurvey((s) => ({ ...s, lastPeriodUnknown: !s.lastPeriodUnknown, lastPeriodDate: s.lastPeriodUnknown ? s.lastPeriodDate : "" }))
               }
               className={clsx(
-                "tap-target w-full rounded-2xl px-5 py-3 text-center text-lg font-medium transition",
-                survey.lastPeriodUnknown
-                  ? "bg-primary-light text-primary-dark shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
-                  : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
+                "tap-target self-center rounded-full px-4 text-base font-semibold underline underline-offset-2 transition",
+                survey.lastPeriodUnknown ? "text-primary" : "text-text-secondary"
               )}
             >
-              {dict.common.dontKnow}
+              {dict.onboarding.notSure}
             </button>
             {survey.lastPeriodUnknown && <ReassureCard text={dict.onboarding.reassureLastPeriod} />}
           </div>
@@ -1906,6 +1889,63 @@ function ConsentCheckbox({
         </p>
         {note && <p className="mt-1 text-sm leading-relaxed text-text-secondary">{note}</p>}
       </div>
+    </div>
+  );
+}
+
+/**
+ * ONB-CYCLE-01 — "hayzingiz necha kun?" / "siklingiz necha kun?" ekrani.
+ *
+ * Ikkalasi bitta komponent, chunki farqi faqat matn va variantlar
+ * ro'yxatida. Referensdagi tuzilma: savol, ostida NORMAL ORALIQ izohi,
+ * keyin g'ildirak, eng pastda "Aniq bilmayman" havolasi.
+ *
+ * Normal oraliq izohi shunchaki bezak emas: ayol o'z raqamini ko'rib
+ * "menda noto'g'rimi?" deb qo'rqmasligi uchun kerak.
+ */
+function CycleLengthStep({
+  title,
+  hint,
+  options,
+  suffix,
+  value,
+  unknown,
+  notSureLabel,
+  reassure,
+  onChange,
+  onToggleUnknown,
+}: {
+  title: string;
+  hint: string;
+  options: string[];
+  suffix: string;
+  value: string;
+  unknown: boolean;
+  notSureLabel: string;
+  reassure: string;
+  onChange: (value: string) => void;
+  onToggleUnknown: () => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col justify-start gap-4">
+      <div className="text-center">
+        <h2 className="text-[1.75rem] font-extrabold leading-tight text-text-primary">{title}</h2>
+        <p className="mt-2 text-base leading-relaxed text-text-secondary">{hint}</p>
+      </div>
+      <div className={clsx(unknown && "pointer-events-none opacity-50")}>
+        <WheelPicker options={options} value={value} suffix={suffix} onChange={onChange} />
+      </div>
+      <button
+        type="button"
+        onClick={onToggleUnknown}
+        className={clsx(
+          "tap-target self-center rounded-full px-4 text-base font-semibold underline underline-offset-2 transition",
+          unknown ? "text-primary" : "text-text-secondary"
+        )}
+      >
+        {notSureLabel}
+      </button>
+      {unknown && <ReassureCard text={reassure} />}
     </div>
   );
 }
