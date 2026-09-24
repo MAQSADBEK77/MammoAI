@@ -278,8 +278,9 @@ const uz = {
       other: "Boshqa",
     },
 
-    nameQuestion: "Ismingiz nima?",
-    namePlaceholder: "Ismingiz",
+    nameIntro: "Keling, yaqinroq tanishamiz!",
+    nameQuestion: "Sizga qanday murojaat qilishimizni istaysiz?",
+    namePlaceholder: "Ismingizni kiriting",
 
     ageLabel: "Yoshingiz",
     birthYearLabel: "Tug'ilgan yilingiz",

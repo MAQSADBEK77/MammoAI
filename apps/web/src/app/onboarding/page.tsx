@@ -48,6 +48,7 @@ import { Button, IconChip, DateWheelPicker, WheelPicker } from "@/components/ui"
 import { Emoji } from "@/components/Emoji";
 import { OnboardingIcon, type OnboardingIconName } from "@/components/onboarding/OnboardingIcon";
 import {
+  ArrowBackRounded,
   LockOutlined,
   SendOutlined,
 } from "@mui/icons-material";
@@ -1017,6 +1018,25 @@ function OnboardingPageInner() {
           uchun u `px-6` chegarasidan tashqariga, butun ekranga yoyiladi. */}
       {step === "account_choice" && <TodayBackdrop soft />}
 
+      {/* ONB-REF-01 (maket bo'yicha): "Orqaga" endi pastdagi matnli tugma
+          emas, TEPADAGI strelka. Ikki sabab: pastki qatorda u asosiy
+          harakat bilan bir xil og'irlikda turib, "davom etish"ni
+          kuchsizlantirardi; ikkinchidan, telefonda tepa-chap — orqaga
+          qaytishning odatiy joyi. */}
+      {step !== "welcome" && step !== "analyzing" && stepIndex > 0 && (
+        <div className="relative z-10 mb-2 shrink-0">
+          <button
+            type="button"
+            onClick={goBack}
+            disabled={submitting}
+            aria-label={dict.common.back}
+            className="tap-target -ml-3 flex h-11 w-11 items-center justify-center rounded-full text-text-primary transition active:scale-95 disabled:opacity-40"
+          >
+            <ArrowBackRounded />
+          </button>
+        </div>
+      )}
+
       {sectionProgress && (
         // ONB-SKIN-01: `relative z-10` SHART — `TodayBackdrop` `fixed inset-0`
         // bo'lgani uchun z-indeksi ko'rsatilmagan hamma narsani bosib qo'yadi.
@@ -1108,7 +1128,7 @@ function OnboardingPageInner() {
                 value={survey.identifier}
                 onChange={(e) => setSurvey((s) => ({ ...s, identifier: formatUzPhoneInput(e.target.value) }))}
                 placeholder={dict.auth.identifierPlaceholder}
-                className="tap-target w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] pl-11 pr-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
+                className="tap-target w-full rounded-2xl bg-surface-muted pl-11 pr-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
             {errorMessage && <p className="text-sm text-danger">{errorMessage}</p>}
@@ -1142,7 +1162,7 @@ function OnboardingPageInner() {
                   value={verifyCode}
                   onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
                   placeholder={dict.auth.codePlaceholder}
-                  className="tap-target w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-center text-2xl font-bold tracking-[0.5em] text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
+                  className="tap-target w-full rounded-2xl bg-surface-muted px-4 text-center text-2xl font-bold tracking-[0.5em] text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
             )}
@@ -1226,7 +1246,7 @@ function OnboardingPageInner() {
             )}
 
             {showOfferText && (
-              <div className="animate-fade-in-up space-y-4 rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] p-4">
+              <div className="animate-fade-in-up space-y-4 rounded-2xl bg-surface-muted p-4">
                 <p className="text-sm font-bold text-text-primary">{dict.privacy.offerTitle}</p>
                 <p className="text-sm leading-relaxed text-text-secondary">{dict.privacy.offerIntro}</p>
                 {dict.privacy.offerSections.map((section) => (
@@ -1252,13 +1272,20 @@ function OnboardingPageInner() {
         )}
 
         {step === "name" && (
-          <div className="flex flex-1 flex-col justify-start gap-4">
-            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.nameQuestion}</h2>
+          <div className="flex flex-1 flex-col justify-start gap-5">
+            <div className="text-center">
+              {/* ONB-REF-01: iliq kirish qatori savolDAN OLDIN — maketdagidek.
+                  U savolni "so'roq" emas, suhbat qilib ko'rsatadi. */}
+              <p className="text-base text-text-secondary">{dict.onboarding.nameIntro}</p>
+              <h2 className="mt-1 text-[1.75rem] font-extrabold leading-tight text-text-primary">
+                {dict.onboarding.nameQuestion}
+              </h2>
+            </div>
             <input
               value={survey.name}
               onChange={(e) => setSurvey((s) => ({ ...s, name: e.target.value }))}
               placeholder={dict.onboarding.namePlaceholder}
-              className="tap-target rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
+              className="tap-target rounded-2xl bg-surface-muted px-5 py-4 text-center text-lg text-text-primary outline-none transition placeholder:text-text-muted focus:ring-2 focus:ring-primary/40"
             />
           </div>
         )}
@@ -1306,7 +1333,7 @@ function OnboardingPageInner() {
                 max={MAX_SANE_CYCLE_LENGTH}
                 value={survey.averageCycleLength}
                 onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
-                className="tap-target mt-4 w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
+                className="tap-target mt-4 w-full rounded-2xl bg-surface-muted px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
               <h2 className="mt-6 text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
               <input
@@ -1316,7 +1343,7 @@ function OnboardingPageInner() {
                 max={MAX_SANE_PERIOD_LENGTH}
                 value={survey.averagePeriodLength}
                 onChange={(e) => setSurvey((s) => ({ ...s, averagePeriodLength: e.target.value }))}
-                className="tap-target mt-4 w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
+                className="tap-target mt-4 w-full rounded-2xl bg-surface-muted px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
               {/* VALIDATE-01: tugma o'chiq bo'lsa NEGA o'chiqligi aytiladi —
                   aks holda foydalanuvchi sababini bilmay qotib qoladi. */}
@@ -1486,7 +1513,7 @@ function OnboardingPageInner() {
                 value={survey.healthConditionsOther}
                 onChange={(e) => setSurvey((s) => ({ ...s, healthConditionsOther: e.target.value }))}
                 placeholder={dict.onboarding.healthConditionsOtherPlaceholder}
-                className="tap-target rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
+                className="tap-target rounded-2xl bg-surface-muted px-4 text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
             )}
           </div>
@@ -1679,21 +1706,15 @@ function OnboardingPageInner() {
         )}
       </div>
 
-      {step !== "welcome" && step !== "analyzing" && (
-        <div className="relative z-10 mt-8 flex shrink-0 items-center justify-between gap-3">
-          {stepIndex > 0 ? (
-            <Button variant="ghost" onClick={goBack} disabled={submitting}>
-              {dict.common.back}
-            </Button>
-          ) : (
-            <span />
-          )}
-          {/* Kirish ekranida pastdagi umumiy tugma KERAK EMAS — har bir usul
-              o'z tugmasiga ega va bosilgan zahoti harakat qiladi. */}
-          {step === "account_choice" ? (
-            <span />
-          ) : step === "account_identifier" ? (
+      {/* ONB-REF-01: pastda BITTA, to'liq kenglikdagi asosiy tugma —
+          maketdagidek. Ilgari bu yerda "Orqaga" va "Keyingisi" yonma-yon
+          turardi; endi orqaga tepadagi strelkada, pastda esa faqat
+          oldinga boradigan yo'l qoladi. */}
+      {step !== "welcome" && step !== "analyzing" && step !== "account_choice" && (
+        <div className="relative z-10 mt-8 shrink-0">
+          {step === "account_identifier" ? (
             <Button
+              className="w-full"
               onClick={async () => {
                 if (await startPhoneCode()) goNext();
               }}
@@ -1702,7 +1723,7 @@ function OnboardingPageInner() {
               {dict.common.continueButton}
             </Button>
           ) : step === "phone_verify" ? (
-            <Button onClick={submitVerifyCode} disabled={submitting || !canProceed()}>
+            <Button className="w-full" onClick={submitVerifyCode} disabled={submitting || !canProceed()}>
               {dict.common.continueButton}
             </Button>
           ) : step === "privacy" ? (
@@ -1710,14 +1731,15 @@ function OnboardingPageInner() {
             // tugma yana bir marta "roziman" demaydi — uchalasi ham
             // belgilanmaguncha shunchaki o'chiq turadi.
             <Button
+              className="w-full"
               onClick={goNext}
               disabled={!(survey.agreedToOffer && survey.agreedToPrivacy && survey.agreedToHealthData)}
             >
-              {dict.common.next}
+              {dict.common.continueButton}
             </Button>
           ) : (
-            <Button onClick={goNext} disabled={!canProceed()}>
-              {dict.common.next}
+            <Button className="w-full" onClick={goNext} disabled={!canProceed()}>
+              {dict.common.continueButton}
             </Button>
           )}
         </div>
