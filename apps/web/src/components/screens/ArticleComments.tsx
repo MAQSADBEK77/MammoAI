@@ -21,7 +21,7 @@ import { Button, Card, LoadingSpinner, Toast } from "@/components/ui";
  * yuborilib keyin yashirilmaydi — aks holda u tarmoq javobida ko'rinib
  * qolardi.
  */
-export function ArticleComments({ articleId }: { articleId: string }) {
+export function ArticleComments({ slug }: { slug: string }) {
   const { dict } = useI18n();
   const confirm = useConfirm();
   const [comments, setComments] = useState<ArticleComment[] | null>(null);
@@ -34,10 +34,10 @@ export function ArticleComments({ articleId }: { articleId: string }) {
   const load = useCallback(() => {
     setLoadError(false);
     api.articles
-      .comments(articleId)
+      .comments(slug)
       .then((res) => setComments(res.comments))
       .catch(() => setLoadError(true));
-  }, [articleId]);
+  }, [slug]);
 
   useEffect(() => {
     const timeout = setTimeout(load, 0);
@@ -54,7 +54,7 @@ export function ArticleComments({ articleId }: { articleId: string }) {
     if (!text || sending) return;
     setSending(true);
     try {
-      const res = await api.articles.addComment(articleId, { body: text, isAnonymous: anonymous });
+      const res = await api.articles.addComment(slug, { body: text, isAnonymous: anonymous });
       setComments((prev) => [...(prev ?? []), res.comment]);
       setDraft("");
       setAnonymous(false);
@@ -71,7 +71,7 @@ export function ArticleComments({ articleId }: { articleId: string }) {
     const previous = comments;
     setComments((prev) => (prev ?? []).filter((c) => c.id !== comment.id));
     try {
-      await api.articles.deleteComment(articleId, comment.id);
+      await api.articles.deleteComment(slug, comment.id);
     } catch {
       setComments(previous);
       showFlash(dict.common.errorGeneric, "error");

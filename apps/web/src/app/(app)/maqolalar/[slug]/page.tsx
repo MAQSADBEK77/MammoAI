@@ -88,7 +88,7 @@ export default function ArticleDetailPage() {
         </Card>
       )}
 
-      <ArticleComments articleId={article.id} />
+      <ArticleComments slug={article.slug} />
     </div>
   );
 }

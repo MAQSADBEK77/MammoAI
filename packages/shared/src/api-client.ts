@@ -357,14 +357,14 @@ export function createApiClient(config: ApiClientConfig) {
       list: () => request<Article[]>("/api/articles"),
       get: (slug: string) => request<Article>(`/api/articles/${slug}`),
       /** CONTENT-02: maqola ostidagi izohlar. */
-      comments: (articleId: string) => request<{ comments: ArticleComment[] }>(`/api/articles/${articleId}/comments`),
-      addComment: (articleId: string, payload: { body: string; isAnonymous: boolean }) =>
-        request<{ comment: ArticleComment }>(`/api/articles/${articleId}/comments`, {
+      comments: (slug: string) => request<{ comments: ArticleComment[] }>(`/api/articles/${slug}/comments`),
+      addComment: (slug: string, payload: { body: string; isAnonymous: boolean }) =>
+        request<{ comment: ArticleComment }>(`/api/articles/${slug}/comments`, {
           method: "POST",
           body: JSON.stringify(payload),
         }),
-      deleteComment: (articleId: string, commentId: string) =>
-        request<{ ok: true }>(`/api/articles/${articleId}/comments?commentId=${encodeURIComponent(commentId)}`, {
+      deleteComment: (slug: string, commentId: string) =>
+        request<{ ok: true }>(`/api/articles/${slug}/comments?commentId=${encodeURIComponent(commentId)}`, {
           method: "DELETE",
         }),
     },
