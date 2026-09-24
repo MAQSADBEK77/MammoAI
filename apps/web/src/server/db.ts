@@ -117,16 +117,6 @@ async function initSchema() {
       )
     `,
     () => sql`
-      CREATE TABLE IF NOT EXISTS article_comments (
-        id TEXT PRIMARY KEY,
-        article_id TEXT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
-        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        body TEXT NOT NULL,
-        is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
-        created_at TEXT NOT NULL
-      )
-    `,
-    () => sql`
       CREATE TABLE IF NOT EXISTS clinics (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -698,6 +688,22 @@ async function initSchema() {
         -- uziladi.
         checklist_item_id TEXT REFERENCES checklist_items(id) ON DELETE SET NULL,
         action TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `,
+    // CONTENT-02: `articles` jadvaliga bog'liq — shuning uchun u
+    // YARATILGANDAN KEYINGI bosqichda. Ilgari `articles` bilan BIR
+    // bosqichda edi va bosqich ichidagi so'rovlar parallel ketgani
+    // uchun CI'da "relation articles does not exist" bilan yiqilardi
+    // (bu fayldagi asosiy qoida: bir bosqich ichidagi jadvallar
+    // bir-biriga bog'liq bo'lmasligi kerak).
+    () => sql`
+      CREATE TABLE IF NOT EXISTS article_comments (
+        id TEXT PRIMARY KEY,
+        article_id TEXT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        body TEXT NOT NULL,
+        is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TEXT NOT NULL
       )
     `,
