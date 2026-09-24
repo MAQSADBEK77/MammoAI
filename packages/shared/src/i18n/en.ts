@@ -161,6 +161,20 @@ const en: Dictionary = {
       "This app does not provide medical diagnoses and does not replace professional medical advice — always consult a qualified doctor before making decisions about your health.",
     notForChildren:
       "The app is intended for users 18 and older and does not knowingly collect data from children under 13.",
+    // ONB-CONSENT-01: alohida-alohida rozilik (Clue/Flo naqshi).
+    consentTitle: "Privacy first",
+    consentSubtitle: "Your data is yours. Before you continue, see exactly what you are agreeing to.",
+    consentOfferPrefix: "I accept the terms of the ",
+    consentOfferLink: "public offer",
+    consentOfferSuffix: ".",
+    consentPrivacyPrefix: "I have read the ",
+    consentPrivacyLink: "privacy policy",
+    consentPrivacySuffix: ".",
+    consentHealthLabel:
+      "I agree to my health data — cycle, symptoms, check-ups — being processed so the app can provide its service.",
+    consentHealthNote: "This data is never sold and never used for advertising.",
+    acceptAll: "Accept all",
+    hideOffer: "Close the text",
     offerTitle: "Public Offer Agreement",
     offerIntro:
       "This document is a public offer under Article 369 of the Civil Code of the Republic of Uzbekistan and sets out the terms of use of the \"Women's Health\" (MammoAI) app (the \"App\"). Registering or starting to use the App constitutes full and unconditional acceptance of these terms.",
