@@ -1052,7 +1052,13 @@ function OnboardingPageInner() {
         // ONB-LOOK-01: kirish ekranida fon `TodayBackdrop`dan keladi
         // (bosh sahifadagi bilan AYNAN bir xil), shuning uchun bu yerda
         // fon rangi berilmaydi — aks holda u gradientni yopib qo'yardi.
-        step === "welcome" ? "h-dvh bg-aurora-cycle" : step === "account_choice" ? "h-dvh" : "h-dvh bg-background"
+        // ONB-SKIN-01: fon endi BUTUN onboarding bo'ylab bosh sahifadagi
+        // bilan bir xil (`TodayBackdrop`). Ilgari u `--color-background`
+        // (#f9fafb — Tailwind gray-50, ko'kimtir SOVUQ kulrang) edi, bosh
+        // sahifa esa iliq pushti gradientda. Yonma-yon qo'yilganda
+        // onboarding boshqa ilovaga o'xshab ko'rinardi. "welcome" o'z
+        // to'q pushti ekranida qoladi — u kirish pardasi.
+        step === "welcome" ? "h-dvh bg-aurora-cycle" : "h-dvh"
       )}
       // Telegram Mini App'da fullscreen sarlavha paneli shaffof holda tepada
       // qoladi (lib/telegram.ts) — oddiy brauzerda --tg-safe-area-top 0px.
@@ -1063,10 +1069,14 @@ function OnboardingPageInner() {
           yorug'lik dog'lari ilova ichidagisi bilan bir xil bo'lib qoladi,
           hatto fon keyinchalik o'zgartirilsa ham. `fixed inset-0` bo'lgani
           uchun u `px-6` chegarasidan tashqariga, butun ekranga yoyiladi. */}
-      {step === "account_choice" && <TodayBackdrop />}
+      {step !== "welcome" && <TodayBackdrop />}
 
       {sectionProgress && (
-        <div className="mb-6 shrink-0">
+        // ONB-SKIN-01: `relative z-10` SHART — `TodayBackdrop` `fixed inset-0`
+        // bo'lgani uchun z-indeksi ko'rsatilmagan hamma narsani bosib qo'yadi.
+        // Fon faqat kirish ekranida turganda bu sezilmasdi; butun onboardingga
+        // yoyilganda esa progress chizig'i g'oyib bo'ldi.
+        <div className="relative z-10 mb-6 shrink-0">
           <SectionProgress {...sectionProgress} />
         </div>
       )}
@@ -1177,7 +1187,7 @@ function OnboardingPageInner() {
                 value={survey.identifier}
                 onChange={(e) => setSurvey((s) => ({ ...s, identifier: formatUzPhoneInput(e.target.value) }))}
                 placeholder={dict.auth.identifierPlaceholder}
-                className="tap-target w-full rounded-2xl border border-border bg-surface pl-11 pr-4 text-lg text-text-primary outline-none focus:border-primary"
+                className="tap-target w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] pl-11 pr-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
             {errorMessage && <p className="text-sm text-danger">{errorMessage}</p>}
@@ -1211,7 +1221,7 @@ function OnboardingPageInner() {
                   value={verifyCode}
                   onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
                   placeholder={dict.auth.codePlaceholder}
-                  className="tap-target w-full rounded-2xl border border-border bg-surface px-4 text-center text-2xl font-bold tracking-[0.5em] text-text-primary outline-none focus:border-primary"
+                  className="tap-target w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-center text-2xl font-bold tracking-[0.5em] text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
             )}
@@ -1241,7 +1251,7 @@ function OnboardingPageInner() {
               <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{dict.privacy.consentSubtitle}</p>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-4 px-1">
               <ConsentCheckbox
                 id="consent-offer"
                 checked={survey.agreedToOffer}
@@ -1295,7 +1305,7 @@ function OnboardingPageInner() {
             )}
 
             {showOfferText && (
-              <div className="animate-fade-in-up space-y-4 rounded-2xl border border-border bg-surface p-4">
+              <div className="animate-fade-in-up space-y-4 rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] p-4">
                 <p className="text-sm font-bold text-text-primary">{dict.privacy.offerTitle}</p>
                 <p className="text-sm leading-relaxed text-text-secondary">{dict.privacy.offerIntro}</p>
                 {dict.privacy.offerSections.map((section) => (
@@ -1327,7 +1337,7 @@ function OnboardingPageInner() {
               value={survey.name}
               onChange={(e) => setSurvey((s) => ({ ...s, name: e.target.value }))}
               placeholder={dict.onboarding.namePlaceholder}
-              className="tap-target rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
+              className="tap-target rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
         )}
@@ -1375,7 +1385,7 @@ function OnboardingPageInner() {
                 max={MAX_SANE_CYCLE_LENGTH}
                 value={survey.averageCycleLength}
                 onChange={(e) => setSurvey((s) => ({ ...s, averageCycleLength: e.target.value }))}
-                className="tap-target mt-4 w-full rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
+                className="tap-target mt-4 w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
               <h2 className="text-center mt-4 text-xl font-bold text-text-primary">{dict.onboarding.averagePeriodLengthQuestion}</h2>
               <input
@@ -1385,7 +1395,7 @@ function OnboardingPageInner() {
                 max={MAX_SANE_PERIOD_LENGTH}
                 value={survey.averagePeriodLength}
                 onChange={(e) => setSurvey((s) => ({ ...s, averagePeriodLength: e.target.value }))}
-                className="tap-target mt-4 w-full rounded-2xl border border-border bg-surface px-4 text-lg text-text-primary outline-none focus:border-primary"
+                className="tap-target mt-4 w-full rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-lg text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
               {/* VALIDATE-01: tugma o'chiq bo'lsa NEGA o'chiqligi aytiladi —
                   aks holda foydalanuvchi sababini bilmay qotib qoladi. */}
@@ -1423,8 +1433,10 @@ function OnboardingPageInner() {
                 )
               }
               className={clsx(
-                "tap-target w-full rounded-2xl border-2 px-5 py-3 text-center text-base font-medium transition",
-                survey.cycleLengthsUnknown ? "border-primary bg-primary-light text-primary-dark" : "border-border bg-surface text-text-primary"
+                "tap-target w-full rounded-2xl px-5 py-3 text-center text-base font-medium transition",
+                survey.cycleLengthsUnknown
+                  ? "bg-primary-light text-primary-dark shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+                  : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
               )}
             >
               {dict.common.dontKnow}
@@ -1451,8 +1463,10 @@ function OnboardingPageInner() {
                 setSurvey((s) => ({ ...s, lastPeriodUnknown: !s.lastPeriodUnknown, lastPeriodDate: s.lastPeriodUnknown ? s.lastPeriodDate : "" }))
               }
               className={clsx(
-                "tap-target w-full rounded-2xl border-2 px-5 py-3 text-center text-base font-medium transition",
-                survey.lastPeriodUnknown ? "border-primary bg-primary-light text-primary-dark" : "border-border bg-surface text-text-primary"
+                "tap-target w-full rounded-2xl px-5 py-3 text-center text-base font-medium transition",
+                survey.lastPeriodUnknown
+                  ? "bg-primary-light text-primary-dark shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+                  : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
               )}
             >
               {dict.common.dontKnow}
@@ -1551,7 +1565,7 @@ function OnboardingPageInner() {
                 value={survey.healthConditionsOther}
                 onChange={(e) => setSurvey((s) => ({ ...s, healthConditionsOther: e.target.value }))}
                 placeholder={dict.onboarding.healthConditionsOtherPlaceholder}
-                className="tap-target rounded-2xl border border-border bg-surface px-4 text-text-primary outline-none focus:border-primary"
+                className="tap-target rounded-2xl bg-surface shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)] px-4 text-text-primary outline-none focus:ring-2 focus:ring-primary/40"
               />
             )}
           </div>
@@ -1825,19 +1839,28 @@ function ConsentCheckbox({
   note?: string;
 }) {
   return (
-    <div
-      className={clsx(
-        "flex items-start gap-3 rounded-2xl border-2 bg-surface px-4 py-3.5 transition",
-        checked ? "border-primary bg-primary-light/25" : "border-border"
-      )}
-    >
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-primary"
-      />
+    <div className="flex items-start gap-3 py-1">
+      {/* ONB-SKIN-01: belgi TIZIMNIKI emas, o'zimizniki — yumaloq burchakli
+          kvadrat, belgilanganda brend pushtisiga to'ladi. `appearance-none`
+          bilan brauzerning o'z ko'rinishi olib tashlanadi; kirish maydonining
+          O'ZI qoladi, ya'ni klaviatura va skrin-riderlar uchun hech narsa
+          buzilmaydi. */}
+      <span className="relative mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center">
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer h-6 w-6 cursor-pointer appearance-none rounded-lg border-2 border-text-muted/30 bg-surface transition checked:border-primary checked:bg-primary"
+        />
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden
+          className="pointer-events-none absolute h-3.5 w-3.5 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+        >
+          <path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium leading-relaxed text-text-primary">
           {prefix && (
@@ -1897,10 +1920,15 @@ function ChoiceStep({
           key={opt.value}
           onClick={opt.onClick}
           className={clsx(
-            "tap-target flex w-full items-center gap-3 rounded-3xl border-2 px-5 py-4 text-left text-base font-medium transition active:scale-[0.98]",
+            // ONB-SKIN-01: 2px kulrang kontur olib tashlandi. Ilovaning
+            // qolgan qismi (Card) hech qayerda ramka chizmaydi — chuqurlik
+            // oq yuza va yumshoq soyadan keladi. Kulrang kontur esa
+            // ekranni eskirgan ko'rsatardi (foydalanuvchi: "they seem old
+            // stylish").
+            "tap-target flex w-full items-center gap-3 rounded-3xl px-5 py-4 text-left text-base font-medium transition active:scale-[0.98]",
             selected === opt.value
-              ? "border-primary bg-primary-light text-primary-dark shadow-lg shadow-primary/20"
-              : "border-border bg-surface text-text-primary hover:border-primary-light"
+              ? "bg-primary-light text-primary-dark shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+              : "bg-surface text-text-primary shadow-[0_4px_16px_color-mix(in_srgb,var(--color-text-primary)_7%,transparent)]"
           )}
         >
           {opt.iconName && (
