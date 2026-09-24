@@ -432,12 +432,19 @@ export function IconChip({
   icon,
   active,
   onClick,
+  size = "md",
 }: {
   label: string;
   icon?: ReactNode;
   active?: boolean;
   onClick?: () => void;
+  /** ONB-CHIP-01: onboardingda variantlar YIRIKROQ. U yerda ekranda
+   * boshqa hech narsa yo'q va ikkita ustun bor, ya'ni joy yetarli;
+   * sikl ekranida esa chiplar kundalik yozuvning bir qismi va uch
+   * ustunda turadi — u yerda "md" o'z o'rnida. */
+  size?: "md" | "lg";
 }) {
+  const circle = size === "lg" ? 76 : 56;
   return (
     <ToggleButton
       value={label}
@@ -446,13 +453,13 @@ export function IconChip({
       disableRipple
       sx={{
         flexDirection: "column",
-        gap: 0.5,
+        gap: size === "lg" ? 1 : 0.5,
         borderRadius: "16px !important",
         border: "none",
         px: 0.5,
-        py: 0.5,
+        py: size === "lg" ? 1.25 : 0.5,
         textTransform: "none",
-        fontSize: "0.75rem",
+        fontSize: size === "lg" ? "0.9375rem" : "0.75rem",
         fontWeight: 500,
         color: "var(--color-text-secondary)",
         backgroundColor: "transparent",
@@ -466,10 +473,10 @@ export function IconChip({
     >
       {icon && (
         <span
-          className="flex items-center justify-center rounded-full text-xl leading-none"
+          className={clsx("flex items-center justify-center rounded-full leading-none", size === "lg" ? "text-3xl" : "text-xl")}
           style={{
-            width: 56,
-            height: 56,
+            width: circle,
+            height: circle,
             backgroundColor: active ? "var(--color-primary)" : "var(--color-surface-muted)",
           }}
         >

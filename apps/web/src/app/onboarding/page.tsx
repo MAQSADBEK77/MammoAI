@@ -1607,8 +1607,9 @@ function OnboardingPageInner() {
               {symptomOptions.map((sym) => (
                 <IconChip
                   key={sym}
+                  size="lg"
                   label={dict.cycle.symptoms[sym]}
-                  icon={<Emoji e={SYMPTOM_ICON[sym]} />}
+                  icon={<Emoji e={SYMPTOM_ICON[sym]} size={34} />}
                   active={survey.typicalSymptoms.includes(sym)}
                   onClick={() =>
                     setSurvey((s) => ({ ...s, typicalSymptoms: toggleArrayValue(s.typicalSymptoms, sym), typicalSymptomsUnknown: false }))
@@ -1616,8 +1617,9 @@ function OnboardingPageInner() {
                 />
               ))}
               <IconChip
+                size="lg"
                 label={dict.common.dontKnow}
-                icon={<Emoji e="🤷" />}
+                icon={<Emoji e="🤷" size={34} />}
                 active={survey.typicalSymptomsUnknown}
                 onClick={() => setSurvey((s) => ({ ...s, typicalSymptomsUnknown: !s.typicalSymptomsUnknown, typicalSymptoms: [] }))}
               />
