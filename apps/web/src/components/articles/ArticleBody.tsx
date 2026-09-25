@@ -43,7 +43,12 @@ function inline(text: string): ReactNode[] {
 }
 
 type Block =
-  | { kind: "h2" | "h3" | "p" | "quote"; text: string }
+  | { kind: "h2" | "h3" | "p"; text: string }
+  /** `> ` bilan boshlanadigan ketma-ket qatorlar — ajratilgan blok.
+   * Birinchi qator sarlavha, qolganlari nuqtalar. Maqolalarda u
+   * "Qisqacha" xulosasi uchun ishlatiladi: ayol butun matnni o'qimasdan
+   * ham asosiy javobni olishi kerak. */
+  | { kind: "callout"; title: string; items: string[] }
   | { kind: "ul" | "ol"; items: string[] };
 
 function parse(body: string): Block[] {
@@ -59,6 +64,11 @@ function parse(body: string): Block[] {
       blocks.push({ kind: "ul", items: lines.map((l) => l.replace(/^[-•]\s+/, "")) });
       continue;
     }
+    if (lines.every((l) => l.startsWith("> "))) {
+      const [title, ...items] = lines.map((l) => l.slice(2));
+      blocks.push({ kind: "callout", title, items });
+      continue;
+    }
     if (lines.every((l) => /^\d+[.)]\s+/.test(l))) {
       blocks.push({ kind: "ol", items: lines.map((l) => l.replace(/^\d+[.)]\s+/, "")) });
       continue;
@@ -67,7 +77,7 @@ function parse(body: string): Block[] {
     for (const line of lines) {
       if (line.startsWith("### ")) blocks.push({ kind: "h3", text: line.slice(4) });
       else if (line.startsWith("## ")) blocks.push({ kind: "h2", text: line.slice(3) });
-      else if (line.startsWith("> ")) blocks.push({ kind: "quote", text: line.slice(2) });
+      else if (line.startsWith("> ")) blocks.push({ kind: "callout", title: line.slice(2), items: [] });
       else if (/^[-•]\s+/.test(line)) blocks.push({ kind: "ul", items: [line.replace(/^[-•]\s+/, "")] });
       else blocks.push({ kind: "p", text: line });
     }
@@ -94,14 +104,21 @@ export function ArticleBody({ body }: { body: string }) {
             </h3>
           );
         }
-        if (block.kind === "quote") {
+        if (block.kind === "callout") {
           return (
-            <p
-              key={i}
-              className="rounded-2xl bg-primary-light/20 px-4 py-3 text-[0.9375rem] leading-relaxed text-text-primary"
-            >
-              {inline(block.text)}
-            </p>
+            <div key={i} className="rounded-2xl bg-primary-light/20 px-4 py-3.5">
+              <p className="text-[0.9375rem] font-bold leading-snug text-text-primary">{inline(block.title)}</p>
+              {block.items.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {block.items.map((item, j) => (
+                    <li key={j} className="flex gap-2.5 text-[0.9375rem] leading-relaxed text-text-primary">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      <span>{inline(item)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           );
         }
         if (block.kind === "ul" || block.kind === "ol") {

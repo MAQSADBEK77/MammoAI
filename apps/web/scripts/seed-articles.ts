@@ -57,11 +57,176 @@ interface Draft {
 
 const ARTICLES: Draft[] = [
   {
+    slug: "hayz-sikli-fazalari",
+    category: "cycle",
+    title: "Sikl fazalari: tanangizda oyiga nima bo'ladi",
+    excerpt: "To'rtta faza, ularning belgilari va nega ba'zi kunlar o'zingizni boshqacha his qilasiz.",
+    body: `> Qisqacha
+> Sikl to'rtta fazaga bo'linadi, har birida gormonlar boshqacha.
+> Kayfiyat, energiya va ishtahaning o'zgarishi — kasallik emas, fazaning ishi.
+> O'z fazangizni bilsangiz, kunni shunga moslashtira olasiz.
+
+Sikl — bu faqat hayz kelgan kunlar emas. Bu butun oy davom etadigan jarayon va uning har bir bosqichida tanangizda boshqa gormonlar yetakchi bo'ladi. Shuning uchun bir hafta o'zingizni kuchli his qilasiz, boshqasida esa hech narsa qilgingiz kelmaydi — bu iroda masalasi emas.
+
+## 1. Hayz fazasi (1–5-kunlar)
+
+Bachadon shilliq qavati ajraladi. Estrogen va progesteron eng past darajada.
+
+Ko'p uchraydigani: charchoq, qorin va bel og'rig'i, kayfiyatning pastligi. Bu kunlarda kamroq reja qilish — dangasalik emas, aqlli qaror.
+
+## 2. Follikulyar faza (taxminan 6–13-kunlar)
+
+Estrogen ko'tarila boshlaydi. Ko'p ayol aynan shu kunlarda o'zini eng yaxshi his qiladi: energiya ko'p, kayfiyat barqaror, yangi ish boshlash oson.
+
+## 3. Ovulyatsiya (taxminan 14-kun atrofida)
+
+Tuxumdondan tuxum hujayra chiqadi. Bu sikldagi eng qisqa bosqich — bir kun atrofida.
+
+Belgilari: ajralmalar tuxum oqiga o'xshab shaffof va cho'ziluvchan bo'ladi, ba'zi ayollarda bir tomonda qisqa sanchiq bo'ladi.
+
+**Muhim:** ovulyatsiya kuni har doim 14-kun emas. U sikl uzunligiga qarab siljiydi, va tartibsiz siklda uni oldindan aytish qiyin.
+
+## 4. Lyuteal faza (ovulyatsiyadan hayzgacha)
+
+Progesteron ko'tariladi. Aynan shu bosqichda hayz oldi belgilari paydo bo'ladi: ko'krak sezgirligi, shishish, ishtahaning ortishi, asabiylashish.
+
+Bu faza odatda 12–14 kun davom etadi va uzunligi nisbatan barqaror — sikl uzunligidagi farq ko'pincha birinchi ikki fazadan keladi.
+
+## Buni bilish nima beradi
+
+Fazani bilsangiz, o'zingizni ayblamaysiz: "nega bugun hech narsa qilolmayapman?" degan savolning javobi ko'pincha oddiy. Ilovada belgilab borsangiz, qaysi belgi qaysi fazada qaytarilishini ko'rasiz — va keyingi oyni shunga qarab rejalashtira olasiz.`,
+    sources: [SSV],
+  },
+  {
+    slug: "unumdor-kunlar-nima",
+    category: "cycle",
+    title: "Unumdor kunlar: qanday hisoblanadi va qanchalik aniq",
+    excerpt: "Homiladorlik ehtimoli yuqori bo'lgan kunlar qaysi va nega ilova buni faqat taxmin qila oladi.",
+    body: `> Qisqacha
+> Unumdor oyna — ovulyatsiyadan oldingi 5 kun va ovulyatsiya kuni.
+> Tuxum hujayra atigi 12–24 soat yashaydi, spermatozoid esa 5 kungacha.
+> Kalendar hisobi — taxmin, kontratseptsiya usuli emas.
+
+Homiladorlik faqat oyning ma'lum kunlarida yuz berishi mumkin. Bu kunlar to'plami "unumdor oyna" deb ataladi.
+
+## Nega oyna 6 kun
+
+Tuxum hujayra chiqqandan keyin atigi **12–24 soat** yashaydi. Ammo spermatozoidlar ayol tanasida **5 kungacha** yashay oladi. Shuning uchun ovulyatsiyadan bir necha kun oldingi aloqa ham homiladorlikka olib kelishi mumkin.
+
+Natijada oyna taxminan shunday: ovulyatsiyadan 5 kun oldin + ovulyatsiya kuni.
+
+## Ilova buni qanday hisoblaydi
+
+Ilova sizning sikl uzunligingiz va oxirgi hayz sanangizdan foydalanib, ovulyatsiya qachon bo'lishini **taxmin qiladi**. Bu hisob, o'lchov emas.
+
+Aniqlik nimaga bog'liq:
+
+- sikl qanchalik barqaror bo'lsa, taxmin shuncha aniq;
+- nechta sikl qayd etilgan bo'lsa, shuncha yaxshi — bitta sikl kam;
+- kasallik, stress, safar va uyqu rejimi ovulyatsiyani siljitishi mumkin.
+
+## Aniqroq bilish yo'llari
+
+- **Ajralmalar.** Ovulyatsiya yaqinlashganda ular shaffof, cho'ziluvchan va ko'proq bo'ladi.
+- **Bazal harorat.** Ertalab o'rindan turmasdan o'lchanadi; ovulyatsiyadan keyin u biroz ko'tariladi. Bu usul ovulyatsiya bo'lganini keyin tasdiqlaydi, oldindan aytmaydi.
+- **Ovulyatsiya testlari.** Siydikdagi gormonni o'lchaydi va ovulyatsiyadan 24–36 soat oldin ijobiy chiqadi.
+
+## Muhim ogohlantirish
+
+**Unumdor oyna hisobini kontratseptsiya sifatida ishlatmang.** Hatto barqaror siklda ham ovulyatsiya kutilmaganda siljishi mumkin. Homiladorlikning oldini olish uchun ishonchli usul kerak — bu haqda alohida maqola bor.`,
+    sources: [SSV, WHO_CONTRACEPTION],
+  },
+  {
+    slug: "birinchi-trimestr",
+    category: "pregnancy",
+    title: "Birinchi trimestr: nima bo'ladi va nimaga e'tibor berish kerak",
+    excerpt: "Dastlabki 12 hafta: belgilar, birinchi tekshiruvlar va qachon zudlik bilan shifokorga borish kerak.",
+    body: `> Qisqacha
+> Birinchi ko'rik 12-haftagacha — qanchalik erta bo'lsa shuncha yaxshi.
+> Ko'ngil aynishi va charchoq keng tarqalgan va odatda 12–14-haftada yengillashadi.
+> Qonash yoki kuchli og'riq — darhol shifokorga murojaat qilish sababi.
+
+Birinchi trimestr — homiladorlikning dastlabki 12 haftasi. Tashqaridan hech narsa ko'rinmaydi, lekin aynan shu davrda bolaning asosiy a'zolari shakllanadi.
+
+## Keng tarqalgan belgilar
+
+- **Ko'ngil aynishi.** Kun davomida, faqat ertalab emas. Ko'pincha 12–14-haftada yengillashadi. Kam-kamdan, tez-tez ovqatlanish yordam beradi.
+- **Charchoq.** Kuchli va kutilmagan. Bu vaqtincha.
+- **Ko'krak sezgirligi.** Ko'krak kattalashadi va og'riydi.
+- **Tez-tez siyish.** Bachadon kattalashib, siydik pufagiga bosim beradi.
+- **Kayfiyat o'zgarishi.** Gormonlar tez o'zgaradi — bu normal.
+
+## Nima qilish kerak
+
+**Folat kislotasi.** Kuniga 400 mkg. U bolaning asab naychasi nuqsonlari xavfini kamaytiradi va aynan birinchi haftalarda muhim.
+
+**Birinchi ko'rikka yozilish.** 12-haftagacha. Shifokor qon va siydik tahlillarini, UTT ni buyuradi va muddatni aniqlaydi.
+
+**To'xtatish kerak bo'lgan narsalar:** chekish, spirtli ichimlik. Dori-darmonni — hatto oddiy og'riq qoldiruvchini ham — shifokor bilan maslahatlashmasdan ichmang.
+
+## Qachon zudlik bilan shifokorga
+
+- har qanday qonash
+- kuchli yoki bir tomonlama qorin og'rig'i
+- yuqori harorat
+- kuchli ko'ngil aynishi: suv ham ichib turolmaslik
+- siyishda achishish yoki og'riq
+
+Bu belgilar har doim ham jiddiy narsani anglatmaydi, lekin ularni kutib o'tirmaslik kerak.`,
+    sources: [SSV],
+  },
+  {
+    slug: "homiladorlikda-ovqatlanish",
+    category: "pregnancy",
+    title: "Homiladorlikda ovqatlanish: nima kerak, nimadan saqlanish kerak",
+    excerpt: "Ikki kishi uchun emas, ikki kishi uchun SIFATLI. Qaysi mahsulotlar muhim va qaysilari xavfli.",
+    body: `> Qisqacha
+> Ikki baravar ko'p emas — ikki baravar sifatli ovqatlanish kerak.
+> Temir, folat, kaltsiy va yod — eng ko'p yetishmaydigan to'rttasi.
+> Xom go'sht, pasterizatsiyalanmagan sut va ko'p kofein — cheklanadi.
+
+"Endi ikki kishi uchun yeyish kerak" degan gap ko'p eshitiladi va u noto'g'ri. Birinchi trimestrda qo'shimcha kaloriya deyarli kerak emas; keyingi oylarda ham qo'shimcha ehtiyoj kuniga bir yengil gazak darajasida.
+
+Muhimi — miqdor emas, tarkib.
+
+## Nima ko'proq kerak
+
+- **Temir.** Homiladorlikda qon hajmi oshadi va kamqonlik keng tarqalgan. Manbalar: go'sht, jigar, loviya, yashil sabzavotlar. C vitamini bilan birga (masalan limon suvi) yaxshiroq so'riladi.
+- **Folat kislotasi.** Homiladorlikdan oldin boshlanadi va birinchi trimestrda davom etadi.
+- **Kaltsiy.** Sut mahsulotlari, kunjut, bodom. Yetishmasa, tana uni onaning suyaklaridan oladi.
+- **Yod.** Yodlangan tuz ishlating.
+- **Oqsil.** Har ovqatda bir oz: tuxum, tovuq, baliq, dukkaklilar.
+
+## Nimadan saqlanish kerak
+
+- xom yoki yarim pishgan go'sht va tuxum
+- pasterizatsiyalanmagan sut va undan qilingan pishloqlar
+- juda ko'p kofein (kuniga bir chashka qahvadan oshmasin)
+- spirtli ichimlik — xavfsiz miqdori yo'q
+- yaxshi yuvilmagan meva-sabzavot
+
+## Ko'ngil aynishi bo'lsa
+
+Kam-kamdan, lekin tez-tez ovqatlaning. Ertalab o'rindan turishdan oldin quruq non yoki pechene yeyish ba'zilarga yordam beradi. Suyuqlikni kun bo'yi oz-ozdan iching.
+
+Agar hech narsa ichib turolmasangiz va vazn yo'qotayotgan bo'lsangiz — bu shifokorga borish sababi, chidash kerak bo'lgan holat emas.
+
+## Vazn haqida
+
+Qancha vazn qo'shish kerakligi homiladorlikdan oldingi TVIga bog'liq va uni shifokor aytadi. Vazn qo'shmaslikka harakat qilish ham, keragidan ko'p qo'shish ham foydali emas.`,
+    sources: [SSV],
+  },
+  {
     slug: "hayz-sikli-nima-normal",
     category: "cycle",
     title: "Hayz sikli: nima normal, nima emas",
     excerpt: "Sikl uzunligi, qon ketish miqdori va og'riq — qachon xavotirlanish kerak, qachon yo'q.",
-    body: `Ko'p ayol "meniki normalmi?" deb o'ylaydi, lekin buni so'rashga tortinadi. Quyida oddiy chegaralar.
+    body: `> Qisqacha
+> Sikl 21–35 kun, hayz 2–7 kun — normal chegaralar.
+> Har oy bir xil bo'lishi shart emas: bir necha kunlik farq tabiiy.
+> Og'riq sizni ishdan qoldirsa, bu chidash kerak degani emas.
+
+Ko'p ayol "meniki normalmi?" deb o'ylaydi, lekin buni so'rashga tortinadi. Quyida oddiy chegaralar.
 
 **Sikl uzunligi.** Hayz boshlangan birinchi kundan keyingi hayzning birinchi kunigacha bo'lgan muddat. 21 kundan 35 kungacha bo'lsa — normal. Har oy bir xil bo'lishi shart emas: bir necha kunlik farq tabiiy.
 
@@ -92,7 +257,12 @@ Ikkinchidan, sizning shaxsiy me'yoringiz boshqa ayolnikidan farq qilishi mumkin.
     category: "checkups",
     title: "Bachadon bo'yni saratoni skrininggi: nima uchun va qanday",
     excerpt: "Oldini olish mumkin bo'lgan saraton. Tekshiruv qanday o'tadi, og'riydimi, qancha vaqt oladi.",
-    body: `Bachadon bo'yni saratoni — oldini olish mumkin bo'lgan kam sonli saraton turlaridan biri. Sababi deyarli har doim HPV (odam papillomavirusi) infeksiyasi va u yillar davomida sekin rivojlanadi. Shuning uchun uni **saratonga aylanishidan oldin** topib, davolash mumkin.
+    body: `> Qisqacha
+> Bu — oldini olish mumkin bo'lgan kam sonli saraton turlaridan biri.
+> Tekshiruv bir necha daqiqa oladi va odatda og'riqsiz.
+> Sabab deyarli har doim HPV; u yillar davomida sekin rivojlanadi.
+
+Bachadon bo'yni saratoni — oldini olish mumkin bo'lgan kam sonli saraton turlaridan biri. Sababi deyarli har doim HPV (odam papillomavirusi) infeksiyasi va u yillar davomida sekin rivojlanadi. Shuning uchun uni **saratonga aylanishidan oldin** topib, davolash mumkin.
 
 ## Tekshiruv qanday o'tadi
 
@@ -127,7 +297,12 @@ Vaksina infeksiyaning oldini oladi va eng samarali natija jinsiy hayot boshlanis
     category: "checkups",
     title: "Ko'krakni o'z-o'zini tekshirish: qanday qilinadi",
     excerpt: "Oyiga bir marta, besh daqiqa. Nimaga e'tibor berish kerak va nima normal.",
-    body: `Ko'krakni o'zingiz tekshirish tibbiy tekshiruvning o'rnini bosmaydi, lekin u sizga **o'z ko'kragingiz qanday ekanini** o'rgatadi. Shunda o'zgarish bo'lsa, siz birinchi bo'lib sezasiz.
+    body: `> Qisqacha
+> Maqsad — saraton izlash emas, o'z ko'kragingizni bilib olish.
+> Oyiga bir marta, hayz tugagandan 3–5 kun keyin.
+> Har qanday yangi o'zgarish shifokorga ko'rsatiladi.
+
+Ko'krakni o'zingiz tekshirish tibbiy tekshiruvning o'rnini bosmaydi, lekin u sizga **o'z ko'kragingiz qanday ekanini** o'rgatadi. Shunda o'zgarish bo'lsa, siz birinchi bo'lib sezasiz.
 
 ## Qachon
 
@@ -160,7 +335,12 @@ Xavotir "bekorga bezovta qilaman" degan o'ydan kuchliroq bo'lsin: erta topilgan 
     category: "checkups",
     title: "Mammografiya: kimga, qachon va og'riydimi",
     excerpt: "Rentgen tekshiruvi qanday o'tadi, qancha davom etadi va kimga bepul.",
-    body: `Mammografiya — ko'krakning rentgen tekshiruvi. U tugunni qo'l bilan sezish mumkin bo'lgunga qadar, ba'zan bir necha yil oldin topa oladi.
+    body: `> Qisqacha
+> Tugunni qo'l bilan sezishdan bir necha yil oldin topa oladi.
+> Butun muolaja 15–20 daqiqa, siqilish esa bir necha soniya.
+> O'zbekistonda 45 yoshdan bepul davlat dasturi mavjud.
+
+Mammografiya — ko'krakning rentgen tekshiruvi. U tugunni qo'l bilan sezish mumkin bo'lgunga qadar, ba'zan bir necha yil oldin topa oladi.
 
 ## Qanday o'tadi
 
@@ -192,7 +372,12 @@ Ko'pchilik natija normal chiqadi. Qo'shimcha tekshiruvga chaqirilsangiz, bu "siz
     category: "cycle",
     title: "Endometrioz: og'riqqa chidash shart emas",
     excerpt: "Tashxis o'rtacha 7–8 yil kechikadi, chunki og'riq \"normal\" deb qabul qilinadi.",
-    body: `Endometriozda bachadonning ichki qavatiga o'xshash to'qima undan tashqarida — tuxumdonlarda, chanoq devorida, ba'zan ichakda o'sadi. Bu to'qima ham har oy hayz kabi o'zgaradi, lekin chiqib keta olmaydi. Natijada yallig'lanish, chandiq va og'riq paydo bo'ladi.
+    body: `> Qisqacha
+> Asosiy belgi — kundalik hayotga xalaqit beradigan og'riq.
+> Tashxis o'rtacha yillar oladi, shuning uchun belgilarni yozib borish muhim.
+> Hayz og'riqli bo'lishi kerak degan gap noto'g'ri.
+
+Endometriozda bachadonning ichki qavatiga o'xshash to'qima undan tashqarida — tuxumdonlarda, chanoq devorida, ba'zan ichakda o'sadi. Bu to'qima ham har oy hayz kabi o'zgaradi, lekin chiqib keta olmaydi. Natijada yallig'lanish, chandiq va og'riq paydo bo'ladi.
 
 ## Asosiy belgilar
 
@@ -224,7 +409,12 @@ Endometrioz surunkali holat, lekin boshqarib bo'ladi: og'riqni nazorat qilish, g
     category: "cycle",
     title: "PCOS: nomuntazam sikl, tuklanish va vazn",
     excerpt: "Polikistoz tuxumdon sindromi — eng keng tarqalgan gormonal holat. Belgilari va nima qilish kerak.",
-    body: `PCOS (polikistoz tuxumdon sindromi) — reproduktiv yoshdagi ayollarda eng ko'p uchraydigan gormonal holatlardan biri. Nomi chalg'ituvchi: bu "kistalar" kasalligi emas, balki gormonal muvozanat buzilishi.
+    body: `> Qisqacha
+> Uchta asosiy belgidan ikkitasi bo'lsa tashxis qo'yiladi.
+> Davolash bor: u sindromni yo'qotmaydi, lekin belgilarni boshqaradi.
+> PCOS bilan homilador bo'lish mumkin.
+
+PCOS (polikistoz tuxumdon sindromi) — reproduktiv yoshdagi ayollarda eng ko'p uchraydigan gormonal holatlardan biri. Nomi chalg'ituvchi: bu "kistalar" kasalligi emas, balki gormonal muvozanat buzilishi.
 
 ## Belgilari
 
@@ -258,7 +448,12 @@ PCOS "davolanmaydi", lekin **boshqariladi**. Ko'p ayol to'g'ri yondashuv bilan m
     category: "cycle",
     title: "Kontratseptsiya: qaysi usul kimga to'g'ri keladi",
     excerpt: "Universal usul yo'q. Tanlov yoshga, sog'liqqa va rejalaringizga bog'liq.",
-    body: `Himoya usulini tanlashda "eng yaxshisi" degan savol noto'g'ri — to'g'ri savol "menga qaysi biri mos keladi?".
+    body: `> Qisqacha
+> Eng yaxshi usul yo'q — sizga mos keladigani bor.
+> Samaradorlik usulni to'g'ri ishlatishga bog'liq.
+> Faqat prezervativ jinsiy yo'l bilan yuqadigan infeksiyalardan ham himoya qiladi.
+
+Himoya usulini tanlashda "eng yaxshisi" degan savol noto'g'ri — to'g'ri savol "menga qaysi biri mos keladi?".
 
 ## Asosiy turlar
 
@@ -299,7 +494,12 @@ Noto'g'ri tanlangan usul siklni buzadi va ayolni "menga hech narsa to'g'ri kelma
     category: "pregnancy",
     title: "Homiladorlikka tayyorgarlik: uch oy oldin boshlanadi",
     excerpt: "Folat kislotasi, tekshiruvlar va nimalarni oldindan hal qilish kerak.",
-    body: `Homiladorlikka tayyorgarlik homilador bo'lgandan keyin emas, undan **kamida uch oy oldin** boshlanadi. Sababi oddiy: homilaning eng muhim a'zolari siz homiladorligingizni bilgunga qadar shakllana boshlaydi.
+    body: `> Qisqacha
+> Folat kislotasi homiladorlikdan kamida bir oy oldin boshlanadi.
+> Sog'lom juftlikda homiladorlik o'rtacha 6–12 oy ichida yuz beradi.
+> 35 yoshdan keyin 6 oydan so'ng shifokorga murojaat qilish tavsiya etiladi.
+
+Homiladorlikka tayyorgarlik homilador bo'lgandan keyin emas, undan **kamida uch oy oldin** boshlanadi. Sababi oddiy: homilaning eng muhim a'zolari siz homiladorligingizni bilgunga qadar shakllana boshlaydi.
 
 ## Folat kislotasi
 
@@ -334,7 +534,12 @@ Sabablarning taxminan yarmi erkak tarafida bo'ladi, shuning uchun juftlik birga 
     category: "cycle",
     title: "Klimaks: nima kutish kerak va nima yordam beradi",
     excerpt: "Issiqlik to'lqinlari, uyqu va kayfiyat. Qachon bu me'yor, qachon shifokorga.",
-    body: `Klimaks — kasallik emas, hayotning tabiiy bosqichi. Lekin uning belgilari ba'zan kundalik hayotga jiddiy xalaqit beradi va bunda yordam bor.
+    body: `> Qisqacha
+> Perimenopauza 40 yoshdan boshlanishi mumkin va yillar davom etadi.
+> Sikl tartibsizlashishi — kasallik emas, o'tish davrining birinchi belgisi.
+> Belgilarni yengillashtirish yo'llari bor, chidash shart emas.
+
+Klimaks — kasallik emas, hayotning tabiiy bosqichi. Lekin uning belgilari ba'zan kundalik hayotga jiddiy xalaqit beradi va bunda yordam bor.
 
 ## Qachon boshlanadi
 
@@ -374,7 +579,12 @@ Shuningdek: 45 yoshgacha hayz to'xtasa (erta klimaks) — bu alohida e'tibor tal
     category: "checkups",
     title: "Ginekolog ko'rigi: tayyorgarlik va nima so'rash kerak",
     excerpt: "Birinchi marta boryapsizmi yoki tortinasizmi — nima bo'lishini oldindan bilish yengillashtiradi.",
-    body: `Ko'p ayol ginekologga borishni kechiktiradi — bilmaganidan, tortinganidan yoki "hech narsa bezovta qilmayapti" deb. Quyida nima bo'lishini oldindan bilib qo'yish uchun.
+    body: `> Qisqacha
+> Uyalish shart emas — shifokor buni har kuni ko'radi.
+> Savollaringizni oldindan yozib boring, o'sha yerda esdan chiqadi.
+> Hayz vaqti ko'rikni bekor qilish sababi emas — avval qo'ng'iroq qiling.
+
+Ko'p ayol ginekologga borishni kechiktiradi — bilmaganidan, tortinganidan yoki "hech narsa bezovta qilmayapti" deb. Quyida nima bo'lishini oldindan bilib qo'yish uchun.
 
 ## Qachon borish kerak
 

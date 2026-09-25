@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import type { Article } from "@mammoai/shared";
 import { ArticleBody } from "@/components/articles/ArticleBody";
 import { useI18n } from "@/lib/i18n";
@@ -17,11 +18,20 @@ export default function ArticleDetailPage() {
   // yo'q edi, so'rov muvaffaqiyatsiz bo'lsa ekran ABADIY yuklanish
   // holatida qolib ketardi.
   const [loadError, setLoadError] = useState(false);
+  /** ARTICLE-STRUCT-01: "Yana o'qing" — maqola oxiridagi bog'liq
+   * maqolalar. Foydalanuvchi so'rovi: ayol o'qib tugatgach, KEYINGI
+   * qadamsiz qolmasligi kerak ("beneficial for people to read and
+   * explore"). Ilgari maqola tugagach faqat izohlar bo'lardi va
+   * o'qishning davomi yo'q edi. */
+  const [related, setRelated] = useState<Article[]>([]);
 
   const load = useCallback(() => {
     setLoadError(false);
     setArticle(null);
     api.articles.get(params.slug).then(setArticle).catch(() => setLoadError(true));
+    // Bog'liq maqolalar ikkinchi darajali: yuklanmasa ham sahifa ishlaydi,
+    // shuning uchun xatosi `loadError`ga ta'sir qilmaydi.
+    api.articles.list().then(setRelated).catch(() => setRelated([]));
   }, [params.slug]);
 
   useEffect(() => {
@@ -88,6 +98,34 @@ export default function ArticleDetailPage() {
           </ul>
         </Card>
       )}
+
+      {/* Avval SHU bo'limdagi maqolalar (mavzu yaqinroq), yetmasa
+          boshqalari bilan to'ldiriladi — ro'yxat doim to'la bo'lsin. */}
+      {(() => {
+        const others = related.filter((a) => a.slug !== article.slug);
+        const picks = [
+          ...others.filter((a) => a.category === article.category),
+          ...others.filter((a) => a.category !== article.category),
+        ].slice(0, 3);
+        if (picks.length === 0) return null;
+        return (
+          <Card className="space-y-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{dict.articles.relatedTitle}</p>
+            <div className="space-y-2">
+              {picks.map((a) => (
+                <Link key={a.slug} href={`/maqolalar/${a.slug}`} className="block">
+                  <div className="rounded-2xl bg-surface-muted px-4 py-3 transition active:scale-[0.99]">
+                    <p className="text-sm font-bold leading-snug text-text-primary">{a.title}</p>
+                    <p className="mt-0.5 text-xs text-text-muted">
+                      {dict.articles.categories[a.category]} · {dict.articles.readingTime(a.readingMinutes)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        );
+      })()}
 
       <ArticleComments slug={article.slug} />
     </div>
