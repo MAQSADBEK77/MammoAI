@@ -45,7 +45,13 @@ export function goalToLandingTab(goal: Goal): LandingTab {
  * kontentni saralash uchun ishlatiladi (rejim — qaysi ekranga tushish,
  * qiziqish — nima o'qish; ikkisi turli narsa).
  */
-export const ADULT_GOALS: Goal[] = ["cycle", "pregnancy", "planning_pregnancy", "checkups", "partner_tracking", "perimenopause"];
+// MODE-CONSOLIDATE-01 (loyiha egasining qarori): `checkups` REJIM sifatida
+// olib tashlandi. Tekshiruvlar bo'limi hammaga menyuda qolaveradi — u
+// alohida "rejim" bo'lishi shart emas edi, chunki uni tanlagan ayol
+// boshqalardan faqat bosh ekrani bilan farq qilardi.
+//
+// Bazadagi 2 ta profil `cycle`ga ko'chirildi (scripts/migrate-modes.ts).
+export const ADULT_GOALS: Goal[] = ["cycle", "pregnancy", "planning_pregnancy", "partner_tracking", "perimenopause"];
 export const MINOR_GOALS: Goal[] = ["cycle", "understand_body"];
 
 export function isPregnancyGoal(goal: Goal): boolean {

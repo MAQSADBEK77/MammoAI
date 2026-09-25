@@ -363,7 +363,9 @@ export default function CommunityPage() {
     <div className="space-y-4 pb-6">
       <ScreenHeader
         title={dict.community.title}
-        subtitle={dict.community.subtitle}
+        // COMM-TRIM-01: izoh matni OLIB TASHLANDI. "Boshqa ayollar bilan
+        // tajriba almashing" — sarlavhaning o'zi aytib turgan narsani
+        // takrorlardi, lentagacha esa allaqachon beshta blok bor edi.
         right={
           <div className="relative">
             <IconButton icon={<Bell sx={{ fontSize: 18 }} />} onClick={toggleNotifications} ariaLabel={dict.community.notificationsTitle} />
@@ -414,20 +416,22 @@ export default function CommunityPage() {
           MARTA chiqardi ("154" ustida "154 a'zo") — ekranning yuqori uchdan
           biri hech qanday yangi ma'lumot bermaydigan matn bilan band edi.
           Endi bitta ixcham qator: raqam + sof yorliq. */}
+      {/* COMM-TRIM-01: uchta alohida qator o'rniga bitta. "0 bugun" esa
+          umuman ko'rsatilmaydi — bo'sh jamiyatni birinchi bo'lib e'lon
+          qilish ayolni yozishga undamaydi, aksincha. */}
       {stats && (
-        <div className="animate-fade-in-up flex items-center justify-around rounded-2xl bg-surface-muted px-4 py-2.5">
-          {[
-            { value: stats.totalMembers, label: dict.community.statsMembers },
-            { value: stats.totalPosts, label: dict.community.statsPosts },
-            { value: stats.postsToday, label: dict.community.statsToday },
-          ].map(({ value, label }) => (
-            <p key={label} className="text-sm text-text-secondary">
-              <span className="font-extrabold text-text-primary">{value}</span> {label}
-            </p>
-          ))}
-        </div>
+        <p className="text-sm text-text-secondary">
+          <span className="font-extrabold text-text-primary">{stats.totalMembers}</span> {dict.community.statsMembers}
+          {" · "}
+          <span className="font-extrabold text-text-primary">{stats.totalPosts}</span> {dict.community.statsPosts}
+          {stats.postsToday > 0 && (
+            <>
+              {" · "}
+              <span className="font-extrabold text-text-primary">{stats.postsToday}</span> {dict.community.statsToday}
+            </>
+          )}
+        </p>
       )}
-
 
       {composerOpen && (
         <Card className="space-y-3">
