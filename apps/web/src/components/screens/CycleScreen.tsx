@@ -34,7 +34,6 @@ import { MyCyclesCard } from "@/components/screens/MyCyclesCard";
 import { CycleHistoryCard } from "@/components/screens/CycleHistoryCard";
 import { SymptomPatternsCard } from "@/components/screens/SymptomPatternsCard";
 import { SelfCheckCard, ArticlesRow } from "@/components/screens/SelfCheckCard";
-import { WellnessCard } from "@/components/WellnessCard";
 import { Emoji } from "@/components/Emoji";
 import { TodayHeader, type TodayDay, type TodayDayMarker } from "@/components/screens/TodayHeader";
 import { TodayAssistantCard } from "@/components/screens/TodayAssistantCard";
@@ -191,7 +190,6 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // tabiiy ravishda tartibsizlashadi) — shu bo'limlar (halqa, "tartibsiz"
   // ogohlantirishi) yashiriladi, o'rniga simptom kuzatuviga urg'u beriladi.
   const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
-  const isWellbeing = onboardingProfile?.primaryGoal === "wellbeing";
 
   useEffect(() => {
     if (!predictionsUpdated) return;
@@ -1136,7 +1134,15 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           (/yordamchi) olib boradi, yangi backend yozilmagan. */}
       {isTodayVariant && <TodayAssistantCard />}
 
-      {isWellbeing && <WellnessCard />}
+      {/* WELLNESS-RETIRE-01: suv/kaloriya kartasi OLIB TASHLANDI.
+          U faqat `wellbeing` rejimida ko'rinardi, o'sha rejim esa
+          MODE-CONSOLIDATE-01 da `cycle`ga qo'shildi. O'lchandi: kartani
+          jami 3 ayol, uch kunlik yozuv bilan ishlatgan (oxirgisi
+          2026-09-21) — ya'ni u hech qachon tutmagan.
+
+          Yozuvlar O'CHIRILMADI: `wellness_logs` jadvali joyida va
+          ma'lumot eksportida ("farovonlik") chiqishda davom etadi, ya'ni
+          o'sha uch ayol o'z ma'lumotini baribir ola oladi. */}
 
       {/* 5. Kunlik maslahat kartasi — iliq, "sizga atalgan" ohangdagi matn
           (dict.cycle.dailyInsights, mazmuni o'zgarmagan, faqat ohang). */}

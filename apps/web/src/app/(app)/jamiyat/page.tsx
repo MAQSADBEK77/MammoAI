@@ -360,7 +360,7 @@ export default function CommunityPage() {
   }
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-3 pb-6">
       <ScreenHeader
         title={dict.community.title}
         // COMM-TRIM-01: izoh matni OLIB TASHLANDI. "Boshqa ayollar bilan
@@ -433,6 +433,14 @@ export default function CommunityPage() {
         </p>
       )}
 
+      {/* COMM-TRIM-02: moderatsiya ogohlantirishi endi ALOHIDA KULRANG
+          QUTI emas, sarlavha ostidagi bitta kichik qator.
+          Mazmuni saqlanib qoldi — bu yerdagi savollar tibbiy va noto'g'ri
+          javob zarar keltirishi mumkin, shuning uchun ogohlantirishni
+          butunlay olib tashlash mumkin emas edi. Lekin u har safar
+          ekranning to'rtdan birini egallab turishi ham shart emas. */}
+      <p className="-mt-2 text-xs leading-relaxed text-text-muted">{dict.community.moderationNotice}</p>
+
       {composerOpen && (
         <Card className="space-y-3">
           <p className="font-semibold text-text-primary">{dict.community.writePostTitle}</p>
@@ -472,17 +480,6 @@ export default function CommunityPage() {
         </Card>
       )}
 
-      {/* COMM-04: moderatsiya ogohlantirishi. Referensda (Flo) ham lentaning
-          tepasida turadi va sabab jiddiy: bu yerdagi savollar TIBBIY
-          ("17 haftada qimirlashini sezmayapman", "ich ketishi xavflimi") va
-          noto'g'ri javob zarar keltirishi mumkin. Ogohlantirish nima
-          qilishimizni ham, nima QILMASLIGIMIZNI ham aniq aytadi: nomaqbul
-          yozuvni olib tashlaymiz, lekin javoblarning to'g'riligini
-          tekshirmaymiz. */}
-      <div className="rounded-2xl bg-surface-muted px-4 py-3">
-        <p className="text-xs leading-relaxed text-text-secondary">{dict.community.moderationNotice}</p>
-      </div>
-
       {/* CLIPBOARD-01: "Ulashish" natijasi — ilgari hech qanday tasdiq yo'q edi. */}
       {shareFlash && <Toast message={shareFlash} tone={shareFlash === dict.common.errorGeneric ? "error" : "success"} />}
 
@@ -490,7 +487,7 @@ export default function CommunityPage() {
           o'z savoliga javob kelganini bilish uchun uni qaytadan qidirishi
           kerak edi — savol bir necha soatdan keyin pastga tushib ketardi.
           Referensda ham aynan shu uchta yorliq bor. */}
-      <div className="flex rounded-2xl bg-surface-muted p-1">
+      <div className="flex rounded-xl bg-surface-muted p-0.5">
         {(
           [
             { id: "all", label: dict.community.tabForum },
@@ -503,7 +500,10 @@ export default function CommunityPage() {
             type="button"
             onClick={() => setScope(t.id)}
             className={clsx(
-              "tap-target flex-1 rounded-xl py-2 text-sm font-bold transition",
+              // COMM-TRIM-02: balandligi kamaytirildi — `tap-target`
+              // (48px) bu yerda ortiqcha edi, yorliq butun kenglikni
+              // egallaydi va barmoq baribir tegadi.
+              "flex-1 rounded-lg py-2 text-sm font-semibold transition",
               scope === t.id ? "bg-surface text-text-primary shadow-sm" : "text-text-secondary"
             )}
           >

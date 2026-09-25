@@ -327,11 +327,10 @@ export function createApiClient(config: ApiClientConfig) {
         remove: (id: string) => request<{ ok: true }>(`/api/pregnancy/album/${id}`, { method: "DELETE" }),
       },
     },
-    wellness: {
-      get: () => request<WellnessResponse>("/api/wellness"),
-      addWater: (ml: number) => request<WellnessResponse>("/api/wellness/water", { method: "POST", body: JSON.stringify({ ml }) }),
-      addCalories: (kcal: number) => request<WellnessResponse>("/api/wellness/calories", { method: "POST", body: JSON.stringify({ kcal }) }),
-    },
+    // WELLNESS-RETIRE-01: suv/kaloriya API'si olib tashlandi — u faqat
+    // `wellbeing` rejimidagi kartaga xizmat qilardi, karta esa
+    // o'chirildi (jami 3 ayol, uch kunlik yozuv). Jadval va mavjud
+    // yozuvlar joyida: ular ma'lumot eksportida chiqadi.
     checkin: {
       get: () => request<CheckinResponse>("/api/checkin"),
       answer: (payload: { questionKey: string; answer: boolean }) =>

@@ -1006,7 +1006,7 @@ const en: Dictionary = {
     anonymousAuthor: "Anonymous member",
     noCommentsYet: "No comments yet — be the first to reply.",
     tabForum: "Forum",
-    moderationNotice: "Women's personal experience — not medical advice. If something worries you, see a doctor.",
+    moderationNotice: "Answers here are personal experience, not medical advice.",
     tabMyQuestions: "My questions",
     tabMyAnswers: "My answers",
     emptyMyQuestions: "You have not asked anything yet. If you have a question, ask — the community will answer.",
