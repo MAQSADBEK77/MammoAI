@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import type { Article } from "@mammoai/shared";
+import { ArticleBody } from "@/components/articles/ArticleBody";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Card, LoadingSpinner, ErrorState } from "@/components/ui";
@@ -66,7 +67,7 @@ export default function ArticleDetailPage() {
       )}
 
       <Card>
-        <p className="whitespace-pre-line leading-relaxed text-text-secondary">{article.body}</p>
+        <ArticleBody body={article.body} />
       </Card>
 
       {article.sources.length > 0 && (
