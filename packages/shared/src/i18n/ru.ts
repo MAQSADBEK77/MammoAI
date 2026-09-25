@@ -968,6 +968,7 @@ const ru: Dictionary = {
     commentSend: "Отправить",
     commentsEmpty: "Пока нет комментариев — будьте первой.",
     readingTime: (min: number) => `${min} мин чтения`,
+    relatedTitle: "Читайте также",
     sourcesTitle: "Источники",
     unreviewedNotice: "Этот текст ещё не проверен врачом. Прежде чем принимать решения о здоровье, посоветуйтесь с врачом.",
     categories: {

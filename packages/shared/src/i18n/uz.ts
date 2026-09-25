@@ -1079,6 +1079,7 @@ const uz = {
     commentSend: "Yuborish",
     commentsEmpty: "Hali izoh yo'q — birinchi bo'ling.",
     readingTime: (min: number) => `${min} daqiqa o'qish`,
+    relatedTitle: "Yana o'qing",
     sourcesTitle: "Manbalar",
     unreviewedNotice: "Bu matn hali shifokor ko'rigidan o'tmagan. Sog'lig'ingizga oid qaror qabul qilishdan oldin shifokor bilan maslahatlashing.",
     categories: {

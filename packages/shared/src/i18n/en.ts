@@ -969,6 +969,7 @@ const en: Dictionary = {
     commentSend: "Send",
     commentsEmpty: "No comments yet — be the first.",
     readingTime: (min: number) => `${min} min read`,
+    relatedTitle: "Read next",
     sourcesTitle: "Sources",
     unreviewedNotice: "This text has not yet been reviewed by a doctor. Talk to a doctor before making decisions about your health.",
     categories: {
