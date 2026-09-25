@@ -1121,7 +1121,7 @@ const uz = {
     /** COMM-04: lenta tepasidagi ogohlantirish. Sog'liq jamiyatida bu
      * bezak emas — savollar tibbiy va noto'g'ri javob zarar keltirishi
      * mumkin. */
-    moderationNotice: "Ayollarning shaxsiy tajribasi — tibbiy maslahat emas. Tashvishlansangiz shifokorga murojaat qiling.",
+    moderationNotice: "Bu yerdagi javoblar — shaxsiy tajriba, tibbiy maslahat emas.",
     tabMyQuestions: "Savollarim",
     tabMyAnswers: "Javoblarim",
     emptyMyQuestions: "Hali savol bermabsiz. Savolingiz bo'lsa — so'rang, jamiyat javob beradi.",
