@@ -266,20 +266,16 @@ const SEED_ARTICLES: SeedArticle[] = [
     excerpt: "Ona va bola salomatligi uchun asosiy tamoyillar.",
     body: "Homiladorlik davrida ovqatlanish sifatiga e'tibor berish miqdoridan ko'ra muhimroq. Temir, kaltsiy va folat kislotasiga boy oziq-ovqatlar tavsiya etiladi. Xom baliq, pasterizatsiya qilinmagan mahsulotlar va ortiqcha kofeindan saqlanish kerak. Aniq dietani shifokoringiz bilan kelishib oling.",
   },
-  {
-    slug: "mammografiya-nima-uchun-kerak",
-    category: "checkups",
-    title: "Mammografiya skrining nima uchun muhim?",
-    excerpt: "Ko'krak saratonini erta aniqlash hayot saqlab qoladi.",
-    body: "Mammografiya — ko'krak to'qimasini rentgen nurlari yordamida tekshirish usuli bo'lib, saratonni klinik alomatlar paydo bo'lishidan ancha oldin aniqlashga yordam beradi. 40 yoshdan katta ayollarga muntazam skrining tavsiya etiladi, 45 yoshdan katta ayollar uchun ko'plab davlatlarda bu bepul dastur orqali taqdim etiladi.",
-  },
-  {
-    slug: "ginekolog-korikka-tayyorgarlik",
-    category: "checkups",
-    title: "Ginekolog ko'rigiga qanday tayyorlanish kerak",
-    excerpt: "Birinchi marta boradiganlar uchun oddiy maslahatlar.",
-    body: "Ko'rikdan oldin qamish/dush ishlatmaslik, so'nggi hayz sanasini eslab qolish va savollaringizni oldindan yozib qo'yish foydali. Ko'rik odatda tez va og'riqsiz o'tadi. Har qanday noqulaylik yoki savolingiz bo'lsa, shifokoringizga ochiq gapirishdan tortinmang — bu ularning kundalik ishi.",
-  },
+  // ARTICLE-DEDUP-01: "mammografiya-nima-uchun-kerak" va
+  // "ginekolog-korikka-tayyorgarlik" bu yerdan OLIB TASHLANDI.
+  //
+  // Ular 286-320 belgilik qisqartmalar edi va `seed-articles.ts` dagi
+  // to'liq maqolalar bilan bir xil mavzuni qoplardi
+  // ("mammografiya-nima", "ginekolog-korigiga-tayyorgarlik", 1600+
+  // belgi). Ro'yxatda ayol deyarli bir xil ikkita sarlavhani ko'rardi.
+  //
+  // Bazadan ham o'chirildi. Bu yerdan olib tashlanmasa, seed skripti
+  // qayta ishga tushganda ular TIKLANIB qolardi.
 ];
 
   const [{ count: articlesCount }] = (await sql`SELECT COUNT(*)::int as count FROM articles`) as unknown as { count: number }[];
