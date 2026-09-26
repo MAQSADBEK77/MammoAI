@@ -1837,6 +1837,7 @@ function OnboardingPageInner() {
               {survey.useImperialUnits ? (
                 <div className="mx-auto flex w-full max-w-xs gap-3">
                   <WheelPicker
+                    rows={3}
                     compact
                     options={HEIGHT_FEET_OPTIONS}
                     value={survey.heightFeet}
@@ -1844,6 +1845,7 @@ function OnboardingPageInner() {
                     onChange={(feet) => setSurvey((s) => ({ ...s, heightFeet: feet }))}
                   />
                   <WheelPicker
+                    rows={3}
                     compact
                     options={HEIGHT_INCHES_OPTIONS}
                     value={survey.heightInches}
@@ -1853,6 +1855,7 @@ function OnboardingPageInner() {
                 </div>
               ) : (
                 <WheelPicker
+                  rows={3}
                   options={HEIGHT_CM_OPTIONS}
                   value={Number(survey.heightCm) || 165}
                   suffix={dict.onboarding.unitCm}
@@ -1865,6 +1868,7 @@ function OnboardingPageInner() {
               <p className="text-center text-sm font-semibold text-text-secondary">{dict.onboarding.weightLabel}</p>
               {survey.useImperialUnits ? (
                 <WheelPicker
+                  rows={3}
                   options={WEIGHT_LB_OPTIONS}
                   value={survey.weightLb}
                   suffix={dict.onboarding.unitLb}
@@ -1872,6 +1876,7 @@ function OnboardingPageInner() {
                 />
               ) : (
                 <WheelPicker
+                  rows={3}
                   options={WEIGHT_KG_OPTIONS}
                   value={Number(survey.weightKg) || 60}
                   suffix={dict.onboarding.unitKg}
