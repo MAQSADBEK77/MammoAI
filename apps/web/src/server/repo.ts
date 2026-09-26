@@ -1940,7 +1940,10 @@ interface ArticleRow {
  * sekinroq o'qiladi). Eng kami 1 daqiqa. */
 const WORDS_PER_MINUTE = 180;
 
-function articleFromRow(row: ArticleRow): Article {
+/** Sessiyasiz kontekstlar (admin panel, seed) uchun bo'sh to'plam. */
+const EMPTY_IDS: ReadonlySet<string> = new Set<string>();
+
+function articleFromRow(row: ArticleRow, bookmarked: ReadonlySet<string> = EMPTY_IDS): Article {
   let sources: Article["sources"] = [];
   try {
     if (row.sources) sources = JSON.parse(row.sources) as Article["sources"];
@@ -1960,23 +1963,61 @@ function articleFromRow(row: ArticleRow): Article {
     readingMinutes: Math.max(1, Math.round(row.body.trim().split(/\s+/).length / WORDS_PER_MINUTE)),
     updatedAt: row.updated_at,
     isSeedData: row.is_seed_data,
+    isBookmarked: bookmarked.has(row.id),
   };
 }
 
-export async function listArticles(): Promise<Article[]> {
-  await ensureSchema();
-  const rows = (await sql`SELECT * FROM articles ORDER BY title ASC`) as unknown as ArticleRow[];
-  return rows.map(articleFromRow);
+/** BOOKMARK-01: shu ayol saqlagan maqolalarning id'lari. `viewerId` yo'q
+ * bo'lsa (admin panel, seed) bazaga umuman bormaymiz. */
+async function bookmarkedArticleIds(viewerId: string | null): Promise<ReadonlySet<string>> {
+  if (!viewerId) return EMPTY_IDS;
+  const rows = (await sql`
+    SELECT article_id FROM article_bookmarks WHERE user_id = ${viewerId}
+  `) as unknown as { article_id: string }[];
+  return new Set(rows.map((r) => r.article_id));
 }
 
-export async function getArticleBySlug(slug: string): Promise<Article | null> {
+export async function listArticles(viewerId: string | null = null): Promise<Article[]> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM articles ORDER BY title ASC`) as unknown as ArticleRow[];
+  const bookmarked = await bookmarkedArticleIds(viewerId);
+  return rows.map((row) => articleFromRow(row, bookmarked));
+}
+
+export async function getArticleBySlug(slug: string, viewerId: string | null = null): Promise<Article | null> {
   await ensureSchema();
   const rows = (await sql`SELECT * FROM articles WHERE slug = ${slug}`) as unknown as ArticleRow[];
   const row = rows[0];
-  return row ? articleFromRow(row) : null;
+  if (!row) return null;
+  return articleFromRow(row, await bookmarkedArticleIds(viewerId));
 }
 
-type ArticleInput = Omit<Article, "id" | "readingMinutes">;
+/**
+ * BOOKMARK-01: maqolani saqlash / saqlanganlardan olib tashlash.
+ *
+ * `ON CONFLICT DO NOTHING` — ayol tugmani ikki marta bossa yoki so'rov
+ * qayta yuborilsa xato bermaydi; amal IDEMPOTENT.
+ */
+export async function setArticleBookmark(userId: string, slug: string, on: boolean): Promise<boolean> {
+  await ensureSchema();
+  const rows = (await sql`SELECT id FROM articles WHERE slug = ${slug}`) as unknown as { id: string }[];
+  const articleId = rows[0]?.id;
+  if (!articleId) return false;
+  if (on) {
+    await sql`
+      INSERT INTO article_bookmarks (article_id, user_id, created_at)
+      VALUES (${articleId}, ${userId}, ${now()})
+      ON CONFLICT (article_id, user_id) DO NOTHING
+    `;
+  } else {
+    await sql`DELETE FROM article_bookmarks WHERE article_id = ${articleId} AND user_id = ${userId}`;
+  }
+  return true;
+}
+
+// `isBookmarked` — YOZUVGA tegishli emas: u maqolaning xossasi emas, balki
+// SO'ROVCHI ayolning maqolaga munosabati (`article_bookmarks` jadvali).
+type ArticleInput = Omit<Article, "id" | "readingMinutes" | "isBookmarked">;
 
 export async function createArticle(article: Omit<ArticleInput, "isSeedData" | "updatedAt"> & { isSeedData?: boolean }): Promise<Article> {
   await ensureSchema();

@@ -366,6 +366,9 @@ export function createApiClient(config: ApiClientConfig) {
         request<{ ok: true }>(`/api/articles/${slug}/comments?commentId=${encodeURIComponent(commentId)}`, {
           method: "DELETE",
         }),
+      /** BOOKMARK-01: "keyinroq o'qiyman". Idempotent — qayta yuborilsa xato bermaydi. */
+      setBookmark: (slug: string, on: boolean) =>
+        request<{ isBookmarked: boolean }>(`/api/articles/${slug}/bookmark`, { method: on ? "PUT" : "DELETE" }),
     },
     community: {
       stats: () => request<CommunityStats>("/api/community/stats"),
