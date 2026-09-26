@@ -25,7 +25,7 @@ describe("resolveReminder — sozlashni tugatmaganlar", () => {
     for (let n = 0; n < SETUP_REMINDER_MAX; n++) {
       expect(resolveReminder(base({ hasOnboarding: false, remindersSentSoFar: n })).kind).toBe("finish-setup");
     }
-    expect(resolveReminder(base({ hasOnboarding: false, remindersSentSoFar: SETUP_REMINDER_MAX }).valueOf()).kind).toBe("none");
+    expect(resolveReminder(base({ hasOnboarding: false, remindersSentSoFar: SETUP_REMINDER_MAX })).kind).toBe("none");
     // Eng yomon kuzatilgan holat — 18 ta xabar — endi takrorlanmaydi.
     expect(resolveReminder(base({ hasOnboarding: false, remindersSentSoFar: 18 })).kind).toBe("none");
   });
