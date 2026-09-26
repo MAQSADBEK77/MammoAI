@@ -1,0 +1,15 @@
+<!-- Kontratseptsiya usullari. Uslub: 200x200, pastel doira foni, tekis shakllar, konturlarsiz. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="96" fill="#D6E6F8"/>
+  <!-- Tabletka blisteri -->
+  <rect x="42" y="56" width="116" height="74" rx="16" fill="#FFFFFF"/>
+  <g fill="#F7A8BC">
+    <circle cx="68" cy="80" r="11"/><circle cx="100" cy="80" r="11"/><circle cx="132" cy="80" r="11"/>
+  </g>
+  <g fill="#C9D6E6">
+    <circle cx="68" cy="108" r="11"/><circle cx="100" cy="108" r="11"/><circle cx="132" cy="108" r="11"/>
+  </g>
+  <!-- Qalqon — himoya -->
+  <path d="M100 126c16 6 26 8 26 8v18c0 14-11 24-26 30-15-6-26-16-26-30v-18s10-2 26-8z" fill="#4A86C8"/>
+  <path d="M90 162l7 7 14-15" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
