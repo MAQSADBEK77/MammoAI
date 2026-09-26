@@ -65,7 +65,7 @@ export interface TelegramBotSettings {
 
 export interface AdminFeedbackEntry {
   id: string;
-  trigger: "manual" | "chat_prompt";
+  trigger: "manual" | "chat_prompt" | "premium_request";
   rating: number | null;
   message: string | null;
   createdAt: string;

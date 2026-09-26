@@ -735,7 +735,11 @@ export interface InsightsSummary {
 // yumshoq so'rov.
 // ---------------------------------------------------------------------------
 
-export type FeedbackTrigger = "manual" | "chat_prompt";
+// PREMIUM-01: `premium_request` — ayolning Premium so'rovi. Oddiy
+// fikrdan ALOHIDA tur, chunki bu sotuv signali: kim so'raganini
+// admin panelda ajratib ko'rish kerak, aks holda u yuzlab umumiy
+// fikr orasida yo'qoladi.
+export type FeedbackTrigger = "manual" | "chat_prompt" | "premium_request";
 
 export interface FeedbackSubmission {
   trigger: FeedbackTrigger;

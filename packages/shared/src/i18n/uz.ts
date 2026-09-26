@@ -1315,6 +1315,12 @@ const uz = {
     title: "Fikr-mulohazangiz",
     subtitle: "Ilova sizga qanday yordam berayotgani haqida gapiring",
     ratingLabel: "Umumiy bahoingiz",
+    // PREMIUM-01
+    premiumTitle: "Premium so'rovi",
+    premiumSubtitle: "So'rovingizni qoldiring — biz bog'lanamiz",
+    premiumPlaceholder: "Qaysi imkoniyat kerakligini yozsangiz bo'ladi (majburiy emas)",
+    premiumSubmit: "So'rov yuborish",
+    premiumThankYou: "So'rovingiz qabul qilindi. Tez orada bog'lanamiz.",
     // FIX-UX-07: 1-5 raqamli tugmalar hech qanday semantik yo'nalishsiz edi
     // — foydalanuvchi 1 yomonmi yoki yaxshimi, taxmin qilardi.
     ratingWorst: "Yomon",
