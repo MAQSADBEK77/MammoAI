@@ -2,6 +2,7 @@ export * from "./types";
 export * from "./date";
 export * from "./design-tokens";
 export * from "./logic/cycle";
+export * from "./logic/reminder";
 export * from "./logic/cycle-phase";
 export * from "./logic/cycle-summary";
 export * from "./logic/cycle-history";

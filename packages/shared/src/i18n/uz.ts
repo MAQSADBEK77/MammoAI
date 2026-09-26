@@ -1308,6 +1308,23 @@ const uz = {
     // CYCLE-ALGO-12: ovulyatsiya signalini qayd etishga nozik taklif —
     // ilovaga qaytganda bashoratni aniqlashtirish imkoniyatini eslatadi.
     fertileWindow: "Siz hozir unumdor oyna ichidasiz. Ovulyatsiya belgilarini sezsangiz, ilovada belgilang — bashorat aniqroq bo'ladi 🌸",
+    // REMIND-02: onboardingni tugatmaganlar uchun ALOHIDA matn. Ularga
+    // "kuzatuvni DAVOM ETTIRING" deyish noto'g'ri edi — ular hech qachon
+    // boshlamagan. Bu xabar ko'pi bilan uch marta yuboriladi.
+    finishSetup: "Sozlashni tugatmabsiz. Bir-ikki savol qoldi — shundan keyin sikl bashorati va eslatmalar ishlay boshlaydi 🌸",
+    finishSetupButton: "Tugatish",
+    // SCREEN-01: muddati o'tgan tekshiruv. Ohang ayblovchi emas —
+    // qo'rquv bu yerda harakatga undamaydi, ortga suradi.
+    checkupOverdue: (count: number) =>
+      count === 1
+        ? "Bitta tekshiruvingiz muddati o'tdi. Yaqin klinikani ko'rib chiqaylikmi? \ud83e\ude7a"
+        : `${count} ta tekshiruvingiz muddati o'tdi. Yaqin klinikani ko'rib chiqaylikmi? \ud83e\ude7a`,
+    checkupButton: "Ko'rish",
+    // Homiladorlik rejimi uchun — ilgari bu ayollarga UMUMAN xabar
+    // yuborilmasdi (sikl matnlari ularga to'g'ri kelmagani uchun jim
+    // qolinardi, lekin o'rniga hech narsa qo'yilmagan edi).
+    pregnancyWeek: (week: number) => `${week}-hafta. Bugun o'zingizni qanday his qilyapsiz? Belgilab qo'ying 🤰`,
+    pregnancyLogToday: "Bugungi holatingizni belgilamadingiz. Bir daqiqa ajratsangiz, shifokorga ko'rsatadigan yozuvingiz to'liq bo'ladi 🤰",
   },
 
   feedback: {

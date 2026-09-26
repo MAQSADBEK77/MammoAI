@@ -755,7 +755,10 @@ export interface FeedbackResponse {
 // Bildirishnomalar — hozircha faqat "postingizga izoh qoldirildi" turi.
 // ---------------------------------------------------------------------------
 
-export type NotificationType = "comment_on_post" | "partner_message" | "daily_reminder";
+// SCREEN-01: `checkup_reminder` ataylab `daily_reminder`dan alohida —
+// tekshiruv eslatmasining takrorlanish oralig'i (7 kun) shu yozuvlar
+// bo'yicha hisoblanadi, kunlik eslatmalar esa har kuni yoziladi.
+export type NotificationType = "comment_on_post" | "partner_message" | "daily_reminder" | "checkup_reminder";
 
 export interface AppNotification {
   id: string;

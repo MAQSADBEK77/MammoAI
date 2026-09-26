@@ -7,7 +7,7 @@
 // kelishilgan). Ustuvorlik: hayz/unumdor kun yaqinlashgani > bugun hali
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
-import { deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, tashkentDateStr } from "@mammoai/shared";
+import { deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
 import {
   createSystemNotification,
@@ -15,6 +15,9 @@ import {
   getOnboardingProfile,
   getPregnancyProfile,
   hasLoggedToday,
+  countOverdueChecklistItems,
+  countRemindersSent,
+  daysSinceCheckupNudge,
   hasSentDailyReminderRecently,
   listCycleLogs,
   listUsersForDailyReminders,
@@ -34,59 +37,99 @@ const REMINDER_PUSH_TITLE = "MammoAI 🌸";
 // kerakli ekranga o'tkazadi.
 const MINI_APP_BASE_URL = "https://mammo.uz";
 const LOG_DEEP_LINK = `${MINI_APP_BASE_URL}/tg?next=${encodeURIComponent("/asosiy?log=1")}`;
+// REMIND-02: sozlashni tugatmaganlar uchun tugma qayd oynasini emas,
+// onboardingni ochadi — ular uchun "belgilash" oynasining o'zi ma'nosiz.
+const SETUP_DEEP_LINK = `${MINI_APP_BASE_URL}/tg?next=${encodeURIComponent("/onboarding")}`;
+// SCREEN-01: tekshiruv eslatmasi ayolni to'g'ridan tekshiruvlar ro'yxatiga
+// olib boradi — u yerda har band ostida "Klinika topish" tugmasi turadi.
+const CHECKUP_DEEP_LINK = `${MINI_APP_BASE_URL}/tg?next=${encodeURIComponent("/tekshiruvlar")}`;
 
-const PERIOD_SOON_DAYS_AHEAD = 2; // shuncha kun (yoki kamroq) qolganda "yaqinlashmoqda" xabari beriladi
-// Kechikish shundan ko'p kun davom etsa, endi "kechikayapti" deb tinimsiz
-// eslatmaylik — bu holatda ko'proq ehtimol tartibsizlik/homiladorlik/yozishni
-// to'xtatgan, kunlik "kechikish o'sib bormoqda" xabari foydali emas, zerikarli.
-const PERIOD_LATE_MAX_DAYS_TO_NOTIFY = 7;
 
-async function buildReminderMessage(userId: string, language: Language): Promise<string | null> {
+
+interface ReminderPlan {
+  text: string;
+  /** Tugma matni va manzili — holatga qarab farq qiladi. */
+  buttonLabel: string;
+  deepLink: string;
+  /** Ilova ichidagi yozuv turi. Standart — kunlik eslatma. */
+  notificationType?: "daily_reminder" | "checkup_reminder";
+}
+
+/**
+ * Ma'lumot yig'adi va QARORNI `resolveReminder`ga (packages/shared)
+ * topshiradi — u yerda sof funksiya sifatida testlar bilan qoplangan.
+ * Bu yerda faqat tarjima va tugma qo'shiladi.
+ */
+async function buildReminderPlan(userId: string, language: Language): Promise<ReminderPlan | null> {
   const dict = dictionaries[language];
+  const log = (text: string): ReminderPlan => ({ text, buttonLabel: dict.reminders.logButton, deepLink: LOG_DEEP_LINK });
 
-  // FIX-06: foydalanuvchi homilador bo'lib qolgani hech qaerda tekshirilmasdi
-  // — pregnancy_profiles yozuvi paydo bo'lgandan keyin ham, oldingi tsikl
-  // tarixiga tayangan "Hayzingiz kechikayapti"/"yaqinlashmoqda" xabarlari
-  // yuborilaverardi (mantiqsiz, hissiy jihatdan og'ir bo'lishi mumkin).
-  // Homiladorlik uchun alohida eslatma matni hali yo'q — shuning uchun
-  // bunday holatda shunchaki hech narsa yuborilmaydi (soxta/chalkash xabar
-  // yuborishdan ko'ra yaxshiroq).
-  // PREG-STATE-01: ilgari pregnancy_profiles qatorining MAVJUDLIGI yetarli
-  // edi — natijada homilador bo'lmagan 11 ayol (jumladan homiladorlikni
-  // rejalashtirayotgan 5 tasi) kundalik eslatmalarni BUTUNLAY, jimgina
-  // olmay qolgan. Endi ayolning o'z belgisiga qaraymiz.
   const [onboarding, pregnancyProfile] = await Promise.all([getOnboardingProfile(userId), getPregnancyProfile(userId)]);
-  if (resolvePregnancyState({ declaredPregnant: onboarding?.isPregnant ?? false, profile: pregnancyProfile }).isPregnant) {
-    return null;
-  }
+  const pregnancy = resolvePregnancyState({ declaredPregnant: onboarding?.isPregnant ?? false, profile: pregnancyProfile });
 
-  const [loggedToday, settings, logs] = await Promise.all([
-    hasLoggedToday(userId),
-    getCycleSettings(userId),
-    listCycleLogs(userId, 365),
+  // Sozlashni tugatmaganlar uchun sikl ma'lumotini umuman so'ramaymiz —
+  // ularda u yo'q, va bu har kecha 39 ta ortiqcha so'rov degani edi.
+  const needsCycleData = !!onboarding && !pregnancy.isPregnant;
+  const [loggedToday, remindersSentSoFar, settings, logs, overdueCheckups, checkupNudgeAge] = await Promise.all([
+    onboarding ? hasLoggedToday(userId) : Promise.resolve(false),
+    onboarding ? Promise.resolve(0) : countRemindersSent(userId),
+    needsCycleData ? getCycleSettings(userId) : Promise.resolve(null),
+    needsCycleData ? listCycleLogs(userId, 365) : Promise.resolve([]),
+    needsCycleData ? countOverdueChecklistItems(userId) : Promise.resolve(0),
+    needsCycleData ? daysSinceCheckupNudge(userId) : Promise.resolve(null),
   ]);
 
-  const adaptive = deriveAdaptiveCycleSettings(logs, settings);
+  const adaptive = needsCycleData && settings ? deriveAdaptiveCycleSettings(logs, settings) : null;
   const prediction = adaptive ? predictCycle(adaptive) : null;
 
-  if (prediction) {
-    // FIX2-23: xuddi shu UTC/Toshkent bug'i (localDateStr()dagi izohga qarang).
-    const today = tashkentDateStr();
-    if (prediction.daysUntilNextPeriod === 0) return dict.reminders.periodToday;
-    if (prediction.daysUntilNextPeriod === 1) return dict.reminders.periodTomorrow;
-    if (prediction.daysUntilNextPeriod > 1 && prediction.daysUntilNextPeriod <= PERIOD_SOON_DAYS_AHEAD) {
-      return dict.reminders.periodSoon(prediction.daysUntilNextPeriod);
-    }
-    if (prediction.daysUntilNextPeriod < 0 && prediction.daysUntilNextPeriod >= -PERIOD_LATE_MAX_DAYS_TO_NOTIFY) {
-      return dict.reminders.periodLate(-prediction.daysUntilNextPeriod);
-    }
-    if (today >= prediction.fertileWindowStart && today <= prediction.fertileWindowEnd) {
-      return dict.reminders.fertileWindow;
-    }
-  }
+  const decision = resolveReminder({
+    today: tashkentDateStr(),
+    hasOnboarding: !!onboarding,
+    remindersSentSoFar,
+    isPregnant: pregnancy.isPregnant,
+    pregnancyWeek: pregnancy.status?.currentWeek ?? null,
+    loggedToday,
+    overdueCheckups,
+    daysSinceCheckupNudge: checkupNudgeAge,
+    prediction: prediction
+      ? {
+          daysUntilNextPeriod: prediction.daysUntilNextPeriod,
+          fertileWindowStart: prediction.fertileWindowStart,
+          fertileWindowEnd: prediction.fertileWindowEnd,
+        }
+      : null,
+  });
 
-  if (!loggedToday) return dict.reminders.logToday;
-  return null;
+  switch (decision.kind) {
+    case "finish-setup":
+      return { text: dict.reminders.finishSetup, buttonLabel: dict.reminders.finishSetupButton, deepLink: SETUP_DEEP_LINK };
+    case "pregnancy-week":
+      return log(dict.reminders.pregnancyWeek(decision.week));
+    case "pregnancy-log":
+      return log(dict.reminders.pregnancyLogToday);
+    case "checkup-overdue":
+      return {
+        text: dict.reminders.checkupOverdue(decision.count),
+        buttonLabel: dict.reminders.checkupButton,
+        deepLink: CHECKUP_DEEP_LINK,
+        // Alohida tur — takrorlanish oralig'i shu yozuvlar bo'yicha hisoblanadi.
+        notificationType: "checkup_reminder",
+      };
+    case "period-today":
+      return log(dict.reminders.periodToday);
+    case "period-tomorrow":
+      return log(dict.reminders.periodTomorrow);
+    case "period-soon":
+      return log(dict.reminders.periodSoon(decision.days));
+    case "period-late":
+      return log(dict.reminders.periodLate(decision.days));
+    case "fertile-window":
+      return log(dict.reminders.fertileWindow);
+    case "log-today":
+      return log(dict.reminders.logToday);
+    case "none":
+      return null;
+  }
 }
 
 export interface DailyReminderResult {
@@ -115,28 +158,25 @@ export async function runDailyReminders(): Promise<DailyReminderResult[]> {
       continue;
     }
 
-    let message: string | null = null;
+    let plan: ReminderPlan | null = null;
     try {
-      message = await buildReminderMessage(user.id, user.language);
+      plan = await buildReminderPlan(user.id, user.language);
     } catch (error) {
       results.push({ userId: user.id, sent: false, message: null, error: `build: ${error instanceof Error ? error.message : String(error)}` });
       continue;
     }
-    if (!message) {
+    if (!plan) {
       results.push({ userId: user.id, sent: false, message: null });
       continue;
     }
+    const message = plan.text;
 
     let telegramSent = false;
     let pushSent = false;
     let deliveryError: string | undefined;
     if (user.telegramUserId) {
       try {
-        await sendTelegramMessage(
-          user.telegramUserId,
-          message,
-          miniAppInlineKeyboard(dictionaries[user.language].reminders.logButton, LOG_DEEP_LINK)
-        );
+        await sendTelegramMessage(user.telegramUserId, message, miniAppInlineKeyboard(plan.buttonLabel, plan.deepLink));
         telegramSent = true;
       } catch (error) {
         deliveryError = error instanceof Error ? error.message : String(error);
@@ -153,7 +193,7 @@ export async function runDailyReminders(): Promise<DailyReminderResult[]> {
       }
     }
     try {
-      await createSystemNotification(user.id, "daily_reminder", message);
+      await createSystemNotification(user.id, plan.notificationType ?? "daily_reminder", message);
     } catch {
       // Ilova ichidagi yozuv muvaffaqiyatsiz bo'lsa ham — boshqa kanallar
       // (agar yuborilgan bo'lsa) baribir foydalanuvchiga yetgan.
