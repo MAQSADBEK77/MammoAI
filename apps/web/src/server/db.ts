@@ -707,6 +707,18 @@ async function initSchema() {
         created_at TEXT NOT NULL
       )
     `,
+    // BOOKMARK-01: "keyinroq o'qiyman" — maqolani saqlash. `articles` bilan
+    // BIR bosqichda EMAS (yuqoridagi izohga qarang: bosqich ichidagi so'rovlar
+    // parallel ketadi, ya'ni bog'liq jadval o'sha bosqichda hali yaratilmagan
+    // bo'lishi mumkin).
+    () => sql`
+      CREATE TABLE IF NOT EXISTS article_bookmarks (
+        article_id TEXT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (article_id, user_id)
+      )
+    `,
     () => sql`
       CREATE TABLE IF NOT EXISTS community_post_likes (
         post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
@@ -959,6 +971,9 @@ async function initSchema() {
     () => sql`CREATE INDEX IF NOT EXISTS idx_community_posts_created ON community_posts(created_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id, created_at ASC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_article_comments_article ON article_comments(article_id, created_at ASC)`,
+    // BOOKMARK-01: birlamchi kalit (article_id, user_id) tartibida, ya'ni
+    // "shu ayolning saqlaganlari" so'rovi undan foydalana olmaydi.
+    () => sql`CREATE INDEX IF NOT EXISTS idx_article_bookmarks_user ON article_bookmarks(user_id, created_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_partner_invites_code ON partner_invites(code)`,
     () => sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_links_a_unique ON partner_links(user_a_id)`,
