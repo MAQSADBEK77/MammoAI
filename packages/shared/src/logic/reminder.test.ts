@@ -9,6 +9,8 @@ function base(over: Partial<ReminderInput> = {}): ReminderInput {
     isPregnant: false,
     pregnancyWeek: null,
     loggedToday: false,
+    overdueCheckups: 0,
+    daysSinceCheckupNudge: null,
     prediction: { daysUntilNextPeriod: 18, fertileWindowStart: "2026-10-05", fertileWindowEnd: "2026-10-11" },
     ...over,
   };
@@ -54,6 +56,36 @@ describe("resolveReminder — homiladorlik", () => {
       base({ isPregnant: true, pregnancyWeek: 20, prediction: { daysUntilNextPeriod: 0, fertileWindowStart: "2026-09-20", fertileWindowEnd: "2026-09-30" } })
     );
     expect(state.kind).toBe("pregnancy-week");
+  });
+});
+
+describe("resolveReminder — tekshiruvlar (SCREEN-01)", () => {
+  it("muddati o'tgan tekshiruv sikl xabaridan ustun turadi", () => {
+    // Kechikkan hayz haqidagi xabarni ayol ertaga ham oladi; o'tkazib
+    // yuborilgan skrining esa yillab o'tkazib yuborilaveradi.
+    const state = resolveReminder(
+      base({ overdueCheckups: 2, prediction: { daysUntilNextPeriod: 0, fertileWindowStart: "2026-09-01", fertileWindowEnd: "2026-09-02" } })
+    );
+    expect(state).toEqual({ kind: "checkup-overdue", count: 2 });
+  });
+
+  it("har kuni takrorlanmaydi", () => {
+    expect(resolveReminder(base({ overdueCheckups: 1, daysSinceCheckupNudge: 1 })).kind).not.toBe("checkup-overdue");
+    expect(resolveReminder(base({ overdueCheckups: 1, daysSinceCheckupNudge: 6 })).kind).not.toBe("checkup-overdue");
+    expect(resolveReminder(base({ overdueCheckups: 1, daysSinceCheckupNudge: 7 })).kind).toBe("checkup-overdue");
+  });
+
+  it("homilador ayolga va sozlashni tugatmaganga yuborilmaydi", () => {
+    // Homiladorlikda tekshiruv rejasi boshqacha; sozlashni tugatmaganda esa
+    // reja umuman ishonchli emas.
+    expect(resolveReminder(base({ overdueCheckups: 3, isPregnant: true, pregnancyWeek: 20 })).kind).toBe("pregnancy-week");
+    expect(resolveReminder(base({ overdueCheckups: 3, hasOnboarding: false })).kind).toBe("finish-setup");
+  });
+
+  it("muddati o'tgani bo'lmasa odatdagidek davom etadi", () => {
+    // Bazada keyingi hayzgacha 18 kun — bu sikl hodisasi emas, shuning
+    // uchun odatdagi "bugun belgilang" taklifiga tushadi.
+    expect(resolveReminder(base({ overdueCheckups: 0 })).kind).toBe("log-today");
   });
 });
 

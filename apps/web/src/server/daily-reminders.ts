@@ -15,7 +15,9 @@ import {
   getOnboardingProfile,
   getPregnancyProfile,
   hasLoggedToday,
+  countOverdueChecklistItems,
   countRemindersSent,
+  daysSinceCheckupNudge,
   hasSentDailyReminderRecently,
   listCycleLogs,
   listUsersForDailyReminders,
@@ -38,6 +40,9 @@ const LOG_DEEP_LINK = `${MINI_APP_BASE_URL}/tg?next=${encodeURIComponent("/asosi
 // REMIND-02: sozlashni tugatmaganlar uchun tugma qayd oynasini emas,
 // onboardingni ochadi — ular uchun "belgilash" oynasining o'zi ma'nosiz.
 const SETUP_DEEP_LINK = `${MINI_APP_BASE_URL}/tg?next=${encodeURIComponent("/onboarding")}`;
+// SCREEN-01: tekshiruv eslatmasi ayolni to'g'ridan tekshiruvlar ro'yxatiga
+// olib boradi — u yerda har band ostida "Klinika topish" tugmasi turadi.
+const CHECKUP_DEEP_LINK = `${MINI_APP_BASE_URL}/tg?next=${encodeURIComponent("/tekshiruvlar")}`;
 
 
 
@@ -46,6 +51,8 @@ interface ReminderPlan {
   /** Tugma matni va manzili — holatga qarab farq qiladi. */
   buttonLabel: string;
   deepLink: string;
+  /** Ilova ichidagi yozuv turi. Standart — kunlik eslatma. */
+  notificationType?: "daily_reminder" | "checkup_reminder";
 }
 
 /**
@@ -63,11 +70,13 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
   // Sozlashni tugatmaganlar uchun sikl ma'lumotini umuman so'ramaymiz —
   // ularda u yo'q, va bu har kecha 39 ta ortiqcha so'rov degani edi.
   const needsCycleData = !!onboarding && !pregnancy.isPregnant;
-  const [loggedToday, remindersSentSoFar, settings, logs] = await Promise.all([
+  const [loggedToday, remindersSentSoFar, settings, logs, overdueCheckups, checkupNudgeAge] = await Promise.all([
     onboarding ? hasLoggedToday(userId) : Promise.resolve(false),
     onboarding ? Promise.resolve(0) : countRemindersSent(userId),
     needsCycleData ? getCycleSettings(userId) : Promise.resolve(null),
     needsCycleData ? listCycleLogs(userId, 365) : Promise.resolve([]),
+    needsCycleData ? countOverdueChecklistItems(userId) : Promise.resolve(0),
+    needsCycleData ? daysSinceCheckupNudge(userId) : Promise.resolve(null),
   ]);
 
   const adaptive = needsCycleData && settings ? deriveAdaptiveCycleSettings(logs, settings) : null;
@@ -80,6 +89,8 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
     isPregnant: pregnancy.isPregnant,
     pregnancyWeek: pregnancy.status?.currentWeek ?? null,
     loggedToday,
+    overdueCheckups,
+    daysSinceCheckupNudge: checkupNudgeAge,
     prediction: prediction
       ? {
           daysUntilNextPeriod: prediction.daysUntilNextPeriod,
@@ -96,6 +107,14 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
       return log(dict.reminders.pregnancyWeek(decision.week));
     case "pregnancy-log":
       return log(dict.reminders.pregnancyLogToday);
+    case "checkup-overdue":
+      return {
+        text: dict.reminders.checkupOverdue(decision.count),
+        buttonLabel: dict.reminders.checkupButton,
+        deepLink: CHECKUP_DEEP_LINK,
+        // Alohida tur — takrorlanish oralig'i shu yozuvlar bo'yicha hisoblanadi.
+        notificationType: "checkup_reminder",
+      };
     case "period-today":
       return log(dict.reminders.periodToday);
     case "period-tomorrow":
@@ -174,7 +193,7 @@ export async function runDailyReminders(): Promise<DailyReminderResult[]> {
       }
     }
     try {
-      await createSystemNotification(user.id, "daily_reminder", message);
+      await createSystemNotification(user.id, plan.notificationType ?? "daily_reminder", message);
     } catch {
       // Ilova ichidagi yozuv muvaffaqiyatsiz bo'lsa ham — boshqa kanallar
       // (agar yuborilgan bo'lsa) baribir foydalanuvchiga yetgan.

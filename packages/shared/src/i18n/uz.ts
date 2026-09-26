@@ -1313,6 +1313,13 @@ const uz = {
     // boshlamagan. Bu xabar ko'pi bilan uch marta yuboriladi.
     finishSetup: "Sozlashni tugatmabsiz. Bir-ikki savol qoldi — shundan keyin sikl bashorati va eslatmalar ishlay boshlaydi 🌸",
     finishSetupButton: "Tugatish",
+    // SCREEN-01: muddati o'tgan tekshiruv. Ohang ayblovchi emas —
+    // qo'rquv bu yerda harakatga undamaydi, ortga suradi.
+    checkupOverdue: (count: number) =>
+      count === 1
+        ? "Bitta tekshiruvingiz muddati o'tdi. Yaqin klinikani ko'rib chiqaylikmi? \ud83e\ude7a"
+        : `${count} ta tekshiruvingiz muddati o'tdi. Yaqin klinikani ko'rib chiqaylikmi? \ud83e\ude7a`,
+    checkupButton: "Ko'rish",
     // Homiladorlik rejimi uchun — ilgari bu ayollarga UMUMAN xabar
     // yuborilmasdi (sikl matnlari ularga to'g'ri kelmagani uchun jim
     // qolinardi, lekin o'rniga hech narsa qo'yilmagan edi).

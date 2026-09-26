@@ -3950,7 +3950,7 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
 
 /** Tizim (kunlik eslatma kabi) bildirishnomasi — haqiqiy "actor" yo'q
  * (`actor_user_id` NULL), shuning uchun UI'da hech kimning ismi ko'rsatilmaydi. */
-export async function createSystemNotification(userId: string, type: "daily_reminder", message: string): Promise<void> {
+export async function createSystemNotification(userId: string, type: "daily_reminder" | "checkup_reminder", message: string): Promise<void> {
   await ensureSchema();
   await sql`
     INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
@@ -3974,6 +3974,19 @@ export async function countRemindersSent(userId: string): Promise<number> {
     SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = ${userId} AND type = 'daily_reminder'
   `) as unknown as { n: number }[];
   return rows[0]?.n ?? 0;
+}
+
+/** SCREEN-01: tekshiruv haqida oxirgi marta necha kun oldin eslatilgan.
+ * Hech qachon eslatilmagan bo'lsa `null`. */
+export async function daysSinceCheckupNudge(userId: string): Promise<number | null> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT MAX(created_at) AS last FROM notifications
+    WHERE user_id = ${userId} AND type = 'checkup_reminder'
+  `) as unknown as { last: string | null }[];
+  const last = rows[0]?.last;
+  if (!last) return null;
+  return Math.floor((Date.now() - Date.parse(last)) / 86_400_000);
 }
 
 export async function hasSentDailyReminderRecently(userId: string): Promise<boolean> {

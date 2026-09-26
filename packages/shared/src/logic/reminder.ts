@@ -12,6 +12,8 @@
 export type ReminderKind =
   /** Onboardingni tugatmagan — "sozlashni tugating". */
   | { kind: "finish-setup" }
+  /** Muddati o'tgan tekshiruv bor. */
+  | { kind: "checkup-overdue"; count: number }
   /** Homilador: hafta bilan. */
   | { kind: "pregnancy-week"; week: number }
   /** Homilador, lekin hafta hisoblanmadi (sana yo'q). */
@@ -36,6 +38,11 @@ export interface ReminderInput {
   /** Homiladorlik haftasi — hisoblab bo'lmasa `null`. */
   pregnancyWeek: number | null;
   loggedToday: boolean;
+  /** Muddati o'tgan, hali bajarilmagan tekshiruvlar soni. */
+  overdueCheckups: number;
+  /** Tekshiruv haqida oxirgi marta necha kun oldin eslatilgan. Hech qachon
+   * eslatilmagan bo'lsa `null`. */
+  daysSinceCheckupNudge: number | null;
   prediction: {
     daysUntilNextPeriod: number;
     fertileWindowStart: string;
@@ -67,6 +74,16 @@ export const PERIOD_LATE_MAX_DAYS_TO_NOTIFY = 7;
  */
 export const SETUP_REMINDER_MAX = 3;
 
+/**
+ * Tekshiruv eslatmasi qancha vaqtda bir marta takrorlanadi.
+ *
+ * HAR KUNI EMAS, ataylab. Tekshiruvdan o'tish bir kunlik ish emas: ayol
+ * navbat olishi, vaqt topishi, pul rejalashtirishi kerak. Kunlik eslatma
+ * bu yerda faqat bir narsani beradi — botni ovozsiz qilish (REMIND-02
+ * dagi 18 ta bir xil xabar buni ko'rsatdi).
+ */
+export const CHECKUP_NUDGE_INTERVAL_DAYS = 7;
+
 export function resolveReminder(input: ReminderInput): ReminderKind {
   // Sozlashni tugatmagan ayolga "kuzatuvni DAVOM ETTIRING" deyish noto'g'ri —
   // u hech qachon boshlamagan. Va uchtadan keyin to'xtaymiz.
@@ -82,6 +99,24 @@ export function resolveReminder(input: ReminderInput): ReminderKind {
     return input.pregnancyWeek !== null
       ? { kind: "pregnancy-week", week: input.pregnancyWeek }
       : { kind: "pregnancy-log" };
+  }
+
+  // SCREEN-01: muddati o'tgan tekshiruv sikl xabaridan USTUN turadi.
+  //
+  // O'lchandi (2026-09-26, production): muddati kelgan 40 ta tekshiruvdan
+  // atigi 1 tasi bajarilgan, reja tuzilgan 111 ayoldan faqat 3 tasi
+  // umrida bironta bandni belgilagan. Shu bilan birga kunlik eslatma
+  // tekshiruv haqida UMUMAN gapirmasdi — ilovaning asosiy va'dasi
+  // ayolga yetadigan yagona kanalda mavjud emas edi.
+  //
+  // Nega hayz xabaridan ustun: kechikkan hayz haqidagi xabarni ayol
+  // ertaga ham oladi, o'tkazib yuborilgan skrining esa yillar davomida
+  // o'tkazib yuborilaveradi.
+  if (
+    input.overdueCheckups > 0 &&
+    (input.daysSinceCheckupNudge === null || input.daysSinceCheckupNudge >= CHECKUP_NUDGE_INTERVAL_DAYS)
+  ) {
+    return { kind: "checkup-overdue", count: input.overdueCheckups };
   }
 
   const p = input.prediction;
