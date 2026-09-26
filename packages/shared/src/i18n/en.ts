@@ -1167,6 +1167,10 @@ const en: Dictionary = {
     periodSoon: (days: number) => `Your period starts in ${days} days 🩷`,
     periodLate: (days: number) => `Your period is ${days} day${days === 1 ? "" : "s"} late — that can be normal too, but keep an eye on it 🩷`,
     fertileWindow: "You're currently in your fertile window. If you notice ovulation signs, log them in the app — it sharpens the prediction 🌸",
+    finishSetup: "You haven't finished setting up. A couple of questions left — then cycle predictions and reminders start working 🌸",
+    finishSetupButton: "Finish",
+    pregnancyWeek: (week: number) => `Week ${week}. How are you feeling today? Log it 🤰`,
+    pregnancyLogToday: "You haven't logged how you feel today. One minute, and your record for the doctor is complete 🤰",
   },
 
   feedback: {

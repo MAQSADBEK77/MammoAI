@@ -3966,6 +3966,16 @@ export async function createSystemNotification(userId: string, type: "daily_remi
 // ishlagani uchun bu farq qilmaydi, lekin vaqt-zonasi murakkabligidan qochadi.
 const DAILY_REMINDER_DEDUPE_HOURS = 20;
 
+/** REMIND-02: shu foydalanuvchiga umuman nechta kunlik eslatma yuborilgan.
+ * Onboardingni tugatmaganlarga yuborishni uchtadan keyin to'xtatish uchun. */
+export async function countRemindersSent(userId: string): Promise<number> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = ${userId} AND type = 'daily_reminder'
+  `) as unknown as { n: number }[];
+  return rows[0]?.n ?? 0;
+}
+
 export async function hasSentDailyReminderRecently(userId: string): Promise<boolean> {
   await ensureSchema();
   const cutoff = new Date(Date.now() - DAILY_REMINDER_DEDUPE_HOURS * 60 * 60 * 1000).toISOString();
