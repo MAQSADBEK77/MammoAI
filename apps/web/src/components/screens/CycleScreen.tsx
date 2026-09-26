@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
-import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/analytics";
 import { useConfirm } from "@/lib/confirm";
@@ -190,6 +190,9 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // tabiiy ravishda tartibsizlashadi) — shu bo'limlar (halqa, "tartibsiz"
   // ogohlantirishi) yashiriladi, o'rniga simptom kuzatuviga urg'u beriladi.
   const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
+  /** TTC-01: homiladorlikka tayyorgarlik rejimi — hero ovulyatsiyani
+   * yetakchi qiladi, keyingi hayzni emas. */
+  const isTryingToConceive = onboardingProfile?.primaryGoal === "planning_pregnancy";
 
   useEffect(() => {
     if (!predictionsUpdated) return;
@@ -545,22 +548,56 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
             : dict.cycle.nextPeriodIn(data.prediction.daysUntilNextPeriod);
 
   // TODAY-01: referensdagi ikki qatorli markaziy blok ("Period:" / "Day 6").
-  // Shartlar yuqoridagi `heroHeadline` bilan AYNAN bir xil tartibda — ikkala
-  // ko'rinish hech qachon boshqa-boshqa holat ko'rsatmasligi uchun. Ikki
-  // qatorga bo'linmaydigan holatlarda (eskirgan ma'lumot, bashorat yo'q,
-  // tartibsiz sikl, past ishonch) `heroLabel` null bo'ladi va TodayHeader
-  // o'sha bitta tushuntiruvchi qatorni kichikroq shriftda ko'rsatadi.
+  // QAROR `resolveCycleHero`da (packages/shared) — u yerda sof funksiya
+  // sifatida test bilan qamralgan; bu yerda faqat tarjima qo'shiladi.
+  // `kind: "none"` — ikki qatorga bo'linmaydigan holat (eskirgan ma'lumot,
+  // bashorat yo'q, tartibsiz sikl, past ishonch): TodayHeader o'shanda
+  // `heroHeadline`ning o'zini kichikroq shriftda ko'rsatadi.
+  const heroState = resolveCycleHero({
+    today,
+    prediction: data.prediction
+      ? {
+          ovulationDay: data.prediction.ovulationDay,
+          fertileWindowStart: data.prediction.fertileWindowStart,
+          fertileWindowEnd: data.prediction.fertileWindowEnd,
+          daysUntilNextPeriod: data.prediction.daysUntilNextPeriod,
+          isStale: data.prediction.isStale,
+        }
+      : null,
+    periodExpectedButUnlogged,
+    isOnPeriod,
+    periodDay: periodDay ?? null,
+    isIrregular: data.isIrregular,
+    isLowInfoPrediction,
+    suppressFertility: data.suppressFertility,
+    isTryingToConceive,
+  });
+
   let heroLabel: string | null = null;
   let heroValue = heroHeadline;
-  if (data.prediction && !data.prediction.isStale && !periodExpectedButUnlogged) {
-    if (isOnPeriod) {
+  switch (heroState.kind) {
+    case "period":
       heroLabel = dict.cycle.heroPeriodLabel;
-      heroValue = dict.cycle.heroPeriodDayValue(periodDay!);
-    } else if (!data.isIrregular && !isLowInfoPrediction) {
-      const days = data.prediction.daysUntilNextPeriod;
-      heroLabel = days < 0 ? dict.cycle.heroDelayedLabel : dict.cycle.heroNextPeriodLabel;
-      heroValue = days === 0 ? dict.cycle.heroTodayValue : dict.cycle.heroDaysValue(Math.abs(days));
-    }
+      heroValue = dict.cycle.heroPeriodDayValue(heroState.day);
+      break;
+    case "fertile-today":
+      heroLabel = dict.cycle.heroFertileLabel;
+      heroValue = dict.cycle.heroFertileTodayValue;
+      break;
+    case "ovulation-in":
+      heroLabel = dict.cycle.heroOvulationLabel;
+      heroValue = dict.cycle.heroDaysValue(heroState.days);
+      break;
+    case "next-period-in":
+      heroLabel = dict.cycle.heroNextPeriodLabel;
+      heroValue = heroState.days === 0 ? dict.cycle.heroTodayValue : dict.cycle.heroDaysValue(heroState.days);
+      break;
+    case "delayed":
+      heroLabel = dict.cycle.heroDelayedLabel;
+      heroValue = dict.cycle.heroDaysValue(heroState.days);
+      break;
+    case "none":
+      break;
   }
 
   // OVERNIGHT-23: ikkinchi darajali, FAQAT ijobiy ohangdagi BITTA qator —
