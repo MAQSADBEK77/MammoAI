@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Dialog, DialogContent } from "@mui/material";
 import { AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
 import type { PregnancyResponse, PregnancyWeekContent, VitalType } from "@mammoai/shared";
 import { getMilestoneForWeek, getVitalTone, localDateStr, formatDateDisplay } from "@mammoai/shared";
@@ -42,6 +43,31 @@ export function PregnancyScreen() {
   const [loggingVital, setLoggingVital] = useState<VitalType | null>(null);
   const [vitalInput, setVitalInput] = useState("");
   const [savingVital, setSavingVital] = useState(false);
+  /** PREG-UI-01: ko'rsatkichlar bloki — standart holatda YOPIQ (0 ta ayol ishlatgan). */
+  const [showVitals, setShowVitals] = useState(false);
+  /** PREG-END-01: "homiladorlik tugadi" oynasi. */
+  const [endingOpen, setEndingOpen] = useState(false);
+  const [endingSaving, setEndingSaving] = useState(false);
+
+  /**
+   * PREG-END-01: natijani saqlaydi va rejimni almashtiradi.
+   *
+   * `isPregnant: false` ham yuboriladi — aks holda ayol rejimida
+   * "homiladorlik" bo'lib qolardi va ekran o'zgarmasdi. Sikl rejimiga
+   * o'tkazamiz, chunki ikkala holatda ham keyingi kuzatiladigan narsa
+   * hayz siklining qaytishi.
+   */
+  async function endPregnancy(outcome: "birth" | "loss") {
+    setEndingSaving(true);
+    try {
+      await api.pregnancy.updateProfile({ outcome, endedOn: todayStr });
+      await api.onboarding.update({ primaryGoal: "cycle", isPregnant: false });
+      window.location.assign("/asosiy");
+    } catch {
+      setEndingSaving(false);
+      setEndingOpen(false);
+    }
+  }
   const [vitalError, setVitalError] = useState<string | null>(null);
   // WEB3-12: ClinicsScreen'dagi FIX-UX-08 bilan bir xil naqsh — .catch()
   // yo'q edi, so'rov muvaffaqiyatsiz bo'lsa ekran ABADIY yuklanish
@@ -209,9 +235,25 @@ export function PregnancyScreen() {
         </div>
       )}
 
-      {/* Sog'liq ko'rsatkichlari — foydalanuvchi o'zi qayd etadigan tezkor-jurnal. */}
+      {/* Sog'liq ko'rsatkichlari — foydalanuvchi o'zi qayd etadigan tezkor-jurnal.
+          PREG-UI-01: endi YIG'ILGAN holda ochiladi. O'lchandi (production,
+          2026-09-27): bu to'rtta kartani bironta ham ayol ishlatmagan —
+          `pregnancy_vitals` jadvalida NOLTA yozuv bor. Shunga qaramay ular
+          ekranning butun bir sahifasini "Kiritilmagan" deb egallab turardi
+          va ostidagi narsalarni pastga surib yuborardi.
+          Funksiya olib tashlanmadi (kimdir boshlashi mumkin) — faqat
+          standart holatda yopiq. Qiymat kiritilgan bo'lsa o'zi ochiladi. */}
       <div className="space-y-2">
-        <p className="text-base font-bold text-text-primary">{dict.pregnancy.vitalsTitle}</p>
+        <button
+          type="button"
+          onClick={() => setShowVitals((v) => !v)}
+          className="flex w-full items-center justify-between text-base font-bold text-text-primary"
+        >
+          {dict.pregnancy.vitalsTitle}
+          <ChevronRight sx={{ fontSize: 18, transform: showVitals ? "rotate(90deg)" : undefined, transition: "transform 150ms" }} />
+        </button>
+        {showVitals && (
+        <>
         <p className="-mt-1 text-xs text-text-muted">{dict.pregnancy.vitalsDisclaimer}</p>
 
         <div className="grid grid-cols-2 gap-3">
@@ -276,6 +318,8 @@ export function PregnancyScreen() {
               </Button>
             </div>
           </Card>
+        )}
+        </>
         )}
       </div>
 
@@ -400,6 +444,62 @@ export function PregnancyScreen() {
       </div>
 
       <PregnancyAlbum currentWeek={status.currentWeek} />
+
+      {/* PREG-END-01 — homiladorlik tugaganini aytish yo'li.
+          Ilgari bu yo'l UMUMAN yo'q edi: ilova faqat TAXMINIY sanaga
+          tayanardi. Muddatidan oldin tug'gan ayol haftalab noto'g'ri hafta
+          ko'rardi; homiladorlikni yo'qotgan ayolga esa "bolangiz endi
+          bodring kattaligida" deb yozishda davom etardi — taxminiy
+          sanadan 14 kun o'tgunga qadar, ya'ni oylab.
+
+          Bir ayol buni bizga FIKR QUTISIGA yozgan ("Homilador edim
+          tugdim") — chunki boshqa joy yo'q edi.
+
+          Tugma ATAYLAB kichkina va ekranning eng pastida: u kundalik
+          harakat emas, lekin kerak bo'lganda topilishi shart. */}
+      <div className="pt-2 text-center">
+        <button
+          type="button"
+          onClick={() => setEndingOpen(true)}
+          className="tap-target px-4 text-sm font-semibold text-text-muted underline decoration-text-muted/30 underline-offset-4"
+        >
+          {dict.pregnancy.endedLink}
+        </button>
+      </div>
+
+      <Dialog
+        open={endingOpen}
+        onClose={() => setEndingOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        slotProps={{ paper: { sx: { borderRadius: "24px", margin: 2 } } }}
+      >
+        <DialogContent>
+          <p className="text-lg font-bold leading-snug text-text-primary">{dict.pregnancy.endedTitle}</p>
+          <p className="mt-2 text-sm leading-relaxed text-text-secondary">{dict.pregnancy.endedHint}</p>
+          <div className="mt-5 space-y-2">
+            {(["birth", "loss"] as const).map((outcome) => (
+              <button
+                key={outcome}
+                type="button"
+                disabled={endingSaving}
+                onClick={() => void endPregnancy(outcome)}
+                className="tap-target w-full rounded-2xl border border-border bg-surface px-4 py-3 text-left text-base font-semibold text-text-primary active:scale-[0.99] disabled:opacity-50"
+              >
+                {outcome === "birth" ? dict.pregnancy.endedBirth : dict.pregnancy.endedLoss}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setEndingOpen(false)}
+            disabled={endingSaving}
+            className="tap-target mt-4 w-full text-sm font-semibold text-text-muted"
+          >
+            {dict.common.cancel}
+          </button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

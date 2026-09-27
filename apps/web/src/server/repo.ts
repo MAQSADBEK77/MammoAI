@@ -1217,6 +1217,8 @@ interface PregnancyRow {
   user_id: string;
   last_menstrual_period: string | null;
   due_date: string | null;
+  outcome: string | null;
+  ended_on: string | null;
 }
 
 export async function getPregnancyProfile(userId: string): Promise<PregnancyProfile | null> {
@@ -1224,21 +1226,28 @@ export async function getPregnancyProfile(userId: string): Promise<PregnancyProf
   const rows = (await sql`SELECT * FROM pregnancy_profiles WHERE user_id = ${userId}`) as unknown as PregnancyRow[];
   const row = rows[0];
   if (!row) return null;
-  return { userId, lastMenstrualPeriod: row.last_menstrual_period, dueDate: row.due_date };
+  return {
+    userId,
+    lastMenstrualPeriod: row.last_menstrual_period,
+    dueDate: row.due_date,
+    outcome: (row.outcome as PregnancyProfile["outcome"]) ?? null,
+    endedOn: row.ended_on ?? null,
+  };
 }
 
 export async function updatePregnancyProfile(
   userId: string,
-  patch: Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate">>
+  patch: Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate" | "outcome" | "endedOn">>
 ): Promise<PregnancyProfile> {
   await ensureSchema();
-  const current = (await getPregnancyProfile(userId)) ?? { userId, lastMenstrualPeriod: null, dueDate: null };
+  const current = (await getPregnancyProfile(userId)) ?? { userId, lastMenstrualPeriod: null, dueDate: null, outcome: null, endedOn: null };
   const merged = { ...current, ...patch };
   await sql`
-    INSERT INTO pregnancy_profiles (user_id, last_menstrual_period, due_date)
-    VALUES (${merged.userId}, ${merged.lastMenstrualPeriod}, ${merged.dueDate})
+    INSERT INTO pregnancy_profiles (user_id, last_menstrual_period, due_date, outcome, ended_on)
+    VALUES (${merged.userId}, ${merged.lastMenstrualPeriod}, ${merged.dueDate}, ${merged.outcome}, ${merged.endedOn})
     ON CONFLICT (user_id) DO UPDATE SET
-      last_menstrual_period = EXCLUDED.last_menstrual_period, due_date = EXCLUDED.due_date
+      last_menstrual_period = EXCLUDED.last_menstrual_period, due_date = EXCLUDED.due_date,
+      outcome = EXCLUDED.outcome, ended_on = EXCLUDED.ended_on
   `;
   return merged;
 }

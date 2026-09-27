@@ -644,6 +644,11 @@ const ru: Dictionary = {
     remainingWeekLabel: "Осталось недель",
     babyDevelopmentTitle: "Ваш малыш на этой неделе",
     motherChangesTitle: "Что происходит с вами",
+    endedLink: "Беременность завершилась?",
+    endedTitle: "Беременность завершилась",
+    endedHint: "Если мы это знаем, приложение покажет вам правильное. Иначе оно продолжит считать недели.",
+    endedBirth: "Мой ребёнок родился",
+    endedLoss: "Беременность прервалась",
     vitalsTitle: "Показатели здоровья",
     vitalsDisclaimer: "Значения вводите вы сами — не с медицинского прибора. Это не медицинский диагноз.",
     vitalsLabels: {

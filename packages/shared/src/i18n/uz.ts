@@ -744,6 +744,12 @@ const uz = {
     // CONTENT-001 — admin panel orqali tahrirlanadigan haftalik kontent sarlavhalari.
     babyDevelopmentTitle: "Chaqalog'ingiz bu hafta",
     motherChangesTitle: "Sizda nima o'zgaradi",
+    // PREG-END-01
+    endedLink: "Homiladorlik tugadimi?",
+    endedTitle: "Homiladorlik tugadi",
+    endedHint: "Buni bilsak, ilova sizga to'g'ri narsani ko'rsatadi. Aks holda u haftalarni sanashda davom etadi.",
+    endedBirth: "Farzandim tug'ildi",
+    endedLoss: "Homiladorlik to'xtadi",
     vitalsTitle: "Sog'liq ko'rsatkichlari",
     vitalsDisclaimer: "O'zingiz kiritgan qiymatlar — tibbiy asbobdan emas. Bu tibbiy tashxis emas.",
     vitalsLabels: {

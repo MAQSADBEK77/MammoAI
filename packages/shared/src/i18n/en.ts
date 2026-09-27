@@ -645,6 +645,11 @@ const en: Dictionary = {
     remainingWeekLabel: "Weeks remaining",
     babyDevelopmentTitle: "Your baby this week",
     motherChangesTitle: "What's changing for you",
+    endedLink: "Has your pregnancy ended?",
+    endedTitle: "Pregnancy ended",
+    endedHint: "If we know, the app can show you the right thing. Otherwise it keeps counting the weeks.",
+    endedBirth: "My baby was born",
+    endedLoss: "The pregnancy ended",
     vitalsTitle: "Health metrics",
     vitalsDisclaimer: "Values you enter yourself — not from a medical device. This is not a medical diagnosis.",
     vitalsLabels: {

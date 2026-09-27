@@ -58,7 +58,7 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
   // bo'lmagan homiladorlik bandlarini olgan. Endi yagona manba —
   // resolvePregnancyState (packages/shared), ayolning o'z belgisi.
   const { isPregnant, isPostpartum, daysSinceDue, status: pregnancyStatus } = resolvePregnancyState(
-    { declaredPregnant: profile.isPregnant, profile: pregnancy },
+    { declaredPregnant: profile.isPregnant, profile: pregnancy, outcome: pregnancy?.outcome ?? null, endedOn: pregnancy?.endedOn ?? null },
     today
   );
   const pregnancyWeek = pregnancyStatus?.currentWeek ?? null;

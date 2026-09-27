@@ -242,10 +242,17 @@ export interface CycleSettings {
   averagePeriodLength: number; // kun, standart 5
 }
 
+/** PREG-END-01: homiladorlik qanday tugadi. Ayolning o'z gapi. */
+export type PregnancyOutcome = "birth" | "loss";
+
 export interface PregnancyProfile {
   userId: string;
   lastMenstrualPeriod: string | null; // YYYY-MM-DD — ikkalasidan biri bo'lishi kerak
   dueDate: string | null; // YYYY-MM-DD
+  /** PREG-END-01: tugagan bo'lsa — qanday. `null` — davom etmoqda. */
+  outcome: PregnancyOutcome | null;
+  /** Tug'ruq yoki tugash sanasi. `outcome` bilan birga to'ldiriladi. */
+  endedOn: string | null;
 }
 
 export interface PregnancyVisitLog {

@@ -313,7 +313,7 @@ export function createApiClient(config: ApiClientConfig) {
     },
     pregnancy: {
       get: () => request<PregnancyResponse>("/api/pregnancy"),
-      updateProfile: (patch: Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate">>) =>
+      updateProfile: (patch: Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate" | "outcome" | "endedOn">>) =>
         request<PregnancyResponse>("/api/pregnancy", { method: "PATCH", body: JSON.stringify(patch) }),
       addVisit: (visit: Pick<PregnancyVisitLog, "label" | "date" | "clinicName" | "note">) =>
         request<PregnancyResponse>("/api/pregnancy/visits", { method: "POST", body: JSON.stringify(visit) }),

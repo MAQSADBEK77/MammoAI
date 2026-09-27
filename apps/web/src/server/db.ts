@@ -657,6 +657,12 @@ async function initSchema() {
     // 24-36 soat ichida kutilishini bildiradi, ya'ni bu eng aniq
     // real vaqt signali (bazal harorat esa ovulyatsiyani faqat O'TGACH
     // tasdiqlaydi — rejalashtirish uchun kech).
+    // PREG-END-01: homiladorlik qanday tugagani — ayolning O'Z gapi.
+    // Usiz ilova faqat TAXMINIY sanaga tayanardi va homiladorlikni
+    // yo'qotgan ayolga oylab "bolangiz endi bodring kattaligida" deb
+    // yozishda davom etardi.
+    () => sql`ALTER TABLE pregnancy_profiles ADD COLUMN IF NOT EXISTS outcome TEXT`,
+    () => sql`ALTER TABLE pregnancy_profiles ADD COLUMN IF NOT EXISTS ended_on TEXT`,
     () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS lh_test TEXT`,
     // Unumdor oyna "qoplanganini" hisoblash uchun. Faqat tayyorgarlik
     // rejimida so'raladi va ko'rsatiladi.
