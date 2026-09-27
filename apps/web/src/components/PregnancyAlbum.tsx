@@ -13,7 +13,8 @@
 // sessiyasi httpOnly cookie).
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PregnancyAlbumPhoto } from "@mammoai/shared";
+import clsx from "clsx";
+import type { AlbumPhotoKind, PregnancyAlbumPhoto } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useConfirm } from "@/lib/confirm";
 import { api } from "@/lib/api";
@@ -34,6 +35,17 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
   // sababli HECH NARSA ko'rsatilmasdi (hatto spinner ham) — bu ekranning
   // eng "sokin" (bildirishnomasiz) xato holati edi.
   const [loadError, setLoadError] = useState(false);
+  /**
+   * PREG-ALBUM-02: qorin suratlari va UZI — IKKI XIL xotira. Lalu'da ular
+   * alohida albom, va shu to'g'ri: ayol "chaqalog'imni ko'rsat" deganda
+   * o'zining oyma-oy qorin suratlarini emas, UZI tasvirlarini qidiradi.
+   * Aralash ro'yxatda UZI o'nlab qorin surati orasida yo'qolib ketardi.
+   *
+   * Bitta tanlagich ikki ishni bajaradi: ro'yxatni filtrlaydi VA yangi
+   * suratning turini belgilaydi — shuning uchun yuklashda alohida savol
+   * berilmaydi (ayol allaqachon qaysi albomda turganini ko'rib turibdi).
+   */
+  const [kind, setKind] = useState<AlbumPhotoKind>("bump");
 
   const loadPhotos = useCallback(() => {
     setLoadError(false);
@@ -74,6 +86,7 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
       form.set("photo", pendingFile);
       form.set("pregnancyWeek", String(currentWeek));
       if (note.trim()) form.set("note", note.trim());
+      form.set("kind", kind);
       const res = await api.pregnancy.album.upload(form);
       setPhotos((cur) => [res.photo, ...(cur ?? [])]);
       setPendingFile(null);
@@ -91,11 +104,29 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
     await api.pregnancy.album.remove(id).catch(() => {});
   }
 
+  const visible = (photos ?? []).filter((p) => p.kind === kind);
+
   return (
     <Card className="flex flex-col gap-4">
       <div>
         <h2 className="text-base font-bold text-text-primary">{dict.pregnancy.albumTitle}</h2>
         <p className="text-xs text-text-secondary">{dict.pregnancy.albumSubtitle}</p>
+      </div>
+
+      <div className="flex gap-1 rounded-full bg-surface-muted p-1">
+        {(["bump", "ultrasound"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setKind(k)}
+            className={clsx(
+              "flex-1 rounded-full py-2 text-xs font-bold transition-colors",
+              k === kind ? "bg-surface text-pregnancy-accent shadow-sm" : "text-text-secondary"
+            )}
+          >
+            {k === "bump" ? dict.pregnancy.albumTabBump : dict.pregnancy.albumTabUltrasound}
+          </button>
+        ))}
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileSelected} />
@@ -147,11 +178,13 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
         <ErrorState bare message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: loadPhotos }} />
       ) : photos === null ? (
         <LoadingSpinner label={dict.common.loading} inline />
-      ) : photos.length === 0 ? (
-        <p className="py-2 text-center text-sm text-text-muted">{dict.pregnancy.albumEmpty}</p>
+      ) : visible.length === 0 ? (
+        <p className="py-2 text-center text-sm text-text-muted">
+          {kind === "ultrasound" ? dict.pregnancy.albumEmptyUltrasound : dict.pregnancy.albumEmpty}
+        </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {photos.map((p) => (
+          {visible.map((p) => (
             <div key={p.id} className="group relative overflow-hidden rounded-[20px] border-2 border-primary/25 shadow-sm">
               <img src={p.photoUrl} alt="" className="aspect-square w-full object-cover" />
               {/* Bezakli "frame" — Instagram story naqshi, gradient pastki bant + hafta yorlig'i. */}

@@ -663,6 +663,12 @@ async function initSchema() {
     // yozishda davom etardi.
     () => sql`ALTER TABLE pregnancy_profiles ADD COLUMN IF NOT EXISTS outcome TEXT`,
     () => sql`ALTER TABLE pregnancy_profiles ADD COLUMN IF NOT EXISTS ended_on TEXT`,
+    // PREG-ALBUM-02: albom endi IKKI XIL — qorin surati va UZI. Lalu'da
+    // ular alohida, va to'g'ri: bu ikki xil xotira. Qorin surati har hafta
+    // takrorlanadi va o'sishni ko'rsatadi, UZI esa kam va har biri alohida
+    // voqea. Bitta ro'yxatda ular aralashib ketardi.
+    // Standart — 'bump': mavjud uchta surat aynan shunday olingan.
+    () => sql`ALTER TABLE pregnancy_album_photos ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'bump'`,
     () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS lh_test TEXT`,
     // Unumdor oyna "qoplanganini" hisoblash uchun. Faqat tayyorgarlik
     // rejimida so'raladi va ko'rsatiladi.

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "./db";
 import { ApiError } from "./api-utils";
-import type { CheckinResponse, Contraction } from "@mammoai/shared";
+import type { AlbumPhotoKind, CheckinResponse, Contraction } from "@mammoai/shared";
 import { PET_IDS, type PetChoice } from "@mammoai/shared";
 import type {
   ChronicCondition,
@@ -1343,29 +1343,40 @@ interface AlbumPhotoRow {
   blob_pathname: string;
   note: string | null;
   created_at: string;
+  kind: string;
 }
 
-export async function listPregnancyAlbumPhotos(userId: string): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string }[]> {
+export async function listPregnancyAlbumPhotos(
+  userId: string
+): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string; kind: AlbumPhotoKind }[]> {
   await ensureSchema();
   const rows = (await sql`
-    SELECT id, pregnancy_week, blob_pathname, note, created_at
+    SELECT id, pregnancy_week, blob_pathname, note, created_at, kind
     FROM pregnancy_album_photos WHERE user_id = ${userId} ORDER BY created_at DESC
   `) as unknown as AlbumPhotoRow[];
-  return rows.map((r) => ({ id: r.id, pregnancyWeek: r.pregnancy_week, blobPathname: r.blob_pathname, note: r.note, createdAt: r.created_at }));
+  return rows.map((r) => ({
+    id: r.id,
+    pregnancyWeek: r.pregnancy_week,
+    blobPathname: r.blob_pathname,
+    note: r.note,
+    createdAt: r.created_at,
+    kind: (r.kind as AlbumPhotoKind) ?? "bump",
+  }));
 }
 
 export async function addPregnancyAlbumPhoto(
   userId: string,
-  entry: { pregnancyWeek: number | null; blobPathname: string; note: string | null }
-): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string }> {
+  entry: { pregnancyWeek: number | null; blobPathname: string; note: string | null; kind?: AlbumPhotoKind }
+): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string; kind: AlbumPhotoKind }> {
   await ensureSchema();
   const id = randomUUID();
   const createdAt = now();
+  const kind: AlbumPhotoKind = entry.kind ?? "bump";
   await sql`
-    INSERT INTO pregnancy_album_photos (id, user_id, pregnancy_week, blob_pathname, note, created_at)
-    VALUES (${id}, ${userId}, ${entry.pregnancyWeek}, ${entry.blobPathname}, ${entry.note}, ${createdAt})
+    INSERT INTO pregnancy_album_photos (id, user_id, pregnancy_week, blob_pathname, note, created_at, kind)
+    VALUES (${id}, ${userId}, ${entry.pregnancyWeek}, ${entry.blobPathname}, ${entry.note}, ${createdAt}, ${kind})
   `;
-  return { id, pregnancyWeek: entry.pregnancyWeek, blobPathname: entry.blobPathname, note: entry.note, createdAt };
+  return { id, pregnancyWeek: entry.pregnancyWeek, blobPathname: entry.blobPathname, note: entry.note, createdAt, kind };
 }
 
 /** `blobPathname`ni ham qaytaradi — chaqiruvchi (route) shu yo'l bo'yicha

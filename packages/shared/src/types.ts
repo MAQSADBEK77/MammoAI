@@ -272,8 +272,12 @@ export interface PregnancyVisitLog {
  * ommaviy/taxmin qilib topiladigan URL emas. Bezakli "frame" rasmga
  * PISHIRILMAGAN — UI'da chizib ko'rsatiladi (dizayn o'zgarsa qayta yuklash
  * shart emas). */
+/** PREG-ALBUM-02: qorin surati yoki UZI. */
+export type AlbumPhotoKind = "bump" | "ultrasound";
+
 export interface PregnancyAlbumPhoto {
   id: string;
+  kind: AlbumPhotoKind;
   pregnancyWeek: number | null;
   photoUrl: string;
   note: string | null;
