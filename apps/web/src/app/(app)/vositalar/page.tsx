@@ -8,6 +8,7 @@ import {
   LocationOnOutlined,
   MedicalInformationOutlined,
   QuizOutlined,
+  RestaurantMenuOutlined,
   SpaOutlined,
 } from "@mui/icons-material";
 import { useI18n } from "@/lib/i18n";
@@ -38,6 +39,9 @@ export default function ToolsPage() {
   const t = dict.tools;
 
   const isPartnerTracking = onboardingProfile?.primaryGoal === "partner_tracking";
+  // "Mumkinmi?" ro'yxati faqat homiladorlarga ko'rsatiladi: qolganlarga
+  // u shovqin, homiladorga esa kunlik savol.
+  const isPregnant = onboardingProfile?.primaryGoal === "pregnancy";
 
   const tiles = [
     { href: "/maqolalar", label: t.articles, hint: t.articlesHint, Icon: ArticleOutlined, tint: "bg-primary/10", fg: "text-primary" },
@@ -45,6 +49,9 @@ export default function ToolsPage() {
     { href: "/hisobot", label: t.report, hint: t.reportHint, Icon: MedicalInformationOutlined, tint: "bg-secondary/10", fg: "text-secondary" },
     { href: "/statistika", label: t.stats, hint: t.statsHint, Icon: InsightsOutlined, tint: "bg-primary/10", fg: "text-primary" },
     { href: "/xavf-testi", label: t.riskQuiz, hint: t.riskQuizHint, Icon: QuizOutlined, tint: "bg-warning/10", fg: "text-warning" },
+    ...(isPregnant
+      ? [{ href: "/ovqat", label: t.food, hint: t.foodHint, Icon: RestaurantMenuOutlined, tint: "bg-success/10", fg: "text-success" }]
+      : []),
     { href: "/muammolar", label: t.concerns, hint: t.concernsHint, Icon: SpaOutlined, tint: "bg-accent/10", fg: "text-accent" },
     // Hamkorini kuzatuvchilarda "Juft" pastki menyuda turadi — bu yerda
     // takrorlash shart emas.

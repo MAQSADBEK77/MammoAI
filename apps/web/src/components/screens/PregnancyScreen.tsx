@@ -441,7 +441,12 @@ export function PregnancyScreen() {
           <GridTile
             emoji={"\u{1F951}"}
             label={dict.pregnancy.gridNutrition}
-            onClick={() => router.push("/maqolalar/homiladorlikda-ovqatlanish")}
+            // PREG-FOOD-01: ilgari bu plitka MAQOLAGA olib borardi.
+            // Endi "Mumkinmi?" ro'yxatiga: ayolning savoli aniq bitta
+            // mahsulot haqida bo'ladi, maqola esa uni o'qishga majbur
+            // qilardi. Maqolaning o'zi ro'yxat ostida havola bo'lib
+            // qoladi.
+            onClick={() => router.push("/ovqat")}
           />
         </div>
       </div>
