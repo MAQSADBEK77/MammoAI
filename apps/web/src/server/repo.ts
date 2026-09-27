@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "./db";
 import { ApiError } from "./api-utils";
-import type { CheckinResponse } from "@mammoai/shared";
+import type { AlbumPhotoKind, CheckinResponse, Contraction } from "@mammoai/shared";
 import { PET_IDS, type PetChoice } from "@mammoai/shared";
 import type {
   ChronicCondition,
@@ -774,6 +774,7 @@ interface OnboardingRow {
   hormonal_contraception: boolean | null;
   smokes: boolean | null;
   has_given_birth: boolean | null;
+  trying_since: string | null;
   chronic_conditions: string | null;
   last_checkup: OnboardingProfile["lastCheckup"];
   primary_goal: OnboardingProfile["primaryGoal"];
@@ -807,6 +808,7 @@ function onboardingFromRow(row: OnboardingRow): OnboardingProfile {
     hormonalContraception: row.hormonal_contraception ?? null,
     smokes: row.smokes ?? null,
     hasGivenBirth: row.has_given_birth ?? null,
+    tryingSince: row.trying_since ?? null,
     chronicConditions: row.chronic_conditions ? (JSON.parse(row.chronic_conditions) as ChronicCondition[]) : null,
     lastCheckup: row.last_checkup,
     primaryGoal: row.primary_goal,
@@ -851,7 +853,7 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
     INSERT INTO onboarding_profiles (
       user_id, name, age, is_pregnant, cycle_regularity, family_history, sexually_active, last_checkup, primary_goal,
       heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg, blood_type,
-      hpv_vaccinated, hormonal_contraception, smokes, has_given_birth, chronic_conditions
+      hpv_vaccinated, hormonal_contraception, smokes, has_given_birth, chronic_conditions, trying_since
     )
     VALUES (
       ${profile.userId}, ${orNull(profile.name)}, ${profile.age}, ${profile.isPregnant}, ${profile.cycleRegularity},
@@ -859,7 +861,7 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
       ${typicalSymptoms}, ${orNull(profile.periodAttitude)}, ${healthConditions}, ${orNull(profile.healthConditionsOther)},
       ${orNull(profile.heightCm)}, ${orNull(profile.weightKg)}, ${orNull(profile.bloodType)},
       ${orNull(profile.hpvVaccinated)}, ${orNull(profile.hormonalContraception)}, ${orNull(profile.smokes)},
-      ${orNull(profile.hasGivenBirth)}, ${chronicConditions}
+      ${orNull(profile.hasGivenBirth)}, ${chronicConditions}, ${orNull(profile.tryingSince)}
     )
     ON CONFLICT (user_id) DO UPDATE SET
       name = EXCLUDED.name, age = EXCLUDED.age, is_pregnant = EXCLUDED.is_pregnant,
@@ -872,7 +874,7 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
       height_cm = EXCLUDED.height_cm, weight_kg = EXCLUDED.weight_kg, blood_type = EXCLUDED.blood_type,
       hpv_vaccinated = EXCLUDED.hpv_vaccinated, hormonal_contraception = EXCLUDED.hormonal_contraception,
       smokes = EXCLUDED.smokes, has_given_birth = EXCLUDED.has_given_birth,
-      chronic_conditions = EXCLUDED.chronic_conditions
+      chronic_conditions = EXCLUDED.chronic_conditions, trying_since = EXCLUDED.trying_since
   `;
 }
 
@@ -913,6 +915,8 @@ export async function updateOnboardingProfile(
       | "smokes"
       | "hasGivenBirth"
       | "chronicConditions"
+      // TTC-02: urinish muddati — tekshiruvlar ekranidagi savol orqali.
+      | "tryingSince"
     >
   >
 ): Promise<OnboardingProfile> {
@@ -982,6 +986,8 @@ interface CycleLogRow {
   symptoms: string;
   created_at: string;
   basal_body_temp: number | null;
+  lh_test: string | null;
+  intercourse: boolean | null;
 }
 
 function cycleLogFromRow(row: CycleLogRow): CycleLog {
@@ -994,6 +1000,8 @@ function cycleLogFromRow(row: CycleLogRow): CycleLog {
     symptoms: JSON.parse(row.symptoms) as Symptom[],
     createdAt: row.created_at,
     basalBodyTemp: row.basal_body_temp,
+    lhTest: (row.lh_test as CycleLog["lhTest"]) ?? null,
+    intercourse: !!row.intercourse,
   };
 }
 
@@ -1059,7 +1067,7 @@ export async function getMaxCycleLogUpdatedAt(userId: string): Promise<string | 
 
 export async function upsertCycleLog(
   userId: string,
-  log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms"> & Partial<Pick<CycleLog, "basalBodyTemp">>
+  log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms"> & Partial<Pick<CycleLog, "basalBodyTemp" | "lhTest" | "intercourse">>
 ): Promise<CycleLog> {
   await ensureSchema();
   const id = randomUUID();
@@ -1069,16 +1077,19 @@ export async function upsertCycleLog(
   // barcha eski chaqiruvlar shunday) `undefined` bo'ladi, `?? null` bilan
   // ustunga `NULL` yoziladi (o'zgarishsiz eski xatti-harakat).
   const basalBodyTemp = log.basalBodyTemp ?? null;
+  // TTC-03: xuddi shu naqsh — eski chaqiruvlar bu maydonlarni bermaydi.
+  const lhTest = log.lhTest ?? null;
+  const intercourse = log.intercourse ?? false;
   // FIX2-26: `updated_at` har bir yozish/tahrirlashda yangilanadi —
   // active-insights.ts shundan foydalanib, faqat yozuvlar SONI o'zgarmagan
   // (mavjud kun tahrirlangan) holatlarda ham AI tahlilini qayta generatsiya
   // qilishi kerakligini aniqlaydi.
   await sql`
-    INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at, updated_at, basal_body_temp)
-    VALUES (${id}, ${userId}, ${log.date}, ${log.flow}, ${log.mood}, ${symptoms}, ${createdAt}, ${createdAt}, ${basalBodyTemp})
+    INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at, updated_at, basal_body_temp, lh_test, intercourse)
+    VALUES (${id}, ${userId}, ${log.date}, ${log.flow}, ${log.mood}, ${symptoms}, ${createdAt}, ${createdAt}, ${basalBodyTemp}, ${lhTest}, ${intercourse})
     ON CONFLICT (user_id, date) DO UPDATE SET
       flow = EXCLUDED.flow, mood = EXCLUDED.mood, symptoms = EXCLUDED.symptoms, updated_at = EXCLUDED.updated_at,
-      basal_body_temp = EXCLUDED.basal_body_temp
+      basal_body_temp = EXCLUDED.basal_body_temp, lh_test = EXCLUDED.lh_test, intercourse = EXCLUDED.intercourse
   `;
   // Har doim qayta hisoblanadi (faqat `log.flow` bor bo'lganda emas) — aks
   // holda mavjud oqim kunini "bekor qilish" (flow'ni null'ga o'zgartirish)
@@ -1152,7 +1163,7 @@ export async function applyPeriodDiff(userId: string, added: string[], removed: 
     const byDate = new Map(existing.map((l) => [l.date, l]));
     for (const date of removed) {
       const log = byDate.get(date);
-      const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null);
+      const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null || log.lhTest !== null || log.intercourse);
       if (hasOtherData) {
         await sql`UPDATE cycle_logs SET flow = NULL, updated_at = ${now()} WHERE user_id = ${userId} AND date = ${date}`;
       } else {
@@ -1181,7 +1192,7 @@ export async function clearPeriodRange(userId: string, dateInRange: string): Pro
   const byDate = new Map(logs.map((l) => [l.date, l]));
   for (const date of run) {
     const log = byDate.get(date);
-    const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null);
+    const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null || log.lhTest !== null || log.intercourse);
     if (hasOtherData) {
       await sql`UPDATE cycle_logs SET flow = NULL, updated_at = ${now()} WHERE user_id = ${userId} AND date = ${date}`;
     } else {
@@ -1206,6 +1217,42 @@ interface PregnancyRow {
   user_id: string;
   last_menstrual_period: string | null;
   due_date: string | null;
+  outcome: string | null;
+  ended_on: string | null;
+}
+
+/**
+ * PREG-LABOR-01 — shvat sanagichi.
+ *
+ * Faqat so'nggi 24 soat o'qiladi: 5-1-1 qoidasi bir soatlik oynada
+ * ishlaydi, undan eskisi esa xulosaga ta'sir qilmaydi va bejiz
+ * yuklanardi.
+ */
+export async function listContractions(userId: string): Promise<Contraction[]> {
+  await ensureSchema();
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const rows = (await sql`
+    SELECT started_at, ended_at FROM pregnancy_contractions
+    WHERE user_id = ${userId} AND started_at >= ${cutoff}
+    ORDER BY started_at ASC
+  `) as unknown as { started_at: string; ended_at: string | null }[];
+  return rows.map((r) => ({ startedAt: r.started_at, endedAt: r.ended_at }));
+}
+
+/** Yangi qisqarishni boshlaydi. Tugallanmagani qolib ketgan bo'lsa yopiladi. */
+export async function startContraction(userId: string): Promise<void> {
+  await ensureSchema();
+  const now_ = now();
+  // Ilova yopilib qolgan bo'lsa tugallanmagan yozuv qoladi — yangisini
+  // boshlashdan oldin uni yopamiz, aks holda o'rtacha buziladi.
+  await sql`UPDATE pregnancy_contractions SET ended_at = ${now_} WHERE user_id = ${userId} AND ended_at IS NULL`;
+  await sql`INSERT INTO pregnancy_contractions (id, user_id, started_at, ended_at) VALUES (${randomUUID()}, ${userId}, ${now_}, NULL)`;
+}
+
+/** Davom etayotgan qisqarishni tugatadi. */
+export async function stopContraction(userId: string): Promise<void> {
+  await ensureSchema();
+  await sql`UPDATE pregnancy_contractions SET ended_at = ${now()} WHERE user_id = ${userId} AND ended_at IS NULL`;
 }
 
 export async function getPregnancyProfile(userId: string): Promise<PregnancyProfile | null> {
@@ -1213,21 +1260,28 @@ export async function getPregnancyProfile(userId: string): Promise<PregnancyProf
   const rows = (await sql`SELECT * FROM pregnancy_profiles WHERE user_id = ${userId}`) as unknown as PregnancyRow[];
   const row = rows[0];
   if (!row) return null;
-  return { userId, lastMenstrualPeriod: row.last_menstrual_period, dueDate: row.due_date };
+  return {
+    userId,
+    lastMenstrualPeriod: row.last_menstrual_period,
+    dueDate: row.due_date,
+    outcome: (row.outcome as PregnancyProfile["outcome"]) ?? null,
+    endedOn: row.ended_on ?? null,
+  };
 }
 
 export async function updatePregnancyProfile(
   userId: string,
-  patch: Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate">>
+  patch: Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate" | "outcome" | "endedOn">>
 ): Promise<PregnancyProfile> {
   await ensureSchema();
-  const current = (await getPregnancyProfile(userId)) ?? { userId, lastMenstrualPeriod: null, dueDate: null };
+  const current = (await getPregnancyProfile(userId)) ?? { userId, lastMenstrualPeriod: null, dueDate: null, outcome: null, endedOn: null };
   const merged = { ...current, ...patch };
   await sql`
-    INSERT INTO pregnancy_profiles (user_id, last_menstrual_period, due_date)
-    VALUES (${merged.userId}, ${merged.lastMenstrualPeriod}, ${merged.dueDate})
+    INSERT INTO pregnancy_profiles (user_id, last_menstrual_period, due_date, outcome, ended_on)
+    VALUES (${merged.userId}, ${merged.lastMenstrualPeriod}, ${merged.dueDate}, ${merged.outcome}, ${merged.endedOn})
     ON CONFLICT (user_id) DO UPDATE SET
-      last_menstrual_period = EXCLUDED.last_menstrual_period, due_date = EXCLUDED.due_date
+      last_menstrual_period = EXCLUDED.last_menstrual_period, due_date = EXCLUDED.due_date,
+      outcome = EXCLUDED.outcome, ended_on = EXCLUDED.ended_on
   `;
   return merged;
 }
@@ -1289,29 +1343,40 @@ interface AlbumPhotoRow {
   blob_pathname: string;
   note: string | null;
   created_at: string;
+  kind: string;
 }
 
-export async function listPregnancyAlbumPhotos(userId: string): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string }[]> {
+export async function listPregnancyAlbumPhotos(
+  userId: string
+): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string; kind: AlbumPhotoKind }[]> {
   await ensureSchema();
   const rows = (await sql`
-    SELECT id, pregnancy_week, blob_pathname, note, created_at
+    SELECT id, pregnancy_week, blob_pathname, note, created_at, kind
     FROM pregnancy_album_photos WHERE user_id = ${userId} ORDER BY created_at DESC
   `) as unknown as AlbumPhotoRow[];
-  return rows.map((r) => ({ id: r.id, pregnancyWeek: r.pregnancy_week, blobPathname: r.blob_pathname, note: r.note, createdAt: r.created_at }));
+  return rows.map((r) => ({
+    id: r.id,
+    pregnancyWeek: r.pregnancy_week,
+    blobPathname: r.blob_pathname,
+    note: r.note,
+    createdAt: r.created_at,
+    kind: (r.kind as AlbumPhotoKind) ?? "bump",
+  }));
 }
 
 export async function addPregnancyAlbumPhoto(
   userId: string,
-  entry: { pregnancyWeek: number | null; blobPathname: string; note: string | null }
-): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string }> {
+  entry: { pregnancyWeek: number | null; blobPathname: string; note: string | null; kind?: AlbumPhotoKind }
+): Promise<{ id: string; pregnancyWeek: number | null; blobPathname: string; note: string | null; createdAt: string; kind: AlbumPhotoKind }> {
   await ensureSchema();
   const id = randomUUID();
   const createdAt = now();
+  const kind: AlbumPhotoKind = entry.kind ?? "bump";
   await sql`
-    INSERT INTO pregnancy_album_photos (id, user_id, pregnancy_week, blob_pathname, note, created_at)
-    VALUES (${id}, ${userId}, ${entry.pregnancyWeek}, ${entry.blobPathname}, ${entry.note}, ${createdAt})
+    INSERT INTO pregnancy_album_photos (id, user_id, pregnancy_week, blob_pathname, note, created_at, kind)
+    VALUES (${id}, ${userId}, ${entry.pregnancyWeek}, ${entry.blobPathname}, ${entry.note}, ${createdAt}, ${kind})
   `;
-  return { id, pregnancyWeek: entry.pregnancyWeek, blobPathname: entry.blobPathname, note: entry.note, createdAt };
+  return { id, pregnancyWeek: entry.pregnancyWeek, blobPathname: entry.blobPathname, note: entry.note, createdAt, kind };
 }
 
 /** `blobPathname`ni ham qaytaradi — chaqiruvchi (route) shu yo'l bo'yicha
@@ -1498,6 +1563,70 @@ export async function getKicksToday(userId: string): Promise<number> {
     SELECT count FROM pregnancy_kicks WHERE user_id = ${userId} AND date = ${today()}
   `) as unknown as { count: number }[];
   return rows[0]?.count ?? 0;
+}
+
+/** PREG-BAG-01: foydalanuvchi belgilagan sumka bandlari. */
+export async function listBagItems(userId: string): Promise<string[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT item_id FROM pregnancy_bag_items WHERE user_id = ${userId}
+  `) as unknown as { item_id: string }[];
+  return rows.map((r) => r.item_id);
+}
+
+/**
+ * Bandni belgilaydi yoki belgisini oladi.
+ *
+ * Belgi olinganda qator O'CHIRILADI — "checked = false" ustuni emas:
+ * ro'yxat kodda turgani uchun yo'q qator "belgilanmagan" degani va
+ * bu ikki manbadan kelgan holatni birlashtirishdan xalos qiladi.
+ */
+export async function setBagItem(userId: string, itemId: string, checked: boolean): Promise<string[]> {
+  await ensureSchema();
+  if (checked) {
+    await sql`
+      INSERT INTO pregnancy_bag_items (user_id, item_id, checked_at)
+      VALUES (${userId}, ${itemId}, ${new Date().toISOString()})
+      ON CONFLICT (user_id, item_id) DO NOTHING
+    `;
+  } else {
+    await sql`DELETE FROM pregnancy_bag_items WHERE user_id = ${userId} AND item_id = ${itemId}`;
+  }
+  return listBagItems(userId);
+}
+
+/**
+ * PREG-KICKS-01: oxirgi 24 soatdagi harakat vaqtlari.
+ *
+ * 24 soat — seansni (2 soat) aniqlash uchun yetarli va ro'yxatni
+ * kichik saqlaydi. Tarix uchun emas: ayolga kechagi sanoq emas,
+ * HOZIRGI seans kerak.
+ */
+export async function listRecentKicks(userId: string): Promise<string[]> {
+  await ensureSchema();
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const rows = (await sql`
+    SELECT kicked_at FROM pregnancy_kick_events
+    WHERE user_id = ${userId} AND kicked_at >= ${cutoff}
+    ORDER BY kicked_at ASC
+  `) as unknown as { kicked_at: string }[];
+  return rows.map((r) => r.kicked_at);
+}
+
+/**
+ * Bitta harakatni qayd etadi. Vaqtni SERVER belgilaydi — telefon soati
+ * noto'g'ri bo'lsa seans hisobi buzilardi.
+ *
+ * Eski kunlik hisoblagich ham oshiriladi: unga faol foydalanuvchilar
+ * statistikasi bog'langan (repo.ts#activeUsers) va uni buzmaslik kerak.
+ */
+export async function addKickEvent(userId: string): Promise<string[]> {
+  await ensureSchema();
+  const id = crypto.randomUUID();
+  const kickedAt = new Date().toISOString();
+  await sql`INSERT INTO pregnancy_kick_events (id, user_id, kicked_at) VALUES (${id}, ${userId}, ${kickedAt})`;
+  await incrementKicks(userId);
+  return listRecentKicks(userId);
 }
 
 export async function incrementKicks(userId: string): Promise<number> {

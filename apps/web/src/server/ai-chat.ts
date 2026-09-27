@@ -210,6 +210,10 @@ async function buildUserContext(userId: string, language: Language): Promise<str
   const pregnancyState = resolvePregnancyState({
     declaredPregnant: onboarding?.isPregnant ?? false,
     profile: pregnancy,
+    // PREG-END-01: homiladorlik tugagan bo'lsa AI ham "siz homiladorsiz"
+    // demasligi kerak — bu eng og'ir chalkashlik bo'lardi.
+    outcome: pregnancy?.outcome ?? null,
+    endedOn: pregnancy?.endedOn ?? null,
   });
   if (pregnancyState.status) {
     const { currentWeek, trimester } = pregnancyState.status;

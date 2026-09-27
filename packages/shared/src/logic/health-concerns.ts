@@ -60,7 +60,20 @@ export const HEALTH_CONCERNS: HealthConcernRule[] = [
   {
     id: "infertility",
     specialist: "reproductology",
-    relatedCheckups: ["preconception_checkup", "pelvic_ultrasound", "thyroid_function_test", "sti_panel", "rubella_immunity_check"],
+    // TTC-02/03: bu yo'nalishga uchta yangi band qo'shildi. Ularsiz
+    // "bepushtlik" mavzusini ochgan ayol eng muhim uchta qadamni —
+    // folat kislotasi, murojaat chegarasi va HAMKOR tekshiruvi —
+    // shu yerdan ko'rmasdi.
+    relatedCheckups: [
+      "fertility_evaluation",
+      "partner_semen_analysis",
+      "preconception_checkup",
+      "folic_acid_start",
+      "pelvic_ultrasound",
+      "thyroid_function_test",
+      "sti_panel",
+      "rubella_immunity_check",
+    ],
     minAge: 18,
     maxAge: 45,
     hideWhenPregnant: true,

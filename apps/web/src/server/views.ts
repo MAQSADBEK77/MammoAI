@@ -16,14 +16,33 @@ import type { CycleResponse, PredictionConfidence, PregnancyResponse, WellnessRe
 import {
   getCycleSettings,
   getKicksToday,
+  listBagItems,
+  listRecentKicks,
   getLatestVitals,
   getOnboardingProfile,
   getPregnancyProfile,
   getWellnessToday,
+  listChecklistItems,
+  listContractions,
   listCycleLogs,
   listPregnancyVisits,
   listRecentVitalsByType,
 } from "./repo";
+
+/**
+ * PREG-SCHED-01: homiladorlikka tegishli majburiy tekshiruvlar.
+ * Manba — SSV jadvali, `checklist-rules.ts`dagi homiladorlik oqimi.
+ */
+const PREGNANCY_CHECKUP_TYPES: ReadonlySet<string> = new Set([
+  "prenatal_screening_stage1",
+  "prenatal_screening_stage1b",
+  "prenatal_screening_stage1c",
+  "gestational_diabetes_screening",
+  "group_b_strep_screening",
+  "pregnancy_patronage_visit",
+  "torch_panel",
+  "bv_targeted_screening",
+]);
 
 /** CYCLE-ALGO-18: kalendarda nechta sikl oldinga ko'rsatiladi — ishonch
  * darajasiga qarab. Ma'lumot qancha ko'p bo'lsa, uzoq bashorat shuncha
@@ -101,6 +120,25 @@ export async function buildCycleResponse(userId: string, today?: string): Promis
   return { settings, logs, prediction, isIrregular, forecast, suppressFertility };
 }
 
+/**
+ * PREG-WEIGHT-01: homiladorlikdan OLDINGI vazndan farqi, kg.
+ *
+ * `computeWeightDeltaKg` dan farqi shunda: u oldingi O'LCHOVDAN farqni
+ * beradi ("o'tgan haftaga nisbatan +0.4"), bu esa butun homiladorlik
+ * davomidagi umumiy oshishni. IOM me'yori aynan umumiy oshishga
+ * bog'langan, shuning uchun ikkalasi ham kerak.
+ */
+async function computeTotalGainKg(userId: string): Promise<number | null> {
+  const [recent, profile] = await Promise.all([
+    listRecentVitalsByType(userId, "weight", 1),
+    getOnboardingProfile(userId),
+  ]);
+  const latest = recent[0] ? Number(recent[0].value) : null;
+  const base = profile?.weightKg ?? null;
+  if (latest === null || Number.isNaN(latest) || base === null) return null;
+  return Math.round((latest - base) * 10) / 10;
+}
+
 /** Vazn — oldingi qayddan (yoki, birinchi qayd bo'lsa, onboarding vaznidan) farqi, kg. */
 async function computeWeightDeltaKg(userId: string): Promise<number | null> {
   const recent = await listRecentVitalsByType(userId, "weight", 2);
@@ -114,13 +152,41 @@ async function computeWeightDeltaKg(userId: string): Promise<number | null> {
 export async function buildPregnancyResponse(userId: string): Promise<PregnancyResponse> {
   const profile = await getPregnancyProfile(userId);
   const status = profile ? getPregnancyStatus(profile) : null;
-  const [visits, kicksToday, latestVitals, weightDeltaKg] = await Promise.all([
+  const [visits, kicksToday, kickTimes, latestVitals, weightDeltaKg, totalGainKg, checklist, contractions, bagItems] =
+    await Promise.all([
     listPregnancyVisits(userId),
     getKicksToday(userId),
+    listRecentKicks(userId),
     getLatestVitals(userId),
     computeWeightDeltaKg(userId),
+    computeTotalGainKg(userId),
+    listChecklistItems(userId),
+    listContractions(userId),
+    listBagItems(userId),
   ]);
-  return { profile, status, visits, kicksToday, latestVitals, weightDeltaKg };
+
+  // PREG-SCHED-01: milliy jadval bo'yicha navbatdagi majburiy tekshiruv.
+  // Faqat homiladorlikka tegishli bandlar; muddati o'tganlari birinchi,
+  // keyin eng yaqini. "Bajarildi" belgilanganlari chiqarib tashlanadi.
+  const allPregnancyItems = checklist
+    .filter((i) => PREGNANCY_CHECKUP_TYPES.has(i.type))
+    .sort((a, b) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999"));
+  const next = allPregnancyItems.find((i) => i.status !== "done") ?? null;
+
+  return {
+    profile,
+    status,
+    visits,
+    kicksToday,
+    kickTimes,
+    latestVitals,
+    weightDeltaKg,
+    totalGainKg,
+    nextScheduledCheckup: next ? { type: next.type, dueDate: next.dueDate, status: next.status } : null,
+    scheduledCheckups: allPregnancyItems.map((i) => ({ type: i.type, dueDate: i.dueDate, status: i.status })),
+    contractions,
+    bagItems,
+  };
 }
 
 export async function buildWellnessResponse(userId: string): Promise<WellnessResponse> {

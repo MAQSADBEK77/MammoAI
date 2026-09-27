@@ -56,9 +56,6 @@ async function buildReminderMessage(userId: string, language: Language): Promise
   // rejalashtirayotgan 5 tasi) kundalik eslatmalarni BUTUNLAY, jimgina
   // olmay qolgan. Endi ayolning o'z belgisiga qaraymiz.
   const [onboarding, pregnancyProfile] = await Promise.all([getOnboardingProfile(userId), getPregnancyProfile(userId)]);
-  if (resolvePregnancyState({ declaredPregnant: onboarding?.isPregnant ?? false, profile: pregnancyProfile }).isPregnant) {
-    return null;
-  }
 
   const [loggedToday, settings, logs] = await Promise.all([
     hasLoggedToday(userId),

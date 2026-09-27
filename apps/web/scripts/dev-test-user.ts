@@ -74,6 +74,7 @@ async function main() {
     smokes: null,
     hasGivenBirth: null,
     chronicConditions: null,
+    tryingSince: null,
     };
     await saveOnboardingProfile(profile);
     await syncChecklistForUser(user.id, profile);
