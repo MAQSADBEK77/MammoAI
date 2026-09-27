@@ -83,7 +83,7 @@ export function PregnancyHero({
           type="button"
           onClick={onOpenCalendar}
           aria-label={dateLabel}
-          className="grid h-10 w-10 place-items-center rounded-full bg-surface text-secondary shadow-sm"
+          className="text-pregnancy-accent grid h-10 w-10 place-items-center rounded-full bg-surface shadow-sm"
         >
           <CalendarMonthOutlined sx={{ fontSize: 20 }} />
         </button>
@@ -101,13 +101,13 @@ export function PregnancyHero({
               onClick={() => onSelectDay(d.date)}
               className="flex flex-col items-center gap-1 py-1"
             >
-              <span className={clsx("text-[10px] font-bold uppercase tracking-wide", isToday ? "text-secondary" : "text-text-muted")}>
+              <span className={clsx("text-[10px] font-bold uppercase tracking-wide", isToday ? "text-pregnancy-accent" : "text-text-muted")}>
                 {isToday ? todayLabel : d.weekdayLabel}
               </span>
               <span
                 className={clsx(
                   "grid h-9 w-9 place-items-center rounded-full text-sm font-bold transition-colors",
-                  isToday ? "bg-secondary text-white shadow-sm" : isSelected ? "bg-surface text-text-primary" : "text-text-secondary"
+                  isToday ? "bg-pregnancy-accent text-white shadow-sm" : isSelected ? "bg-surface text-text-primary" : "text-text-secondary"
                 )}
               >
                 {d.dayNumber}
@@ -120,13 +120,13 @@ export function PregnancyHero({
       <div className="mt-6 flex flex-col items-center gap-3">
         <PregnancyWeekImage week={week} icon={sizeIcon} />
         <button type="button" onClick={onOpenDetails} className="flex items-center gap-1.5">
-          <span className="text-[1.75rem] font-extrabold leading-tight text-secondary">{weekDayLabel}</span>
-          <InfoOutlined sx={{ fontSize: 18 }} className="text-secondary/60" />
+          <span className="text-pregnancy-accent text-[1.75rem] font-extrabold leading-tight">{weekDayLabel}</span>
+          <InfoOutlined sx={{ fontSize: 18 }} className="text-pregnancy-accent opacity-60" />
         </button>
         <button
           type="button"
           onClick={onOpenDetails}
-          className="tap-target rounded-full bg-surface px-7 text-sm font-bold text-secondary shadow-md shadow-secondary/10 active:scale-[0.98]"
+          className="text-pregnancy-accent tap-target rounded-full bg-surface px-7 text-sm font-bold shadow-md active:scale-[0.98]"
         >
           {detailsLabel}
         </button>

@@ -243,8 +243,8 @@ export function PregnancyScreen() {
         </div>
 
         <div className="flex justify-center gap-3">
-          <FloatingTag icon={<CalendarClock sx={{ fontSize: 18 }} className="text-secondary" />} value={String(status.currentWeek)} label={dict.pregnancy.completedWeekLabel} />
-          <FloatingTag icon={<Hourglass sx={{ fontSize: 18 }} className="text-secondary" />} value={String(weeksRemaining)} label={dict.pregnancy.remainingWeekLabel} />
+          <FloatingTag icon={<CalendarClock sx={{ fontSize: 18 }} className="text-pregnancy-accent" />} value={String(status.currentWeek)} label={dict.pregnancy.completedWeekLabel} />
+          <FloatingTag icon={<Hourglass sx={{ fontSize: 18 }} className="text-pregnancy-accent" />} value={String(weeksRemaining)} label={dict.pregnancy.remainingWeekLabel} />
         </div>
 
         {/* PREG-HERO-01: chiziq endi OQ fonda — oq matn ko'rinmasdi.
@@ -254,7 +254,7 @@ export function PregnancyScreen() {
         <div className="space-y-1.5">
           <div className="h-3 w-full overflow-hidden rounded-full bg-surface-muted">
             <div
-              className="bg-aurora-pregnancy h-full rounded-full transition-all"
+              className="bg-pregnancy-accent h-full rounded-full transition-all"
               style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }}
             />
           </div>
