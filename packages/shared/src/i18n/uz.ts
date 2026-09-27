@@ -103,6 +103,7 @@ const uz = {
     community: "Jamiyat",
     clinics: "Klinikalar",
     profile: "Profil",
+    tools: "Vositalar",
     articles: "Maqolalar",
     assistant: "Yordamchi",
     // TODAY-01: pastki menyuda "Hamkor" o'rniga qisqaroq nom (foydalanuvchi
@@ -1340,6 +1341,24 @@ const uz = {
   // bildirishnomalar markazida bir xil matn. Faqat MAZMUNLI bo'lganda yuboriladi
   // (bugun hali belgilanmagan bo'lsa, YOKI hayz/unumdor kun yaqinlashganda) —
   // har kuni bir xil xabar yuborib zerikarli qilib yubormaslik uchun.
+  tools: {
+    title: "Vositalar",
+    subtitle: "Ilovaning barcha bo'limlari bir joyda",
+    articles: "Maqolalar",
+    articlesHint: "Shifokor tekshirgan materiallar",
+    clinics: "Klinikalar",
+    clinicsHint: "Yaqin klinika va bepul skrining",
+    report: "Shifokor uchun hisobot",
+    reportHint: "Qabulga olib boring",
+    stats: "Statistika",
+    statsHint: "Sikl va simptomlar tahlili",
+    riskQuiz: "Xavf testi",
+    riskQuizHint: "Shaxsiy xavf darajangiz",
+    concerns: "Sizni nima bezovta qilyapti",
+    concernsHint: "12 ta yo'nalish bo'yicha yordam",
+    partner: "Juft",
+    partnerHint: "Hamkoringiz bilan ulashish",
+  },
   reminders: {
     logToday: "Bugungi holatingizni hali belgilamadingiz. Bir daqiqa ajratib, sikl kuzatuvini davom ettiring 🌸",
     logButton: "Belgilash",

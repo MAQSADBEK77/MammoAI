@@ -12,8 +12,8 @@ import {
   GroupsOutlined,
   Favorite,
   FavoriteBorderOutlined,
-  MenuBook,
-  MenuBookOutlined,
+  GridView,
+  GridViewOutlined,
   ChatBubble,
   ChatBubbleOutlineOutlined,
 } from "@mui/icons-material";
@@ -55,7 +55,7 @@ export function BottomNav() {
     // butun ilovaning mazmuni.
     ...(isPartnerTracking
       ? [{ href: "/hamkor", label: dict.nav.partner, Icon: Favorite, IconOutline: FavoriteBorderOutlined }]
-      : [{ href: "/maqolalar", label: dict.nav.articles, Icon: MenuBook, IconOutline: MenuBookOutlined }]),
+      : [{ href: "/vositalar", label: dict.nav.tools, Icon: GridView, IconOutline: GridViewOutlined }]),
     // TODAY-04: menyu HAR DOIM tekis — hech qaysi band boshqasidan katta emas
     // (foydalanuvchi so'rovi). Yordamchi "mo'ralab" turganda esa uning O'Z
     // ikonkasi kattalashadi (pastda), oynani unga bog'laydigan "dum"ni
