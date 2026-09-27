@@ -632,6 +632,9 @@ const en: Dictionary = {
 
   pregnancy: {
     title: "Pregnancy",
+    weekDayLabel: (week: number, day: number) => `${week} weeks, ${day} days`,
+    weekContentMissing: "Content for this week is not ready yet.",
+    detailsButton: "Details",
     weekLabel: (week: number) => `Week ${week}`,
     daysRemaining: (days: number) => `${days} days until due date`,
     trimester: (t: number) => `Trimester ${t}`,

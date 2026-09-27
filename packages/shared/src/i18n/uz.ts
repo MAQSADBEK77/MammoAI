@@ -730,6 +730,10 @@ const uz = {
 
   pregnancy: {
     title: "Homiladorlik",
+    // PREG-HERO-01
+    weekDayLabel: (week: number, day: number) => `${week} hafta, ${day} kun`,
+    weekContentMissing: "Bu hafta uchun matn hali tayyorlanmagan.",
+    detailsButton: "Batafsil",
     weekLabel: (week: number) => `${week}-hafta`,
     daysRemaining: (days: number) => `Tug'ilishga ${days} kun qoldi`,
     trimester: (t: number) => `${t}-trimestr`,

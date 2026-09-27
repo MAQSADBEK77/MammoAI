@@ -13,7 +13,7 @@ import { useIllustrations } from "@/lib/illustrations";
 import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
-import { PregnancyWeekImage } from "@/components/PregnancyWeekImage";
+import { PregnancyHero } from "@/components/screens/PregnancyHero";
 import { PregnancyAlbum } from "@/components/PregnancyAlbum";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
@@ -51,6 +51,7 @@ export function PregnancyScreen() {
   /** PREG-END-01: "homiladorlik tugadi" oynasi. */
   const [endingOpen, setEndingOpen] = useState(false);
   const [endingSaving, setEndingSaving] = useState(false);
+  const [showWeekDetails, setShowWeekDetails] = useState(false);
 
   /**
    * PREG-END-01: natijani saqlaydi va rejimni almashtiradi.
@@ -204,17 +205,38 @@ export function PregnancyScreen() {
     ? Math.max(0, Math.round((new Date(nextVisit.date + "T00:00:00Z").getTime() - new Date(todayStr + "T00:00:00Z").getTime()) / 86400000))
     : null;
 
+  /** PREG-HERO-01: hafta chizig'i uchun yetti kun — bugundan uch kun oldin
+   * boshlanadi, ya'ni bugun o'rtada turadi (Flo referensidagi kabi). */
+  const heroDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(`${todayStr}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + i - 3);
+    const date = d.toISOString().slice(0, 10);
+    return { date, weekdayLabel: dict.common.weekdaysShort[d.getUTCDay()], dayNumber: d.getUTCDate() };
+  });
+
   return (
     <div className="space-y-5 pb-6">
-      <ScreenHeader title={greeting} subtitle={dict.pregnancy.trimester(status.trimester)} />
+      <PregnancyHero
+        dateLabel={formatDateDisplay(todayStr)}
+        onOpenCalendar={() => router.push("/tekshiruvlar")}
+        days={heroDays}
+        today={todayStr}
+        selectedDate={todayStr}
+        onSelectDay={() => {}}
+        todayLabel={dict.cycle.todayLabel}
+        week={status.currentWeek}
+        sizeIcon={milestone.icon}
+        weekDayLabel={dict.pregnancy.weekDayLabel(status.currentWeek, status.currentDay)}
+        detailsLabel={dict.pregnancy.detailsButton}
+        onOpenDetails={() => setShowWeekDetails(true)}
+      />
 
-      {/* Homiladorlik "sayohati" kartasi — binafsha gradient fon, markazda
-          o'lcham-illyustratsiya, ustida suzuvchi statistik yorliqlar. */}
-      <div className="bg-aurora-pregnancy animate-fade-in-up space-y-5 rounded-[32px] p-6 text-center">
-        <div className="flex flex-col items-center gap-1">
-          <PregnancyWeekImage week={status.currentWeek} icon={milestone.icon} />
-          <h2 className="text-2xl font-extrabold text-white">{dict.pregnancy.weekLabel(status.currentWeek)}</h2>
-          <p className="max-w-[280px] text-white/85">
+      {/* Hafta tafsiloti — gradientdan KEYIN, oq fonda. Ilgari bularning
+          hammasi gradient kartaning ICHIDA edi va o'qish qiyin edi. */}
+      <div className="space-y-5">
+        <div className="text-center">
+          <p className="text-sm font-semibold text-text-secondary">{dict.pregnancy.trimester(status.trimester)}</p>
+          <p className="mt-1 text-base font-bold text-text-primary">
             {showSizeComparison ? dict.pregnancy.sizeComparison(sizeLabel) : dict.pregnancy.earlyWeekNote}
           </p>
         </div>
@@ -224,11 +246,27 @@ export function PregnancyScreen() {
           <FloatingTag icon={<Hourglass sx={{ fontSize: 18 }} className="text-secondary" />} value={String(weeksRemaining)} label={dict.pregnancy.remainingWeekLabel} />
         </div>
 
-        <div className="space-y-2">
-          <div className="h-3 w-full overflow-hidden rounded-full bg-white/25">
-            <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }} />
+        {/* PREG-HERO-01: chiziq endi OQ fonda — oq matn ko'rinmasdi.
+            Lalu referensidagi kabi trimestr yorliqlari ham qo'shildi:
+            ayol o'zini butun yo'lning qayerida turganini ko'rishi kerak,
+            faqat foizni emas. */}
+        <div className="space-y-1.5">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-muted">
+            <div
+              className="bg-aurora-pregnancy h-full rounded-full transition-all"
+              style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }}
+            />
           </div>
-          <p className="text-sm font-semibold text-white">{dict.pregnancy.daysRemaining(status.daysRemaining)}</p>
+          <div className="flex justify-between text-[11px] font-semibold">
+            {([1, 2, 3] as const).map((t) => (
+              <span key={t} className={t === status.trimester ? "text-text-primary" : "text-text-muted"}>
+                {dict.pregnancy.trimester(t)}
+              </span>
+            ))}
+          </div>
+          <p className="pt-1 text-center text-sm font-semibold text-text-secondary">
+            {dict.pregnancy.daysRemaining(status.daysRemaining)}
+          </p>
         </div>
       </div>
 
@@ -557,6 +595,48 @@ export function PregnancyScreen() {
           {dict.pregnancy.endedLink}
         </button>
       </div>
+
+      {/* PREG-HERO-01 — "Batafsil" oynasi. Flo referensida bu pastdan
+          chiqadigan varaq: katta rasm, hafta, va shu hafta haqidagi matn.
+          Bizda rasm allaqachon hero'da, shuning uchun bu yerda faqat
+          mazmun — takrorlash ortiqcha bo'lardi. */}
+      <Dialog
+        open={showWeekDetails}
+        onClose={() => setShowWeekDetails(false)}
+        fullWidth
+        maxWidth="xs"
+        slotProps={{ paper: { sx: { borderRadius: "24px", margin: 2 } } }}
+      >
+        <DialogContent>
+          <p className="text-lg font-bold text-text-primary">
+            {dict.pregnancy.weekDayLabel(status.currentWeek, status.currentDay)}
+          </p>
+          <p className="mt-1 text-sm text-text-secondary">
+            {showSizeComparison ? dict.pregnancy.sizeComparison(sizeLabel) : dict.pregnancy.earlyWeekNote}
+          </p>
+          {weekContent ? (
+            <div className="mt-4 space-y-4">
+              <div>
+                <p className="text-sm font-bold text-text-primary">{dict.pregnancy.babyDevelopmentTitle}</p>
+                <p className="mt-1 text-sm leading-relaxed text-text-secondary">{weekContent.babyDevelopment}</p>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-text-primary">{dict.pregnancy.motherChangesTitle}</p>
+                <p className="mt-1 text-sm leading-relaxed text-text-secondary">{weekContent.motherChanges}</p>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-text-muted">{dict.pregnancy.weekContentMissing}</p>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowWeekDetails(false)}
+            className="tap-target mt-5 w-full rounded-2xl bg-surface-muted text-sm font-semibold text-text-secondary"
+          >
+            {dict.common.close}
+          </button>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={endingOpen}

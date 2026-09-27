@@ -631,6 +631,9 @@ const ru: Dictionary = {
 
   pregnancy: {
     title: "Беременность",
+    weekDayLabel: (week: number, day: number) => `${week} недель, ${day} дней`,
+    weekContentMissing: "Текст для этой недели пока не готов.",
+    detailsButton: "Подробнее",
     weekLabel: (week: number) => `${week}-я неделя`,
     daysRemaining: (days: number) => `До родов осталось ${days} дн.`,
     trimester: (t: number) => `${t}-й триместр`,
