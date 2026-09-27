@@ -690,6 +690,28 @@ const ru: Dictionary = {
     nextCheckupTitle: "Следующий приём",
     nextCheckupNone: "Приём не запланирован",
     nextCheckupDaysLeft: (days: number) => (days === 0 ? "Сегодня" : days === 1 ? "Завтра" : `Осталось ${days} дн.`),
+    // PREG-DETAIL-01: emoji faqat `public/emoji` da MAVJUD bo'lganlaridan
+    // tanlandi — u yerda atigi 87 ta Twemoji SVG bor va yo'g'i singan
+    // rasm bo'lib chiqadi (bu loyihada allaqachon uchragan xato).
+    // Ba'zi mevaning aniq belgisi yo'q, shuning uchun eng yaqini olindi.
+    sizeEmoji: {
+      poppySeed: "\ud83c\udf31",
+      raspberry: "\ud83e\udad0",
+      lime: "\ud83c\udf4b",
+      lemon: "\ud83c\udf4b",
+      avocado: "\ud83e\udd51",
+      corn: "\ud83c\udf3d",
+      eggplant: "\ud83c\udf46",
+      coconut: "\ud83e\udd65",
+      pineapple: "\ud83c\udf4d",
+      watermelon: "\ud83c\udf49",
+    },
+    weekDetailTitle: (week: number) => `Что происходит на ${week}-й неделе`,
+    detailLength: (cm: number) => `Длина: ${cm} см`,
+    detailWeight: (g: number) => (g < 1000 ? `Вес: ${g} г` : `Вес: ${(g / 1000).toFixed(2)} кг`),
+    measureCrownRump: "Длина измеряется от макушки до копчика.",
+    measureCrownHeel: "Длина измеряется от макушки до пяток \u2014 с 20-й недели метод меняется.",
+    detailAverageNote: "Это средние значения; здоровый плод может от них отличаться.",
     sizes: {
       poppySeed: "маковое зёрнышко",
       raspberry: "малину",

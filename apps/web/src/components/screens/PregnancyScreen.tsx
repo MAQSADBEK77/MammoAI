@@ -14,6 +14,7 @@ import { Emoji } from "@/components/Emoji";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { PregnancyHero } from "@/components/screens/PregnancyHero";
+import { PregnancyWeekDetail } from "@/components/screens/PregnancyWeekDetail";
 import { PregnancyAlbum } from "@/components/PregnancyAlbum";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
@@ -662,47 +663,12 @@ export function PregnancyScreen() {
         </button>
       </div>
 
-      {/* PREG-HERO-01 — "Batafsil" oynasi. Flo referensida bu pastdan
-          chiqadigan varaq: katta rasm, hafta, va shu hafta haqidagi matn.
-          Bizda rasm allaqachon hero'da, shuning uchun bu yerda faqat
-          mazmun — takrorlash ortiqcha bo'lardi. */}
-      <Dialog
-        open={showWeekDetails}
-        onClose={() => setShowWeekDetails(false)}
-        fullWidth
-        maxWidth="xs"
-        slotProps={{ paper: { sx: { borderRadius: "24px", margin: 2 } } }}
-      >
-        <DialogContent>
-          <p className="text-lg font-bold text-text-primary">
-            {dict.pregnancy.weekDayLabel(status.currentWeek, status.currentDay)}
-          </p>
-          <p className="mt-1 text-sm text-text-secondary">
-            {showSizeComparison ? dict.pregnancy.sizeComparison(sizeLabel) : dict.pregnancy.earlyWeekNote}
-          </p>
-          {weekContent ? (
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="text-sm font-bold text-text-primary">{dict.pregnancy.babyDevelopmentTitle}</p>
-                <p className="mt-1 text-sm leading-relaxed text-text-secondary">{weekContent.babyDevelopment}</p>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-text-primary">{dict.pregnancy.motherChangesTitle}</p>
-                <p className="mt-1 text-sm leading-relaxed text-text-secondary">{weekContent.motherChanges}</p>
-              </div>
-            </div>
-          ) : (
-            <p className="mt-4 text-sm text-text-muted">{dict.pregnancy.weekContentMissing}</p>
-          )}
-          <button
-            type="button"
-            onClick={() => setShowWeekDetails(false)}
-            className="tap-target mt-5 w-full rounded-2xl bg-surface-muted text-sm font-semibold text-text-secondary"
-          >
-            {dict.common.close}
-          </button>
-        </DialogContent>
-      </Dialog>
+      {/* PREG-DETAIL-01: "Batafsil" endi TO'LIQ EKRAN — hafta tanlagich,
+          o'lchamlar va matn bilan (referensdagi kabi). Ilgari bu kichik
+          oyna edi va faqat joriy haftani ko'rsatardi. */}
+      {showWeekDetails && (
+        <PregnancyWeekDetail currentWeek={status.currentWeek} onClose={() => setShowWeekDetails(false)} />
+      )}
 
       <Dialog
         open={endingOpen}

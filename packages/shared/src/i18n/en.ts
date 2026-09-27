@@ -691,6 +691,28 @@ const en: Dictionary = {
     nextCheckupTitle: "Next checkup",
     nextCheckupNone: "No checkup scheduled",
     nextCheckupDaysLeft: (days: number) => (days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days left`),
+    // PREG-DETAIL-01: emoji faqat `public/emoji` da MAVJUD bo'lganlaridan
+    // tanlandi — u yerda atigi 87 ta Twemoji SVG bor va yo'g'i singan
+    // rasm bo'lib chiqadi (bu loyihada allaqachon uchragan xato).
+    // Ba'zi mevaning aniq belgisi yo'q, shuning uchun eng yaqini olindi.
+    sizeEmoji: {
+      poppySeed: "\ud83c\udf31",
+      raspberry: "\ud83e\udad0",
+      lime: "\ud83c\udf4b",
+      lemon: "\ud83c\udf4b",
+      avocado: "\ud83e\udd51",
+      corn: "\ud83c\udf3d",
+      eggplant: "\ud83c\udf46",
+      coconut: "\ud83e\udd65",
+      pineapple: "\ud83c\udf4d",
+      watermelon: "\ud83c\udf49",
+    },
+    weekDetailTitle: (week: number) => `What happens at week ${week}`,
+    detailLength: (cm: number) => `Length: ${cm} cm`,
+    detailWeight: (g: number) => (g < 1000 ? `Weight: ${g} g` : `Weight: ${(g / 1000).toFixed(2)} kg`),
+    measureCrownRump: "Length is measured from crown to rump.",
+    measureCrownHeel: "Length is measured from crown to heel \u2014 the method changes from week 20.",
+    detailAverageNote: "These are average values; a healthy baby may differ.",
     sizes: {
       poppySeed: "a poppy seed",
       raspberry: "a raspberry",

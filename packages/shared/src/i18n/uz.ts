@@ -793,6 +793,28 @@ const uz = {
     nextCheckupTitle: "Keyingi ko'rik",
     nextCheckupNone: "Rejalashtirilgan ko'rik yo'q",
     nextCheckupDaysLeft: (days: number) => (days === 0 ? "Bugun" : days === 1 ? "Ertaga" : `${days} kun qoldi`),
+    // PREG-DETAIL-01: emoji faqat `public/emoji` da MAVJUD bo'lganlaridan
+    // tanlandi — u yerda atigi 87 ta Twemoji SVG bor va yo'g'i singan
+    // rasm bo'lib chiqadi (bu loyihada allaqachon uchragan xato).
+    // Ba'zi mevaning aniq belgisi yo'q, shuning uchun eng yaqini olindi.
+    sizeEmoji: {
+      poppySeed: "\ud83c\udf31",
+      raspberry: "\ud83e\udad0",
+      lime: "\ud83c\udf4b",
+      lemon: "\ud83c\udf4b",
+      avocado: "\ud83e\udd51",
+      corn: "\ud83c\udf3d",
+      eggplant: "\ud83c\udf46",
+      coconut: "\ud83e\udd65",
+      pineapple: "\ud83c\udf4d",
+      watermelon: "\ud83c\udf49",
+    },
+    weekDetailTitle: (week: number) => `${week}-haftada nima bo'ladi`,
+    detailLength: (cm: number) => `Uzunligi: ${cm} sm`,
+    detailWeight: (g: number) => (g < 1000 ? `Vazni: ${g} g` : `Vazni: ${(g / 1000).toFixed(2)} kg`),
+    measureCrownRump: "Uzunlik boshdan dumg'azagacha o'lchanadi.",
+    measureCrownHeel: "Uzunlik boshdan tovongacha o'lchanadi \u2014 20-haftadan boshlab usul shunday o'zgaradi.",
+    detailAverageNote: "Bular o'rtacha qiymatlar; sog'lom homila ulardan farq qilishi mumkin.",
     sizes: {
       poppySeed: "moshdona",
       raspberry: "malina",

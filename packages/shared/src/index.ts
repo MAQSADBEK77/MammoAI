@@ -2,6 +2,7 @@ export * from "./types";
 export * from "./date";
 export * from "./design-tokens";
 export * from "./logic/conception";
+export * from "./logic/fetal-size";
 export * from "./logic/cycle";
 export * from "./logic/cycle-hero";
 export * from "./logic/cycle-phase";
