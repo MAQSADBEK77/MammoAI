@@ -774,6 +774,7 @@ interface OnboardingRow {
   hormonal_contraception: boolean | null;
   smokes: boolean | null;
   has_given_birth: boolean | null;
+  trying_since: string | null;
   chronic_conditions: string | null;
   last_checkup: OnboardingProfile["lastCheckup"];
   primary_goal: OnboardingProfile["primaryGoal"];
@@ -807,6 +808,7 @@ function onboardingFromRow(row: OnboardingRow): OnboardingProfile {
     hormonalContraception: row.hormonal_contraception ?? null,
     smokes: row.smokes ?? null,
     hasGivenBirth: row.has_given_birth ?? null,
+    tryingSince: row.trying_since ?? null,
     chronicConditions: row.chronic_conditions ? (JSON.parse(row.chronic_conditions) as ChronicCondition[]) : null,
     lastCheckup: row.last_checkup,
     primaryGoal: row.primary_goal,
@@ -851,7 +853,7 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
     INSERT INTO onboarding_profiles (
       user_id, name, age, is_pregnant, cycle_regularity, family_history, sexually_active, last_checkup, primary_goal,
       heard_about_us, typical_symptoms, period_attitude, health_conditions, health_conditions_other, height_cm, weight_kg, blood_type,
-      hpv_vaccinated, hormonal_contraception, smokes, has_given_birth, chronic_conditions
+      hpv_vaccinated, hormonal_contraception, smokes, has_given_birth, chronic_conditions, trying_since
     )
     VALUES (
       ${profile.userId}, ${orNull(profile.name)}, ${profile.age}, ${profile.isPregnant}, ${profile.cycleRegularity},
@@ -859,7 +861,7 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
       ${typicalSymptoms}, ${orNull(profile.periodAttitude)}, ${healthConditions}, ${orNull(profile.healthConditionsOther)},
       ${orNull(profile.heightCm)}, ${orNull(profile.weightKg)}, ${orNull(profile.bloodType)},
       ${orNull(profile.hpvVaccinated)}, ${orNull(profile.hormonalContraception)}, ${orNull(profile.smokes)},
-      ${orNull(profile.hasGivenBirth)}, ${chronicConditions}
+      ${orNull(profile.hasGivenBirth)}, ${chronicConditions}, ${orNull(profile.tryingSince)}
     )
     ON CONFLICT (user_id) DO UPDATE SET
       name = EXCLUDED.name, age = EXCLUDED.age, is_pregnant = EXCLUDED.is_pregnant,
@@ -872,7 +874,7 @@ export async function saveOnboardingProfile(profile: OnboardingProfile): Promise
       height_cm = EXCLUDED.height_cm, weight_kg = EXCLUDED.weight_kg, blood_type = EXCLUDED.blood_type,
       hpv_vaccinated = EXCLUDED.hpv_vaccinated, hormonal_contraception = EXCLUDED.hormonal_contraception,
       smokes = EXCLUDED.smokes, has_given_birth = EXCLUDED.has_given_birth,
-      chronic_conditions = EXCLUDED.chronic_conditions
+      chronic_conditions = EXCLUDED.chronic_conditions, trying_since = EXCLUDED.trying_since
   `;
 }
 
@@ -913,6 +915,8 @@ export async function updateOnboardingProfile(
       | "smokes"
       | "hasGivenBirth"
       | "chronicConditions"
+      // TTC-02: urinish muddati — tekshiruvlar ekranidagi savol orqali.
+      | "tryingSince"
     >
   >
 ): Promise<OnboardingProfile> {

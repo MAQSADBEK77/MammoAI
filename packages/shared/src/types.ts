@@ -168,6 +168,9 @@ export interface OnboardingProfile {
   smokes: boolean | null;
   /** Tug'ish tarixi — ko'krak va tuxumdon saratoni xavfiga ta'sir qiladi. */
   hasGivenBirth: boolean | null;
+  /** TTC-02: homiladorlikka urinish boshlangan sana ("YYYY-MM-DD").
+   * `null` — hali so'ralmagan yoki bu rejimda emas. */
+  tryingSince: string | null;
   /** Ginekologik bo'lmagan surunkali holatlar. */
   chronicConditions: ChronicCondition[] | null;
   /** Ixtiyoriy — foydalanuvchi o'zi kiritadi, tibbiy tashxis manbai emas. */
@@ -349,6 +352,10 @@ export type ChecklistItemType =
   | "thyroid_function_test"
   | "rubella_immunity_check"
   | "colorectal_cancer_screening"
+  // TTC-02: homiladorlikka tayyorgarlik uchun uchta yangi band.
+  | "folic_acid_start"
+  | "fertility_evaluation"
+  | "partner_semen_analysis"
   | "pregnancy_patronage_visit"
   | "postpartum_home_visit"
   | "menopause_checkup"

@@ -722,6 +722,11 @@ const en: Dictionary = {
         title: "Have you given birth?",
         hint: "Birth history affects breast and ovarian cancer risk.",
       },
+      tryingSince: {
+        title: "How long have you been trying to conceive?",
+        hint: "This decides when to see a doctor: 12 months under 35, 6 months at 35–40. Not knowing this threshold costs months.",
+        options: { lt6: "Less than 6 months", m6to12: "6–12 months", gt12: "More than a year" },
+      },
       chronicConditions: {
         title: "Do you have any of these?",
         hint: "Non-gynaecological conditions that still affect your plan.",
@@ -896,6 +901,18 @@ const en: Dictionary = {
       rubella_immunity_check: {
         title: "Rubella immunity check",
         why: "If you are not immune and are infected early in pregnancy, the risk of serious birth defects is high. The vaccine CANNOT be given once you are pregnant, so this only works beforehand.",
+      },
+      folic_acid_start: {
+        title: "Start folic acid (400 mcg)",
+        why: "The single most proven step when preparing for pregnancy — it lowers the risk of neural tube defects. Starting once pregnancy is confirmed is too late: it must begin at least a month before conception. Available over the counter.",
+      },
+      fertility_evaluation: {
+        title: "Not pregnant yet — get evaluated",
+        why: "You have passed the referral threshold (12 months under 35, 6 months at 35–40). This does not mean infertility — most causes are treatable, but they have to be found first. The longer the wait, the smaller the chance.",
+      },
+      partner_semen_analysis: {
+        title: "Semen analysis for your partner",
+        why: "In about half of cases the cause is male. A semen analysis is cheap, fast and painless, yet it is often done last. Doing it alongside the woman's evaluation saves months.",
       },
       colorectal_cancer_screening: {
         title: "Colorectal cancer screening",

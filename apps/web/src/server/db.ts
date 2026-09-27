@@ -587,6 +587,11 @@ async function initSchema() {
     () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS smokes BOOLEAN`,
     () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS has_given_birth BOOLEAN`,
     () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS chronic_conditions TEXT`,
+    // TTC-02: "qachondan beri urinyapsiz" — shifokorga murojaat chegarasi
+    // (35 yoshgacha 12 oy, 35-40 yoshda 6 oy) shu sanadan hisoblanadi.
+    // Onboardingda EMAS, tekshiruvlar ekranida so'raladi: onboarding
+    // allaqachon uzun, bu savol esa faqat bitta rejimga tegishli.
+    () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS trying_since TEXT`,
     // MUHIM: `notifications`ga tegishli ALTER'lar ATAYLAB bu yerda EMAS —
     // pastda, jadvalning o'zi ("2.5-bosqich") yaratilgandan KEYIN (qarang:
     // "2.6-bosqich"). Bu yerda turganda haqiqiy production'da hech qachon

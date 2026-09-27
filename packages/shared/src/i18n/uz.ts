@@ -823,6 +823,11 @@ const uz = {
         title: "Tug'gansizmi?",
         hint: "Tug'ish tarixi ko'krak va tuxumdon saratoni xavfiga ta'sir qiladi.",
       },
+      tryingSince: {
+        title: "Qancha vaqtdan beri homiladorlikka urinyapsiz?",
+        hint: "Shifokorga qachon murojaat qilish kerakligi shunga bog'liq: 35 yoshgacha 12 oy, 35-40 yoshda 6 oy. Bu chegarani bilmaslik ko'p vaqt yo'qotadi.",
+        options: { lt6: "6 oydan kam", m6to12: "6-12 oy", gt12: "Bir yildan ortiq" },
+      },
       chronicConditions: {
         title: "Quyidagilardan biri bormi?",
         hint: "Ginekologik bo'lmagan, lekin rejaga ta'sir qiladigan holatlar.",
@@ -1002,6 +1007,18 @@ const uz = {
       rubella_immunity_check: {
         title: "Qizamiqchaga (rubella) qarshi immunitet tekshiruvi",
         why: "Immunitet bo'lmasa va homiladorlikning erta davrida yuqsa — og'ir tug'ma nuqsonlar xavfi yuqori. Vaktsinani homilador bo'lgach QILIB BO'LMAYDI, shuning uchun bu faqat oldindan qilinadigan ish.",
+      },
+      folic_acid_start: {
+        title: "Folat kislotasini boshlash (400 mkg)",
+        why: "Homiladorlikka tayyorgarlikdagi eng isbotlangan bitta qadam — bolada nerv naychasi nuqsonlari xavfini kamaytiradi. Homiladorlik aniqlangach boshlash KECH: u homiladorlikdan kamida bir oy oldin boshlanishi kerak. Dorixonada retseptsiz sotiladi.",
+      },
+      fertility_evaluation: {
+        title: "Homiladorlik bo'lmasa — tekshiruvdan o'tish",
+        why: "Urinish muddati chegaradan oshdi (35 yoshgacha 12 oy, 35-40 yoshda 6 oy). Bu «bepushtlik» degani emas — sabablarning ko'pi davolanadi, lekin oldin aniqlanishi kerak. Kutish qancha uzaysa, imkoniyat shuncha kamayadi.",
+      },
+      partner_semen_analysis: {
+        title: "Hamkoringiz uchun spermogramma",
+        why: "Bepushtlik holatlarining taxminan yarmida sabab erkakda. Spermogramma — arzon, tez va og'riqsiz tekshiruv, lekin ko'pincha u eng oxirida qilinadi. Uni ayolning tekshiruvi bilan bir vaqtda qilish oylarni tejaydi.",
       },
       colorectal_cancer_screening: {
         title: "Yo'g'on ichak saratoni skrininggi",

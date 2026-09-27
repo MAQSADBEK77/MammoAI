@@ -12,6 +12,7 @@ const BASE: ChecklistRuleInput = {
   daysSinceDue: null,
   isPerimenopause: false,
   isTryingToConceive: false,
+  conceptionNeedsEvaluation: false,
   lastCheckup: "recent",
   healthConditions: [],
   hpvVaccinated: null,

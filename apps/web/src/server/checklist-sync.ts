@@ -7,6 +7,8 @@ import {
   isCycleIrregular,
   isPerimenopauseGoal,
   isTryingToConceiveGoal,
+  monthsTryingSince,
+  resolveConceptionStage,
   resolvePregnancyState,
   tashkentDateStr,
 } from "@mammoai/shared";
@@ -74,6 +76,18 @@ export async function syncChecklistForUser(userId: string, knownProfile?: Onboar
     daysSinceDue,
     isPerimenopause: isPerimenopauseGoal(profile.primaryGoal),
     isTryingToConceive: isTryingToConceiveGoal(profile.primaryGoal),
+    // TTC-02: shifokorga murojaat chegarasi. `hasKnownRiskFactor` — aniq
+    // sabab bo'lishi mumkin bo'lgan holatlar: tartibsiz sikl (ovulyatsiya
+    // muammosining eng ko'p uchraydigan belgisi) va ayolning o'zi
+    // ko'rsatgan ginekologik tashxislar. ACOG bunday holatda 12 oy
+    // kutishni tavsiya qilmaydi.
+    conceptionNeedsEvaluation:
+      isTryingToConceiveGoal(profile.primaryGoal) &&
+      resolveConceptionStage({
+        age: profile.age,
+        monthsTrying: monthsTryingSince(profile.tryingSince, today),
+        hasKnownRiskFactor: cycleIrregular || profile.healthConditions.length > 0,
+      }).kind === "evaluate-now",
     // PLAN-01: bu ikkalasi onboarding'da SO'RALARDI, lekin rejaga umuman
     // ta'sir qilmasdi — qarang: checklist-rules.ts izohlari.
     lastCheckup: profile.lastCheckup,
