@@ -52,6 +52,8 @@ export function PregnancyScreen() {
   const [endingOpen, setEndingOpen] = useState(false);
   const [endingSaving, setEndingSaving] = useState(false);
   const [showWeekDetails, setShowWeekDetails] = useState(false);
+  /** PREG-UI-02: shaxsiy tashriflar — standart holatda yopiq (0 ta yozuv). */
+  const [showVisits, setShowVisits] = useState(false);
 
   /**
    * PREG-END-01: natijani saqlaydi va rejimni almashtiradi.
@@ -437,10 +439,10 @@ export function PregnancyScreen() {
             <span
               className={clsx(
                 "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
-                scheduled.overdue ? "bg-danger/10" : "bg-secondary/10"
+                scheduled.overdue ? "bg-danger/10" : "bg-pregnancy-accent/10"
               )}
             >
-              <CalendarDays sx={{ fontSize: 20 }} className={scheduled.overdue ? "text-danger" : "text-secondary"} />
+              <CalendarDays sx={{ fontSize: 20 }} className={scheduled.overdue ? "text-danger" : "text-pregnancy-accent"} />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-text-secondary">{dict.pregnancy.scheduledCheckupTitle}</p>
@@ -537,9 +539,24 @@ export function PregnancyScreen() {
         </div>
       )}
 
+      {/* PREG-UI-02: shaxsiy tashriflar bo'limi endi YIG'ILGAN. Sabab
+          ko'rsatkichlar blokidagi bilan bir xil: `pregnancy_visits`
+          jadvalida NOLTA yozuv bor. Ustiga endi uning TEPASIDA milliy
+          jadvalning to'liq ro'yxati turibdi — ikkita "tashriflar"
+          ro'yxati yonma-yon turgani chalkashlik berardi. */}
       <div>
+        <button
+          type="button"
+          onClick={() => setShowVisits((v) => !v)}
+          className="mb-2 flex w-full items-center justify-between font-semibold text-text-primary"
+        >
+          {dict.pregnancy.visitsTitle}
+          <ChevronRight sx={{ fontSize: 18, transform: showVisits ? "rotate(90deg)" : undefined, transition: "transform 150ms" }} />
+        </button>
+        {showVisits && (
+        <div>
         <div className="mb-2 flex items-center justify-between">
-          <p className="font-semibold text-text-primary">{dict.pregnancy.visitsTitle}</p>
+          <span aria-hidden />
           {!addingVisit && (
             <Button variant="ghost" onClick={() => setAddingVisit(true)}>
               {dict.pregnancy.addVisitButton}
@@ -617,6 +634,8 @@ export function PregnancyScreen() {
             </Card>
           ))}
         </div>
+        </div>
+        )}
       </div>
 
       <PregnancyAlbum currentWeek={status.currentWeek} />

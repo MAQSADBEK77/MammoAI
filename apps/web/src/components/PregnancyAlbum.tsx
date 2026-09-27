@@ -124,7 +124,17 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
           </div>
         </div>
       ) : (
-        <Button variant="secondary" onClick={pickFile} className="gap-2">
+        // PREG-UI-03: tugma binafsha (`secondary`) edi va iliq ekranda
+        // yolg'iz sovuq dog' bo'lib turardi.
+        // Rang INLINE va `background` (qisqartma) orqali beriladi.
+        // `Button`ning "primary" varianti fonni GRADIENT bilan chizadi,
+        // ya'ni background-IMAGE — shuning uchun `backgroundColor`
+        // umuman ko'rinmasdi, gradient uning ustida turardi.
+        <Button
+          onClick={pickFile}
+          className="gap-2"
+          style={{ background: "var(--color-pregnancy-accent)", boxShadow: "none" }}
+        >
           {/* OVERNIGHT-05: 📷'ning mahalliy Twemoji SVG fayli yo'q edi. */}
           <Emoji e="🖼️" size={16} />
           {dict.pregnancy.albumAddButton}
