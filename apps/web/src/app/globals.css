@@ -326,8 +326,15 @@ body {
   --color-pregnancy-accent: #e9a179;
 }
 
+/* Referensdagi fon TEKIS gradient emas: u iliq maydon ustidagi yumshoq
+   yorug'lik — "qorin ichidan kelayotgan nur" hissi. Uch qatlam:
+   markaziy nur, yuqori-chapdagi issiqroq dog', va asosiy gradient.
+   Rasm kerak emas, hammasi CSS. */
 .bg-aurora-pregnancy-soft {
-  background: linear-gradient(180deg, #f8d8c2 0%, #fbe6d8 60%, #fdf1ea 100%);
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 46%, rgba(255, 252, 248, 0.9) 0%, rgba(255, 252, 248, 0) 60%),
+    radial-gradient(ellipse 80% 60% at 18% 8%, rgba(243, 186, 148, 0.5) 0%, rgba(243, 186, 148, 0) 65%),
+    linear-gradient(180deg, #f6d2b9 0%, #fadfcd 55%, #fdf1ea 100%);
 }
 
 /* Referensda gradientdan KEYINGI qism ham iliq (krem), sovuq kulrang
@@ -341,7 +348,9 @@ body {
 }
 
 [data-theme="dark"] .bg-aurora-pregnancy-soft {
-  background: linear-gradient(180deg, #33241c 0%, #261d18 55%, var(--color-background) 100%);
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 46%, rgba(94, 66, 50, 0.55) 0%, rgba(94, 66, 50, 0) 60%),
+    linear-gradient(180deg, #3a2820 0%, #2a1f19 55%, var(--color-background) 100%);
 }
 
 /* Kunlik tavsiyalar kartalari — fon bilan bir oilada, lekin ajralib turadi. */

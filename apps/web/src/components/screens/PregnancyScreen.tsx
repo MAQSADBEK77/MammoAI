@@ -262,7 +262,7 @@ export function PregnancyScreen() {
             ayol o'zini butun yo'lning qayerida turganini ko'rishi kerak,
             faqat foizni emas. */}
         <div className="space-y-1.5">
-          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-muted">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-black/5">
             <div
               className="bg-pregnancy-accent h-full rounded-full transition-all"
               style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }}

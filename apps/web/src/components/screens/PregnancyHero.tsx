@@ -143,12 +143,35 @@ export function PregnancyHero({
         {/* PREG-HERO-04: rasm HAFTAGA QARAB o'sadi — referensda 3-haftada
             u juda kichik, oxirida esa butun maydonni egallaydi. Bu shunchaki
             bezak emas: o'sishning o'zi ma'lumot. */}
-        <div className="flex h-52 items-center justify-center">
+        {/* PREG-HERO-06 — rasm fonga SINGIB ketadi.
+            Rasmlarning o'zi yaxshi (iliq, yumshoq, Flo uslubiga yaqin),
+            lekin biz ularni qattiq chegarali DOIRA + SOYA ichiga
+            solardik — natijada ular fonga "yopishtirilgan stiker"
+            bo'lib ko'rinardi. Referensda esa homila suzib turadi:
+            chegarasi yo'q, chetlari fonga eriydi.
+
+            Orqasida yumshoq yorug'lik — referensdagi "qorin ichidagi
+            nur" hissi. U CSS bilan chiziladi, rasm kerak emas. */}
+        <div className="relative flex h-56 items-center justify-center">
+          <span
+            aria-hidden
+            className="absolute rounded-full"
+            style={{
+              width: imageSize * 1.9,
+              height: imageSize * 1.9,
+              background: "radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 68%)",
+            }}
+          />
           <PregnancyWeekImage
             week={week}
             icon={sizeIcon}
-            className="rounded-full object-cover shadow-lg"
-            style={{ width: imageSize, height: imageSize }}
+            className="relative object-cover"
+            style={{
+              width: imageSize,
+              height: imageSize,
+              WebkitMaskImage: "radial-gradient(circle, #000 52%, transparent 74%)",
+              maskImage: "radial-gradient(circle, #000 52%, transparent 74%)",
+            }}
           />
         </div>
         <button type="button" onClick={onOpenDetails} className="flex items-center gap-1.5">
