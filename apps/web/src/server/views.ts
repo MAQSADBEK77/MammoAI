@@ -120,6 +120,25 @@ export async function buildCycleResponse(userId: string, today?: string): Promis
   return { settings, logs, prediction, isIrregular, forecast, suppressFertility };
 }
 
+/**
+ * PREG-WEIGHT-01: homiladorlikdan OLDINGI vazndan farqi, kg.
+ *
+ * `computeWeightDeltaKg` dan farqi shunda: u oldingi O'LCHOVDAN farqni
+ * beradi ("o'tgan haftaga nisbatan +0.4"), bu esa butun homiladorlik
+ * davomidagi umumiy oshishni. IOM me'yori aynan umumiy oshishga
+ * bog'langan, shuning uchun ikkalasi ham kerak.
+ */
+async function computeTotalGainKg(userId: string): Promise<number | null> {
+  const [recent, profile] = await Promise.all([
+    listRecentVitalsByType(userId, "weight", 1),
+    getOnboardingProfile(userId),
+  ]);
+  const latest = recent[0] ? Number(recent[0].value) : null;
+  const base = profile?.weightKg ?? null;
+  if (latest === null || Number.isNaN(latest) || base === null) return null;
+  return Math.round((latest - base) * 10) / 10;
+}
+
 /** Vazn — oldingi qayddan (yoki, birinchi qayd bo'lsa, onboarding vaznidan) farqi, kg. */
 async function computeWeightDeltaKg(userId: string): Promise<number | null> {
   const recent = await listRecentVitalsByType(userId, "weight", 2);
@@ -133,12 +152,14 @@ async function computeWeightDeltaKg(userId: string): Promise<number | null> {
 export async function buildPregnancyResponse(userId: string): Promise<PregnancyResponse> {
   const profile = await getPregnancyProfile(userId);
   const status = profile ? getPregnancyStatus(profile) : null;
-  const [visits, kicksToday, kickTimes, latestVitals, weightDeltaKg, checklist, contractions, bagItems] = await Promise.all([
+  const [visits, kicksToday, kickTimes, latestVitals, weightDeltaKg, totalGainKg, checklist, contractions, bagItems] =
+    await Promise.all([
     listPregnancyVisits(userId),
     getKicksToday(userId),
     listRecentKicks(userId),
     getLatestVitals(userId),
     computeWeightDeltaKg(userId),
+    computeTotalGainKg(userId),
     listChecklistItems(userId),
     listContractions(userId),
     listBagItems(userId),
@@ -160,6 +181,7 @@ export async function buildPregnancyResponse(userId: string): Promise<PregnancyR
     kickTimes,
     latestVitals,
     weightDeltaKg,
+    totalGainKg,
     nextScheduledCheckup: next ? { type: next.type, dueDate: next.dueDate, status: next.status } : null,
     scheduledCheckups: allPregnancyItems.map((i) => ({ type: i.type, dueDate: i.dueDate, status: i.status })),
     contractions,

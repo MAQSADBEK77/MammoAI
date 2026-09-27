@@ -6,6 +6,7 @@ export * from "./logic/fetal-size";
 export * from "./logic/food-safety";
 export * from "./logic/kicks";
 export * from "./logic/hospital-bag";
+export * from "./logic/weight-gain";
 export * from "./logic/contractions";
 export * from "./logic/cycle";
 export * from "./logic/cycle-hero";

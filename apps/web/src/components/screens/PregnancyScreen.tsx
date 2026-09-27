@@ -25,6 +25,7 @@ import { PregnancyHero } from "@/components/screens/PregnancyHero";
 import { PregnancyWeekDetail } from "@/components/screens/PregnancyWeekDetail";
 import { ContractionTimer } from "@/components/screens/ContractionTimer";
 import { KickCounter } from "@/components/screens/KickCounter";
+import { WeightGainCard } from "@/components/screens/WeightGainCard";
 import { PregnancyAlbum } from "@/components/PregnancyAlbum";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
@@ -611,6 +612,15 @@ export function PregnancyScreen() {
           onChange={(next) => setData((prev) => (prev ? { ...prev, contractions: next } : prev))}
         />
       )}
+
+      {/* PREG-WEIGHT-01: vazn me'yori. Karta faqat bo'y va boshlang'ich
+          vazn ma'lum bo'lganda chiziladi — ichkarida o'zi tekshiradi. */}
+      <WeightGainCard
+        heightCm={onboardingProfile?.heightCm ?? null}
+        prePregnancyWeightKg={onboardingProfile?.weightKg ?? null}
+        week={status.currentWeek}
+        totalGainKg={data.totalGainKg}
+      />
 
       {/* PREG-BAG-01: sumka kartasi 30-haftadan ko'rinadi — ro'yxat
           34-haftaga tayyor bo'lishi kerak, ya'ni yig'ishga to'rt hafta

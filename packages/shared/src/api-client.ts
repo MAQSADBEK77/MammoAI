@@ -141,6 +141,8 @@ export interface PregnancyResponse {
   kickTimes: string[];
   /** PREG-BAG-01: tug'ruqxona sumkasida belgilangan bandlar. */
   bagItems: string[];
+  /** PREG-WEIGHT-01: homiladorlikdan oldingi vazndan umumiy farq, kg. */
+  totalGainKg: number | null;
   /** Har bir tur bo'yicha eng so'nggi o'z-o'zidan qayd etilgan ko'rsatkich. */
   latestVitals: Partial<Record<VitalType, PregnancyVitalLog>>;
   /** Vazn — oldingi qayddan (yoki onboarding vaznidan) farqi, kg. */
