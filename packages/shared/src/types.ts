@@ -223,7 +223,17 @@ export interface CycleLog {
    * kunini simptom-signaldan ko'ra ANIQROQ aniqlash uchun ishlatiladi
    * (cycle.ts#detectOvulationFromBbt). */
   basalBodyTemp: number | null;
+  /** TTC-03: ovulyatsiya (LH) testi natijasi. Musbat test ovulyatsiya
+   * 24-36 soat ichida kutilishini bildiradi — rejalashtirish uchun eng
+   * foydali real vaqt signali. `null` — test qilinmagan. */
+  lhTest: LhTestResult | null;
+  /** TTC-03: shu kuni jinsiy aloqa bo'lganmi. Unumdor oynaning
+   * "qoplanishi"ni hisoblash uchun; faqat tayyorgarlik rejimida. */
+  intercourse: boolean;
 }
+
+/** TTC-03: ovulyatsiya testi natijasi. */
+export type LhTestResult = "positive" | "negative";
 
 export interface CycleSettings {
   userId: string;

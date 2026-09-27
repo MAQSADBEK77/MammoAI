@@ -986,6 +986,8 @@ interface CycleLogRow {
   symptoms: string;
   created_at: string;
   basal_body_temp: number | null;
+  lh_test: string | null;
+  intercourse: boolean | null;
 }
 
 function cycleLogFromRow(row: CycleLogRow): CycleLog {
@@ -998,6 +1000,8 @@ function cycleLogFromRow(row: CycleLogRow): CycleLog {
     symptoms: JSON.parse(row.symptoms) as Symptom[],
     createdAt: row.created_at,
     basalBodyTemp: row.basal_body_temp,
+    lhTest: (row.lh_test as CycleLog["lhTest"]) ?? null,
+    intercourse: !!row.intercourse,
   };
 }
 
@@ -1063,7 +1067,7 @@ export async function getMaxCycleLogUpdatedAt(userId: string): Promise<string | 
 
 export async function upsertCycleLog(
   userId: string,
-  log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms"> & Partial<Pick<CycleLog, "basalBodyTemp">>
+  log: Pick<CycleLog, "date" | "flow" | "mood" | "symptoms"> & Partial<Pick<CycleLog, "basalBodyTemp" | "lhTest" | "intercourse">>
 ): Promise<CycleLog> {
   await ensureSchema();
   const id = randomUUID();
@@ -1073,16 +1077,19 @@ export async function upsertCycleLog(
   // barcha eski chaqiruvlar shunday) `undefined` bo'ladi, `?? null` bilan
   // ustunga `NULL` yoziladi (o'zgarishsiz eski xatti-harakat).
   const basalBodyTemp = log.basalBodyTemp ?? null;
+  // TTC-03: xuddi shu naqsh — eski chaqiruvlar bu maydonlarni bermaydi.
+  const lhTest = log.lhTest ?? null;
+  const intercourse = log.intercourse ?? false;
   // FIX2-26: `updated_at` har bir yozish/tahrirlashda yangilanadi —
   // active-insights.ts shundan foydalanib, faqat yozuvlar SONI o'zgarmagan
   // (mavjud kun tahrirlangan) holatlarda ham AI tahlilini qayta generatsiya
   // qilishi kerakligini aniqlaydi.
   await sql`
-    INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at, updated_at, basal_body_temp)
-    VALUES (${id}, ${userId}, ${log.date}, ${log.flow}, ${log.mood}, ${symptoms}, ${createdAt}, ${createdAt}, ${basalBodyTemp})
+    INSERT INTO cycle_logs (id, user_id, date, flow, mood, symptoms, created_at, updated_at, basal_body_temp, lh_test, intercourse)
+    VALUES (${id}, ${userId}, ${log.date}, ${log.flow}, ${log.mood}, ${symptoms}, ${createdAt}, ${createdAt}, ${basalBodyTemp}, ${lhTest}, ${intercourse})
     ON CONFLICT (user_id, date) DO UPDATE SET
       flow = EXCLUDED.flow, mood = EXCLUDED.mood, symptoms = EXCLUDED.symptoms, updated_at = EXCLUDED.updated_at,
-      basal_body_temp = EXCLUDED.basal_body_temp
+      basal_body_temp = EXCLUDED.basal_body_temp, lh_test = EXCLUDED.lh_test, intercourse = EXCLUDED.intercourse
   `;
   // Har doim qayta hisoblanadi (faqat `log.flow` bor bo'lganda emas) — aks
   // holda mavjud oqim kunini "bekor qilish" (flow'ni null'ga o'zgartirish)
@@ -1156,7 +1163,7 @@ export async function applyPeriodDiff(userId: string, added: string[], removed: 
     const byDate = new Map(existing.map((l) => [l.date, l]));
     for (const date of removed) {
       const log = byDate.get(date);
-      const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null);
+      const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null || log.lhTest !== null || log.intercourse);
       if (hasOtherData) {
         await sql`UPDATE cycle_logs SET flow = NULL, updated_at = ${now()} WHERE user_id = ${userId} AND date = ${date}`;
       } else {
@@ -1185,7 +1192,7 @@ export async function clearPeriodRange(userId: string, dateInRange: string): Pro
   const byDate = new Map(logs.map((l) => [l.date, l]));
   for (const date of run) {
     const log = byDate.get(date);
-    const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null);
+    const hasOtherData = !!log && (log.mood !== null || log.symptoms.length > 0 || log.basalBodyTemp !== null || log.lhTest !== null || log.intercourse);
     if (hasOtherData) {
       await sql`UPDATE cycle_logs SET flow = NULL, updated_at = ${now()} WHERE user_id = ${userId} AND date = ${date}`;
     } else {

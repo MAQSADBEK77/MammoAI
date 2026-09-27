@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
-import { formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { fertileWindowCoverage, formatDateDisplay, getCyclePhase, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/analytics";
 import { useConfirm } from "@/lib/confirm";
@@ -135,6 +135,9 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // "36." kabi yarim kiritgan holatni ham to'g'ri ko'rsatish uchun; saqlashda
   // raqamga aylantiriladi (bo'sh bo'lsa `null`).
   const [basalBodyTempInput, setBasalBodyTempInput] = useState("");
+  // TTC-03: faqat homiladorlikka tayyorgarlik rejimida so'raladigan ikkita qayd.
+  const [lhTestInput, setLhTestInput] = useState<"positive" | "negative" | null>(null);
+  const [intercourseInput, setIntercourseInput] = useState(false);
   const [showAdvancedLog, setShowAdvancedLog] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingLog, setDeletingLog] = useState(false);
@@ -190,6 +193,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // tabiiy ravishda tartibsizlashadi) — shu bo'limlar (halqa, "tartibsiz"
   // ogohlantirishi) yashiriladi, o'rniga simptom kuzatuviga urg'u beriladi.
   const isPerimenopause = onboardingProfile?.primaryGoal === "perimenopause";
+  /** TTC-03: homiladorlikka tayyorgarlik rejimi. */
+  const isTryingToConceive = onboardingProfile?.primaryGoal === "planning_pregnancy";
 
   useEffect(() => {
     if (!predictionsUpdated) return;
@@ -658,6 +663,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     setMood(existing?.mood ?? null);
     setSymptoms(existing?.symptoms ?? []);
     setBasalBodyTempInput(existing?.basalBodyTemp != null ? String(existing.basalBodyTemp) : "");
+    setLhTestInput(existing?.lhTest ?? null);
+    setIntercourseInput(existing?.intercourse ?? false);
     setShowAdvancedLog(existing?.basalBodyTemp != null);
     setLogging(true);
   }
@@ -725,7 +732,14 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
       // qarab) — server tomonida yana bir bor 34-42°C oralig'i tekshiriladi.
       const trimmed = basalBodyTempInput.trim().replace(",", ".");
       const basalBodyTemp = trimmed ? Number(trimmed) : null;
-      const res = await api.cycle.logDay({ date: logDate, flow, mood, symptoms, basalBodyTemp });
+      const res = await api.cycle.logDay({
+        date: logDate,
+        flow,
+        mood,
+        symptoms,
+        basalBodyTemp,
+        ...(isTryingToConceive ? { lhTest: lhTestInput, intercourse: intercourseInput } : {}),
+      });
       setData(res);
       // TODAY-03: yangi yozuv bashoratni qayta hisoblatadi — foydalanuvchi
       // buni ko'rishi kerak, aks holda "saqladim, nima o'zgardi?" degan savol
@@ -750,6 +764,59 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // (mavjud yozuvda qiymat bo'lsa, avtomatik ochiladi — `openLogging`ga
   // qarang). Kuzatuvchilar uchun esa (BBT ovulyatsiyani simptomdan ANIQROQ
   // aniqlaydi) aniqlikni sezilarli oshiradi.
+  /**
+   * TTC-03 — tayyorgarlik rejimidagi ikkita qo'shimcha qayd.
+   *
+   * Nega ular "Ilg'or" bo'limida EMAS, balki yuqorida: bu rejimda aynan
+   * shu ikkalasi asosiy ma'lumot. Ovulyatsiya testi — yagona REAL VAQT
+   * signali (bazal harorat ovulyatsiyani faqat o'tgach tasdiqlaydi, ya'ni
+   * rejalashtirish uchun kech), aloqa kuni esa unumdor oynaning
+   * qoplanishini hisoblash uchun kerak.
+   *
+   * Boshqa rejimlarda umuman ko'rsatilmaydi — ular uchun bu savollar
+   * o'rinsiz va bezovta qiladi.
+   */
+  const conceptionLogFields = isTryingToConceive ? (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <p className="text-sm font-semibold text-text-secondary">{dict.cycle.lhTestLabel}</p>
+        <div className="flex gap-2">
+          {([
+            { v: "positive" as const, label: dict.cycle.lhTestPositive },
+            { v: "negative" as const, label: dict.cycle.lhTestNegative },
+          ]).map((opt) => (
+            <button
+              key={opt.v}
+              type="button"
+              aria-pressed={lhTestInput === opt.v}
+              onClick={() => setLhTestInput(lhTestInput === opt.v ? null : opt.v)}
+              className={clsx(
+                "tap-target flex-1 rounded-2xl border px-3 text-sm font-semibold transition-colors",
+                lhTestInput === opt.v
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-surface text-text-secondary"
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <button
+        type="button"
+        aria-pressed={intercourseInput}
+        onClick={() => setIntercourseInput((v) => !v)}
+        className={clsx(
+          "tap-target flex w-full items-center justify-between rounded-2xl border px-4 text-sm font-semibold transition-colors",
+          intercourseInput ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-text-secondary"
+        )}
+      >
+        {dict.cycle.intercourseLabel}
+        <span aria-hidden>{intercourseInput ? "\u2713" : ""}</span>
+      </button>
+    </div>
+  ) : null;
+
   const advancedLogFields = (
     <div>
       <button
@@ -1204,7 +1271,13 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           moods={MOODS}
           mood={mood}
           onToggleMood={(m) => setMood(mood === m ? null : m)}
-          advanced={advancedLogFields}
+          advanced={
+            <>
+              {conceptionLogFields}
+              {conceptionLogFields}
+          {advancedLogFields}
+            </>
+          }
           onClose={() => setLogging(false)}
           onSave={saveLog}
           onDelete={data.logs.some((l) => l.date === logDate) ? removeLog : null}
@@ -1298,6 +1371,40 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           raqamlari esa boshqa narsani aytadi: testni 34 ta ayol to'ldirgan,
           ya'ni hayz qayd etgandan (30) KO'PROQ. Eng ko'p ishlatilgan
           xususiyatlardan biri eng kam ko'rinadigan joyda turgan edi. */}
+      {/* TTC-03 — unumdor oynaning QOPLANISHI.
+          "Unumdor kunlaringiz keldi" degan xabarning o'zi yetarli emas:
+          oyna o'tgach ayol o'sha kunlarda nima bo'lganini eslay olmaydi va
+          keyingi siklga ham xuddi shu noaniqlikda o'tadi. Bu karta aniq
+          javob beradi va keyingi qadamni ko'rsatadi.
+          Gormonal kontratseptsiyada va bashorat ishonchsiz bo'lganda
+          ko'rsatilmaydi — u yerda unumdorlik hisobimiz ma'noli emas. */}
+      {isTryingToConceive &&
+        data.prediction &&
+        !data.prediction.isStale &&
+        !data.suppressFertility &&
+        data.prediction.confidence !== "insufficient" &&
+        (() => {
+          const coverage = fertileWindowCoverage(
+            data.prediction.fertileWindowStart,
+            data.prediction.fertileWindowEnd,
+            data.logs.filter((l) => l.intercourse).map((l) => l.date)
+          );
+          return (
+            <Card className="space-y-1.5">
+              <p className="text-sm font-semibold text-text-secondary">{dict.cycle.fertileCoverageTitle}</p>
+              <p className="text-base font-bold text-text-primary">
+                {coverage.covered === 0
+                  ? dict.cycle.fertileCoverageEmpty
+                  : dict.cycle.fertileCoverageValue(coverage.covered, coverage.total)}
+              </p>
+              <p className="text-xs text-text-muted">
+                {formatDateDisplay(data.prediction.fertileWindowStart)} \u2013{" "}
+                {formatDateDisplay(data.prediction.fertileWindowEnd)}
+              </p>
+            </Card>
+          );
+        })()}
+
       <SelfCheckCard result={quizResult} onOpen={() => router.push("/xavf-testi")} />
 
       <ArticlesRow

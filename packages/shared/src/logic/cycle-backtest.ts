@@ -160,7 +160,7 @@ function makeSyntheticLogs(cycleLengths: number[], periodLength = 5, startDate =
   const pushPeriod = (start: string) => {
     for (let d = 0; d < periodLength; d++) {
       const flow: FlowLevel = d === 0 ? "heavy" : "medium";
-      logs.push({ id: `synthetic-${id++}`, userId: "synthetic", date: addDays(start, d), flow, mood: null, symptoms: [], createdAt: start, basalBodyTemp: null });
+      logs.push({ id: `synthetic-${id++}`, userId: "synthetic", date: addDays(start, d), flow, mood: null, symptoms: [], createdAt: start, basalBodyTemp: null, lhTest: null, intercourse: false });
     }
   };
   pushPeriod(cursor);

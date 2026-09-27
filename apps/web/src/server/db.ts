@@ -652,6 +652,15 @@ async function initSchema() {
     // orqali kunlik yozuvga qo'shiladi. Ovulyatsiyani simptomdan ANIQROQ
     // aniqlash uchun (cycle.ts#detectOvulationFromBbt).
     () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS basal_body_temp NUMERIC`,
+    // TTC-03: homiladorlikka tayyorgarlik uchun ikkita qayd.
+    // `lh_test` — ovulyatsiya testi natijasi: musbat test ovulyatsiya
+    // 24-36 soat ichida kutilishini bildiradi, ya'ni bu eng aniq
+    // real vaqt signali (bazal harorat esa ovulyatsiyani faqat O'TGACH
+    // tasdiqlaydi — rejalashtirish uchun kech).
+    () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS lh_test TEXT`,
+    // Unumdor oyna "qoplanganini" hisoblash uchun. Faqat tayyorgarlik
+    // rejimida so'raladi va ko'rsatiladi.
+    () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS intercourse BOOLEAN NOT NULL DEFAULT FALSE`,
   ]);
 
   // 1.6-bosqich: NOT NULL cheklovini olib tashlash — ATAYLAB yuqoridagi

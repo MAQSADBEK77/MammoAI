@@ -418,6 +418,15 @@ const uz = {
     symptomsLabel: "Alomatlar",
     // CYCLE-ALGO-15: bazal tana harorati (BBT) — ixtiyoriy, "Ilg'or" bo'lim.
     advancedSectionLabel: "Ilg'or",
+    // TTC-03
+    lhTestLabel: "Ovulyatsiya testi (LH)",
+    lhTestPositive: "Musbat",
+    lhTestNegative: "Manfiy",
+    intercourseLabel: "Bugun jinsiy aloqa bo'ldi",
+    fertileCoverageTitle: "Unumdor oyna",
+    fertileCoverageValue: (covered: number, total: number) => `${total} kundan ${covered} tasi belgilangan`,
+    fertileCoverageEmpty: "Bu oynada hali hech narsa belgilanmagan",
+    monthsTryingLabel: (months: number) => (months === 0 ? "Birinchi oy" : `${months}-oy urinilmoqda`),
     basalBodyTempLabel: "Bazal tana harorati (°C)",
     basalBodyTempHint: "Har kuni uyg'ongan zahoti, harakatdan oldin o'lchang — ovulyatsiyani simptomdan ham aniqroq belgilashga yordam beradi.",
     nextPeriodIn: (days: number) =>

@@ -24,6 +24,8 @@ function mkLog(date: string, overrides: Partial<CycleLog> = {}): CycleLog {
     symptoms: [],
     createdAt: `${date}T00:00:00.000Z`,
     basalBodyTemp: null,
+    lhTest: null,
+    intercourse: false,
     ...overrides,
   };
 }
