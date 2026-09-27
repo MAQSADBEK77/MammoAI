@@ -645,6 +645,8 @@ const en: Dictionary = {
     remainingWeekLabel: "Weeks remaining",
     babyDevelopmentTitle: "Your baby this week",
     motherChangesTitle: "What's changing for you",
+    scheduleTitle: "Pregnancy schedule",
+    scheduleNote: "Based on the Uzbekistan Ministry of Health protocol. Dates are calculated from your week.",
     scheduledCheckupTitle: "Next scheduled check-up",
     scheduledCheckupNow: "Due now",
     scheduledCheckupOverdue: "Overdue",

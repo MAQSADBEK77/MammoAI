@@ -409,6 +409,49 @@ export function PregnancyScreen() {
         </Card>
       )}
 
+      {/* PREG-SCHED-02 — MILLIY JADVALNING TO'LIQ RO'YXATI.
+          Ayol butun yo'lni oldindan ko'rishi kerak, faqat keyingi qadamni
+          emas: homiladorlikda "yana nima kutmoqda" degan savol doimiy va
+          hozircha unga javob beradigan joy yo'q edi.
+
+          Bu Lalu va Flo'da UMUMAN yo'q: ularda haftalik kontent bor, lekin
+          O'ZBEKISTON protokoli bo'yicha majburiy jadval yo'q. */}
+      {data.scheduledCheckups.length > 0 && (
+        <div>
+          <p className="mb-2 font-semibold text-text-primary">{dict.pregnancy.scheduleTitle}</p>
+          <div className="space-y-2">
+            {data.scheduledCheckups.map((item) => {
+              const done = item.status === "done";
+              const overdue = item.status === "overdue";
+              return (
+                <Card key={item.type} className="flex items-center gap-3 py-3">
+                  <span
+                    className={clsx(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                      done ? "bg-success/15 text-success" : overdue ? "bg-danger/15 text-danger" : "bg-surface-muted text-text-muted"
+                    )}
+                    aria-hidden
+                  >
+                    {done ? "\u2713" : overdue ? "!" : "\u00b7"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className={clsx("truncate text-sm font-semibold", done ? "text-text-muted line-through" : "text-text-primary")}>
+                      {dict.checklist.items[item.type].title}
+                    </p>
+                    {item.dueDate && !done && (
+                      <p className={clsx("text-xs", overdue ? "font-semibold text-danger" : "text-text-muted")}>
+                        {formatDateDisplay(item.dueDate)}
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-xs text-text-muted">{dict.pregnancy.scheduleNote}</p>
+        </div>
+      )}
+
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="font-semibold text-text-primary">{dict.pregnancy.visitsTitle}</p>

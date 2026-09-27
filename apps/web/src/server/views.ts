@@ -141,10 +141,10 @@ export async function buildPregnancyResponse(userId: string): Promise<PregnancyR
   // PREG-SCHED-01: milliy jadval bo'yicha navbatdagi majburiy tekshiruv.
   // Faqat homiladorlikka tegishli bandlar; muddati o'tganlari birinchi,
   // keyin eng yaqini. "Bajarildi" belgilanganlari chiqarib tashlanadi.
-  const pregnancyItems = checklist
-    .filter((i) => PREGNANCY_CHECKUP_TYPES.has(i.type) && i.status !== "done")
+  const allPregnancyItems = checklist
+    .filter((i) => PREGNANCY_CHECKUP_TYPES.has(i.type))
     .sort((a, b) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999"));
-  const next = pregnancyItems[0] ?? null;
+  const next = allPregnancyItems.find((i) => i.status !== "done") ?? null;
 
   return {
     profile,
@@ -154,6 +154,7 @@ export async function buildPregnancyResponse(userId: string): Promise<PregnancyR
     latestVitals,
     weightDeltaKg,
     nextScheduledCheckup: next ? { type: next.type, dueDate: next.dueDate, status: next.status } : null,
+    scheduledCheckups: allPregnancyItems.map((i) => ({ type: i.type, dueDate: i.dueDate, status: i.status })),
   };
 }
 

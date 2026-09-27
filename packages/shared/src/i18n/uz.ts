@@ -746,6 +746,8 @@ const uz = {
     motherChangesTitle: "Sizda nima o'zgaradi",
     // PREG-END-01
     // PREG-SCHED-01
+    scheduleTitle: "Homiladorlik jadvali",
+    scheduleNote: "O'zbekiston Sog'liqni saqlash vazirligi protokoli bo'yicha. Sanalar sizning haftangizdan hisoblangan.",
     scheduledCheckupTitle: "Jadval bo'yicha navbatdagi tekshiruv",
     scheduledCheckupNow: "Hozir vaqti keldi",
     scheduledCheckupOverdue: "Muddati o'tdi",

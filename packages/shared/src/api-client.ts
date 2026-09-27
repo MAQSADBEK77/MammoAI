@@ -151,6 +151,12 @@ export interface PregnancyResponse {
    * ko'rsatilmasdi.
    */
   nextScheduledCheckup: { type: ChecklistItemType; dueDate: string | null; status: ChecklistStatus } | null;
+  /**
+   * PREG-SCHED-02: milliy jadvalning TO'LIQ ro'yxati — bajarilganlari bilan
+   * birga. Ayol butun yo'lni oldindan ko'rishi kerak, faqat keyingi qadamni
+   * emas: homiladorlikda "yana nima kutmoqda" degan savol doimiy.
+   */
+  scheduledCheckups: { type: ChecklistItemType; dueDate: string | null; status: ChecklistStatus }[];
 }
 
 // App.pdf §5-10 — onboarding so'rovnomasi endi akkaunt yaratilgandan KEYIN, sessiya

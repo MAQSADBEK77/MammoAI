@@ -644,6 +644,8 @@ const ru: Dictionary = {
     remainingWeekLabel: "Осталось недель",
     babyDevelopmentTitle: "Ваш малыш на этой неделе",
     motherChangesTitle: "Что происходит с вами",
+    scheduleTitle: "График беременности",
+    scheduleNote: "По протоколу Министерства здравоохранения Узбекистана. Даты рассчитаны от вашей недели.",
     scheduledCheckupTitle: "Следующее обследование по графику",
     scheduledCheckupNow: "Сейчас самое время",
     scheduledCheckupOverdue: "Срок прошёл",
