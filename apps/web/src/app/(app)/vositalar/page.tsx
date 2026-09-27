@@ -7,7 +7,9 @@ import {
   InsightsOutlined,
   LocationOnOutlined,
   MedicalInformationOutlined,
+  LuggageOutlined,
   QuizOutlined,
+  ReportGmailerrorredOutlined,
   RestaurantMenuOutlined,
   SpaOutlined,
 } from "@mui/icons-material";
@@ -49,8 +51,14 @@ export default function ToolsPage() {
     { href: "/hisobot", label: t.report, hint: t.reportHint, Icon: MedicalInformationOutlined, tint: "bg-secondary/10", fg: "text-secondary" },
     { href: "/statistika", label: t.stats, hint: t.statsHint, Icon: InsightsOutlined, tint: "bg-primary/10", fg: "text-primary" },
     { href: "/xavf-testi", label: t.riskQuiz, hint: t.riskQuizHint, Icon: QuizOutlined, tint: "bg-warning/10", fg: "text-warning" },
+    // Homiladorlik vositalari faqat homiladorlarga: qolganlarga ular
+    // shovqin, homiladorga esa kunlik savol.
     ...(isPregnant
-      ? [{ href: "/ovqat", label: t.food, hint: t.foodHint, Icon: RestaurantMenuOutlined, tint: "bg-success/10", fg: "text-success" }]
+      ? [
+          { href: "/ovqat", label: t.food, hint: t.foodHint, Icon: RestaurantMenuOutlined, tint: "bg-success/10", fg: "text-success" },
+          { href: "/xavfli-belgilar", label: t.warningSigns, hint: t.warningSignsHint, Icon: ReportGmailerrorredOutlined, tint: "bg-danger/10", fg: "text-danger" },
+          { href: "/sumka", label: t.bag, hint: t.bagHint, Icon: LuggageOutlined, tint: "bg-warning/10", fg: "text-warning" },
+        ]
       : []),
     { href: "/muammolar", label: t.concerns, hint: t.concernsHint, Icon: SpaOutlined, tint: "bg-accent/10", fg: "text-accent" },
     // Hamkorini kuzatuvchilarda "Juft" pastki menyuda turadi — bu yerda
