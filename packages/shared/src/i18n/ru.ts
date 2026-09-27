@@ -737,6 +737,8 @@ const ru: Dictionary = {
     photoPromptTitle: (week: number) => `Наступила ${week}-я неделя!`,
     photoPromptBody: "Время сделать фото животика",
     photoPromptCta: "Сделать",
+    gridTitle: "Важное",
+    gridNutrition: "Питание",
     albumTitle: "Альбом беременности",
     albumSubtitle: "Загрузите фото живота/малыша — на память о каждой неделе",
     albumAddButton: "Добавить фото",

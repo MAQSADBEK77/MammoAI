@@ -58,6 +58,7 @@ export function PregnancyScreen() {
   const [showVisits, setShowVisits] = useState(false);
   const vitalsRef = useRef<HTMLDivElement>(null);
   const albumRef = useRef<HTMLDivElement>(null);
+  const visitsRef = useRef<HTMLDivElement>(null);
   /** PREG-PHOTO-01: shu HAFTA uchun surat eslatmasi yopilganmi. */
   const [photoPromptDismissed, setPhotoPromptDismissed] = useState(true);
 
@@ -80,6 +81,22 @@ export function PregnancyScreen() {
     }, 0);
     return () => clearTimeout(timeout);
   }, [photoPromptKey]);
+
+  /** Bo'limni ochadi va o'sha joyga suradi. Ref'lar RENDER ichida emas,
+   * shu yerda o'qiladi — React qoidasi (`react-hooks/refs`). */
+  const openVitals = useCallback(() => {
+    setShowVitals(true);
+    setTimeout(() => vitalsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  }, []);
+
+  const openVisits = useCallback(() => {
+    setShowVisits(true);
+    setTimeout(() => visitsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  }, []);
+
+  const scrollToAlbum = useCallback(() => {
+    setTimeout(() => albumRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+  }, []);
 
   function dismissPhotoPrompt() {
     setPhotoPromptDismissed(true);
@@ -337,7 +354,7 @@ export function PregnancyScreen() {
           </div>
           <button
             type="button"
-            onClick={() => albumRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            onClick={scrollToAlbum}
             className="text-pregnancy-accent shrink-0 rounded-full bg-surface-muted px-4 py-2 text-xs font-bold"
           >
             {dict.pregnancy.photoPromptCta}
@@ -366,13 +383,7 @@ export function PregnancyScreen() {
         <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
           <button
             type="button"
-            onClick={() => {
-              // PREG-INSIGHTS-02: blokni ochishning O'ZI yetarli emas edi —
-              // u ekrandan ancha pastda va ayol "+" ni bosgach hech narsa
-              // o'zgarmagandek ko'rardi. Endi ochilgach o'sha joyga suriladi.
-              setShowVitals(true);
-              setTimeout(() => vitalsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-            }}
+            onClick={openVitals}
             className="flex h-36 w-32 shrink-0 flex-col items-start justify-between rounded-3xl bg-surface p-3 text-left shadow-sm active:scale-[0.98]"
           >
             <span className="text-xs font-semibold leading-snug text-text-secondary">{dict.pregnancy.insightsAddLabel}</span>
@@ -411,6 +422,30 @@ export function PregnancyScreen() {
         </div>
       </div>
 
+      {/* PREG-GRID-01 — "Muhim" panjarasi (Lalu naqshi).
+          Lalu'ning bosh ekranida 2 ustunli olti plitka bor va ular
+          ilovaning qolgan qismiga yagona, KO'RINADIGAN kirish nuqtasi
+          beradi. Bizda esa o'sha bo'limlar (ko'rsatkichlar, tashriflar,
+          albom) uzun sahifaning turli joylarida, yig'ilgan sarlavhalar
+          ortida edi — ya'ni bor, lekin topilmaydi.
+
+          Plitka bosilganda tegishli bo'lim ochiladi VA o'sha joyga
+          suriladi: faqat ochish yetarli emasligini "+" kartasida
+          ko'rdik (PREG-INSIGHTS-02). */}
+      <div className="space-y-2">
+        <p className="text-base font-bold text-text-primary">{dict.pregnancy.gridTitle}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <GridTile emoji={"\u{1FA7A}"} label={dict.pregnancy.vitalsTitle} onClick={openVitals} />
+          <GridTile emoji={"\u{1F3E5}"} label={dict.pregnancy.visitsTitle} onClick={openVisits} />
+          <GridTile emoji={"\u{1F5BC}\uFE0F"} label={dict.pregnancy.albumTitle} onClick={scrollToAlbum} />
+          <GridTile
+            emoji={"\u{1F951}"}
+            label={dict.pregnancy.gridNutrition}
+            onClick={() => router.push("/maqolalar/homiladorlikda-ovqatlanish")}
+          />
+        </div>
+      </div>
+
       {/* Sog'liq ko'rsatkichlari — foydalanuvchi o'zi qayd etadigan tezkor-jurnal.
           PREG-UI-01: endi YIG'ILGAN holda ochiladi. O'lchandi (production,
           2026-09-27): bu to'rtta kartani bironta ham ayol ishlatmagan —
@@ -420,14 +455,7 @@ export function PregnancyScreen() {
           Funksiya olib tashlanmadi (kimdir boshlashi mumkin) — faqat
           standart holatda yopiq. Qiymat kiritilgan bo'lsa o'zi ochiladi. */}
       <div ref={vitalsRef} className="scroll-mt-4 space-y-2">
-        <button
-          type="button"
-          onClick={() => setShowVitals((v) => !v)}
-          className="flex w-full items-center justify-between text-base font-bold text-text-primary"
-        >
-          {dict.pregnancy.vitalsTitle}
-          <ChevronRight sx={{ fontSize: 18, transform: showVitals ? "rotate(90deg)" : undefined, transition: "transform 150ms" }} />
-        </button>
+        {showVitals && <p className="text-base font-bold text-text-primary">{dict.pregnancy.vitalsTitle}</p>}
         {showVitals && (
         <>
         <p className="-mt-1 text-xs text-text-muted">{dict.pregnancy.vitalsDisclaimer}</p>
@@ -632,15 +660,8 @@ export function PregnancyScreen() {
           jadvalida NOLTA yozuv bor. Ustiga endi uning TEPASIDA milliy
           jadvalning to'liq ro'yxati turibdi — ikkita "tashriflar"
           ro'yxati yonma-yon turgani chalkashlik berardi. */}
-      <div>
-        <button
-          type="button"
-          onClick={() => setShowVisits((v) => !v)}
-          className="mb-2 flex w-full items-center justify-between font-semibold text-text-primary"
-        >
-          {dict.pregnancy.visitsTitle}
-          <ChevronRight sx={{ fontSize: 18, transform: showVisits ? "rotate(90deg)" : undefined, transition: "transform 150ms" }} />
-        </button>
+      <div ref={visitsRef} className="scroll-mt-4">
+        {showVisits && <p className="mb-2 font-semibold text-text-primary">{dict.pregnancy.visitsTitle}</p>}
         {showVisits && (
         <div>
         <div className="mb-2 flex items-center justify-between">
@@ -793,5 +814,23 @@ export function PregnancyScreen() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/** PREG-GRID-01: "Muhim" panjarasining bitta plitkasi. Alohida komponent —
+ * plitkalarni render ichida massiv sifatida qurish `react-hooks/refs`
+ * qoidasini buzardi. */
+function GridTile({ emoji, label, onClick }: { emoji: string; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-3 rounded-3xl bg-surface p-4 text-left shadow-sm transition active:scale-[0.98]"
+    >
+      <span className="bg-pregnancy-accent/10 grid h-10 w-10 shrink-0 place-items-center rounded-2xl">
+        <Emoji e={emoji} size={18} />
+      </span>
+      <span className="min-w-0 text-sm font-bold leading-snug text-text-primary">{label}</span>
+    </button>
   );
 }

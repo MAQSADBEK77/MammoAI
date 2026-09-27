@@ -738,6 +738,8 @@ const en: Dictionary = {
     photoPromptTitle: (week: number) => `Week ${week} is here!`,
     photoPromptBody: "Time for your bump photo",
     photoPromptCta: "Take it",
+    gridTitle: "Important",
+    gridNutrition: "Nutrition",
     albumTitle: "Pregnancy album",
     albumSubtitle: "Upload a bump/baby photo — a keepsake for every week",
     albumAddButton: "Add photo",

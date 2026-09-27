@@ -842,6 +842,8 @@ const uz = {
     photoPromptTitle: (week: number) => `${week}-hafta keldi!`,
     photoPromptBody: "Qorin suratini olish vaqti",
     photoPromptCta: "Olish",
+    gridTitle: "Muhim",
+    gridNutrition: "Ovqatlanish",
     albumTitle: "Homiladorlik albomi",
     albumSubtitle: "Qorin/chaqaloq rasmingizni yuklang — har hafta uchun chiroyli xotira",
     albumAddButton: "Rasm qo'shish",
