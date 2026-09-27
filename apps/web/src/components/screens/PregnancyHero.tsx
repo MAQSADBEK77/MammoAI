@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarMonthOutlined, InfoOutlined } from "@mui/icons-material";
+import { CalendarMonthOutlined, InfoOutlined, Menu as MenuIcon } from "@mui/icons-material";
+import { useAppDrawer } from "@/components/AppDrawer";
 import clsx from "clsx";
 import { PregnancyWeekImage } from "@/components/PregnancyWeekImage";
 
@@ -42,6 +43,7 @@ export function PregnancyHero({
   weekDayLabel,
   detailsLabel,
   onOpenDetails,
+  menuLabel,
 }: {
   dateLabel: string;
   onOpenCalendar: () => void;
@@ -58,19 +60,30 @@ export function PregnancyHero({
   weekDayLabel: string;
   detailsLabel: string;
   onOpenDetails: () => void;
+  /** Burger tugmasining ekran o'quvchi uchun nomi. */
+  menuLabel: string;
 }) {
+  const { openDrawer } = useAppDrawer();
   return (
-    <div className="bg-aurora-pregnancy -mx-4 -mt-4 rounded-b-[2.5rem] px-4 pb-7 pt-4">
-      {/* Burger tugmasi bu yerda YO'Q — ilova sarlavhasida allaqachon bitta
-          bor va ikkitasi yonma-yon turgani chalkashlik berardi. */}
+    <div
+      className="bg-aurora-pregnancy-soft -mx-4 -mt-2 rounded-b-[2.5rem] px-4 pb-7"
+      style={{ paddingTop: "calc(var(--tg-safe-area-top) + 1rem)" }}
+    >
       <div className="flex items-center justify-between">
-        <span className="h-10 w-10" aria-hidden />
-        <p className="text-base font-bold text-white">{dateLabel}</p>
+        <button
+          type="button"
+          onClick={openDrawer}
+          aria-label={menuLabel}
+          className="grid h-10 w-10 place-items-center rounded-full bg-surface text-text-secondary shadow-sm"
+        >
+          <MenuIcon sx={{ fontSize: 20 }} />
+        </button>
+        <p className="text-base font-bold text-text-primary">{dateLabel}</p>
         <button
           type="button"
           onClick={onOpenCalendar}
           aria-label={dateLabel}
-          className="grid h-10 w-10 place-items-center rounded-full bg-white/25 text-white backdrop-blur"
+          className="grid h-10 w-10 place-items-center rounded-full bg-surface text-secondary shadow-sm"
         >
           <CalendarMonthOutlined sx={{ fontSize: 20 }} />
         </button>
@@ -88,13 +101,13 @@ export function PregnancyHero({
               onClick={() => onSelectDay(d.date)}
               className="flex flex-col items-center gap-1 py-1"
             >
-              <span className={clsx("text-[10px] font-bold uppercase tracking-wide", isToday ? "text-white" : "text-white/70")}>
+              <span className={clsx("text-[10px] font-bold uppercase tracking-wide", isToday ? "text-secondary" : "text-text-muted")}>
                 {isToday ? todayLabel : d.weekdayLabel}
               </span>
               <span
                 className={clsx(
                   "grid h-9 w-9 place-items-center rounded-full text-sm font-bold transition-colors",
-                  isToday ? "bg-white text-secondary" : isSelected ? "bg-white/35 text-white" : "text-white/90"
+                  isToday ? "bg-secondary text-white shadow-sm" : isSelected ? "bg-surface text-text-primary" : "text-text-secondary"
                 )}
               >
                 {d.dayNumber}
@@ -107,13 +120,13 @@ export function PregnancyHero({
       <div className="mt-6 flex flex-col items-center gap-3">
         <PregnancyWeekImage week={week} icon={sizeIcon} />
         <button type="button" onClick={onOpenDetails} className="flex items-center gap-1.5">
-          <span className="text-[1.75rem] font-extrabold leading-tight text-white">{weekDayLabel}</span>
-          <InfoOutlined sx={{ fontSize: 18 }} className="text-white/80" />
+          <span className="text-[1.75rem] font-extrabold leading-tight text-secondary">{weekDayLabel}</span>
+          <InfoOutlined sx={{ fontSize: 18 }} className="text-secondary/60" />
         </button>
         <button
           type="button"
           onClick={onOpenDetails}
-          className="tap-target rounded-full bg-white px-7 text-sm font-bold text-secondary shadow-sm active:scale-[0.98]"
+          className="tap-target rounded-full bg-surface px-7 text-sm font-bold text-secondary shadow-md shadow-secondary/10 active:scale-[0.98]"
         >
           {detailsLabel}
         </button>

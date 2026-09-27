@@ -296,6 +296,27 @@ body {
   background: linear-gradient(135deg, var(--color-secondary) 0%, #4c1d95 100%);
 }
 
+/* PREG-HERO-02 — homiladorlik ekranining YUMSHOQ foni.
+ *
+ * Referenslar (Flo, Mom+, Lalu) qayta ko'rildi va ularning uchalasida
+ * ham bitta qoida bor: FON JUDA OCH, MATN QUYUQ. Flo'da bu och shaftoli,
+ * Mom+ da och pushti, Lalu'da esa yashil sarlavha ustidagi OQ karta.
+ *
+ * `.bg-aurora-pregnancy` esa to'yingan binafsha + oq matn — ya'ni
+ * teskarisi. U karta sifatida ishlagan (kichik maydon), lekin butun
+ * ekran tepasiga yoyilganda ko'zni charchatadi.
+ *
+ * Bu variant o'sha binafsha ohangni saqlaydi (brend yo'qolmaydi),
+ * lekin deyarli oq darajada ochadi — shunda matn quyuq bo'la oladi.
+ */
+.bg-aurora-pregnancy-soft {
+  background: linear-gradient(180deg, #f1e9fe 0%, #f9f5ff 55%, var(--color-background) 100%);
+}
+
+[data-theme="dark"] .bg-aurora-pregnancy-soft {
+  background: linear-gradient(180deg, #2a2340 0%, #231f33 55%, var(--color-background) 100%);
+}
+
 .bg-aurora-checkup {
   background: linear-gradient(135deg, var(--color-accent) 0%, #0f766e 100%);
 }

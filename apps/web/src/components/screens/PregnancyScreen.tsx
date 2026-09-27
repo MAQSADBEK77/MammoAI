@@ -229,6 +229,7 @@ export function PregnancyScreen() {
         weekDayLabel={dict.pregnancy.weekDayLabel(status.currentWeek, status.currentDay)}
         detailsLabel={dict.pregnancy.detailsButton}
         onOpenDetails={() => setShowWeekDetails(true)}
+        menuLabel={dict.common.openMenu}
       />
 
       {/* Hafta tafsiloti — gradientdan KEYIN, oq fonda. Ilgari bularning
