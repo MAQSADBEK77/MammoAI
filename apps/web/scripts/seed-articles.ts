@@ -530,6 +530,105 @@ Sabablarning taxminan yarmi erkak tarafida bo'ladi, shuning uchun juftlik birga 
     sources: [SSV, WHO_INFERTILITY],
   },
   {
+    slug: "erkak-omili-spermogramma",
+    category: "checkups",
+    title: "Erkak omili: nega tekshiruv ikkalangizdan boshlanadi",
+    excerpt: "Homiladorlik bo'lmasligining taxminan yarmida sabab erkakda. Spermogramma — arzon, tez va og'riqsiz.",
+    body: `> Qisqacha
+> Sabablarning taxminan yarmi erkak tarafida bo'ladi.
+> Spermogramma arzon, tez va og'riqsiz \u2014 lekin ko'pincha eng oxirida qilinadi.
+> Uni ayolning tekshiruvi bilan bir vaqtda qilish oylarni tejaydi.
+
+Homiladorlik bo'lmayotganda tekshiruv deyarli har doim ayoldan boshlanadi. Bu odat tibbiy asosga emas, ijtimoiy odatga tayanadi \u2014 va u vaqt yo'qotadi.
+
+## Raqamlar nima deydi
+
+Bepushtlik holatlarining taxminan **yarmida** sabab erkak tarafida bo'ladi yoki ikkala tarafda birga uchraydi. O'zbekistonda so'nggi o'n yilda erkak bepushtligi sezilarli o'sgani qayd etilgan.
+
+Ya'ni faqat ayolni tekshirish \u2014 tanganing bir tomoniga qarash.
+
+## Spermogramma nima
+
+Bu sperma namunasining laboratoriya tahlili. Unda bir nechta ko'rsatkich baholanadi: spermatozoidlar soni, harakatchanligi va tuzilishi.
+
+Amalda bu:
+
+- **og'riqsiz** \u2014 hech qanday igna yoki jarrohlik yo'q;
+- **tez** \u2014 natija odatda bir necha kun ichida tayyor;
+- **arzon** \u2014 ayolning to'liq tekshiruvidan ancha past narxda;
+- **oddiy** \u2014 tayyorgarlik sifatida odatda 2\u20135 kun jinsiy tiyilish so'raladi.
+
+## Nega birinchi bo'lib qilinadi
+
+Mantiq oddiy: eng arzon va eng tez tekshiruvdan boshlanadi. Agar natija muammoni ko'rsatsa, ayolni uzoq va qimmat tekshiruvlardan o'tkazishdan oldin shu yo'nalishda harakat qilinadi.
+
+Natija normal chiqsa ham bu behuda emas \u2014 u bitta katta ehtimolni chetlab o'tadi va qolgan izlanishni qisqartiradi.
+
+## Bitta tahlil yetarli emas bo'lishi mumkin
+
+Ko'rsatkichlar kasallik, isitma, stress va hatto namuna olish sharoitiga qarab o'zgaradi. Shuning uchun natija me'yordan chetga chiqsa, odatda bir necha hafta o'tib **takrorlanadi** \u2014 bitta tahlil bo'yicha xulosa chiqarilmaydi.
+
+## Suhbat haqida
+
+Bu mavzu ko'p juftliklar uchun og'ir. Lekin tekshiruvdan o'tish ayblov emas \u2014 u shunchaki savolga javob izlash. Va sabablarning ko'pi, ikkala tarafda ham, davolanadi yoki chetlab o'tiladi.
+
+Eng foydali gap odatda eng oddiysi: "Keling, ikkalamiz ham tekshirilaylik \u2014 shunda aniq bilamiz".`,
+    sources: [SSV, WHO_INFERTILITY],
+  },
+  {
+    slug: "homiladorlik-bolmayapti-tekshiruv",
+    category: "checkups",
+    title: "Homiladorlik bo'lmayapti: tekshiruvda nima bo'ladi",
+    excerpt: "Qachon murojaat qilish kerak, qanday tahlillar olinadi va nimadan qo'rqmaslik kerak.",
+    body: `> Qisqacha
+> 35 yoshgacha \u2014 12 oydan keyin, 35\u201340 yoshda \u2014 6 oydan keyin murojaat qilinadi.
+> Tartibsiz hayz yoki ma'lum tashxis bo'lsa kutilmaydi.
+> Tekshiruv \u2014 tashxis emas, savolga javob izlash. Sabablarning ko'pi davolanadi.
+
+Ko'p ayol shifokorga borishni "yomon xabar eshitaman" degan qo'rquv tufayli kechiktiradi. Aslida tekshiruvning maqsadi boshqa: nima bo'layotganini aniqlash. Va aniqlangan narsalarning ko'pi davolanadi.
+
+## Qachon borish kerak
+
+| Holat | Qachon |
+| --- | --- |
+| 35 yoshgacha | 12 oy urinishdan keyin |
+| 35\u201340 yosh | 6 oy urinishdan keyin |
+| 40 yoshdan katta | Kutmasdan |
+| Tartibsiz yoki yo'q hayz | Kutmasdan |
+| Ma'lum tashxis (endometrioz, PCOS, chanoq operatsiyasi) | Kutmasdan |
+
+Yosh bilan chegara qisqarishining sababi bor: tuxumdon zaxirasi yosh o'tishi bilan kamayadi va kutilgan har oy imkoniyatni kamaytiradi.
+
+## Qabulda nima bo'ladi
+
+Odatda shifokor avval **gaplashadi**: hayz sikli qanday, qancha vaqtdan beri urinyapsiz, oldin homiladorlik bo'lganmi, qanday kasalliklar va operatsiyalar bo'lgan, qanday dori ichasiz.
+
+Shundan keyin ko'rik va, odatda, **chanoq a'zolari UZI**si. Bu og'riqsiz.
+
+## Qanday tahlillar olinadi
+
+Ro'yxat holatga qarab farq qiladi, lekin ko'pincha shular bo'ladi:
+
+- **Ovulyatsiya bor-yo'qligini tekshirish** \u2014 siklning ikkinchi yarmida progesteron tahlili.
+- **Qalqonsimon bez va prolaktin** \u2014 ikkalasi ham ovulyatsiyani to'xtatishi mumkin va ikkalasi ham davolanadi.
+- **Chanoq a'zolari UZI** \u2014 tuxumdonlar va bachadon holati.
+- **Naychalar o'tkazuvchanligi** \u2014 alohida tekshiruv, har doim ham birinchi bosqichda emas.
+- **Hamkor uchun spermogramma** \u2014 shu bilan bir vaqtda.
+
+## Nimadan qo'rqmaslik kerak
+
+"Bepushtlik" so'zi tashxis emas, muddat atamasi: u shunchaki belgilangan vaqt ichida homiladorlik bo'lmaganini bildiradi. U "hech qachon bo'lmaydi" degani emas.
+
+Sabablarning katta qismi \u2014 ovulyatsiya buzilishi, qalqonsimon bez, gormonal muvozanat \u2014 dori bilan tuzatiladi. Ba'zilari umuman topilmaydi va juftlik keyinroq o'z-o'zidan homilador bo'ladi.
+
+Eng yomon variant \u2014 tekshirilmaslik. Chunki u yagona holat: unda hech narsa o'zgarmaydi.
+
+## Nimani olib borish kerak
+
+Hayz sikli yozuvlaringiz, oldingi tahlillar va ichayotgan dorilaringiz ro'yxati. Ilovadagi yozuvlaringizni shifokorga telefonda ko'rsatsangiz bo'ladi \u2014 xotiradan gapirishdan ancha aniq.`,
+    sources: [SSV, WHO_INFERTILITY],
+  },
+  {
     slug: "klimaks-nima-kutish",
     category: "cycle",
     title: "Klimaks: nima kutish kerak va nima yordam beradi",
