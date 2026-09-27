@@ -449,6 +449,11 @@ export function PregnancyScreen() {
           <GridTile emoji={"\u{1F3E5}"} label={dict.pregnancy.visitsTitle} onClick={openVisits} />
           <GridTile emoji={"\u{1F5BC}\uFE0F"} label={dict.pregnancy.albumTitle} onClick={scrollToAlbum} />
           <GridTile
+            emoji={"\u{1F534}"}
+            label={dict.pregnancy.warningTile}
+            onClick={() => router.push("/xavfli-belgilar")}
+          />
+          <GridTile
             emoji={"\u{1F951}"}
             label={dict.pregnancy.gridNutrition}
             // PREG-FOOD-01: ilgari bu plitka MAQOLAGA olib borardi.
