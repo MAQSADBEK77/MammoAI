@@ -838,6 +838,10 @@ const uz = {
       pineapple: "ananas",
       watermelon: "tarvuz",
     },
+    // PREG-PHOTO-01
+    photoPromptTitle: (week: number) => `${week}-hafta keldi!`,
+    photoPromptBody: "Qorin suratini olish vaqti",
+    photoPromptCta: "Olish",
     albumTitle: "Homiladorlik albomi",
     albumSubtitle: "Qorin/chaqaloq rasmingizni yuklang — har hafta uchun chiroyli xotira",
     albumAddButton: "Rasm qo'shish",

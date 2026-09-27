@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent } from "@mui/material";
-import { AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
+import { Close, AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
 import type { PregnancyResponse, PregnancyWeekContent, VitalType } from "@mammoai/shared";
 import { getMilestoneForWeek, getVitalTone, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -57,6 +57,38 @@ export function PregnancyScreen() {
   /** PREG-UI-02: shaxsiy tashriflar — standart holatda yopiq (0 ta yozuv). */
   const [showVisits, setShowVisits] = useState(false);
   const vitalsRef = useRef<HTMLDivElement>(null);
+  const albumRef = useRef<HTMLDivElement>(null);
+  /** PREG-PHOTO-01: shu HAFTA uchun surat eslatmasi yopilganmi. */
+  const [photoPromptDismissed, setPhotoPromptDismissed] = useState(true);
+
+  /** Yopilgani SHU HAFTA uchun eslab qolinadi — keyingi haftada eslatma
+   * yana chiqadi, chunki u yangi surat haqida. */
+  // `status` pastroqda, erta-qaytishlardan KEYIN e'lon qilinadi — hook esa
+  // shartsiz ishlashi kerak, shuning uchun bu yerda `data` dan o'qiymiz.
+  const promptWeek = data?.status?.currentWeek ?? null;
+  const photoPromptKey = promptWeek !== null ? `mammoai:preg-photo-week-${promptWeek}` : null;
+  useEffect(() => {
+    if (!photoPromptKey) return;
+    const timeout = setTimeout(() => {
+      try {
+        setPhotoPromptDismissed(window.localStorage.getItem(photoPromptKey) === "1");
+      } catch {
+        // Xotira bloklangan — eslatmani ko'rsatmaymiz: yopilganini eslab
+        // qololmasak, har ochilishda takrorlagandan ko'ra jim turgan yaxshi.
+        setPhotoPromptDismissed(true);
+      }
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [photoPromptKey]);
+
+  function dismissPhotoPrompt() {
+    setPhotoPromptDismissed(true);
+    try {
+      if (photoPromptKey) window.localStorage.setItem(photoPromptKey, "1");
+    } catch {
+      // Eslab qololmadik — bu safar baribir yopiladi.
+    }
+  }
 
   /**
    * PREG-END-01: natijani saqlaydi va rejimni almashtiradi.
@@ -285,6 +317,41 @@ export function PregnancyScreen() {
           </p>
         </div>
       </div>
+
+      {/* PREG-PHOTO-01 — haftalik surat eslatmasi.
+          Lalu'dagi eng kuchli ushlab turuvchi ilmoq: u ayolni har hafta
+          qaytaradi va vaqt o'tishi bilan tashlab ketish qiyin bo'lgan
+          narsa — albom — yig'iladi. Bizda albom bor edi, lekin uni
+          to'ldirishga chaqiradigan hech narsa yo'q edi: 15 ta homiladorlik
+          profilidan atigi 2 tasi surat qo'ygan.
+
+          Har hafta BIR MARTA ko'rsatiladi: yopilsa, o'sha hafta qaytmaydi. */}
+      {!photoPromptDismissed && (
+        <Card className="flex items-center gap-3">
+          <span className="bg-pregnancy-accent/10 grid h-11 w-11 shrink-0 place-items-center rounded-2xl">
+            <Emoji e={"\u{1F5BC}\uFE0F"} size={20} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-text-primary">{dict.pregnancy.photoPromptTitle(status.currentWeek)}</p>
+            <p className="text-xs text-text-secondary">{dict.pregnancy.photoPromptBody}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => albumRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            className="text-pregnancy-accent shrink-0 rounded-full bg-surface-muted px-4 py-2 text-xs font-bold"
+          >
+            {dict.pregnancy.photoPromptCta}
+          </button>
+          <button
+            type="button"
+            onClick={dismissPhotoPrompt}
+            aria-label={dict.common.close}
+            className="shrink-0 text-text-muted"
+          >
+            <Close sx={{ fontSize: 18 }} />
+          </button>
+        </Card>
+      )}
 
       {/* PREG-INSIGHTS-01 — "Kunlik tavsiyalar" (referensdagi "My daily
           insights"). Ilgari bu ikkita to'liq enli matn kartasi edi va
@@ -659,7 +726,9 @@ export function PregnancyScreen() {
         )}
       </div>
 
-      <PregnancyAlbum currentWeek={status.currentWeek} />
+      <div ref={albumRef} className="scroll-mt-4">
+        <PregnancyAlbum currentWeek={status.currentWeek} />
+      </div>
 
       {/* PREG-END-01 — homiladorlik tugaganini aytish yo'li.
           Ilgari bu yo'l UMUMAN yo'q edi: ilova faqat TAXMINIY sanaga
