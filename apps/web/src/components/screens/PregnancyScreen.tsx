@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent } from "@mui/material";
@@ -55,6 +55,7 @@ export function PregnancyScreen() {
   const [showWeekDetails, setShowWeekDetails] = useState(false);
   /** PREG-UI-02: shaxsiy tashriflar — standart holatda yopiq (0 ta yozuv). */
   const [showVisits, setShowVisits] = useState(false);
+  const vitalsRef = useRef<HTMLDivElement>(null);
 
   /**
    * PREG-END-01: natijani saqlaydi va rejimni almashtiradi.
@@ -297,7 +298,13 @@ export function PregnancyScreen() {
         <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
           <button
             type="button"
-            onClick={() => setShowVitals(true)}
+            onClick={() => {
+              // PREG-INSIGHTS-02: blokni ochishning O'ZI yetarli emas edi —
+              // u ekrandan ancha pastda va ayol "+" ni bosgach hech narsa
+              // o'zgarmagandek ko'rardi. Endi ochilgach o'sha joyga suriladi.
+              setShowVitals(true);
+              setTimeout(() => vitalsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+            }}
             className="flex h-36 w-32 shrink-0 flex-col items-start justify-between rounded-3xl bg-surface p-3 text-left shadow-sm active:scale-[0.98]"
           >
             <span className="text-xs font-semibold leading-snug text-text-secondary">{dict.pregnancy.insightsAddLabel}</span>
@@ -344,7 +351,7 @@ export function PregnancyScreen() {
           va ostidagi narsalarni pastga surib yuborardi.
           Funksiya olib tashlanmadi (kimdir boshlashi mumkin) — faqat
           standart holatda yopiq. Qiymat kiritilgan bo'lsa o'zi ochiladi. */}
-      <div className="space-y-2">
+      <div ref={vitalsRef} className="scroll-mt-4 space-y-2">
         <button
           type="button"
           onClick={() => setShowVitals((v) => !v)}
