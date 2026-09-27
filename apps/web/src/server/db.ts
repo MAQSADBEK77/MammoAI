@@ -856,6 +856,17 @@ async function initSchema() {
     // qoida esa harakat kamayganini payqashning yagona yo'li.
     // Eski jadval o'chirilmaydi: unga faol foydalanuvchi hisobi
     // bog'langan va undagi yozuvlar foydalanuvchilarniki.
+    // PREG-BAG-01: tug'ruqxona sumkasi ro'yxatidagi belgilar.
+    // Ro'yxatning O'ZI kodda (kontent, tarjimalari bilan) — bazada
+    // faqat foydalanuvchi nimani belgilagani turadi.
+    () => sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_bag_items (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        item_id TEXT NOT NULL,
+        checked_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, item_id)
+      )
+    `,
     () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_kick_events (
         id TEXT PRIMARY KEY,

@@ -4,9 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent } from "@mui/material";
-import { Close, AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
+import { Close, LuggageOutlined as Luggage, AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
 import type { PregnancyResponse, PregnancyWeekContent, VitalType } from "@mammoai/shared";
-import { KICK_START_WEEK, getMilestoneForWeek, getVitalTone, localDateStr, formatDateDisplay } from "@mammoai/shared";
+import {
+  HOSPITAL_BAG_WEEK,
+  KICK_START_WEEK,
+  bagProgress,
+  getMilestoneForWeek,
+  getVitalTone,
+  localDateStr,
+  formatDateDisplay,
+} from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
@@ -602,6 +610,29 @@ export function PregnancyScreen() {
           contractions={data.contractions}
           onChange={(next) => setData((prev) => (prev ? { ...prev, contractions: next } : prev))}
         />
+      )}
+
+      {/* PREG-BAG-01: sumka kartasi 30-haftadan ko'rinadi — ro'yxat
+          34-haftaga tayyor bo'lishi kerak, ya'ni yig'ishga to'rt hafta
+          vaqt qoladi. Karta ochilgan sonni ko'rsatadi: "0 / 30" ning
+          o'zi eslatma bo'lib ishlaydi. */}
+      {status.currentWeek >= HOSPITAL_BAG_WEEK - 4 && (
+        <button
+          type="button"
+          onClick={() => router.push("/sumka")}
+          className="flex w-full items-center gap-3 rounded-3xl bg-surface p-4 text-left shadow-sm transition active:scale-[0.99]"
+        >
+          <span className="bg-pregnancy-accent/10 grid h-10 w-10 shrink-0 place-items-center rounded-2xl">
+            <Luggage sx={{ fontSize: 20 }} className="text-pregnancy-accent" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-text-primary">{dict.pregnancy.bagCardTitle}</span>
+            <span className="block text-xs text-text-secondary">
+              {dict.pregnancy.bagProgress(bagProgress(data.bagItems).checked, bagProgress(data.bagItems).total)}
+            </span>
+          </span>
+          <ChevronRight sx={{ fontSize: 20 }} className="shrink-0 text-text-muted" />
+        </button>
       )}
 
       {/* PREG-KICKS-01: 28-haftadan boshlab. Ilgari bu "Bugun: 14 ta

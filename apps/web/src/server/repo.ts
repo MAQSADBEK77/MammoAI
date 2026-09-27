@@ -1565,6 +1565,36 @@ export async function getKicksToday(userId: string): Promise<number> {
   return rows[0]?.count ?? 0;
 }
 
+/** PREG-BAG-01: foydalanuvchi belgilagan sumka bandlari. */
+export async function listBagItems(userId: string): Promise<string[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT item_id FROM pregnancy_bag_items WHERE user_id = ${userId}
+  `) as unknown as { item_id: string }[];
+  return rows.map((r) => r.item_id);
+}
+
+/**
+ * Bandni belgilaydi yoki belgisini oladi.
+ *
+ * Belgi olinganda qator O'CHIRILADI — "checked = false" ustuni emas:
+ * ro'yxat kodda turgani uchun yo'q qator "belgilanmagan" degani va
+ * bu ikki manbadan kelgan holatni birlashtirishdan xalos qiladi.
+ */
+export async function setBagItem(userId: string, itemId: string, checked: boolean): Promise<string[]> {
+  await ensureSchema();
+  if (checked) {
+    await sql`
+      INSERT INTO pregnancy_bag_items (user_id, item_id, checked_at)
+      VALUES (${userId}, ${itemId}, ${new Date().toISOString()})
+      ON CONFLICT (user_id, item_id) DO NOTHING
+    `;
+  } else {
+    await sql`DELETE FROM pregnancy_bag_items WHERE user_id = ${userId} AND item_id = ${itemId}`;
+  }
+  return listBagItems(userId);
+}
+
 /**
  * PREG-KICKS-01: oxirgi 24 soatdagi harakat vaqtlari.
  *

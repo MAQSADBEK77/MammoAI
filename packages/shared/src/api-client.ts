@@ -139,6 +139,8 @@ export interface PregnancyResponse {
   kicksToday: number;
   /** PREG-KICKS-01: oxirgi 24 soatdagi harakat vaqtlari (ISO). */
   kickTimes: string[];
+  /** PREG-BAG-01: tug'ruqxona sumkasida belgilangan bandlar. */
+  bagItems: string[];
   /** Har bir tur bo'yicha eng so'nggi o'z-o'zidan qayd etilgan ko'rsatkich. */
   latestVitals: Partial<Record<VitalType, PregnancyVitalLog>>;
   /** Vazn — oldingi qayddan (yoki onboarding vaznidan) farqi, kg. */
@@ -342,6 +344,11 @@ export function createApiClient(config: ApiClientConfig) {
       addVisit: (visit: Pick<PregnancyVisitLog, "label" | "date" | "clinicName" | "note">) =>
         request<PregnancyResponse>("/api/pregnancy/visits", { method: "POST", body: JSON.stringify(visit) }),
       logKick: () => request<PregnancyResponse>("/api/pregnancy/kicks", { method: "POST" }),
+      setBagItem: (itemId: string, checked: boolean) =>
+        request<PregnancyResponse>("/api/pregnancy/bag", {
+          method: "POST",
+          body: JSON.stringify({ itemId, checked }),
+        }),
       /** PREG-LABOR-01: shvat sanagichi — boshlash va tugatish. */
       contraction: (action: "start" | "stop") =>
         request<PregnancyResponse>("/api/pregnancy/contractions", { method: "POST", body: JSON.stringify({ action }) }),

@@ -16,6 +16,7 @@ import type { CycleResponse, PredictionConfidence, PregnancyResponse, WellnessRe
 import {
   getCycleSettings,
   getKicksToday,
+  listBagItems,
   listRecentKicks,
   getLatestVitals,
   getOnboardingProfile,
@@ -132,7 +133,7 @@ async function computeWeightDeltaKg(userId: string): Promise<number | null> {
 export async function buildPregnancyResponse(userId: string): Promise<PregnancyResponse> {
   const profile = await getPregnancyProfile(userId);
   const status = profile ? getPregnancyStatus(profile) : null;
-  const [visits, kicksToday, kickTimes, latestVitals, weightDeltaKg, checklist, contractions] = await Promise.all([
+  const [visits, kicksToday, kickTimes, latestVitals, weightDeltaKg, checklist, contractions, bagItems] = await Promise.all([
     listPregnancyVisits(userId),
     getKicksToday(userId),
     listRecentKicks(userId),
@@ -140,6 +141,7 @@ export async function buildPregnancyResponse(userId: string): Promise<PregnancyR
     computeWeightDeltaKg(userId),
     listChecklistItems(userId),
     listContractions(userId),
+    listBagItems(userId),
   ]);
 
   // PREG-SCHED-01: milliy jadval bo'yicha navbatdagi majburiy tekshiruv.
@@ -161,6 +163,7 @@ export async function buildPregnancyResponse(userId: string): Promise<PregnancyR
     nextScheduledCheckup: next ? { type: next.type, dueDate: next.dueDate, status: next.status } : null,
     scheduledCheckups: allPregnancyItems.map((i) => ({ type: i.type, dueDate: i.dueDate, status: i.status })),
     contractions,
+    bagItems,
   };
 }
 
