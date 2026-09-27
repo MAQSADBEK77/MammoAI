@@ -745,6 +745,10 @@ const uz = {
     babyDevelopmentTitle: "Chaqalog'ingiz bu hafta",
     motherChangesTitle: "Sizda nima o'zgaradi",
     // PREG-END-01
+    // PREG-SCHED-01
+    scheduledCheckupTitle: "Jadval bo'yicha navbatdagi tekshiruv",
+    scheduledCheckupNow: "Hozir vaqti keldi",
+    scheduledCheckupOverdue: "Muddati o'tdi",
     endedLink: "Homiladorlik tugadimi?",
     endedTitle: "Homiladorlik tugadi",
     endedHint: "Buni bilsak, ilova sizga to'g'ri narsani ko'rsatadi. Aks holda u haftalarni sanashda davom etadi.",

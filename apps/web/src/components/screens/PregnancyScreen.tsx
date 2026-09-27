@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import clsx from "clsx";
+import { useRouter } from "next/navigation";
 import { Dialog, DialogContent } from "@mui/material";
 import { AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
 import type { PregnancyResponse, PregnancyWeekContent, VitalType } from "@mammoai/shared";
@@ -44,6 +46,7 @@ export function PregnancyScreen() {
   const [vitalInput, setVitalInput] = useState("");
   const [savingVital, setSavingVital] = useState(false);
   /** PREG-UI-01: ko'rsatkichlar bloki — standart holatda YOPIQ (0 ta ayol ishlatgan). */
+  const router = useRouter();
   const [showVitals, setShowVitals] = useState(false);
   /** PREG-END-01: "homiladorlik tugadi" oynasi. */
   const [endingOpen, setEndingOpen] = useState(false);
@@ -186,6 +189,16 @@ export function PregnancyScreen() {
   );
 
   const todayStr = localDateStr();
+  /** PREG-SCHED-01: milliy jadval bo'yicha navbatdagi majburiy tekshiruv. */
+  const scheduled = (() => {
+    const n = data.nextScheduledCheckup;
+    if (!n) return null;
+    const daysLeft = n.dueDate
+      ? Math.round((Date.parse(`${n.dueDate}T00:00:00Z`) - Date.parse(`${todayStr}T00:00:00Z`)) / 86_400_000)
+      : 0;
+    return { type: n.type, daysLeft: Math.max(0, daysLeft), overdue: n.status === "overdue" || daysLeft < 0 };
+  })();
+
   const nextVisit = data.visits.find((v) => v.date >= todayStr) ?? null;
   const nextVisitDaysLeft = nextVisit
     ? Math.max(0, Math.round((new Date(nextVisit.date + "T00:00:00Z").getTime() - new Date(todayStr + "T00:00:00Z").getTime()) / 86400000))
@@ -323,29 +336,64 @@ export function PregnancyScreen() {
         )}
       </div>
 
-      {/* Navbatdagi ko'rik — haqiqiy `visits` ma'lumotidan. Bosilganda tashrif
-          qo'shish shakli ochiladi — strelka shunchaki bezak emas. */}
-      <button type="button" className="w-full text-left" onClick={() => setAddingVisit(true)}>
-        <Card interactive className="flex items-center gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/10">
-            <CalendarDays sx={{ fontSize: 20 }} className="text-secondary" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-text-secondary">{dict.pregnancy.nextCheckupTitle}</p>
-            {nextVisit ? (
-              <>
-                <p className="font-bold text-text-primary">{nextVisit.date}</p>
-                <p className="text-sm text-text-secondary">
-                  {nextVisit.label} · {dict.pregnancy.nextCheckupDaysLeft(nextVisitDaysLeft ?? 0)}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-text-muted">{dict.pregnancy.nextCheckupNone}</p>
-            )}
-          </div>
-          <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
-        </Card>
-      </button>
+      {/* PREG-SCHED-01 — navbatdagi MAJBURIY tekshiruv (SSV jadvali).
+          Ilgari bu karta faqat ayol O'ZI kiritgan tashriflardan o'qirdi va
+          production'da doim bo'sh turardi: `pregnancy_visits` jadvalida
+          NOLTA yozuv bor. Shu bilan birga milliy jadval (10-14, 16-20,
+          24-28, 28-32, 35-37 hafta) checklist'da ALLAQACHON hisoblangan —
+          u shunchaki bu ekranda ko'rsatilmasdi.
+
+          Aynan shu bizning Lalu va Flo'da yo'q ustunligimiz: kontent emas,
+          MAJBURIY JADVAL. Shuning uchun u endi birinchi navbatda o'sha
+          jadvaldan o'qiydi, ayolning shaxsiy tashrifi esa ikkinchi. */}
+      {scheduled ? (
+        <button type="button" className="w-full text-left" onClick={() => router.push("/tekshiruvlar")}>
+          <Card interactive className="flex items-center gap-3">
+            <span
+              className={clsx(
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
+                scheduled.overdue ? "bg-danger/10" : "bg-secondary/10"
+              )}
+            >
+              <CalendarDays sx={{ fontSize: 20 }} className={scheduled.overdue ? "text-danger" : "text-secondary"} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-text-secondary">{dict.pregnancy.scheduledCheckupTitle}</p>
+              <p className="font-bold text-text-primary">{dict.checklist.items[scheduled.type].title}</p>
+              <p className={clsx("text-sm", scheduled.overdue ? "font-semibold text-danger" : "text-text-secondary")}>
+                {scheduled.overdue
+                  ? dict.pregnancy.scheduledCheckupOverdue
+                  : scheduled.daysLeft === 0
+                    ? dict.pregnancy.scheduledCheckupNow
+                    : dict.pregnancy.nextCheckupDaysLeft(scheduled.daysLeft)}
+              </p>
+            </div>
+            <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
+          </Card>
+        </button>
+      ) : (
+        <button type="button" className="w-full text-left" onClick={() => setAddingVisit(true)}>
+          <Card interactive className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary/10">
+              <CalendarDays sx={{ fontSize: 20 }} className="text-secondary" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-text-secondary">{dict.pregnancy.nextCheckupTitle}</p>
+              {nextVisit ? (
+                <>
+                  <p className="font-bold text-text-primary">{nextVisit.date}</p>
+                  <p className="text-sm text-text-secondary">
+                    {nextVisit.label} · {dict.pregnancy.nextCheckupDaysLeft(nextVisitDaysLeft ?? 0)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-text-muted">{dict.pregnancy.nextCheckupNone}</p>
+              )}
+            </div>
+            <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
+          </Card>
+        </button>
+      )}
 
       {status.trimester === 3 && (
         <Card className="flex items-center justify-between">

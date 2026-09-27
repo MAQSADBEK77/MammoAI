@@ -20,10 +20,26 @@ import {
   getOnboardingProfile,
   getPregnancyProfile,
   getWellnessToday,
+  listChecklistItems,
   listCycleLogs,
   listPregnancyVisits,
   listRecentVitalsByType,
 } from "./repo";
+
+/**
+ * PREG-SCHED-01: homiladorlikka tegishli majburiy tekshiruvlar.
+ * Manba — SSV jadvali, `checklist-rules.ts`dagi homiladorlik oqimi.
+ */
+const PREGNANCY_CHECKUP_TYPES: ReadonlySet<string> = new Set([
+  "prenatal_screening_stage1",
+  "prenatal_screening_stage1b",
+  "prenatal_screening_stage1c",
+  "gestational_diabetes_screening",
+  "group_b_strep_screening",
+  "pregnancy_patronage_visit",
+  "torch_panel",
+  "bv_targeted_screening",
+]);
 
 /** CYCLE-ALGO-18: kalendarda nechta sikl oldinga ko'rsatiladi — ishonch
  * darajasiga qarab. Ma'lumot qancha ko'p bo'lsa, uzoq bashorat shuncha
@@ -114,13 +130,31 @@ async function computeWeightDeltaKg(userId: string): Promise<number | null> {
 export async function buildPregnancyResponse(userId: string): Promise<PregnancyResponse> {
   const profile = await getPregnancyProfile(userId);
   const status = profile ? getPregnancyStatus(profile) : null;
-  const [visits, kicksToday, latestVitals, weightDeltaKg] = await Promise.all([
+  const [visits, kicksToday, latestVitals, weightDeltaKg, checklist] = await Promise.all([
     listPregnancyVisits(userId),
     getKicksToday(userId),
     getLatestVitals(userId),
     computeWeightDeltaKg(userId),
+    listChecklistItems(userId),
   ]);
-  return { profile, status, visits, kicksToday, latestVitals, weightDeltaKg };
+
+  // PREG-SCHED-01: milliy jadval bo'yicha navbatdagi majburiy tekshiruv.
+  // Faqat homiladorlikka tegishli bandlar; muddati o'tganlari birinchi,
+  // keyin eng yaqini. "Bajarildi" belgilanganlari chiqarib tashlanadi.
+  const pregnancyItems = checklist
+    .filter((i) => PREGNANCY_CHECKUP_TYPES.has(i.type) && i.status !== "done")
+    .sort((a, b) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999"));
+  const next = pregnancyItems[0] ?? null;
+
+  return {
+    profile,
+    status,
+    visits,
+    kicksToday,
+    latestVitals,
+    weightDeltaKg,
+    nextScheduledCheckup: next ? { type: next.type, dueDate: next.dueDate, status: next.status } : null,
+  };
 }
 
 export async function buildWellnessResponse(userId: string): Promise<WellnessResponse> {

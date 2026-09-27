@@ -8,7 +8,9 @@ import type {
   Article,
   BlockedUserEntry,
   BloodType,
+  ChecklistItemType,
   ChecklistResponse,
+  ChecklistStatus,
   Clinic,
   CommunityComment,
   CommunityPost,
@@ -138,6 +140,17 @@ export interface PregnancyResponse {
   latestVitals: Partial<Record<VitalType, PregnancyVitalLog>>;
   /** Vazn — oldingi qayddan (yoki onboarding vaznidan) farqi, kg. */
   weightDeltaKg: number | null;
+  /**
+   * PREG-SCHED-01: milliy jadval bo'yicha NAVBATDAGI majburiy tekshiruv.
+   *
+   * Ilgari homiladorlik ekranidagi "Keyingi ko'rik" kartasi faqat ayol
+   * O'ZI kiritgan tashriflardan o'qirdi — production'da esa bironta ham
+   * tashrif kiritilmagan (0 yozuv), ya'ni karta doim bo'sh turardi.
+   * Shu bilan birga SSV jadvali (10-14, 16-20, 24-28, 28-32, 35-37 hafta)
+   * checklist'da ALLAQACHON hisoblangan edi — u shunchaki bu ekranda
+   * ko'rsatilmasdi.
+   */
+  nextScheduledCheckup: { type: ChecklistItemType; dueDate: string | null; status: ChecklistStatus } | null;
 }
 
 // App.pdf §5-10 — onboarding so'rovnomasi endi akkaunt yaratilgandan KEYIN, sessiya
