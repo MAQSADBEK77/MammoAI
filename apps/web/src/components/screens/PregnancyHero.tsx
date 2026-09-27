@@ -68,8 +68,10 @@ export function PregnancyHero({
   initials: string | null;
 }) {
   const { openDrawer } = useAppDrawer();
-  // 3-haftada ~72px, 40-haftada ~208px — referensdagi o'sish.
-  const imageSize = Math.round(72 + (Math.min(40, Math.max(3, week)) - 3) * (136 / 37));
+  // 3-haftada ~130px, 40-haftada ~280px. Avvalgi diapazon (72–208)
+  // juda kichik edi: 10-haftada rasm atigi ~98px bo'lib, ekranning
+  // yuragi bo'lish o'rniga yo'qolib ketardi.
+  const imageSize = Math.round(130 + (Math.min(40, Math.max(3, week)) - 3) * (150 / 37));
   return (
     <div
       className="bg-aurora-pregnancy-soft -mx-4 -mt-2 rounded-b-[50%_2.5rem] px-4 pb-9"
@@ -152,7 +154,7 @@ export function PregnancyHero({
 
             Orqasida yumshoq yorug'lik — referensdagi "qorin ichidagi
             nur" hissi. U CSS bilan chiziladi, rasm kerak emas. */}
-        <div className="relative flex h-56 items-center justify-center">
+        <div className="relative flex h-72 items-center justify-center">
           <span
             aria-hidden
             className="absolute rounded-full"
