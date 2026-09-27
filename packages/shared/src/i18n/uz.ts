@@ -103,6 +103,7 @@ const uz = {
     community: "Jamiyat",
     clinics: "Klinikalar",
     profile: "Profil",
+    articles: "Maqolalar",
     assistant: "Yordamchi",
     // TODAY-01: pastki menyuda "Hamkor" o'rniga qisqaroq nom (foydalanuvchi
     // so'rovi) — `partner.title` bo'lim ICHIDAGI sarlavha uchun o'zgarishsiz qoladi.

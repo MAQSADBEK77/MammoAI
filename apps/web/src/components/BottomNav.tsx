@@ -12,6 +12,8 @@ import {
   GroupsOutlined,
   Favorite,
   FavoriteBorderOutlined,
+  MenuBook,
+  MenuBookOutlined,
   ChatBubble,
   ChatBubbleOutlineOutlined,
 } from "@mui/icons-material";
@@ -39,7 +41,21 @@ export function BottomNav() {
     { href: "/asosiy", label: dict.nav.home, Icon: CalendarMonth, IconOutline: CalendarMonthOutlined },
     ...(isPartnerTracking ? [] : [{ href: "/jamiyat", label: dict.nav.community, Icon: Groups, IconOutline: GroupsOutlined }]),
     { href: "/tekshiruvlar", label: dict.nav.checklist, Icon: FactCheck, IconOutline: FactCheckOutlined },
-    { href: "/hamkor", label: dict.nav.partner, Icon: Favorite, IconOutline: FavoriteBorderOutlined },
+    // NAV-01 — bu o'rin ilgari "Juft" (hamkor) edi, egasining so'roviga
+    // ko'ra qo'shilgan. O'lchov esa boshqasini ko'rsatdi (30 kun,
+    // production):
+    //
+    //   • Juft tabiga 86 ayol kirgan, 25 ta taklif yuborilgan — lekin
+    //     bog'lanish ATIGI BITTA. Ya'ni 25 tadan 24 tasi natijasiz.
+    //   • Maqolalar esa menyuda YO'Q va shuning uchun atigi 15 ayolga
+    //     yetgan — holbuki u yerda 16 ta maqola bor.
+    //
+    // Juft yo'qolmaydi: u yon menyuga (AppDrawer) o'tdi va hamkorini
+    // kuzatuvchilar uchun menyuda O'Z O'RNIDA qoladi — ular uchun bu
+    // butun ilovaning mazmuni.
+    ...(isPartnerTracking
+      ? [{ href: "/hamkor", label: dict.nav.partner, Icon: Favorite, IconOutline: FavoriteBorderOutlined }]
+      : [{ href: "/maqolalar", label: dict.nav.articles, Icon: MenuBook, IconOutline: MenuBookOutlined }]),
     // TODAY-04: menyu HAR DOIM tekis — hech qaysi band boshqasidan katta emas
     // (foydalanuvchi so'rovi). Yordamchi "mo'ralab" turganda esa uning O'Z
     // ikonkasi kattalashadi (pastda), oynani unga bog'laydigan "dum"ni

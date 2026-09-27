@@ -96,6 +96,7 @@ const en: Dictionary = {
     community: "Community",
     clinics: "Clinics",
     profile: "Profile",
+    articles: "Articles",
     assistant: "Assistant",
     partner: "Partner",
   },

@@ -94,6 +94,7 @@ const ru: Dictionary = {
     community: "Сообщество",
     clinics: "Клиники",
     profile: "Профиль",
+    articles: "Статьи",
     assistant: "Помощник",
     partner: "Пара",
   },
