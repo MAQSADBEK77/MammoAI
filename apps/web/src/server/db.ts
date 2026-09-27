@@ -850,6 +850,19 @@ async function initSchema() {
         ended_at TEXT
       )
     `,
+    // PREG-KICKS-01: harakatlarning VAQTI. Eski `pregnancy_kicks`
+    // jadvalida faqat kunlik SON bor edi ("bugun 14 ta"), ya'ni
+    // "2 soat ichida 10 ta" qoidasini hisoblab bo'lmasdi — aynan shu
+    // qoida esa harakat kamayganini payqashning yagona yo'li.
+    // Eski jadval o'chirilmaydi: unga faol foydalanuvchi hisobi
+    // bog'langan va undagi yozuvlar foydalanuvchilarniki.
+    () => sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_kick_events (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kicked_at TEXT NOT NULL
+      )
+    `,
     () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_week_content (
         week INTEGER PRIMARY KEY,
@@ -985,6 +998,7 @@ async function initSchema() {
     () => sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_checklist_user_type ON checklist_items(user_id, type)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_kick_events_user ON pregnancy_kick_events(user_id, kicked_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_album_user ON pregnancy_album_photos(user_id, created_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_community_posts_tag ON community_posts(tag, created_at DESC)`,
     // FIX3-22: "Barchasi" (teg tanlanmagan) standart ko'rinish teg bo'yicha

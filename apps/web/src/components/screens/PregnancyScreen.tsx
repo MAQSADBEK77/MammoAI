@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Dialog, DialogContent } from "@mui/material";
 import { Close, AccessTimeOutlined as CalendarClock, CalendarMonthOutlined as CalendarDays, ChevronRight, HourglassEmptyOutlined as Hourglass, MedicalServicesOutlined as Stethoscope, FavoriteBorderOutlined as Heart, MonitorHeartOutlined as Activity, MonitorWeightOutlined as Scale, DeviceThermostatOutlined as Thermometer } from "@mui/icons-material";
 import type { PregnancyResponse, PregnancyWeekContent, VitalType } from "@mammoai/shared";
-import { getMilestoneForWeek, getVitalTone, localDateStr, formatDateDisplay } from "@mammoai/shared";
+import { KICK_START_WEEK, getMilestoneForWeek, getVitalTone, localDateStr, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
@@ -16,6 +16,7 @@ import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, Scre
 import { PregnancyHero } from "@/components/screens/PregnancyHero";
 import { PregnancyWeekDetail } from "@/components/screens/PregnancyWeekDetail";
 import { ContractionTimer } from "@/components/screens/ContractionTimer";
+import { KickCounter } from "@/components/screens/KickCounter";
 import { PregnancyAlbum } from "@/components/PregnancyAlbum";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
@@ -603,18 +604,14 @@ export function PregnancyScreen() {
         />
       )}
 
-      {status.trimester === 3 && (
-        <Card className="flex items-center justify-between">
-          <div>
-            <p className="font-semibold text-text-primary">{dict.pregnancy.kickCounterTitle}</p>
-            <p className="text-sm text-text-secondary">{dict.pregnancy.kickCounterCount(data.kicksToday)}</p>
-          </div>
-          <Button
-            onClick={async () => setData(await api.pregnancy.logKick())}
-          >
-            {dict.pregnancy.kickCounterButton}
-          </Button>
-        </Card>
+      {/* PREG-KICKS-01: 28-haftadan boshlab. Ilgari bu "Bugun: 14 ta
+          tepki" degan bitta qator edi — raqam to'g'ri, lekin ayol uni
+          nima bilan solishtirishni bilmasdi. */}
+      {status.currentWeek >= KICK_START_WEEK && (
+        <KickCounter
+          kickTimes={data.kickTimes}
+          onChange={(next) => setData((prev) => (prev ? { ...prev, kickTimes: next } : prev))}
+        />
       )}
 
       {/* PREG-SCHED-02 — MILLIY JADVALNING TO'LIQ RO'YXATI.

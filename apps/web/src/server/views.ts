@@ -16,6 +16,7 @@ import type { CycleResponse, PredictionConfidence, PregnancyResponse, WellnessRe
 import {
   getCycleSettings,
   getKicksToday,
+  listRecentKicks,
   getLatestVitals,
   getOnboardingProfile,
   getPregnancyProfile,
@@ -131,9 +132,10 @@ async function computeWeightDeltaKg(userId: string): Promise<number | null> {
 export async function buildPregnancyResponse(userId: string): Promise<PregnancyResponse> {
   const profile = await getPregnancyProfile(userId);
   const status = profile ? getPregnancyStatus(profile) : null;
-  const [visits, kicksToday, latestVitals, weightDeltaKg, checklist, contractions] = await Promise.all([
+  const [visits, kicksToday, kickTimes, latestVitals, weightDeltaKg, checklist, contractions] = await Promise.all([
     listPregnancyVisits(userId),
     getKicksToday(userId),
+    listRecentKicks(userId),
     getLatestVitals(userId),
     computeWeightDeltaKg(userId),
     listChecklistItems(userId),
@@ -153,6 +155,7 @@ export async function buildPregnancyResponse(userId: string): Promise<PregnancyR
     status,
     visits,
     kicksToday,
+    kickTimes,
     latestVitals,
     weightDeltaKg,
     nextScheduledCheckup: next ? { type: next.type, dueDate: next.dueDate, status: next.status } : null,

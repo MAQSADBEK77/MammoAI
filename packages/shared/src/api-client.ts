@@ -137,6 +137,8 @@ export interface PregnancyResponse {
   status: PregnancyStatus | null;
   visits: PregnancyVisitLog[];
   kicksToday: number;
+  /** PREG-KICKS-01: oxirgi 24 soatdagi harakat vaqtlari (ISO). */
+  kickTimes: string[];
   /** Har bir tur bo'yicha eng so'nggi o'z-o'zidan qayd etilgan ko'rsatkich. */
   latestVitals: Partial<Record<VitalType, PregnancyVitalLog>>;
   /** Vazn — oldingi qayddan (yoki onboarding vaznidan) farqi, kg. */

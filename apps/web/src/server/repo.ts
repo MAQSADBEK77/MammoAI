@@ -1565,6 +1565,40 @@ export async function getKicksToday(userId: string): Promise<number> {
   return rows[0]?.count ?? 0;
 }
 
+/**
+ * PREG-KICKS-01: oxirgi 24 soatdagi harakat vaqtlari.
+ *
+ * 24 soat — seansni (2 soat) aniqlash uchun yetarli va ro'yxatni
+ * kichik saqlaydi. Tarix uchun emas: ayolga kechagi sanoq emas,
+ * HOZIRGI seans kerak.
+ */
+export async function listRecentKicks(userId: string): Promise<string[]> {
+  await ensureSchema();
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const rows = (await sql`
+    SELECT kicked_at FROM pregnancy_kick_events
+    WHERE user_id = ${userId} AND kicked_at >= ${cutoff}
+    ORDER BY kicked_at ASC
+  `) as unknown as { kicked_at: string }[];
+  return rows.map((r) => r.kicked_at);
+}
+
+/**
+ * Bitta harakatni qayd etadi. Vaqtni SERVER belgilaydi — telefon soati
+ * noto'g'ri bo'lsa seans hisobi buzilardi.
+ *
+ * Eski kunlik hisoblagich ham oshiriladi: unga faol foydalanuvchilar
+ * statistikasi bog'langan (repo.ts#activeUsers) va uni buzmaslik kerak.
+ */
+export async function addKickEvent(userId: string): Promise<string[]> {
+  await ensureSchema();
+  const id = crypto.randomUUID();
+  const kickedAt = new Date().toISOString();
+  await sql`INSERT INTO pregnancy_kick_events (id, user_id, kicked_at) VALUES (${id}, ${userId}, ${kickedAt})`;
+  await incrementKicks(userId);
+  return listRecentKicks(userId);
+}
+
 export async function incrementKicks(userId: string): Promise<number> {
   await ensureSchema();
   await sql`
