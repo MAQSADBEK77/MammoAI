@@ -733,6 +733,8 @@ const uz = {
     // PREG-HERO-01
     weekDayLabel: (week: number, day: number) => `${week} hafta, ${day} kun`,
     weekContentMissing: "Bu hafta uchun matn hali tayyorlanmagan.",
+    insightsTitle: "Kunlik tavsiyalar",
+    insightsAddLabel: "Bugungi holatni qayd eting",
     detailsButton: "Batafsil",
     weekLabel: (week: number) => `${week}-hafta`,
     daysRemaining: (days: number) => `Tug'ilishga ${days} kun qoldi`,

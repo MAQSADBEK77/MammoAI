@@ -271,21 +271,57 @@ export function PregnancyScreen() {
         </div>
       </div>
 
-      {/* CONTENT-001: admin panel orqali tahrirlanadigan haftalik matn —
-          tashxis emas, faqat umumiy ma'lumot (izoh — vitalsDisclaimer
-          bilan bir xil ehtiyotkorlik). Kiritilmagan hafta uchun ko'rsatilmaydi. */}
-      {weekContent && (
-        <div className="space-y-3">
-          <Card className="space-y-1.5">
-            <p className="text-sm font-bold text-text-primary">{dict.pregnancy.babyDevelopmentTitle}</p>
-            <p className="text-sm text-text-secondary">{weekContent.babyDevelopment}</p>
-          </Card>
-          <Card className="space-y-1.5">
-            <p className="text-sm font-bold text-text-primary">{dict.pregnancy.motherChangesTitle}</p>
-            <p className="text-sm text-text-secondary">{weekContent.motherChanges}</p>
-          </Card>
+      {/* PREG-INSIGHTS-01 — "Kunlik tavsiyalar" (referensdagi "My daily
+          insights"). Ilgari bu ikkita to'liq enli matn kartasi edi va
+          ekranni pastga cho'zardi. Endi gorizontal qator: birinchi karta
+          har doim QAYD QO'SHISH, qolganlari o'qish uchun.
+
+          Nega birinchi karta amal: referensda ham shunday. Ro'yxatning
+          boshida turgan yagona harakat tugmasi — ayol nima qilishi
+          kerakligini izlab yurmaydi. */}
+      <div className="space-y-2">
+        <p className="text-base font-bold text-text-primary">{dict.pregnancy.insightsTitle}</p>
+        <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+          <button
+            type="button"
+            onClick={() => setShowVitals(true)}
+            className="flex h-36 w-32 shrink-0 flex-col items-start justify-between rounded-3xl bg-surface p-3 text-left shadow-sm active:scale-[0.98]"
+          >
+            <span className="text-xs font-semibold leading-snug text-text-secondary">{dict.pregnancy.insightsAddLabel}</span>
+            <span className="bg-pregnancy-accent grid h-10 w-10 place-items-center rounded-full text-xl font-bold text-white">+</span>
+          </button>
+
+          {weekContent && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowWeekDetails(true)}
+                className="bg-pregnancy-soft-card flex h-36 w-44 shrink-0 flex-col justify-between rounded-3xl p-3 text-left active:scale-[0.98]"
+              >
+                <span className="text-sm font-bold leading-snug text-text-primary">{dict.pregnancy.babyDevelopmentTitle}</span>
+                <span className="line-clamp-3 text-xs leading-snug text-text-secondary">{weekContent.babyDevelopment}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowWeekDetails(true)}
+                className="bg-pregnancy-soft-card flex h-36 w-44 shrink-0 flex-col justify-between rounded-3xl p-3 text-left active:scale-[0.98]"
+              >
+                <span className="text-sm font-bold leading-snug text-text-primary">{dict.pregnancy.motherChangesTitle}</span>
+                <span className="line-clamp-3 text-xs leading-snug text-text-secondary">{weekContent.motherChanges}</span>
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => router.push("/maqolalar")}
+            className="bg-pregnancy-soft-card flex h-36 w-44 shrink-0 flex-col justify-between rounded-3xl p-3 text-left active:scale-[0.98]"
+          >
+            <span className="text-sm font-bold leading-snug text-text-primary">{dict.tools.articles}</span>
+            <span className="text-xs leading-snug text-text-secondary">{dict.tools.articlesHint}</span>
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Sog'liq ko'rsatkichlari — foydalanuvchi o'zi qayd etadigan tezkor-jurnal.
           PREG-UI-01: endi YIG'ILGAN holda ochiladi. O'lchandi (production,

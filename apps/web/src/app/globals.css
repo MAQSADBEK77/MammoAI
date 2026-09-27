@@ -334,6 +334,17 @@ body {
   background: linear-gradient(180deg, #33241c 0%, #261d18 55%, var(--color-background) 100%);
 }
 
+/* Kunlik tavsiyalar kartalari — fon bilan bir oilada, lekin ajralib turadi. */
+.bg-pregnancy-soft-card {
+  background: #fdeee4;
+  border: 1px solid #f7d9c6;
+}
+
+[data-theme="dark"] .bg-pregnancy-soft-card {
+  background: #2b211b;
+  border-color: #3b2c23;
+}
+
 .text-pregnancy-accent {
   color: var(--color-pregnancy-accent);
 }

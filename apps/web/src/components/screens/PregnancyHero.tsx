@@ -64,6 +64,8 @@ export function PregnancyHero({
   menuLabel: string;
 }) {
   const { openDrawer } = useAppDrawer();
+  // 3-haftada ~72px, 40-haftada ~208px — referensdagi o'sish.
+  const imageSize = Math.round(72 + (Math.min(40, Math.max(3, week)) - 3) * (136 / 37));
   return (
     <div
       className="bg-aurora-pregnancy-soft -mx-4 -mt-2 rounded-b-[2.5rem] px-4 pb-7"
@@ -74,16 +76,16 @@ export function PregnancyHero({
           type="button"
           onClick={openDrawer}
           aria-label={menuLabel}
-          className="grid h-10 w-10 place-items-center rounded-full bg-surface text-text-secondary shadow-sm"
+          className="text-pregnancy-accent -ml-2 grid h-10 w-10 place-items-center rounded-full"
         >
           <MenuIcon sx={{ fontSize: 20 }} />
         </button>
-        <p className="text-base font-bold text-text-primary">{dateLabel}</p>
+        <p className="text-lg font-bold text-text-primary">{dateLabel}</p>
         <button
           type="button"
           onClick={onOpenCalendar}
           aria-label={dateLabel}
-          className="text-pregnancy-accent grid h-10 w-10 place-items-center rounded-full bg-surface shadow-sm"
+          className="text-pregnancy-accent -mr-2 grid h-10 w-10 place-items-center rounded-full"
         >
           <CalendarMonthOutlined sx={{ fontSize: 20 }} />
         </button>
@@ -107,18 +109,39 @@ export function PregnancyHero({
               <span
                 className={clsx(
                   "grid h-9 w-9 place-items-center rounded-full text-sm font-bold transition-colors",
-                  isToday ? "bg-pregnancy-accent text-white shadow-sm" : isSelected ? "bg-surface text-text-primary" : "text-text-secondary"
+                  isToday
+                    ? "bg-surface text-pregnancy-accent shadow-md"
+                    : isSelected
+                      ? "bg-surface/60 text-text-primary"
+                      : "text-text-secondary"
                 )}
               >
                 {d.dayNumber}
               </span>
+              {/* Referensda bugungi kun ostida kichik nuqta turadi — u
+                  "shu kunda qayd bor" degani emas, shunchaki joriy kunni
+                  yana bir marta belgilaydi. */}
+              <span
+                className={clsx("h-1 w-1 rounded-full", isToday ? "bg-pregnancy-accent/60" : "bg-transparent")}
+                aria-hidden
+              />
             </button>
           );
         })}
       </div>
 
       <div className="mt-6 flex flex-col items-center gap-3">
-        <PregnancyWeekImage week={week} icon={sizeIcon} />
+        {/* PREG-HERO-04: rasm HAFTAGA QARAB o'sadi — referensda 3-haftada
+            u juda kichik, oxirida esa butun maydonni egallaydi. Bu shunchaki
+            bezak emas: o'sishning o'zi ma'lumot. */}
+        <div className="flex h-52 items-center justify-center">
+          <PregnancyWeekImage
+            week={week}
+            icon={sizeIcon}
+            className="rounded-full object-cover shadow-lg"
+            style={{ width: imageSize, height: imageSize }}
+          />
+        </div>
         <button type="button" onClick={onOpenDetails} className="flex items-center gap-1.5">
           <span className="text-pregnancy-accent text-[1.75rem] font-extrabold leading-tight">{weekDayLabel}</span>
           <InfoOutlined sx={{ fontSize: 18 }} className="text-pregnancy-accent opacity-60" />
