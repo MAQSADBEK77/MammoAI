@@ -3,6 +3,7 @@ export * from "./date";
 export * from "./design-tokens";
 export * from "./logic/conception";
 export * from "./logic/cycle";
+export * from "./logic/cycle-hero";
 export * from "./logic/cycle-phase";
 export * from "./logic/cycle-summary";
 export * from "./logic/cycle-history";

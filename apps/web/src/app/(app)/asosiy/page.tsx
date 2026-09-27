@@ -57,12 +57,25 @@ export default function AsosiyPage() {
   // eski ekranga MUHTOJ emas — farq shunchaki e'tibordan chetda qolgan.
   // Endi barcha sikl-asosidagi rejimlar bir xil, yangi ekranni oladi.
   //
-  // `perimenopause` ATAYLAB chetda: u bashorat halqasi o'rniga o'z
-  // kartasini ko'rsatadigan qilib maxsus qurilgan ("necha kun qoldi"
-  // savolining o'zi u yerda ma'nosiz) va uni yangi ekranga ko'chirish
-  // alohida, ehtiyotkor ish — bu tuzatishning maqsadi emas.
-  const useTodayVariant =
-    goalToLandingTab(onboardingProfile.primaryGoal) === "cycle" && onboardingProfile.primaryGoal !== "perimenopause";
+  // TTC-01 — XATO TUZATILDI. Bu yerda variant `goalToLandingTab` orqali
+  // hisoblanardi, u esa `planning_pregnancy`ni "pregnancy"ga xaritalaydi,
+  // ya'ni shart yolg'on bo'lib chiqardi. Natijada homiladorlikka
+  // TAYYORGARLIK ko'rayotgan ayol ESKI ("classic") ekranni olardi —
+  // holbuki CycleScreen'ning o'z izohida bu ekran aynan `cycle` VA
+  // `planning_pregnancy` uchun deb yozilgan.
+  //
+  // Bu shunchaki ko'rinish emas edi: homiladorlik EHTIMOLI yorlig'i
+  // (`heroChip`) faqat "today" ekranida chiziladi. Ya'ni bu signalga
+  // eng muhtoj ayollar — homilador bo'lmoqchi bo'lganlar — uni
+  // ko'rmaydigan yagona guruh edi.
+  //
+  // `perimenopause` ATAYLAB chetda qoladi: u bashorat halqasi o'rniga
+  // o'z kartasini ko'rsatadigan qilib maxsus qurilgan ("necha kun qoldi"
+  // savolining o'zi u yerda ma'nosiz).
+  //
+  // `partner_tracking` bu yergacha yetib kelmaydi — yuqoridagi effekt uni
+  // /hamkor sahifasiga yo'naltiradi.
+  const useTodayVariant = onboardingProfile.primaryGoal !== "perimenopause";
 
   return (
     <div className="space-y-8 pb-6">
