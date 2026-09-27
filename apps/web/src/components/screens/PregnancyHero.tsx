@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarMonthOutlined, InfoOutlined, Menu as MenuIcon } from "@mui/icons-material";
+import { CalendarMonthOutlined, InfoOutlined } from "@mui/icons-material";
 import { useAppDrawer } from "@/components/AppDrawer";
 import clsx from "clsx";
 import { PregnancyWeekImage } from "@/components/PregnancyWeekImage";
@@ -44,6 +44,8 @@ export function PregnancyHero({
   detailsLabel,
   onOpenDetails,
   menuLabel,
+  avatarUrl,
+  initials,
 }: {
   dateLabel: string;
   onOpenCalendar: () => void;
@@ -60,25 +62,32 @@ export function PregnancyHero({
   weekDayLabel: string;
   detailsLabel: string;
   onOpenDetails: () => void;
-  /** Burger tugmasining ekran o'quvchi uchun nomi. */
+  /** Menyu tugmasining ekran o'quvchi uchun nomi. */
   menuLabel: string;
+  avatarUrl: string | null;
+  initials: string | null;
 }) {
   const { openDrawer } = useAppDrawer();
   // 3-haftada ~72px, 40-haftada ~208px — referensdagi o'sish.
   const imageSize = Math.round(72 + (Math.min(40, Math.max(3, week)) - 3) * (136 / 37));
   return (
     <div
-      className="bg-aurora-pregnancy-soft -mx-4 -mt-2 rounded-b-[2.5rem] px-4 pb-7"
+      className="bg-aurora-pregnancy-soft -mx-4 -mt-2 rounded-b-[50%_2.5rem] px-4 pb-9"
       style={{ paddingTop: "calc(var(--tg-safe-area-top) + 1rem)" }}
     >
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={openDrawer}
-          aria-label={menuLabel}
-          className="text-pregnancy-accent -ml-2 grid h-10 w-10 place-items-center rounded-full"
-        >
-          <MenuIcon sx={{ fontSize: 20 }} />
+        {/* Referensda chapda BURGER emas, AVATAR turadi. U ham menyuni
+            ochadi — ya'ni funksiya bir xil, lekin ekran issiqroq
+            ko'rinadi: ayol o'zini ko'radi, tizim tugmasini emas. */}
+        <button type="button" onClick={openDrawer} aria-label={menuLabel} className="-ml-1 shrink-0">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- foydalanuvchi avatari
+            <img src={avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-white/70" />
+          ) : (
+            <span className="bg-pregnancy-accent grid h-10 w-10 place-items-center rounded-full text-sm font-bold text-white ring-2 ring-white/70">
+              {initials ?? "\u00b7"}
+            </span>
+          )}
         </button>
         <p className="text-lg font-bold text-text-primary">{dateLabel}</p>
         <button

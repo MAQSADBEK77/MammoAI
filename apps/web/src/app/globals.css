@@ -327,7 +327,17 @@ body {
 }
 
 .bg-aurora-pregnancy-soft {
-  background: linear-gradient(180deg, #fbe3d3 0%, #fdf2ea 55%, var(--color-background) 100%);
+  background: linear-gradient(180deg, #f8d8c2 0%, #fbe6d8 60%, #fdf1ea 100%);
+}
+
+/* Referensda gradientdan KEYINGI qism ham iliq (krem), sovuq kulrang
+   emas — ekran bitta oilada qoladi. */
+.bg-pregnancy-page {
+  background: #fdf5f0;
+}
+
+[data-theme="dark"] .bg-pregnancy-page {
+  background: var(--color-background);
 }
 
 [data-theme="dark"] .bg-aurora-pregnancy-soft {
@@ -336,8 +346,8 @@ body {
 
 /* Kunlik tavsiyalar kartalari — fon bilan bir oilada, lekin ajralib turadi. */
 .bg-pregnancy-soft-card {
-  background: #fdeee4;
-  border: 1px solid #f7d9c6;
+  background: #fbe0d0;
+  border: 1.5px solid #f0b795;
 }
 
 [data-theme="dark"] .bg-pregnancy-soft-card {

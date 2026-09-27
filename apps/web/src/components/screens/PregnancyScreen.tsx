@@ -30,7 +30,7 @@ const VITAL_TINT: Record<VitalType, string> = {
 export function PregnancyScreen() {
   const { dict } = useI18n();
   const { resolve } = useIllustrations();
-  const { onboardingProfile } = useSession();
+  const { onboardingProfile, user } = useSession();
   const [data, setData] = useState<PregnancyResponse | null>(null);
   // CONTENT-001: admin panel orqali tahrirlanadigan haftalik kontent —
   // topilmasa (hali kiritilmagan hafta) eski statik meva-qiyoslash tizimiga
@@ -207,6 +207,12 @@ export function PregnancyScreen() {
 
   /** PREG-HERO-01: hafta chizig'i uchun yetti kun — bugundan uch kun oldin
    * boshlanadi, ya'ni bugun o'rtada turadi (Flo referensidagi kabi). */
+  /** Referensdagi kabi "27-Sentabr" — yil ko'rsatilmaydi, u ortiqcha. */
+  const heroDateLabel = (() => {
+    const d = new Date(`${todayStr}T00:00:00`);
+    return `${d.getDate()}-${dict.common.months[d.getMonth()]}`;
+  })();
+
   const heroDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(`${todayStr}T00:00:00Z`);
     d.setUTCDate(d.getUTCDate() + i - 3);
@@ -215,9 +221,11 @@ export function PregnancyScreen() {
   });
 
   return (
-    <div className="space-y-5 pb-6">
+    // PREG-HERO-05: butun ekran iliq krem fonda — referensda gradientdan
+    // keyingi qism ham issiq, sovuq kulrang emas.
+    <div className="bg-pregnancy-page -mx-4 -mb-6 space-y-5 px-4 pb-6">
       <PregnancyHero
-        dateLabel={formatDateDisplay(todayStr)}
+        dateLabel={heroDateLabel}
         onOpenCalendar={() => router.push("/tekshiruvlar")}
         days={heroDays}
         today={todayStr}
@@ -230,6 +238,8 @@ export function PregnancyScreen() {
         detailsLabel={dict.pregnancy.detailsButton}
         onOpenDetails={() => setShowWeekDetails(true)}
         menuLabel={dict.common.openMenu}
+        avatarUrl={user?.avatarUrl ?? null}
+        initials={onboardingProfile?.name?.trim()?.[0]?.toUpperCase() ?? null}
       />
 
       {/* Hafta tafsiloti — gradientdan KEYIN, oq fonda. Ilgari bularning
