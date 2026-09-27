@@ -2,6 +2,7 @@
 // (absolyut baseUrl, "Authorization: Bearer" tokeni) shu bir xil mantiqdan foydalanadi.
 // Backend — apps/web/src/app/api ichida, ikkalasiga ham xizmat qiladi (spec §8).
 
+import type { Contraction } from "./logic/contractions";
 import type {
   AnalyticsEventInput,
   AppNotification,
@@ -157,6 +158,8 @@ export interface PregnancyResponse {
    * emas: homiladorlikda "yana nima kutmoqda" degan savol doimiy.
    */
   scheduledCheckups: { type: ChecklistItemType; dueDate: string | null; status: ChecklistStatus }[];
+  /** PREG-LABOR-01: so'nggi 24 soatdagi shvat yozuvlari. */
+  contractions: Contraction[];
 }
 
 // App.pdf §5-10 — onboarding so'rovnomasi endi akkaunt yaratilgandan KEYIN, sessiya
@@ -337,6 +340,9 @@ export function createApiClient(config: ApiClientConfig) {
       addVisit: (visit: Pick<PregnancyVisitLog, "label" | "date" | "clinicName" | "note">) =>
         request<PregnancyResponse>("/api/pregnancy/visits", { method: "POST", body: JSON.stringify(visit) }),
       logKick: () => request<PregnancyResponse>("/api/pregnancy/kicks", { method: "POST" }),
+      /** PREG-LABOR-01: shvat sanagichi — boshlash va tugatish. */
+      contraction: (action: "start" | "stop") =>
+        request<PregnancyResponse>("/api/pregnancy/contractions", { method: "POST", body: JSON.stringify({ action }) }),
       logVital: (payload: { type: VitalType; value: string; recordedAt?: string }) =>
         request<PregnancyResponse>("/api/pregnancy/vitals", { method: "POST", body: JSON.stringify(payload) }),
       // CONTENT-001 — admin panel orqali tahrirlanadigan haftalik kontent.

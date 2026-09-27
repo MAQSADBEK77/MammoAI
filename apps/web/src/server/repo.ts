@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "./db";
 import { ApiError } from "./api-utils";
-import type { CheckinResponse } from "@mammoai/shared";
+import type { CheckinResponse, Contraction } from "@mammoai/shared";
 import { PET_IDS, type PetChoice } from "@mammoai/shared";
 import type {
   ChronicCondition,
@@ -1219,6 +1219,40 @@ interface PregnancyRow {
   due_date: string | null;
   outcome: string | null;
   ended_on: string | null;
+}
+
+/**
+ * PREG-LABOR-01 — shvat sanagichi.
+ *
+ * Faqat so'nggi 24 soat o'qiladi: 5-1-1 qoidasi bir soatlik oynada
+ * ishlaydi, undan eskisi esa xulosaga ta'sir qilmaydi va bejiz
+ * yuklanardi.
+ */
+export async function listContractions(userId: string): Promise<Contraction[]> {
+  await ensureSchema();
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const rows = (await sql`
+    SELECT started_at, ended_at FROM pregnancy_contractions
+    WHERE user_id = ${userId} AND started_at >= ${cutoff}
+    ORDER BY started_at ASC
+  `) as unknown as { started_at: string; ended_at: string | null }[];
+  return rows.map((r) => ({ startedAt: r.started_at, endedAt: r.ended_at }));
+}
+
+/** Yangi qisqarishni boshlaydi. Tugallanmagani qolib ketgan bo'lsa yopiladi. */
+export async function startContraction(userId: string): Promise<void> {
+  await ensureSchema();
+  const now_ = now();
+  // Ilova yopilib qolgan bo'lsa tugallanmagan yozuv qoladi — yangisini
+  // boshlashdan oldin uni yopamiz, aks holda o'rtacha buziladi.
+  await sql`UPDATE pregnancy_contractions SET ended_at = ${now_} WHERE user_id = ${userId} AND ended_at IS NULL`;
+  await sql`INSERT INTO pregnancy_contractions (id, user_id, started_at, ended_at) VALUES (${randomUUID()}, ${userId}, ${now_}, NULL)`;
+}
+
+/** Davom etayotgan qisqarishni tugatadi. */
+export async function stopContraction(userId: string): Promise<void> {
+  await ensureSchema();
+  await sql`UPDATE pregnancy_contractions SET ended_at = ${now()} WHERE user_id = ${userId} AND ended_at IS NULL`;
 }
 
 export async function getPregnancyProfile(userId: string): Promise<PregnancyProfile | null> {

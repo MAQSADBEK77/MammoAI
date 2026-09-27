@@ -15,6 +15,7 @@ import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { PregnancyHero } from "@/components/screens/PregnancyHero";
 import { PregnancyWeekDetail } from "@/components/screens/PregnancyWeekDetail";
+import { ContractionTimer } from "@/components/screens/ContractionTimer";
 import { PregnancyAlbum } from "@/components/PregnancyAlbum";
 
 const VITAL_TYPES: VitalType[] = ["heart_rate", "blood_pressure", "weight", "temperature"];
@@ -488,6 +489,18 @@ export function PregnancyScreen() {
             <ChevronRight sx={{ fontSize: 18 }} className="shrink-0 text-text-muted" />
           </Card>
         </button>
+      )}
+
+      {/* PREG-LABOR-01: shvat sanagichi — faqat UCHINCHI trimestrda.
+          Ilgari bunday narsa umuman yo'q edi va Lalu'da bor. Bu tibbiy
+          jihatdan harakatga undaydigan yagona homiladorlik vositasi:
+          u "qachon tug'ruqxonaga borish kerak" degan savolga aniq
+          chegara beradi (5-1-1). */}
+      {status.trimester === 3 && (
+        <ContractionTimer
+          contractions={data.contractions}
+          onChange={(next) => setData((prev) => (prev ? { ...prev, contractions: next } : prev))}
+        />
       )}
 
       {status.trimester === 3 && (

@@ -837,6 +837,14 @@ async function initSchema() {
     // CONTENT-001: homiladorlikning har bir haftasi uchun admin-tahrirlanadigan
     // matn — boshqa jadvallarga bog'liq emas, istalgan bosqichda yaratilishi mumkin.
     () => sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_contractions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        started_at TEXT NOT NULL,
+        ended_at TEXT
+      )
+    `,
+    () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_week_content (
         week INTEGER PRIMARY KEY,
         size_label TEXT NOT NULL,
