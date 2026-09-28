@@ -342,6 +342,7 @@ const en: Dictionary = {
     notificationsSamplePreview: "Your period is expected to start in 2 days",
     notificationsNowLabel: "Now",
     notificationsTurnOnButton: "Turn on",
+    notificationsDeclineButton: "Not now",
 
     analyzingTitle: "Analyzing your information...",
     analyzingSubtitle: "Preparing a plan just for you",

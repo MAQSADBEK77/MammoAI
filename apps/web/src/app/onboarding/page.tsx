@@ -34,6 +34,7 @@ import {
   extractUzPhoneDigits,
   ApiError,
   resolveRestoreStep,
+  resolveNotificationsChoice,
 } from "@mammoai/shared";
 import { TodayBackdrop } from "@/components/screens/TodayBackdrop";
 import { useI18n } from "@/lib/i18n";
@@ -981,7 +982,11 @@ function OnboardingPageInner() {
         heightCm: survey.useImperialUnits ? feetInchesToCm(survey.heightFeet, survey.heightInches) : Number(survey.heightCm) || null,
         weightKg: survey.useImperialUnits ? lbToKg(survey.weightLb) : Number(survey.weightKg) || null,
         bloodType: null,
-        notificationsEnabled: !!survey.notificationsEnabled,
+        // ONB-NOTIF-02: qaror `resolveNotificationsChoice`da, testlar
+        // bilan qotirilgan (packages/shared). Ilgari bu yerda
+        // `!!survey.notificationsEnabled` turardi va tanlanmagan holat
+        // jimgina O'CHIRISHGA aylanardi.
+        notificationsEnabled: resolveNotificationsChoice(survey.notificationsEnabled),
       });
       applyMeResponse(res);
       clearOnboardingDraft();
@@ -1965,6 +1970,22 @@ function OnboardingPageInner() {
           ) : step === "phone_verify" ? (
             <Button className="w-full" onClick={submitVerifyCode} disabled={submitting || !canProceed()}>
               {dict.common.continueButton}
+            </Button>
+          ) : step === "notifications" ? (
+            // ONB-NOTIF-02: bu qadamda pastdagi tugma "Davom etish" emas,
+            // ANIQ rad javobi. Ilgari u qiymatni tegmasdan o'tkazib
+            // yuborardi va natija o'chirish bo'lardi — ya'ni ayol
+            // "keyinroq qarayman" deb o'ylab, aslida butunlay voz
+            // kechgan bo'lib chiqardi.
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                void requestNotificationPermission(false);
+                goNext();
+              }}
+            >
+              {dict.onboarding.notificationsDeclineButton}
             </Button>
           ) : step === "privacy" ? (
             // ONB-CONSENT-01: rozilik endi belgilarning O'ZIDA, shuning uchun

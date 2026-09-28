@@ -341,6 +341,7 @@ const ru: Dictionary = {
     notificationsSamplePreview: "Ваши месячные ожидаются через 2 дня",
     notificationsNowLabel: "Сейчас",
     notificationsTurnOnButton: "Включить",
+    notificationsDeclineButton: "Не сейчас",
 
     analyzingTitle: "Анализируем ваши данные...",
     analyzingSubtitle: "Готовим программу специально для вас",

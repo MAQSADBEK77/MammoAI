@@ -370,6 +370,7 @@ const uz = {
     notificationsSamplePreview: "Hayzingiz 2 kundan keyin boshlanishi kutilmoqda",
     notificationsNowLabel: "Hozir",
     notificationsTurnOnButton: "Yoqish",
+    notificationsDeclineButton: "Hozir emas",
 
     analyzingTitle: "Ma'lumotlaringiz tahlil qilinmoqda...",
     analyzingSubtitle: "Sizga mos dastur tayyorlanmoqda",
