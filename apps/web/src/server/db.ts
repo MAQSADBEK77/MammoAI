@@ -587,6 +587,11 @@ async function initSchema() {
     () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS smokes BOOLEAN`,
     () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS has_given_birth BOOLEAN`,
     () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS chronic_conditions TEXT`,
+    // TTC-02: "qachondan beri urinyapsiz" — shifokorga murojaat chegarasi
+    // (35 yoshgacha 12 oy, 35-40 yoshda 6 oy) shu sanadan hisoblanadi.
+    // Onboardingda EMAS, tekshiruvlar ekranida so'raladi: onboarding
+    // allaqachon uzun, bu savol esa faqat bitta rejimga tegishli.
+    () => sql`ALTER TABLE onboarding_profiles ADD COLUMN IF NOT EXISTS trying_since TEXT`,
     // MUHIM: `notifications`ga tegishli ALTER'lar ATAYLAB bu yerda EMAS —
     // pastda, jadvalning o'zi ("2.5-bosqich") yaratilgandan KEYIN (qarang:
     // "2.6-bosqich"). Bu yerda turganda haqiqiy production'da hech qachon
@@ -647,6 +652,27 @@ async function initSchema() {
     // orqali kunlik yozuvga qo'shiladi. Ovulyatsiyani simptomdan ANIQROQ
     // aniqlash uchun (cycle.ts#detectOvulationFromBbt).
     () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS basal_body_temp NUMERIC`,
+    // TTC-03: homiladorlikka tayyorgarlik uchun ikkita qayd.
+    // `lh_test` — ovulyatsiya testi natijasi: musbat test ovulyatsiya
+    // 24-36 soat ichida kutilishini bildiradi, ya'ni bu eng aniq
+    // real vaqt signali (bazal harorat esa ovulyatsiyani faqat O'TGACH
+    // tasdiqlaydi — rejalashtirish uchun kech).
+    // PREG-END-01: homiladorlik qanday tugagani — ayolning O'Z gapi.
+    // Usiz ilova faqat TAXMINIY sanaga tayanardi va homiladorlikni
+    // yo'qotgan ayolga oylab "bolangiz endi bodring kattaligida" deb
+    // yozishda davom etardi.
+    () => sql`ALTER TABLE pregnancy_profiles ADD COLUMN IF NOT EXISTS outcome TEXT`,
+    () => sql`ALTER TABLE pregnancy_profiles ADD COLUMN IF NOT EXISTS ended_on TEXT`,
+    // PREG-ALBUM-02: albom endi IKKI XIL — qorin surati va UZI. Lalu'da
+    // ular alohida, va to'g'ri: bu ikki xil xotira. Qorin surati har hafta
+    // takrorlanadi va o'sishni ko'rsatadi, UZI esa kam va har biri alohida
+    // voqea. Bitta ro'yxatda ular aralashib ketardi.
+    // Standart — 'bump': mavjud uchta surat aynan shunday olingan.
+    () => sql`ALTER TABLE pregnancy_album_photos ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'bump'`,
+    () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS lh_test TEXT`,
+    // Unumdor oyna "qoplanganini" hisoblash uchun. Faqat tayyorgarlik
+    // rejimida so'raladi va ko'rsatiladi.
+    () => sql`ALTER TABLE cycle_logs ADD COLUMN IF NOT EXISTS intercourse BOOLEAN NOT NULL DEFAULT FALSE`,
   ]);
 
   // 1.6-bosqich: NOT NULL cheklovini olib tashlash — ATAYLAB yuqoridagi
@@ -829,6 +855,38 @@ async function initSchema() {
     // CONTENT-001: homiladorlikning har bir haftasi uchun admin-tahrirlanadigan
     // matn — boshqa jadvallarga bog'liq emas, istalgan bosqichda yaratilishi mumkin.
     () => sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_contractions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        started_at TEXT NOT NULL,
+        ended_at TEXT
+      )
+    `,
+    // PREG-KICKS-01: harakatlarning VAQTI. Eski `pregnancy_kicks`
+    // jadvalida faqat kunlik SON bor edi ("bugun 14 ta"), ya'ni
+    // "2 soat ichida 10 ta" qoidasini hisoblab bo'lmasdi — aynan shu
+    // qoida esa harakat kamayganini payqashning yagona yo'li.
+    // Eski jadval o'chirilmaydi: unga faol foydalanuvchi hisobi
+    // bog'langan va undagi yozuvlar foydalanuvchilarniki.
+    // PREG-BAG-01: tug'ruqxona sumkasi ro'yxatidagi belgilar.
+    // Ro'yxatning O'ZI kodda (kontent, tarjimalari bilan) — bazada
+    // faqat foydalanuvchi nimani belgilagani turadi.
+    () => sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_bag_items (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        item_id TEXT NOT NULL,
+        checked_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, item_id)
+      )
+    `,
+    () => sql`
+      CREATE TABLE IF NOT EXISTS pregnancy_kick_events (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kicked_at TEXT NOT NULL
+      )
+    `,
+    () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_week_content (
         week INTEGER PRIMARY KEY,
         size_label TEXT NOT NULL,
@@ -963,6 +1021,7 @@ async function initSchema() {
     () => sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_checklist_user_type ON checklist_items(user_id, type)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_referral_user ON referral_events(user_id)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_vitals_user ON pregnancy_vitals(user_id)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_kick_events_user ON pregnancy_kick_events(user_id, kicked_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_pregnancy_album_user ON pregnancy_album_photos(user_id, created_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_community_posts_tag ON community_posts(tag, created_at DESC)`,
     // FIX3-22: "Barchasi" (teg tanlanmagan) standart ko'rinish teg bo'yicha

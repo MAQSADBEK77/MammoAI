@@ -61,6 +61,7 @@ export async function PATCH(request: NextRequest) {
         | "smokes"
         | "hasGivenBirth"
         | "chronicConditions"
+        | "tryingSince"
       >
     >;
     const onboardingProfile = await updateOnboardingProfile(user.id, patch);

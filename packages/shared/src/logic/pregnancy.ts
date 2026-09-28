@@ -1,7 +1,7 @@
 // Homiladorlik hisob-kitoblari — spec §3: tug'ilish sanasi kalkulyatori, joriy hafta.
 // Standart tibbiy qoida: homiladorlik oxirgi hayz sanasidan (LMP) 280 kun (40 hafta) davom etadi.
 
-import type { PregnancyProfile, VitalType } from "../types";
+import type { PregnancyOutcome, PregnancyProfile, VitalType } from "../types";
 import { tashkentDateStr } from "../date";
 import { addDays, daysBetween } from "./cycle";
 
@@ -75,6 +75,20 @@ export interface PregnancyStateInput {
   /** Tug'ilish sanasi kalkulyatorining saqlangan kiritmasi — bu O'Z-O'ZIDAN
    * homiladorlik belgisi EMAS. */
   profile: Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate"> | null;
+  /**
+   * PREG-END-01: homiladorlik qanday tugagani — ayolning O'ZI aytgan.
+   * `null` — davom etmoqda (yoki hali aytilmagan).
+   *
+   * Bu maydonsiz ilova faqat TAXMINIY sanaga tayanardi, ya'ni:
+   *   • muddatidan oldin tug'gan ayol haftalab noto'g'ri hafta ko'rardi;
+   *   • homiladorlikni YO'QOTGAN ayolga esa ilova "bolangiz endi
+   *     bodring kattaligida" deb yozishda davom etardi — taxminiy
+   *     sanadan 14 kun o'tgunga qadar, ya'ni oylab.
+   * Ikkinchisi shunchaki xato emas, shafqatsizlik.
+   */
+  outcome?: PregnancyOutcome | null;
+  /** Tug'ruq yoki tugash sanasi ("YYYY-MM-DD"). `outcome` bilan birga keladi. */
+  endedOn?: string | null;
 }
 
 export interface PregnancyState {
@@ -88,9 +102,27 @@ export interface PregnancyState {
 }
 
 export function resolvePregnancyState(input: PregnancyStateInput, today: string = tashkentDateStr()): PregnancyState {
-  const { declaredPregnant, profile } = input;
+  const { declaredPregnant, profile, outcome = null, endedOn = null } = input;
   const dueDate = profile?.dueDate ?? (profile?.lastMenstrualPeriod ? dueDateFromLmp(profile.lastMenstrualPeriod) : null);
   const daysSinceDue = dueDate ? daysBetween(dueDate, today) : null;
+
+  // PREG-END-01: ayolning O'Z gapi taxminiy sanadan USTUN turadi.
+  if (outcome) {
+    // Homiladorlik to'xtagan bo'lsa — hech qanday tug'ruqdan keyingi
+    // band ochilmaydi. Chaqaloq ko'rigi va emizish bo'yicha eslatma
+    // bu holatda zarar keltiradi.
+    if (outcome === "loss") {
+      return { isPregnant: false, isPostpartum: false, daysSinceDue, status: null };
+    }
+    // Tug'ruqdan keyingi oyna HAQIQIY sanadan hisoblanadi, taxminiydan emas.
+    const sinceBirth = endedOn ? daysBetween(endedOn, today) : daysSinceDue;
+    return {
+      isPregnant: false,
+      isPostpartum: sinceBirth !== null && sinceBirth >= 0 && sinceBirth <= POSTPARTUM_WINDOW_DAYS,
+      daysSinceDue,
+      status: null,
+    };
+  }
 
   // Tug'ruqdan keyingi davr ATAYLAB `declaredPregnant`ga bog'lanmagan:
   // tug'ib bo'lgan ayol rejimini almashtirgan bo'lsa ham, unga tug'ruqdan

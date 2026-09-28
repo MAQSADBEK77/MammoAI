@@ -296,6 +296,82 @@ body {
   background: linear-gradient(135deg, var(--color-secondary) 0%, #4c1d95 100%);
 }
 
+/* PREG-HERO-03 — homiladorlik ekranining ILIQ foni.
+ *
+ * Referenslar (Flo, Mom+, Lalu) qayta ko'rildi va ularning uchalasida
+ * ham bitta qoida bor: FON JUDA OCH, MATN QUYUQ. Flo'da bu och
+ * shaftoli, Mom+ da och pushti, Lalu'da esa yashil sarlavha ustidagi
+ * OQ karta.
+ *
+ * Avvalgi `.bg-aurora-pregnancy` to'yingan binafsha + oq matn edi —
+ * ya'ni teskarisi. U KARTA sifatida ishlagan (kichik maydon), lekin
+ * butun ekran tepasiga yoyilganda ko'zni charchatadi (egasi shuni
+ * ushladi).
+ *
+ * Rang binafshadan ILIQ SHAFTOLIGA o'tkazildi. Bu egasining qarori:
+ * homiladorlik ekrani ilovaning qolgan qismidan yumshoqroq bo'lishi
+ * kerak, va Flo aynan shu ohangni bejiz tanlamagan — u teri rangiga
+ * yaqin va "qorin" hissini beradi.
+ *
+ * Pastda fon sahifa foniga SINGIB ketadi: referenslarda ham aniq
+ * chegara yo'q.
+ */
+:root {
+  /* Homiladorlik ekranining urg'u rangi — iliq terrakota. Faqat shu
+     ekranda ishlatiladi, rejim-rangi tizimiga tegmaydi. */
+  --color-pregnancy-accent: #b4562c;
+}
+
+[data-theme="dark"] {
+  --color-pregnancy-accent: #e9a179;
+}
+
+/* Referensdagi fon TEKIS gradient emas: u iliq maydon ustidagi yumshoq
+   yorug'lik — "qorin ichidan kelayotgan nur" hissi. Uch qatlam:
+   markaziy nur, yuqori-chapdagi issiqroq dog', va asosiy gradient.
+   Rasm kerak emas, hammasi CSS. */
+.bg-aurora-pregnancy-soft {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 46%, rgba(255, 252, 248, 0.9) 0%, rgba(255, 252, 248, 0) 60%),
+    radial-gradient(ellipse 80% 60% at 18% 8%, rgba(243, 186, 148, 0.5) 0%, rgba(243, 186, 148, 0) 65%),
+    linear-gradient(180deg, #f6d2b9 0%, #fadfcd 55%, #fdf1ea 100%);
+}
+
+/* Referensda gradientdan KEYINGI qism ham iliq (krem), sovuq kulrang
+   emas — ekran bitta oilada qoladi. */
+.bg-pregnancy-page {
+  background: #fdf5f0;
+}
+
+[data-theme="dark"] .bg-pregnancy-page {
+  background: var(--color-background);
+}
+
+[data-theme="dark"] .bg-aurora-pregnancy-soft {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 46%, rgba(94, 66, 50, 0.55) 0%, rgba(94, 66, 50, 0) 60%),
+    linear-gradient(180deg, #3a2820 0%, #2a1f19 55%, var(--color-background) 100%);
+}
+
+/* Kunlik tavsiyalar kartalari — fon bilan bir oilada, lekin ajralib turadi. */
+.bg-pregnancy-soft-card {
+  background: #fbe0d0;
+  border: 1.5px solid #f0b795;
+}
+
+[data-theme="dark"] .bg-pregnancy-soft-card {
+  background: #2b211b;
+  border-color: #3b2c23;
+}
+
+.text-pregnancy-accent {
+  color: var(--color-pregnancy-accent);
+}
+
+.bg-pregnancy-accent {
+  background-color: var(--color-pregnancy-accent);
+}
+
 .bg-aurora-checkup {
   background: linear-gradient(135deg, var(--color-accent) 0%, #0f766e 100%);
 }

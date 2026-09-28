@@ -11,7 +11,17 @@ import { useState } from "react";
 import { getEmbryoImageWeek } from "@mammoai/shared";
 import { SizeIllustration } from "@/components/SizeIllustration";
 
-export function PregnancyWeekImage({ week, icon }: { week: number; icon: string }) {
+export function PregnancyWeekImage({
+  week,
+  icon,
+  className,
+  style,
+}: {
+  week: number;
+  icon: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   const [failed, setFailed] = useState(false);
   if (failed) return <SizeIllustration icon={icon} />;
 
@@ -20,7 +30,8 @@ export function PregnancyWeekImage({ week, icon }: { week: number; icon: string 
     <img
       src={`/embryo/week${getEmbryoImageWeek(week)}.jpg`}
       alt=""
-      className="mx-auto h-40 w-40 rounded-full object-cover shadow-lg"
+      className={className ?? "mx-auto h-40 w-40 rounded-full object-cover shadow-lg"}
+      style={style}
       onError={() => setFailed(true)}
     />
   );
