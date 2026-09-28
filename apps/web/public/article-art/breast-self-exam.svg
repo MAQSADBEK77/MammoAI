@@ -1,0 +1,20 @@
+<!-- Ko'krakni o'z-o'zini tekshirish. Uslub: 200x200, pastel doira foni, tekis shakllar, konturlarsiz. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="96" fill="#FBD3DD"/>
+  <!-- Aylanma tekshiruv yo'li -->
+  <circle cx="100" cy="92" r="46" fill="#FFFFFF"/>
+  <circle cx="100" cy="92" r="46" fill="none" stroke="#E9506B" stroke-width="8" stroke-linecap="round" stroke-dasharray="26 20"/>
+  <!-- Qo'l: kaft + to'rt barmoq + bosh barmoq -->
+  <g fill="#F4A6B8">
+    <rect x="78" y="112" width="52" height="56" rx="20"/>
+    <rect x="80" y="74" width="13" height="50" rx="6.5"/>
+    <rect x="96" y="66" width="13" height="58" rx="6.5"/>
+    <rect x="112" y="72" width="13" height="52" rx="6.5"/>
+    <rect x="127" y="86" width="13" height="40" rx="6.5"/>
+    <rect x="62" y="104" width="13" height="34" rx="6.5" transform="rotate(-28 68 121)"/>
+  </g>
+  <!-- Barmoq uchlari — aynan tekshirish nuqtalari -->
+  <g fill="#E9506B">
+    <circle cx="86" cy="80" r="6"/><circle cx="102" cy="72" r="6"/><circle cx="118" cy="78" r="6"/>
+  </g>
+</svg>

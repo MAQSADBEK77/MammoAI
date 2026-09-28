@@ -1,0 +1,12 @@
+<!-- Hayz sikli fazalari. Uslub: 200x200, pastel doira foni, tekis shakllar, konturlarsiz. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="96" fill="#FBD3DD"/>
+  <circle cx="100" cy="100" r="66" fill="#FFFFFF"/>
+  <!-- To'rt faza — halqa bo'laklari -->
+  <path d="M100 100 L100 34 A66 66 0 0 1 154 66 Z" fill="#E9506B"/>
+  <path d="M100 100 L154 66 A66 66 0 0 1 154 134 Z" fill="#F7A8BC"/>
+  <path d="M100 100 L154 134 A66 66 0 0 1 46 134 Z" fill="#7FB1E6"/>
+  <path d="M100 100 L46 134 A66 66 0 0 1 100 34 Z" fill="#C9D6E6"/>
+  <circle cx="100" cy="100" r="34" fill="#FFFFFF"/>
+  <path d="M100 82c8 11 14 17 14 24a14 14 0 0 1-28 0c0-7 6-13 14-24z" fill="#E9506B"/>
+</svg>

@@ -3,14 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Bookmark, BookmarkBorder, ChevronRight } from "@mui/icons-material";
-import type { Article, ArticleCategory } from "@mammoai/shared";
+import { articleArtPath, type Article } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Card, EmptyState, ErrorState, LoadingSpinner, ScreenHeader, SegmentedControl, Toast } from "@/components/ui";
-import { Emoji } from "@/components/Emoji";
-
-const CATEGORY_EMOJI: Record<ArticleCategory, string> = { cycle: "🩸", pregnancy: "🤰", checkups: "🩺" };
-const CATEGORY_TINT: Record<ArticleCategory, string> = { cycle: "bg-primary/15", pregnancy: "bg-secondary/15", checkups: "bg-accent/15" };
 
 type Tab = "all" | "saved";
 
@@ -84,23 +80,20 @@ export default function ArticlesPage() {
       ) : (
         visible.map((article) => (
           <Link key={article.id} href={`/maqolalar/${article.slug}`}>
-            <Card interactive className="flex items-start gap-3">
-              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${CATEGORY_TINT[article.category]}`}>
-                <Emoji e={CATEGORY_EMOJI[article.category]} />
-              </span>
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Badge>{dict.articles.categories[article.category]}</Badge>
-                <p className="font-semibold text-text-primary">{article.title}</p>
-                <p className="line-clamp-2 text-sm text-text-secondary">{article.excerpt}</p>
-              </div>
-              <div className="flex shrink-0 flex-col items-center gap-2">
-                {/* Karta butunlay `Link` ichida — tugma bosilganda sahifa
+            <Card interactive className="overflow-hidden !p-0">
+              {/* ART-01: referensdagidek rasm kartaning TEPASINI egallaydi.
+                  Fon kategoriyaga qarab ozgina farq qiladi — ro'yxat bir
+                  xil rangdagi devorga aylanib qolmasin. */}
+              <div className="relative flex h-28 items-center justify-center bg-surface-muted">
+                {/* eslint-disable-next-line @next/next/no-img-element -- kichik statik SVG, next/image shart emas */}
+                <img src={articleArtPath(article.slug, article.category)} alt="" className="h-20 w-20" />
+                {/* Karta butunlay `Link` ichida — tugma bosilganda maqola
                     OCHILIB ketmasligi uchun hodisa to'xtatiladi. */}
                 <button
                   type="button"
                   aria-label={article.isBookmarked ? dict.articles.unsaveAction : dict.articles.saveAction}
                   aria-pressed={article.isBookmarked}
-                  className="-m-2 p-2 text-text-muted transition-colors hover:text-primary"
+                  className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-surface/90 text-text-muted shadow-sm transition-colors hover:text-primary"
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -113,7 +106,14 @@ export default function ArticlesPage() {
                     <BookmarkBorder sx={{ fontSize: 20 }} />
                   )}
                 </button>
-                <ChevronRight sx={{ fontSize: 18 }} className="text-text-muted" />
+              </div>
+              <div className="flex items-start gap-3 p-4">
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Badge>{dict.articles.categories[article.category]}</Badge>
+                  <p className="font-semibold text-text-primary">{article.title}</p>
+                  <p className="line-clamp-2 text-sm text-text-secondary">{article.excerpt}</p>
+                </div>
+                <ChevronRight sx={{ fontSize: 18 }} className="mt-1 shrink-0 text-text-muted" />
               </div>
             </Card>
           </Link>
