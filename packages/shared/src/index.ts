@@ -12,7 +12,6 @@ export * from "./logic/warning-signs";
 export * from "./logic/contractions";
 export * from "./logic/cycle";
 export * from "./logic/cycle-hero";
-export * from "./logic/cycle-ring";
 export * from "./logic/reminder";
 export * from "./logic/cycle-phase";
 export * from "./logic/cycle-summary";
