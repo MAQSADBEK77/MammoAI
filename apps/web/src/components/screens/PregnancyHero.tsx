@@ -74,8 +74,27 @@ export function PregnancyHero({
   const imageSize = Math.round(130 + (Math.min(40, Math.max(3, week)) - 3) * (150 / 37));
   return (
     <div
-      className="bg-aurora-pregnancy-soft -mx-4 -mt-2 rounded-b-[50%_2.5rem] px-4 pb-9"
-      style={{ paddingTop: "calc(var(--tg-safe-area-top) + 1rem)" }}
+      className="bg-aurora-pregnancy-soft -mx-4 rounded-b-[50%_2.5rem] px-4 pb-9"
+      style={{
+        // TG-SAFEAREA-01: gradient ekranning ENG TEPASIDAN boshlanishi kerak.
+        //
+        // Sahifa konteyneri (app/(app)/layout.tsx) tepadan
+        // `--tg-safe-area-top + 1rem` bo'sh joy qoldiradi — u Telegram'ning
+        // shaffof sarlavha paneli (⋮ va ✕ tugmalari) ostida qolib
+        // ketmaslik uchun. Telegram to'liq ekranda bu ~100 px.
+        //
+        // Ilgari hero shu bo'sh joyni QOLDIRIB, o'zining paddingini yana
+        // qo'shardi. Natijada tepada sahifa foni rangidagi kulrang tasma
+        // turardi va gradient uning ostidan boshlanardi (foydalanuvchi
+        // ko'rsatgan skrinshot, Mini App).
+        //
+        // Endi manfiy margin konteynerning paddingini AYNAN qoplaydi:
+        // gradient tepaga yetadi, matn esa o'z paddingi bilan tugmalar
+        // ostida qolmaydi. Oddiy brauzerda `--tg-safe-area-top: 0px`,
+        // ya'ni -1rem/+1rem — hech narsa o'zgarmaydi.
+        marginTop: "calc(-1 * (var(--tg-safe-area-top) + 1rem))",
+        paddingTop: "calc(var(--tg-safe-area-top) + 1rem)",
+      }}
     >
       <div className="flex items-center justify-between">
         {/* Referensda chapda BURGER emas, AVATAR turadi. U ham menyuni
