@@ -1190,10 +1190,16 @@ function OnboardingPageInner() {
       {step !== "welcome" && step !== "analyzing" && (
         <div
           className={clsx(
-            "relative z-10 mb-3 grid shrink-0 grid-cols-[2.75rem_1fr_2.75rem] items-center",
-            // Oyna bo'lmaganda tepadagi xavfsiz zonani hisobga olamiz —
-            // oyna holatida bu masofani oynaning o'zi beradi.
-            !isSheet && "pt-[var(--tg-safe-area-top)]"
+            "relative z-10 mb-3 grid shrink-0 grid-cols-[2.75rem_1fr_2.75rem] items-center"
+            // TG-SAFEAREA-01: bu yerda ilgari yana `pt-[var(--tg-safe-area-top)]`
+            // turardi. Lekin ildiz konteyner allaqachon
+            // `calc(var(--tg-safe-area-top) + 2rem)` beradi, ya'ni Telegram
+            // to'liq ekranda masofa IKKI MARTA hisoblanardi.
+            //
+            // O'lchandi (390x740, sarlavha paneli 96px): savol matni
+            // 314-pikseldan boshlanardi — ekranning 42 foizi bo'sh
+            // ketardi va past ekranlarda kontent tugmaga siqilardi.
+            // Tuzatgandan keyin — 218px.
           )}
         >
           {stepIndex > 0 ? (
