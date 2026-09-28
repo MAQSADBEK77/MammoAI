@@ -324,18 +324,25 @@ export function StatTile({
   label: string;
   value: string;
   unit?: string;
-  tone?: "primary" | "secondary" | "accent" | "muted";
+  /** CHECKUPS-01: `success`/`danger` — HOLAT ranglari. Ular rejimga
+   * qarab o'zgarmaydi, `primary`/`accent` esa o'zgaradi va ba'zi
+   * rejimlarda bir xil (#0d9488) bo'lib qoladi. */
+  tone?: "primary" | "secondary" | "accent" | "muted" | "success" | "danger";
   active?: boolean;
   /** Karta bosiladigan bo'lsa (masalan qiymat kiritish uchun) true qiling. */
   interactive?: boolean;
 }) {
   const toneBg = active
-    ? tone === "primary"
-      ? "var(--color-primary)"
-      : tone === "secondary"
-        ? "var(--color-secondary)"
-        : tone === "accent"
-          ? "var(--color-accent)"
+    ? tone === "success"
+      ? "var(--color-success)"
+      : tone === "danger"
+        ? "var(--color-danger)"
+        : tone === "primary"
+          ? "var(--color-primary)"
+          : tone === "secondary"
+            ? "var(--color-secondary)"
+            : tone === "accent"
+              ? "var(--color-accent)"
           : "var(--color-nav)"
     : "var(--color-surface)";
   return (

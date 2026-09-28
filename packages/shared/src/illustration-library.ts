@@ -166,7 +166,10 @@ export const DEFAULT_SLOT_ASSIGNMENTS: Record<IllustrationSlotKey, string> = {
   "onboarding.notifications": "classic-notifications",
   "onboarding.period_attitude": "classic-meditation",
   "onboarding.analyzing": "classic-well-done",
-  "screen.tekshiruvlar": "classic-healthy-lifestyle",
+  // CHECKUPS-01: ilgari "classic-healthy-lifestyle" edi — unda ERKAK
+  // olma yeb turgan rasm. Ayollar salomatligi ilovasining tekshiruv
+  // ekranida bu o'rinsiz. Yangisi — ro'yxat ushlab turgan ayol.
+  "screen.tekshiruvlar": "to-do-list_eoia",
   "screen.pregnancy": "classic-expecting",
   "landing.heroLeft": "classic-welcome",
   "landing.heroRight": "classic-healthy-lifestyle",
