@@ -398,6 +398,9 @@ const uz = {
     predictionsUpdatedLabel: "Bashoratlar yangilandi!",
     heroPeriodLabel: "Hayz:",
     heroPeriodDayValue: (day: number) => `${day}-kun`,
+    heroFertileLabel: "Unumdor kunlar",
+    heroFertileTodayValue: "Bugun",
+    heroOvulationLabel: "Ovulyatsiya",
     heroNextPeriodLabel: "Keyingi hayz:",
     heroDelayedLabel: "Kechikmoqda:",
     /** 0-BOSQICH: kutilgan sana kelgan, lekin hech narsa qayd etilmagan.
