@@ -372,6 +372,7 @@ const en: Dictionary = {
     heroPeriodStartedQuestion: "Has your period started?",
     heroPeriodStartedCta: "Yes, log it today",
     heroTodayValue: "Today",
+    ringCycleDay: (day: number) => `Cycle day ${day}`,
     heroDaysValue: (days: number) => `${days} days`,
     assistantCardTitle: "MammoAI Assistant",
     assistantCardMessage: "How are you feeling today? Let's figure it out together:",
