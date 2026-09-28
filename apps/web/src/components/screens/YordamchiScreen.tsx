@@ -214,7 +214,7 @@ export function YordamchiScreen() {
               </li>
             ))}
           </ul>
-          <Button className="mt-2" onClick={() => router.push("/fikr")}>
+          <Button className="mt-2" onClick={() => router.push("/fikr?tema=premium")}>
             {dict.chat.premiumCta}
           </Button>
         </Card>
