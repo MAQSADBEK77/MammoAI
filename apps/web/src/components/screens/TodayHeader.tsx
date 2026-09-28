@@ -5,6 +5,8 @@ import clsx from "clsx";
 import { Avatar } from "@mui/material";
 import { CalendarMonthOutlined, InfoOutlined } from "@mui/icons-material";
 import { Emoji } from "@/components/Emoji";
+import type { CycleRing as CycleRingData } from "@mammoai/shared";
+import { CycleRing } from "@/components/screens/CycleRing";
 import { useI18n } from "@/lib/i18n";
 import { TodayStatusCircle } from "@/components/screens/TodayBackdrop";
 import { PetArt } from "@/components/pets/PetArt";
@@ -57,6 +59,9 @@ export interface TodayHeaderProps {
   /** Markaziy blok. `label` bo'lsa — kichik yorliq + KATTA qiymat (referens
    * "Period:" / "Day 6"). Bo'lmasa — bitta o'rtacha o'lchamli qator (masalan
    * "oxirgi hayz sanasini belgilang" kabi holatlar). */
+  /** CYCLE-RING-01: sikl halqasi. Bo'lmasa (ma'lumot yetarli emas yoki
+   *  homiladorlik rejimi) hero avvalgidek faqat matn bo'lib qoladi. */
+  ring?: CycleRingData | null;
   heroLabel: string | null;
   heroValue: string;
   heroTapHint: string | null;
@@ -99,6 +104,7 @@ export function TodayHeader({
   today,
   selectedDate,
   onSelectDay,
+  ring,
   heroLabel,
   heroValue,
   heroTapHint,
@@ -342,17 +348,33 @@ export function TodayHeader({
         type="button"
         onClick={() => onHeroClick?.()}
         disabled={!onHeroClick}
-        className="block w-full px-4 py-16 text-center disabled:cursor-default"
+        className={clsx("block w-full text-center disabled:cursor-default", ring ? "px-4 py-6" : "px-4 py-16")}
       >
-        {heroLabel ? (
-          <>
-            <p className="text-2xl font-semibold text-text-primary">{heroLabel}</p>
-            <p className="mt-2 text-6xl font-extrabold leading-none tracking-tight text-text-primary sm:text-7xl">{heroValue}</p>
-          </>
-        ) : (
-          <p className="text-2xl font-extrabold leading-snug text-text-primary">{heroValue}</p>
-        )}
-        {heroTapHint && <p className="mt-3 text-sm font-bold text-primary">{heroTapHint}</p>}
+        {/* CYCLE-RING-01: halqa bo'lsa matn uning ICHIDA turadi. Shrift
+            kichrayadi — 264 px doira ichida 72 px raqam sig'maydi va
+            chetlarga tegib ketardi. */}
+        <RingFrame ring={ring}>
+          {heroLabel ? (
+            <>
+              <p className={clsx("font-semibold text-text-primary", ring ? "text-base" : "text-2xl")}>{heroLabel}</p>
+              <p
+                className={clsx(
+                  "font-extrabold leading-none tracking-tight text-text-primary",
+                  ring ? "mt-1 text-4xl" : "mt-2 text-6xl sm:text-7xl"
+                )}
+              >
+                {heroValue}
+              </p>
+            </>
+          ) : (
+            <p className={clsx("font-extrabold leading-snug text-text-primary", ring ? "text-lg" : "text-2xl")}>
+              {heroValue}
+            </p>
+          )}
+          {heroTapHint && (
+            <p className={clsx("font-bold text-primary", ring ? "mt-2 text-xs" : "mt-3 text-sm")}>{heroTapHint}</p>
+          )}
+        </RingFrame>
       </button>
       )}
 
@@ -454,4 +476,10 @@ function HomePet({ pet, onTap, label }: { pet: Pet; onTap: () => void; label: st
       </span>
     </button>
   );
+}
+
+/** Halqa bo'lsa matnni uning ichiga joylaydi, bo'lmasa shunchaki o'tkazadi. */
+function RingFrame({ ring, children }: { ring?: CycleRingData | null; children: React.ReactNode }) {
+  if (!ring) return <>{children}</>;
+  return <CycleRing ring={ring}>{children}</CycleRing>;
 }

@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
-import { fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { buildCycleRing, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/analytics";
 import { useConfirm } from "@/lib/confirm";
@@ -636,6 +636,25 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     maxSymptoms: 2,
   });
 
+  /**
+   * CYCLE-RING-01: halqa faqat ISHONCHLI bashorat bo'lganda chiziladi.
+   * Ma'lumot kam yoki eskirgan bo'lsa u yolg'on aniqlik berardi —
+   * ayol o'zini siklning aniq bir kunida ko'rardi, biz esa uni
+   * bilmaymiz. Bunday holatda hero avvalgidek faqat matn bo'lib qoladi.
+   */
+  const cycleRing =
+    data.prediction && !data.prediction.isStale && !isLowInfoPrediction && !data.isIrregular
+      ? buildCycleRing({
+          today,
+          lastPeriodStart: data.prediction.lastPeriodStart,
+          cycleLength: data.prediction.averageCycleLength,
+          periodLength: data.prediction.averagePeriodLength,
+          fertileWindowStart: data.prediction.fertileWindowStart,
+          fertileWindowEnd: data.prediction.fertileWindowEnd,
+          ovulationDay: data.prediction.ovulationDay,
+        })
+      : null;
+
   const heroTapHintText = periodExpectedButUnlogged
     ? dict.cycle.heroPeriodStartedCta
     : dict.cycle.heroTapHint;
@@ -906,6 +925,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           today={today}
           selectedDate={viewedDayDetail}
           onSelectDay={(d) => setViewedDayDetail((cur) => (cur === d ? null : d))}
+          ring={cycleRing}
           heroLabel={heroLabel}
           heroValue={heroValue}
           heroTapHint={heroIsCallToAction ? heroTapHintText : null}
