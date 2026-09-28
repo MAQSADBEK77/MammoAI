@@ -374,12 +374,6 @@ export function TodayHeader({
           {heroTapHint && (
             <p className={clsx("font-bold text-primary", ring ? "mt-2 text-xs" : "mt-3 text-sm")}>{heroTapHint}</p>
           )}
-          {/* CYCLE-RING-01: halqa "qayerdaman?" degan savolga shakl bilan
-              javob beradi, bu qator esa RAQAM bilan. Ikkalasi birga
-              turgani ma'noli: halqa taxminiy, raqam aniq. */}
-          {ring && !heroTapHint && (
-            <p className="mt-1.5 text-xs font-semibold text-text-muted">{dict.cycle.ringCycleDay(ring.cycleDay)}</p>
-          )}
         </RingFrame>
       </button>
       )}

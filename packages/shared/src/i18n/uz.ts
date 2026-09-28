@@ -412,7 +412,6 @@ const uz = {
     heroPeriodStartedQuestion: "Hayzingiz boshlandimi?",
     heroPeriodStartedCta: "Ha, bugun belgilash",
     heroTodayValue: "Bugun",
-    ringCycleDay: (day: number) => `Sikl kuni: ${day}`,
     heroDaysValue: (days: number) => `${days} kun`,
     assistantCardTitle: "MammoAI yordamchisi",
     assistantCardMessage: "Bugun o'zingizni qanday his qilyapsiz? Keling, birga aniqlaymiz:",

@@ -371,7 +371,6 @@ const ru: Dictionary = {
     heroPeriodStartedQuestion: "Месячные начались?",
     heroPeriodStartedCta: "Да, отметить сегодня",
     heroTodayValue: "Сегодня",
-    ringCycleDay: (day: number) => `День цикла: ${day}`,
     heroDaysValue: (days: number) => `${days} дн.`,
     assistantCardTitle: "Помощник MammoAI",
     assistantCardMessage: "Как вы себя чувствуете сегодня? Давайте разберёмся вместе:",
