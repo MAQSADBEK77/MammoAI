@@ -477,6 +477,9 @@ export interface Article {
   sources: ArticleSource[];
   /** Taxminiy o'qish vaqti — matn uzunligidan hisoblanadi. */
   readingMinutes: number;
+  /** BOOKMARK-01: shu maqolani SO'ROVCHI ayol saqlaganmi. Foydalanuvchiga
+   * bog'liq maydon — sessiyasiz kontekstlarda (admin panel, seed) `false`. */
+  isBookmarked: boolean;
   updatedAt: string | null;
   /** CONTENT-01: ilgari bu `true` deb QATTIQ yozilgan edi — ya'ni har bir
    * maqola, hatto shifokor yozgani ham, "namuna" deb belgilanardi. Endi

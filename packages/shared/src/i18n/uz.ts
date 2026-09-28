@@ -1077,6 +1077,13 @@ const uz = {
     title: "Maqolalar",
     readMore: "Batafsil o'qish",
     seedDataNotice: "Kontent tez-tez yangilanib boradi.",
+    // BOOKMARK-01
+    saveAction: "Saqlash",
+    unsaveAction: "Saqlanganlardan olib tashlash",
+    savedTab: "Saqlanganlar",
+    allTab: "Barchasi",
+    savedEmpty: "Hali hech narsa saqlamagansiz. Maqolani keyinroq o'qish uchun xatcho'p belgisini bosing.",
+    saveFailed: "Saqlab bo'lmadi — qayta urinib ko'ring.",
     commentsTitle: "Izohlar",
     commentPlaceholder: "Savolingiz yoki tajribangizni yozing...",
     commentSend: "Yuborish",
