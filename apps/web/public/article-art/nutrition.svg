@@ -1,0 +1,17 @@
+<!-- Homiladorlikda ovqatlanish. Uslub: 200x200, pastel doira foni, tekis shakllar, konturlarsiz. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="96" fill="#FBD3DD"/>
+  <circle cx="100" cy="104" r="60" fill="#FFFFFF"/>
+  <circle cx="100" cy="104" r="48" fill="#F6F1E7"/>
+  <!-- Likopchadagi uch qism -->
+  <path d="M100 104 L100 56 A48 48 0 0 1 143 118 Z" fill="#3FA37A"/>
+  <path d="M100 104 L143 118 A48 48 0 0 1 64 137 Z" fill="#F2A33C"/>
+  <path d="M100 104 L64 137 A48 48 0 0 1 100 56 Z" fill="#E9506B"/>
+  <circle cx="100" cy="104" r="13" fill="#FFFFFF"/>
+  <!-- Vilka -->
+  <g fill="#C9D6E6">
+    <rect x="30" y="66" width="7" height="76" rx="3.5"/>
+    <rect x="42" y="66" width="7" height="30" rx="3.5"/>
+    <rect x="54" y="66" width="7" height="30" rx="3.5"/>
+  </g>
+</svg>

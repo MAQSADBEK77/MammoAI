@@ -14,7 +14,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { Menu as MenuIcon, PersonOutlined, LockOutlined, FeedbackOutlined, Close } from "@mui/icons-material";
+import { Menu as MenuIcon, PersonOutlined, LockOutlined, FeedbackOutlined, FavoriteBorderOutlined, Close } from "@mui/icons-material";
 import clsx from "clsx";
 import type { Language } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
@@ -79,6 +79,10 @@ export function AppDrawerProvider({ children }: { children: ReactNode }) {
   // yerda takrorlanmaydi. Profil endi FAQAT shu burger menyu orqali ochiladi
   // (foydalanuvchi so'rovi).
   const navItems = [
+    // NAV-01: "Juft" pastki menyudan shu yerga ko'chdi — u yerda 25 ta
+    // taklifdan atigi bitta bog'lanish chiqqan edi, lekin funksiya
+    // yo'qolmasligi kerak.
+    { href: "/hamkor", label: dict.nav.partner, icon: <FavoriteBorderOutlined /> },
     { href: "/profil", label: dict.nav.profile, icon: <PersonOutlined /> },
     { href: "/maxfiylik", label: dict.profile.securityTitle, icon: <LockOutlined /> },
     { href: "/fikr", label: dict.feedback.menuLabel, icon: <FeedbackOutlined /> },

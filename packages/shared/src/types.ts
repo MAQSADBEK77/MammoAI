@@ -168,6 +168,9 @@ export interface OnboardingProfile {
   smokes: boolean | null;
   /** Tug'ish tarixi — ko'krak va tuxumdon saratoni xavfiga ta'sir qiladi. */
   hasGivenBirth: boolean | null;
+  /** TTC-02: homiladorlikka urinish boshlangan sana ("YYYY-MM-DD").
+   * `null` — hali so'ralmagan yoki bu rejimda emas. */
+  tryingSince: string | null;
   /** Ginekologik bo'lmagan surunkali holatlar. */
   chronicConditions: ChronicCondition[] | null;
   /** Ixtiyoriy — foydalanuvchi o'zi kiritadi, tibbiy tashxis manbai emas. */
@@ -220,7 +223,17 @@ export interface CycleLog {
    * kunini simptom-signaldan ko'ra ANIQROQ aniqlash uchun ishlatiladi
    * (cycle.ts#detectOvulationFromBbt). */
   basalBodyTemp: number | null;
+  /** TTC-03: ovulyatsiya (LH) testi natijasi. Musbat test ovulyatsiya
+   * 24-36 soat ichida kutilishini bildiradi — rejalashtirish uchun eng
+   * foydali real vaqt signali. `null` — test qilinmagan. */
+  lhTest: LhTestResult | null;
+  /** TTC-03: shu kuni jinsiy aloqa bo'lganmi. Unumdor oynaning
+   * "qoplanishi"ni hisoblash uchun; faqat tayyorgarlik rejimida. */
+  intercourse: boolean;
 }
+
+/** TTC-03: ovulyatsiya testi natijasi. */
+export type LhTestResult = "positive" | "negative";
 
 export interface CycleSettings {
   userId: string;
@@ -229,10 +242,17 @@ export interface CycleSettings {
   averagePeriodLength: number; // kun, standart 5
 }
 
+/** PREG-END-01: homiladorlik qanday tugadi. Ayolning o'z gapi. */
+export type PregnancyOutcome = "birth" | "loss";
+
 export interface PregnancyProfile {
   userId: string;
   lastMenstrualPeriod: string | null; // YYYY-MM-DD — ikkalasidan biri bo'lishi kerak
   dueDate: string | null; // YYYY-MM-DD
+  /** PREG-END-01: tugagan bo'lsa — qanday. `null` — davom etmoqda. */
+  outcome: PregnancyOutcome | null;
+  /** Tug'ruq yoki tugash sanasi. `outcome` bilan birga to'ldiriladi. */
+  endedOn: string | null;
 }
 
 export interface PregnancyVisitLog {
@@ -252,8 +272,12 @@ export interface PregnancyVisitLog {
  * ommaviy/taxmin qilib topiladigan URL emas. Bezakli "frame" rasmga
  * PISHIRILMAGAN — UI'da chizib ko'rsatiladi (dizayn o'zgarsa qayta yuklash
  * shart emas). */
+/** PREG-ALBUM-02: qorin surati yoki UZI. */
+export type AlbumPhotoKind = "bump" | "ultrasound";
+
 export interface PregnancyAlbumPhoto {
   id: string;
+  kind: AlbumPhotoKind;
   pregnancyWeek: number | null;
   photoUrl: string;
   note: string | null;
@@ -349,6 +373,10 @@ export type ChecklistItemType =
   | "thyroid_function_test"
   | "rubella_immunity_check"
   | "colorectal_cancer_screening"
+  // TTC-02: homiladorlikka tayyorgarlik uchun uchta yangi band.
+  | "folic_acid_start"
+  | "fertility_evaluation"
+  | "partner_semen_analysis"
   | "pregnancy_patronage_visit"
   | "postpartum_home_visit"
   | "menopause_checkup"
@@ -477,6 +505,9 @@ export interface Article {
   sources: ArticleSource[];
   /** Taxminiy o'qish vaqti — matn uzunligidan hisoblanadi. */
   readingMinutes: number;
+  /** BOOKMARK-01: shu maqolani SO'ROVCHI ayol saqlaganmi. Foydalanuvchiga
+   * bog'liq maydon — sessiyasiz kontekstlarda (admin panel, seed) `false`. */
+  isBookmarked: boolean;
   updatedAt: string | null;
   /** CONTENT-01: ilgari bu `true` deb QATTIQ yozilgan edi — ya'ni har bir
    * maqola, hatto shifokor yozgani ham, "namuna" deb belgilanardi. Endi
@@ -735,7 +766,11 @@ export interface InsightsSummary {
 // yumshoq so'rov.
 // ---------------------------------------------------------------------------
 
-export type FeedbackTrigger = "manual" | "chat_prompt";
+// PREMIUM-01: `premium_request` — ayolning Premium so'rovi. Oddiy
+// fikrdan ALOHIDA tur, chunki bu sotuv signali: kim so'raganini
+// admin panelda ajratib ko'rish kerak, aks holda u yuzlab umumiy
+// fikr orasida yo'qoladi.
+export type FeedbackTrigger = "manual" | "chat_prompt" | "premium_request";
 
 export interface FeedbackSubmission {
   trigger: FeedbackTrigger;
@@ -755,7 +790,10 @@ export interface FeedbackResponse {
 // Bildirishnomalar — hozircha faqat "postingizga izoh qoldirildi" turi.
 // ---------------------------------------------------------------------------
 
-export type NotificationType = "comment_on_post" | "partner_message" | "daily_reminder";
+// SCREEN-01: `checkup_reminder` ataylab `daily_reminder`dan alohida —
+// tekshiruv eslatmasining takrorlanish oralig'i (7 kun) shu yozuvlar
+// bo'yicha hisoblanadi, kunlik eslatmalar esa har kuni yoziladi.
+export type NotificationType = "comment_on_post" | "partner_message" | "daily_reminder" | "checkup_reminder";
 
 export interface AppNotification {
   id: string;

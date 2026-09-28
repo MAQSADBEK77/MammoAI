@@ -41,6 +41,9 @@ export interface ChecklistRuleInput {
   isPerimenopause: boolean;
   /** FIX-CHECKUPS: primaryGoal === "planning_pregnancy". */
   isTryingToConceive: boolean;
+  /** TTC-02: `resolveConceptionStage(...).kind === "evaluate-now"` —
+   * shifokorga murojaat chegarasi o'tganmi. Qaror logic/conception.ts da. */
+  conceptionNeedsEvaluation: boolean;
   /** PLAN-01: onboarding'dagi "oxirgi marta qachon tekshiruvdan o'tgansiz?"
    * javobi. ILGARI BU SO'RALARDI, LEKIN ISHLATILMASDI — natijada "hech
    * qachon" degan ayol ham, "o'tgan oy" degan ayol ham bir xil "365 kundan
@@ -185,6 +188,27 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
     // BO'LMAYDI, ya'ni keyin tuzatib bo'lmaydigan yagona band.
     items.push({ type: "rubella_immunity_check", dueInDays: 14 });
     if (input.age >= 25) items.push({ type: "thyroid_function_test", dueInDays: 30 });
+
+    // TTC-02: FOLAT KISLOTASI. Homiladorlikka tayyorgarlikdagi eng
+    // isbotlangan bitta aralashuv — nerv naychasi nuqsonlarining oldini
+    // oladi. ACOG: kuniga kamida 400 mkg, homiladorlikdan KAMIDA BIR OY
+    // oldin boshlanadi. Ya'ni homiladorlik aniqlangach boshlash KECH.
+    // Shu sababli muddati 0: bugundan.
+    // https://www.acog.org/news/news-articles/2026/03/folic-acid-supplementation-a-foundation-for-lifelong-health
+    items.push({ type: "folic_acid_start", dueInDays: 0 });
+
+    // TTC-02: shifokorga murojaat chegarasi. ACOG: 35 yoshgacha 12 oy,
+    // 35-40 yoshda 6 oy, 40 dan katta yoki xavf omili bo'lsa DARHOL.
+    // Chegara `resolveConceptionStage`da hisoblanadi (logic/conception.ts)
+    // — bu yerda faqat natijasi bandga aylantiriladi.
+    if (input.conceptionNeedsEvaluation) {
+      items.push({ type: "fertility_evaluation", dueInDays: 14 });
+      // Erkak omili bepushtlik holatlarining taxminan yarmida uchraydi,
+      // lekin tekshiruv deyarli har doim AYOLdan boshlanadi. Spermogramma
+      // esa arzon va tez. Shuning uchun u ayolning tekshiruvi bilan BIR
+      // VAQTDA taklif qilinadi, keyin emas.
+      items.push({ type: "partner_semen_analysis", dueInDays: 14 });
+    }
   }
 
   // --- Perimenopauza/menopauza ---
@@ -363,6 +387,11 @@ export const CHECKLIST_ITEM_IS_FREE: Record<ChecklistItemType, boolean> = {
   thyroid_function_test: false,
   rubella_immunity_check: false,
   colorectal_cancer_screening: false,
+  // Folat kislotasi dorixonada arzon va retseptsiz — "bepul" emas, lekin
+  // klinikaga borish ham shart emas.
+  folic_acid_start: false,
+  fertility_evaluation: false,
+  partner_semen_analysis: false,
 };
 
 // FIX-CHECKUPS: Tekshiruvlar ekranida bo'limlarga guruhlash uchun.
@@ -402,6 +431,9 @@ export const CHECKUP_CATEGORY: Record<ChecklistItemType, ChecklistCategory> = {
   thyroid_function_test: "lab",
   rubella_immunity_check: "lab",
   colorectal_cancer_screening: "screening",
+  folic_acid_start: "self_exam",
+  fertility_evaluation: "consultation",
+  partner_semen_analysis: "lab",
 };
 
 /**
@@ -478,6 +510,9 @@ export const CHECKUP_SOURCE: Record<ChecklistItemType, CheckupSource[]> = {
   thyroid_function_test: ["international_practice"],
   rubella_immunity_check: ["international_practice"],
   colorectal_cancer_screening: ["international_practice"],
+  folic_acid_start: ["international_practice"],
+  fertility_evaluation: ["international_practice"],
+  partner_semen_analysis: ["international_practice"],
 };
 
 /** UI'ning `dict.checklist.frequencyLabels`idan tarjima qilinadi — statik

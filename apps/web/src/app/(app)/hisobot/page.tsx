@@ -58,7 +58,7 @@ export default function DoctorReportPage() {
           </div>
           <h2 className="text-lg font-bold text-text-primary">{dict.doctorReport.premiumTitle}</h2>
           <p className="max-w-sm text-sm text-text-secondary">{dict.doctorReport.premiumBody}</p>
-          <Button className="mt-2" onClick={() => router.push("/fikr")}>
+          <Button className="mt-2" onClick={() => router.push("/fikr?tema=premium")}>
             {dict.chat.premiumCta}
           </Button>
         </Card>

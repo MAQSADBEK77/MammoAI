@@ -136,7 +136,7 @@ export default function ChecklistPage() {
 
       <div className="flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element -- SVG, next/image optimizatsiyasi kerak emas */}
-        <img src={resolve("screen.tekshiruvlar")} alt="" className="h-32 w-auto" />
+        <img src={resolve("screen.tekshiruvlar")} alt="" className="h-24 w-auto" />
       </div>
 
       {readOnly && emptyReason ? (
@@ -145,9 +145,24 @@ export default function ChecklistPage() {
         </Card>
       ) : (
         <div className="animate-fade-in-up flex gap-2.5">
-          <StatTile icon={<CheckCircleOutlined sx={{ fontSize: 16 }} />} label={statusLabel.done} value={String(doneCount)} tone="accent" active />
+          {/* CHECKUPS-01: ranglar endi HOLATNI bildiradi. Ilgari "Bajarildi"
+              `accent`, "Muddati o'tgan" esa `primary` edi — lekin
+              `--color-primary` REJIMGA qarab o'zgaradi va ba'zi rejimlarda
+              `--color-accent` bilan aynan bir xil (#0d9488) bo'lib qoladi.
+              Natijada ayol eng muhim ikki holatni — bajarilgan va muddati
+              o'tgan — bir qarashda ajrata olmasdi.
+
+              Muddati o'tgani BO'LMASA qizil plitka ko'rsatilmaydi: nol
+              ustidagi ogohlantirish rangi behuda tashvish beradi. */}
+          <StatTile icon={<CheckCircleOutlined sx={{ fontSize: 16 }} />} label={statusLabel.done} value={String(doneCount)} tone="success" active />
           <StatTile icon={<AccessTimeOutlined sx={{ fontSize: 16 }} />} label={statusLabel.pending} value={String(pendingCount)} tone="secondary" active />
-          <StatTile icon={<ErrorOutlineOutlined sx={{ fontSize: 16 }} />} label={statusLabel.overdue} value={String(overdueCount)} tone="primary" active />
+          <StatTile
+            icon={<ErrorOutlineOutlined sx={{ fontSize: 16 }} />}
+            label={statusLabel.overdue}
+            value={String(overdueCount)}
+            tone={overdueCount > 0 ? "danger" : "muted"}
+            active={overdueCount > 0}
+          />
         </div>
       )}
 
@@ -179,28 +194,6 @@ export default function ChecklistPage() {
           <Card interactive className="space-y-1">
             <p className="font-semibold text-text-primary">{dict.concerns.cardTitle}</p>
             <p className="text-sm text-text-secondary">{dict.concerns.cardBody}</p>
-          </Card>
-        </button>
-      )}
-
-      {/* REPORT-01: shifokor uchun hisobot — aynan tekshiruvlar ekranida,
-          chunki ayol shu yerda "shifokorga borishim kerak" degan qarorga
-          keladi. Hisobot o'sha qabulga tayyorgarlik. */}
-      {!readOnly && (
-        <button onClick={() => router.push("/hisobot")} className="block w-full text-left">
-          <Card interactive className="space-y-1">
-            <p className="font-semibold text-text-primary">{dict.doctorReport.title}</p>
-            <p className="text-sm text-text-secondary">{dict.doctorReport.subtitle}</p>
-          </Card>
-        </button>
-      )}
-
-      {/* O'z-o'zini tekshirish testi — faqat o'zining checklist'i uchun,
-          hamkorining ro'yxatini ko'rayotganda ma'nosiz (bu shaxsiy xavf testi). */}
-      {!readOnly && (
-        <button onClick={() => router.push("/xavf-testi")} className="block w-full text-left">
-          <Card interactive>
-            <p className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</p>
           </Card>
         </button>
       )}
@@ -286,6 +279,33 @@ export default function ChecklistPage() {
           </div>
         </div>
       ))}
+
+      {/* CHECKUPS-01: bu ikkala karta RO'YXATDAN KEYIN turadi.
+          Ilgari ular ro'yxatdan OLDIN edi va ayol tekshiruvlarini ko'rish
+          uchun to'rtta kartani aylanib o'tishi kerak edi — sahifaning o'zagi
+          ekrandan tashqarida qolardi. Mazmunan ham keyingi o'rin to'g'ri:
+          ikkalasi ham ro'yxatni KO'RGANDAN keyingi qadam.
+
+          REPORT-01: hisobot aynan shu ekranda, chunki ayol bu yerda
+          "shifokorga borishim kerak" degan qarorga keladi. */}
+      {!readOnly && (
+        <button onClick={() => router.push("/hisobot")} className="block w-full text-left">
+          <Card interactive className="space-y-1">
+            <p className="font-semibold text-text-primary">{dict.doctorReport.title}</p>
+            <p className="text-sm text-text-secondary">{dict.doctorReport.subtitle}</p>
+          </Card>
+        </button>
+      )}
+
+      {/* O'z-o'zini tekshirish testi — faqat o'zining checklist'i uchun,
+          hamkorining ro'yxatini ko'rayotganda ma'nosiz (bu shaxsiy xavf testi). */}
+      {!readOnly && (
+        <button onClick={() => router.push("/xavf-testi")} className="block w-full text-left">
+          <Card interactive>
+            <p className="font-semibold text-text-primary">{dict.checklist.riskQuizCardTitle}</p>
+          </Card>
+        </button>
+      )}
     </div>
   );
 }

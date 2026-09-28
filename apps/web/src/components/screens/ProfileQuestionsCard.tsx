@@ -30,6 +30,11 @@ import { api } from "@/lib/api";
  * Ayol bir-ikkitasiga javob berib to'xtasa ham, eng foydali javoblarni
  * bergan bo'ladi. */
 const QUESTION_ORDER = [
+  // TTC-02: bu savol FAQAT homiladorlikka tayyorgarlik rejimida
+  // ko'rsatiladi (pastdagi `pending` filtriga qarang) va birinchi
+  // turadi — shifokorga murojaat chegarasi aynan shunga bog'liq,
+  // ya'ni javobning qiymati boshqa savollarnikidan yuqori.
+  "tryingSince",
   "sexuallyActive",
   "familyHistory",
   "hpvVaccinated",
@@ -42,6 +47,25 @@ const QUESTION_ORDER = [
 type QuestionId = (typeof QUESTION_ORDER)[number];
 
 const CHRONIC_OPTIONS: ChronicCondition[] = ["diabetes", "hypertension", "thyroid", "anemia", "none"];
+
+/**
+ * TTC-02: "qancha vaqtdan beri urinyapsiz" — SANA emas, MUDDAT
+ * so'raladi. Ayol "2025-yil 14-mart" deb eslamaydi, "yarim yildan
+ * beri" deb eslaydi. Tanlov taxminiy sanaga aylantiriladi; chegara
+ * (12 oy / 6 oy) uchun bu aniqlik yetarli.
+ */
+const TRYING_OPTIONS = [
+  { id: "lt6", months: 3 },
+  { id: "m6to12", months: 8 },
+  { id: "gt12", months: 15 },
+] as const;
+
+/** Tanlangan muddatdan taxminiy boshlanish sanasi ("YYYY-MM-DD"). */
+function tryingSinceFromMonths(months: number): string {
+  const d = new Date();
+  d.setUTCMonth(d.getUTCMonth() - months);
+  return d.toISOString().slice(0, 10);
+}
 
 /** Kartani bu qurilmada yashirish (vaqtincha). Tibbiy ma'lumot emas —
  * shunchaki interfeys afzalligi, shuning uchun localStorage yetarli. */
@@ -71,7 +95,12 @@ export function ProfileQuestionsCard({
 
   // Javob berilmagan savollar. `null` = "hali so'ralmagan" — bu "yo'q"
   // bilan bir xil EMAS (GATE-01), shuning uchun aynan `null` tekshiriladi.
-  const pending = QUESTION_ORDER.filter((id) => profile[id] === null);
+  const pending = QUESTION_ORDER.filter((id) => {
+    if (profile[id] !== null) return false;
+    // Urinish muddati boshqa rejimlarda ma'nosiz — so'ralmaydi.
+    if (id === "tryingSince") return profile.primaryGoal === "planning_pregnancy";
+    return true;
+  });
   if (pending.length === 0 || snoozed) return null;
 
   const current = pending[Math.min(index, pending.length - 1)];
@@ -153,7 +182,19 @@ export function ProfileQuestionsCard({
           <p className="mt-2 text-sm leading-relaxed text-text-secondary">{copy.hint}</p>
 
           <div className="mt-5 space-y-2">
-            {current === "chronicConditions" ? (
+            {current === "tryingSince" ? (
+              TRYING_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void save({ tryingSince: tryingSinceFromMonths(opt.months) })}
+                  className="tap-target w-full rounded-2xl border border-border bg-surface px-4 py-3 text-left text-base font-semibold text-text-primary active:scale-[0.99] disabled:opacity-50"
+                >
+                  {t.questions.tryingSince.options[opt.id]}
+                </button>
+              ))
+            ) : current === "chronicConditions" ? (
               CHRONIC_OPTIONS.map((c) => (
                 <button
                   key={c}

@@ -1,13 +1,22 @@
-// CONTENT-001 — homiladorlikning 42 haftasi uchun boshlang'ich kontent.
-// `articles`/`clinics` kabi bu ham keyinchalik to'liq admin panel orqali
-// (/admin/pregnancy-content) tahrirlanadi — bu skript faqat bo'sh jadvalni
-// boshlang'ich, umumiy va tibbiy jihatdan ehtiyotkor matn bilan to'ldiradi.
-// Matn umumiy ma'lumot uchun — tashxis yoki shaxsiy tibbiy maslahat EMAS.
+// CONTENT-001 / CONTENT-04 — homiladorlikning 42 haftasi uchun kontent.
 //
-// Ishga tushirish: npm run seed:pregnancy-content --workspace=apps/web
+// CONTENT-04 (qayta yozildi): avvalgi matnlar har hafta uchun BITTA
+// jumla edi (o'rtacha 90 belgi). "Batafsil" ekrani ochilganda ayol
+// ikkita yarim qator ko'rardi va boshqa hech narsa — Lalu va Flo'da
+// esa bu joyda to'liq xatboshi turadi. Endi har hafta chaqaloq va ona
+// uchun alohida, amaliy maslahati bilan yoziladi (o'rtacha ~250 belgi).
+//
+// Matn umumiy ma'lumot uchun — tashxis yoki shaxsiy tibbiy maslahat
+// EMAS. Shifokor ko'rib chiqqach, admin panelda tasdiqlanadi.
+//
+// Ishga tushirish:
+//   npm run seed:pregnancy-content --workspace=apps/web          (ko'rish)
+//   npm run seed:pregnancy-content --workspace=apps/web -- --write (yozish)
 
 import { ensureSchema } from "../src/server/db";
 import { upsertPregnancyWeekContent } from "../src/server/repo";
+
+const WRITE = process.argv.includes("--write");
 
 interface WeekSeed {
   week: number;
@@ -17,63 +26,72 @@ interface WeekSeed {
 }
 
 export const WEEKS: WeekSeed[] = [
-  { week: 1, sizeLabel: "hali otalanmagan", babyDevelopment: "Homiladorlik sanasi an'anaviy ravishda oxirgi hayzning birinchi kunidan hisoblanadi — bu haftada urug'lantirish hali sodir bo'lmagan.", motherChanges: "Tana odatdagidek — hali homiladorlikka xos hech qanday belgi kutilmaydi." },
-  { week: 2, sizeLabel: "moshdona urug'i", babyDevelopment: "Ovulyatsiya shu hafta atrofida sodir bo'ladi — tuxum hujayra urug'lantirishga tayyorlanmoqda.", motherChanges: "Ba'zilar shu davrda unumdorlik belgilarini (masalan shilliq qavat o'zgarishi) sezishi mumkin." },
-  { week: 3, sizeLabel: "qum zarrachasi", babyDevelopment: "Urug'lantirish sodir bo'ladi va zigota bachadon nayidan bachadon tomon harakatlana boshlaydi, hujayralar bo'linishda davom etadi.", motherChanges: "Bu bosqichda homiladorlikning tashqi belgilari deyarli sezilmaydi." },
-  { week: 4, sizeLabel: "moshdona", babyDevelopment: "Embrion bachadon devoriga implantatsiya qiladi — bu keyinchalik yo'ldosh va amniotik pufakchaga aylanadigan tuzilmalar shakllana boshlaydi.", motherChanges: "Ba'zi ayollar implantatsiya bilan bog'liq yengil tomchilashni yoki charchoqni sezishi mumkin." },
-  { week: 5, sizeLabel: "kunjut urug'i", babyDevelopment: "Yurak, miya va orqa miyaning dastlabki asoslari shakllana boshlaydi — bu davr organ rivojlanishi uchun juda muhim.", motherChanges: "Gormon darajasi ko'tarila boshlaydi — ko'ngil aynishi, charchoq va ko'krak sezuvchanligi paydo bo'lishi mumkin." },
-  { week: 6, sizeLabel: "no'xat donasi", babyDevelopment: "Yurak urishi boshlanadi (ba'zan UTT'da ko'rinishi mumkin), qo'l va oyoq kurtaklari paydo bo'ladi.", motherChanges: "Ertalabki ko'ngil aynishi va hidlarga sezgirlik ko'pchilikda shu haftalarda kuchayadi." },
-  { week: 7, sizeLabel: "ko'k moviz", babyDevelopment: "Miya tez sur'atda rivojlanmoqda, yuz xususiyatlari (ko'z, burun) asta shakllanmoqda.", motherChanges: "Charchoq va tez-tez siyish hissi ko'payishi mumkin — bachadon o'sib, siydik pufagiga bosim tushiradi." },
-  { week: 8, sizeLabel: "malina", babyDevelopment: "Barmoqlar shakllana boshlaydi, asosiy ichki organlar allaqachon o'z o'rnida — hozircha juda kichik.", motherChanges: "Kayfiyat o'zgarishi va ko'krak sezuvchanligi gormonal o'zgarishlar bilan bog'liq bo'lishi mumkin." },
-  { week: 9, sizeLabel: "uzum", babyDevelopment: "Barcha asosiy organlar mavjud — shu haftadan boshlab \"embrion\" emas, \"fetus\" (homila) deb ataladi.", motherChanges: "Kiyimlar birozgina qulayroq his qilinishi mumkin, garchi qorin hali sezilarli darajada kattalashmagan bo'lsa ham." },
-  { week: 10, sizeLabel: "kivi", babyDevelopment: "Bo'g'imlar harakatlana boshlaydi, garchi bu hali sezilmasa ham — suyak to'qimasi shakllanishda davom etmoqda.", motherChanges: "Ko'pchilikda birinchi trimestrning kuchli belgilari (ko'ngil aynishi) shu davrda cho'qqisiga chiqadi." },
-  { week: 11, sizeLabel: "anjir", babyDevelopment: "Suyaklar asta qattiqlasha boshlaydi, boshning tanaga nisbati hali katta.", motherChanges: "Ba'zi ayollarda energiya darajasi asta tiklana boshlaydi." },
-  { week: 12, sizeLabel: "limon", babyDevelopment: "Reflekslar rivojlanadi (masalan barmoqlarni siqish) — birinchi trimestr yakunlanmoqda.", motherChanges: "Ko'ngil aynishi ko'pchilikda shu hafta atrofida asta kamayadi, garchi bu individual bo'lsa ham." },
-  { week: 13, sizeLabel: "shaftoli", babyDevelopment: "Jinsiy a'zolar shakllanmoqda (garchi UTT'da hali aniq ko'rinmasligi mumkin), ovoz tizimi asoslari paydo bo'ladi.", motherChanges: "Ikkinchi trimestrga o'tish bilan ko'pchilik o'zini energikroq his qila boshlaydi." },
-  { week: 14, sizeLabel: "apelsin", babyDevelopment: "Yuz mushaklari rivojlanadi — homila endi qovog'ini qisish, tirjayish kabi ifodalarni \"mashq qilishi\" mumkin.", motherChanges: "Qorin asta ko'rinarli bo'la boshlaydi." },
-  { week: 15, sizeLabel: "olma", babyDevelopment: "Suyak to'qimasi mustahkamlanishda davom etadi, quloqlar o'z joyiga yaqinlashmoqda.", motherChanges: "Orqa og'rig'i yoki bo'g'im bo'shashishi ba'zi ayollarda shu davrda boshlanishi mumkin." },
-  { week: 16, sizeLabel: "avokado", babyDevelopment: "Ba'zi onalar shu hafta atrofida ilk harakatlarni (\"tipirchilash\") sezishi mumkin, garchi bu birinchi homiladorlikda ko'pincha keyinroq bo'ladi.", motherChanges: "Qorin ko'rinishi kundan-kunga sezilarli bo'lib bormoqda." },
-  { week: 17, sizeLabel: "nok", babyDevelopment: "Terini himoya qiluvchi yog' to'plami (jag'-yostiqcha) shakllana boshlaydi, qon aylanish tizimi rivojlanmoqda.", motherChanges: "Vazn oshishi barqarorlashadi — bu davrda muvozanatli ovqatlanish tavsiya etiladi." },
-  { week: 18, sizeLabel: "bolgar qalampiri", babyDevelopment: "Quloqlar o'z o'rniga to'liq joylashgan — homila ayrim ovozlarni his qila boshlashi mumkin.", motherChanges: "Ko'pchilik shu davrda ilk aniq harakatlarni sezadi." },
-  { week: 19, sizeLabel: "pomidor", babyDevelopment: "Teri himoya qatlami (vernix) shakllanadi — bu teri suyuqlikda uzoq muddat bo'lishdan himoya qiladi.", motherChanges: "Qorin terisining tortilishi bilan bog'liq qichishish ba'zilarda kuzatiladi." },
-  { week: 20, sizeLabel: "banan", babyDevelopment: "Homiladorlikning taxminan yarmi — ko'pchilik klinikada shu davrda batafsil UTT o'tkaziladi.", motherChanges: "Harakatlar muntazamroq his qilina boshlaydi." },
-  { week: 21, sizeLabel: "sabzi", babyDevelopment: "Harakatlar kuchayadi va ko'proq sezila boshlaydi, ovqat hazm qilish tizimi rivojlanmoqda.", motherChanges: "Orqa og'rig'i yoki oyoq tomirlarining kattalashishi (varikoz) ba'zilarda boshlanishi mumkin." },
-  { week: 22, sizeLabel: "bodring", babyDevelopment: "Qoshlar va ko'z qovoqlari shakllangan, lablar aniqroq ko'rinadi.", motherChanges: "Qorin kattalashishi bilan tana muvozanati o'zgarishi mumkin." },
-  { week: 23, sizeLabel: "baqlajon", babyDevelopment: "Teri ostida qon tomirlari ko'rinib turadi — teri hali yupqa va yarim shaffof.", motherChanges: "Braxton-Hiks qisqarishlari (bachadonning yengil, og'riqsiz \"mashq\" qisqarishlari) ba'zilarda boshlanishi mumkin." },
-  { week: 24, sizeLabel: "makkajo'xori", babyDevelopment: "O'pkalar rivojlanishda muhim bosqichga yetadi — bu vaqtdan boshlab erta tug'ilgan chaqaloqning tibbiy yordam bilan omon qolish ehtimoli oshadi.", motherChanges: "Qandli diabet skriningi odatda shu davr atrofida tavsiya etiladi — shifokoringiz bilan maslahatlashing." },
-  { week: 25, sizeLabel: "gulkaram boshi", babyDevelopment: "Sochlar rangi va teksturasi shakllana boshlaydi, homila teri ostida yog' to'plamoqda.", motherChanges: "Uyqu sifati qorin kattaligi tufayli o'zgarishi mumkin — yon tomonda yotish ko'pincha qulayroq." },
-  { week: 26, sizeLabel: "karam boshi", babyDevelopment: "Ko'zlar asta ochila boshlaydi, yorug'likka reaksiya rivojlanmoqda.", motherChanges: "Nafas qisilishi bachadonning diafragmaga bosimi tufayli sezilishi mumkin." },
-  { week: 27, sizeLabel: "gul karam", babyDevelopment: "Miya faol rivojlanmoqda, uyqu-uyg'onish sikllari shakllana boshlaydi — bu uchinchi trimestrning boshlanishi.", motherChanges: "Orqa og'rig'i va oyoq shishishi ko'proq sezilishi mumkin." },
-  { week: 28, sizeLabel: "katta baqlajon", babyDevelopment: "Uxlash-uyg'onish davri aniqroq bo'ladi, ko'z pilkalari mavjud.", motherChanges: "Ko'pchilik klinikada shu davrdan boshlab tekshiruvlar tez-tezroq (har 2 haftada) tavsiya etiladi." },
-  { week: 29, sizeLabel: "kichik qovoq", babyDevelopment: "Mushaklar va o'pkalar rivojlanishda davom etadi, bosh o'sishi tezlashadi.", motherChanges: "Charchoq qaytadan kuchayishi mumkin — tana kattalashgan yukka moslashmoqda." },
-  { week: 30, sizeLabel: "katta karam", babyDevelopment: "Miya tez o'sib bormoqda, amniotik suyuqlik miqdori ko'pincha shu davrda eng yuqori darajaga yetadi.", motherChanges: "Nafas qisilishi va tez-tez siyish hissi davom etishi mumkin." },
-  { week: 31, sizeLabel: "kokos yong'og'i", babyDevelopment: "Barcha besh sezgi a'zosi faol — homila yorug'lik, ovoz va ta'mga (amniotik suyuqlik orqali) reaksiya bildiradi.", motherChanges: "Uyqu qulayligi uchun qo'shimcha yostiqlar foydali bo'lishi mumkin." },
-  { week: 32, sizeLabel: "ananas", babyDevelopment: "Tirnoqlar barmoq uchlariga yetib boradi, teri silliqlasha boshlaydi.", motherChanges: "Braxton-Hiks qisqarishlari tez-tezroq sezilishi mumkin." },
-  { week: 33, sizeLabel: "katta ananas", babyDevelopment: "Bosh suyagi suyaklari hali yumshoq va harakatchan qoladi — bu tug'ruq jarayoni uchun zarur.", motherChanges: "Bel og'rig'i va uyquga qiynalish ko'pchilikda kuzatiladi." },
-  { week: 34, sizeLabel: "qovun", babyDevelopment: "O'pkalar yetilishda davom etadi, teri ostidagi yog' qatlami qalinlashmoqda.", motherChanges: "Qorin pastga tushishi (\"yengillashish\") ba'zilarda shu davrda boshlanadi." },
-  { week: 35, sizeLabel: "katta qovun", babyDevelopment: "Buyraklar to'liq rivojlangan, jigar ham asosiy vazifalarni bajarishga tayyor.", motherChanges: "Tez-tez siyish hissi kuchayishi mumkin — bosh pastga tushib, siydik pufagiga bosim oshadi." },
-  { week: 36, sizeLabel: "romaine salat", babyDevelopment: "Homila odatda tug'ruqqa tayyorgarlik ko'rib, bosh pastga tomon joylasha boshlaydi.", motherChanges: "Klinikaga tashriflar odatda haftalik bo'lib qoladi — shifokor tavsiyalariga amal qiling." },
-  { week: 37, sizeLabel: "pichan (leek)", babyDevelopment: "\"Erta muddat\" boshlanadi — o'pkalar va boshqa organlar deyarli to'liq tayyor.", motherChanges: "Tug'ruq belgilariga (muntazam qisqarishlar, suv ketishi) e'tiborli bo'lish tavsiya etiladi." },
-  { week: 38, sizeLabel: "kichik qovun", babyDevelopment: "Barcha organlar tug'ilishga tayyor, homila tug'ruq kanaliga tushishi mumkin.", motherChanges: "Kutish bilan bog'liq hayajon va bezovtalik — bu davr uchun tabiiy holat." },
-  { week: 39, sizeLabel: "kichik tarvuz", babyDevelopment: "\"To'liq muddat\" hisoblanadi — teri silliq, yog' qatlami tug'ilgandan keyingi issiqlikni saqlash uchun yetarli.", motherChanges: "Tug'ruq har qanday kun boshlanishi mumkin — sumka va hujjatlarni tayyor tutish tavsiya etiladi." },
-  { week: 40, sizeLabel: "tarvuz", babyDevelopment: "Kutilayotgan tug'ilish sanasi — lekin haqiqiy tug'ruq sanasidan bir necha kun oldin yoki keyin bo'lishi ham me'yorda.", motherChanges: "Shifokor bilan muntazam aloqada bo'lish va tug'ruq belgilarini kuzatish muhim." },
-  { week: 41, sizeLabel: "katta tarvuz", babyDevelopment: "Ba'zi homiladorliklar 40 haftadan tabiiy ravishda uzoqroq davom etadi.", motherChanges: "Shifokor odatda bu davrda homila holatini kuzatish uchun qo'shimcha tekshiruvlar tavsiya qiladi." },
-  { week: 42, sizeLabel: "katta tarvuz", babyDevelopment: "\"Muddatidan keyingi\" homiladorlik deb hisoblanadi — yo'ldosh funksiyasi kuzatilishi muhim.", motherChanges: "Shifokoringiz tug'ruqni sun'iy chaqirish yoki qo'shimcha kuzatuv haqida maslahat berishi mumkin." },
+  { week: 1, sizeLabel: "hali otalanmagan", babyDevelopment: "Hisob oxirgi hayzning birinchi kunidan yuritiladi, shuning uchun bu haftada homila hali yo'q. Tanangiz tuxum hujayrani yetiltirishga kirishadi va bachadon shilliq qavati yangilanadi.", motherChanges: "Bu haftada hayz ketadi. Homiladorlikni rejalashtirayotgan bo'lsangiz, folat kislotasini (kuniga 400 mkg) shu paytdan boshlang: asab naychasi siz homiladorlikni bilishingizdan oldin yopiladi. Chekish va alkogoldan voz kechish ham shu bosqichda muhim." },
+  { week: 2, sizeLabel: "moshdona urug'i", babyDevelopment: "Tuxumdonda follikula yetiladi va hafta oxirida ovulyatsiya bo'ladi. Urug'lanish hali sodir bo'lmagan, lekin unumdor kunlar aynan shu davrga to'g'ri keladi.", motherChanges: "Ajralmalar suyuqroq va tiniqroq bo'lishi, ovulyatsiyadan keyin bazal harorat biroz ko'tarilishi mumkin. Ba'zilar tuxumdon sohasida yengil sanchiqni sezadi." },
+  { week: 3, sizeLabel: "qum zarrachasi", babyDevelopment: "Urug'lanish sodir bo'ladi. Bo'linayotgan hujayralar to'plami bachadon nayidan bachadonga qarab harakatlanadi va hafta oxirida devorga o'rnasha boshlaydi.", motherChanges: "Ko'pchilik hali hech narsa sezmaydi. Ba'zi ayollarda o'rnashish paytida bir-ikki tomchi qon yoki yengil tortishuv bo'ladi — bu hayzdan ancha kam va qisqa." },
+  { week: 4, sizeLabel: "moshdona", babyDevelopment: "Embrion bachadon devoriga to'liq o'rnashadi. Yo'ldosh va homila pufagining asosi qo'yiladi; hujayralar uch qavatga ajraladi — asab tizimi, ichki organlar va suyak-mushak tizimi shu qavatlardan rivojlanadi.", motherChanges: "Hayz kechikadi va test ijobiy chiqishi mumkin. Ko'krak sezuvchan bo'ladi, charchoq va kayfiyat o'zgarishi paydo bo'ladi. Shu paytdan boshlab har qanday dorini faqat shifokor bilan kelishib iching." },
+  { week: 5, sizeLabel: "kunjut urug'i", babyDevelopment: "Yurak naychasi urishni boshlaydi va asab naychasi yopiladi — bu miya va orqa miyaning asosi. Homila taxminan 2 mm, lekin eng muhim organlar aynan shu haftalarda quriladi.", motherChanges: "Ko'ngil aynishi, hidlarga sezgirlik va charchoq kuchayadi. Birinchi qabulga yozilish uchun yaxshi payt: hisobga turish 12-haftagacha tavsiya etiladi." },
+  { week: 6, sizeLabel: "no'xat donasi", babyDevelopment: "Yurak urishi UTTda ko'rinishi mumkin. Qo'l va oyoq kurtaklari, ko'z hamda quloqning dastlabki tuzilmalari paydo bo'ladi.", motherChanges: "Ertalabki ko'ngil aynishi cho'qqisiga yaqinlashadi. Kam-kam, tez-tez ovqatlaning; o'rindan turishdan oldin quruq non yoki bir necha dona yong'oq yeyish ba'zilarga yordam beradi." },
+  { week: 7, sizeLabel: "ko'k moviz", babyDevelopment: "Miya juda tez o'sadi, asab hujayralari daqiqasiga minglab ko'payadi. Barmoq kurtaklari va burun teshiklari ko'rina boshlaydi.", motherChanges: "Tez-tez siyish va charchoq odatiy holga aylanadi. Suyuqlikni yetarli iching: suvsizlanish ko'ngil aynishini kuchaytiradi." },
+  { week: 8, sizeLabel: "malina", babyDevelopment: "Barmoqlar ajrala boshlaydi, asosiy organlarning hammasi o'z o'rnida. Homila taxminan 1,5 sm va allaqachon harakatlanadi — bu harakatlar hali sezilmaydi.", motherChanges: "Bachadon kattalashib, bel va qorinda yengil tortishuv berishi mumkin. Ko'krak o'lchami o'zgaradi, qulay ich kiyim kerak bo'ladi." },
+  { week: 9, sizeLabel: "uzum", babyDevelopment: "Endi u embrion emas, homila deb ataladi. Qo'l va oyoqlar bukiladi, ko'z qovoqlari shakllanadi, yurak to'rt bo'lmaga ajraladi.", motherChanges: "Gormon darajasi eng yuqori nuqtaga chiqadi: kayfiyat o'zgarishi va yig'loqilik ko'pincha shu davrga to'g'ri keladi. Bu vaqtinchalik." },
+  { week: 10, sizeLabel: "kivi", babyDevelopment: "Barcha hayotiy organlar shakllangan — endi ular o'sib, yetilib boradi. Tirnoq kurtaklari paydo bo'ladi, bo'g'imlar bukiladi.", motherChanges: "Birinchi skrining (11–13 hafta) uchun yozilish payti. Ko'ngil aynishi ko'pchilikda shu hafta atrofida eng kuchli bo'lib, so'ng yengillashadi." },
+  { week: 11, sizeLabel: "anjir", babyDevelopment: "Homila tanasi tikkalashadi, bosh hali nisbatan katta. Suyaklar qattiqlasha boshlaydi, sut tishlarining kurtaklari paydo bo'ladi.", motherChanges: "Birinchi skrining UTTsi va qon tahlili shu haftadan boshlanadi: bo'yin burmasi (NT) o'lchanadi. Skrining tashxis emas — u faqat ehtimolni baholaydi." },
+  { week: 12, sizeLabel: "limon", babyDevelopment: "Homila yutinadi, barmoqlarini siqadi, hiqichoq tutishi mumkin. Buyraklar siydik ishlab chiqara boshlaydi.", motherChanges: "Birinchi trimestr yakunlanmoqda: ko'ngil aynishi ko'pchilikda kamayadi, tushish xavfi sezilarli pasayadi. Bachadon qov suyagidan yuqoriga ko'tariladi." },
+  { week: 13, sizeLabel: "shaftoli", babyDevelopment: "Ovoz paychalari va jinsiy a'zolar shakllanadi. Teri hali yupqa va shaffof, qon tomirlari ko'rinib turadi.", motherChanges: "Energiya qaytadi — ko'pchilik ikkinchi trimestrni eng qulay davr deb ataydi. Vazn asta-sekin qo'shila boshlaydi." },
+  { week: 14, sizeLabel: "apelsin", babyDevelopment: "Yuz mushaklari ishlaydi: homila qovog'ini uyadi, lablarini cho'chchaytiradi. Bo'yin uzayib, bosh tanadan aniq ajraladi.", motherChanges: "Qorin ko'rina boshlaydi. Bel ostida tortishuv (yumaloq boylam og'rig'i) paydo bo'lishi mumkin — bu bachadonni ushlab turuvchi boylamlarning cho'zilishi." },
+  { week: 15, sizeLabel: "olma", babyDevelopment: "Homila yorug'likni sezadi va tovushlarga javob bera boshlaydi. Suyaklar mustahkamlanadi, teri ustini mayin tuklar (lanugo) qoplaydi.", motherChanges: "Burun bitishi va milk qonashi ko'p uchraydi — bu qon aylanishining ko'payishi bilan bog'liq. Yumshoq tish cho'tkasidan foydalaning." },
+  { week: 16, sizeLabel: "avokado", babyDevelopment: "Mushaklar kuchayadi, homila faol harakatlanadi. Ba'zi ayollar ilk harakatlarni shu haftalarda sezadi; birinchi homiladorlikda bu odatda kechroq bo'ladi.", motherChanges: "Ikkinchi skrining (16–18 hafta) uchun payt. Qorin yaqqol ko'rinadi, qulay kiyim va poyabzal kerak bo'ladi." },
+  { week: 17, sizeLabel: "nok", babyDevelopment: "Teri ostida yog' to'plana boshlaydi — u tug'ilgandan keyin issiqlikni saqlashga yordam beradi. Eshitish tizimi rivojlanmoqda.", motherChanges: "Ishtaha ochiladi. Vazn bir tekis qo'shilgani yaxshi: keskin sakrash ham, butunlay to'xtab qolish ham shifokor bilan gaplashish uchun sabab." },
+  { week: 18, sizeLabel: "bolgar qalampiri", babyDevelopment: "Homila ovozlarni eshitadi: yurak urishi, ichak tovushlari va sizning ovozingizni. Quloqlar o'z joyiga joylashgan.", motherChanges: "Ko'pchilik shu haftalarda harakatlarni aniq sezadi. Chalqancha yotganda bosh aylansa, yon tomonga o'giriling — bachadon yirik venani bosadi." },
+  { week: 19, sizeLabel: "pomidor", babyDevelopment: "Terini vernix — moysimon himoya qatlami qoplaydi. Miyada sezgi markazlari shakllanmoqda.", motherChanges: "Qorin va ko'krak terisi cho'zilib qichishishi mumkin, namlovchi krem yordam beradi. Kaft va tovonning qattiq qichishishi esa alohida belgi: shifokorga ayting." },
+  { week: 20, sizeLabel: "banan", babyDevelopment: "Homiladorlikning yarmi. Batafsil UTT shu davrda o'tkaziladi: organlar, yo'ldosh joylashuvi va suv miqdori tekshiriladi.", motherChanges: "Harakatlar muntazamroq bo'ladi. Bachadon tubi kindik darajasiga chiqadi; bel og'rig'i paydo bo'lsa, qaddi-qomat va poyabzalga e'tibor bering." },
+  { week: 21, sizeLabel: "sabzi", babyDevelopment: "Homila amniotik suyuqlikni yutadi va ta'mni farqlay boshlaydi — siz yegan taomning ta'mi suyuqlikka o'tadi.", motherChanges: "Oyoqda tomirlar kengayishi va shish paydo bo'lishi mumkin. Uzoq tik turishdan saqlaning, oyoqni baland qo'yib dam oling." },
+  { week: 22, sizeLabel: "bodring", babyDevelopment: "Qosh va kipriklar shakllangan. Homila o'z yuzini va kindik tanasini paypaslaydi, vazni taxminan 430 g.", motherChanges: "Braxton-Hiks qisqarishlari boshlanishi mumkin: ular og'riqsiz, notekis va o'tib ketadi. Muntazam va og'riqli bo'lsa — shifokorga murojaat qiling." },
+  { week: 23, sizeLabel: "baqlajon", babyDevelopment: "O'pkada surfaktant ishlab chiqarila boshlaydi — bu modda mustaqil nafas olish uchun zarur. Teri hali burushgan, yog' qatlami yupqa.", motherChanges: "Vazn tezroq qo'shiladi. Gestatsion diabet skriningi (24–28 hafta) yaqinlashmoqda, qabulga yozilib qo'ying." },
+  { week: 24, sizeLabel: "makkajo'xori", babyDevelopment: "Homila hayotchanlik chegarasiga yetadi: shu muddatdan keyin tug'ilgan chaqaloq zamonaviy yordam bilan omon qolishi mumkin. Ichki quloq to'liq ishlaydi, muvozanat sezgisi paydo bo'ladi.", motherChanges: "Gestatsion diabetga tekshiruv shu davrda tavsiya etiladi. Qorin terisida chiziqlar (striyalar) paydo bo'lishi mumkin — bu teri tuzilishiga bog'liq." },
+  { week: 25, sizeLabel: "gulkaram boshi", babyDevelopment: "Teri tekislanadi, yog' qatlami qalinlashadi. Qo'l panjalari to'liq ishlaydi, homila musht tugadi.", motherChanges: "Ko'krakdan ilk suyuqlik (og'iz suti) chiqishi mumkin. Uyqu buzilsa, yon tomonda, tizza orasiga yostiq qo'yib yotish qulayroq." },
+  { week: 26, sizeLabel: "karam boshi", babyDevelopment: "Ko'zlar ochiladi va yorug'likka javob beradi. Miya to'lqinlari eshitish hamda ko'rishga reaksiya ko'rsata boshlaydi.", motherChanges: "Nafas qisilishi kuchayishi mumkin — bachadon diafragmaga bosim beradi. Tez-tez, kichik nafas olib dam oling." },
+  { week: 27, sizeLabel: "gul karam", babyDevelopment: "Uchinchi trimestr boshlanadi. Homila uyqu va uyg'oqlik sikliga ega, hiqichoq tutadi — siz buni bir maromdagi sekin turtkilar sifatida sezasiz.", motherChanges: "Tekshiruvlar tez-tezlashadi. Oyoq tirishishi va bel og'rig'i ko'p uchraydi: kaltsiy va magniyga boy ovqat hamda yengil cho'zilish mashqlari yordam beradi." },
+  { week: 28, sizeLabel: "katta baqlajon", babyDevelopment: "Ko'z pilklari shakllangan, homila ko'zini pirpiratadi. Vazni taxminan 1 kg va hozirdan boshlab u tez o'sadi.", motherChanges: "Harakatlarni har kuni sanash tavsiya etiladi. Qoningiz Rh-manfiy bo'lsa, shu davrda anti-D immunoglobulin qilinadi — shifokordan so'rang." },
+  { week: 29, sizeLabel: "kichik qovoq", babyDevelopment: "Suyaklar mustahkamlanadi va kaltsiyga ehtiyoj ortadi. Homila tana haroratini o'zi ushlab tura boshlaydi.", motherChanges: "Qabziyat va jig'ildon qaynashi kuchayishi mumkin: kichik porsiyalarda ovqatlaning va ovqatdan keyin darrov yotmang." },
+  { week: 30, sizeLabel: "katta karam", babyDevelopment: "Miya burmalari chuqurlashadi, ko'rish qobiliyati rivojlanadi. Amniotik suyuqlik miqdori eng yuqori darajaga yaqin.", motherChanges: "Charchoq qaytadi. Dekret ta'tili va tug'ruqxona tanlovi haqida o'ylash payti; tug'ruqxona sumkasini yig'a boshlang." },
+  { week: 31, sizeLabel: "kokos yong'og'i", babyDevelopment: "Beshala sezgi ham ishlaydi. Homila tanish ovozlarni farqlaydi va ularga tinchlanish bilan javob berishi mumkin.", motherChanges: "Braxton-Hiks qisqarishlari tez-tezlashadi. Nafas mashqlari va tug'ruqqa tayyorgarlik kurslari shu davrda foydali." },
+  { week: 32, sizeLabel: "ananas", babyDevelopment: "Homila odatda bosh bilan pastga o'giriladi. Tirnoqlar barmoq uchiga yetadi, lanugo asta to'kila boshlaydi.", motherChanges: "Uchinchi skrining UTT (32–34 hafta) o'tkaziladi: homilaning o'sishi, yo'ldosh holati va suv miqdori baholanadi." },
+  { week: 33, sizeLabel: "katta ananas", babyDevelopment: "Bosh suyagi hali yumshoq va harakatchan — bu tug'ruq kanalidan o'tish uchun kerak. Onadan himoya antitanalari o'tadi.", motherChanges: "Qovurg'a ostida bosim va nafas qisilishi kuchayishi mumkin. Tug'ruq belgilari va tug'ruqxonaga qachon borish haqida shifokor bilan oldindan kelishib oling." },
+  { week: 34, sizeLabel: "qovun", babyDevelopment: "O'pkalar deyarli yetilgan, teri ostidagi yog' qalinlashadi — teri silliqlashib, pushti tus oladi.", motherChanges: "Sumka tayyor bo'lsin: tug'ruqning taxminan 10 foizi 37-haftagacha boshlanadi. Shish va qon bosimini kuzatib boring." },
+  { week: 35, sizeLabel: "katta qovun", babyDevelopment: "Buyrak va jigar to'liq ishlaydi. Homilaga joy torayadi: harakatlar kuchli, lekin kengroq emas — ularning SONI kamaymasligi kerak.", motherChanges: "B guruh streptokokk (GBS) tahlili odatda 35–37 haftada olinadi. Bosh pastga tushgani uchun tez-tez siyish qaytadi." },
+  { week: 36, sizeLabel: "romaine salat", babyDevelopment: "Bosh chanoqqa joylasha boshlaydi. Vazn haftasiga taxminan 200 g qo'shiladi.", motherChanges: "Tashriflar haftalik bo'ladi. Qorin pastga tushsa nafas olish yengillashadi, lekin siydik pufagiga bosim ortadi." },
+  { week: 37, sizeLabel: "pichan (leek)", babyDevelopment: "\"Erta to'liq muddat\" boshlanadi: organlar tayyor, homila asosan vazn yig'adi.", motherChanges: "Tug'ruq belgilarini biling: muntazam kuchayib boruvchi qisqarishlar, suv ketishi, shilliq tiqinning chiqishi. Har qanday qon ketishida darhol murojaat qiling." },
+  { week: 38, sizeLabel: "kichik qovun", babyDevelopment: "Bosh sochlari 3–5 sm bo'lishi mumkin. Ichakda birinchi axlat — mekoniy to'planadi.", motherChanges: "Kutish charchatadi va bu normal. Kuniga bir necha marta harakatlarni sanash ko'pchilikni tinchlantiradi." },
+  { week: 39, sizeLabel: "kichik tarvuz", babyDevelopment: "To'liq muddat. O'pkalar oxirgi surfaktant zaxirasini to'playdi, teri silliq va yog' qatlami yetarli.", motherChanges: "Hujjatlar va sumka eshik oldida tursin. Qisqarishlar besh daqiqada bir, bir daqiqadan, bir soat davom etsa — tug'ruqxonaga boring." },
+  { week: 40, sizeLabel: "tarvuz", babyDevelopment: "Kutilgan sana. Chaqaloqlarning atigi 5 foizi aynan shu kuni tug'iladi, shuning uchun bir hafta oldin yoki keyin tug'ilish ham me'yor.", motherChanges: "Shifokor homila holatini va suv miqdorini kuzatadi. Harakatlar kamaysa — kutmang, darhol murojaat qiling." },
+  { week: 41, sizeLabel: "katta tarvuz", babyDevelopment: "Homila o'sishda davom etadi, tirnoqlar uzayadi. Yo'ldosh ishi sekinlashishi mumkin, shuning uchun kuzatuv zarur.", motherChanges: "Kuzatuv tez-tezlashadi (KTG, UTT). Shifokor tug'ruqni sun'iy chaqirish haqida gaplashishi mumkin." },
+  { week: 42, sizeLabel: "katta tarvuz", babyDevelopment: "Muddatdan keyingi homiladorlik. Yo'ldosh holati va suv miqdori diqqat bilan kuzatiladi.", motherChanges: "Bu bosqichda odatda tug'ruqni chaqirish tavsiya etiladi. Kuzatuvni kechiktirmang va shifokoringiz bilan doimiy aloqada bo'ling." },
 ];
 
 async function main() {
   await ensureSchema();
+  if (!WRITE) {
+    // Bazaga yozish PRODUCTION ma'lumotiga tegadi, shuning uchun
+    // standart holatda faqat ko'rsatiladi. Yozish uchun --write kerak.
+    for (const w of WEEKS) {
+      console.log(`${w.week}-hafta (${w.sizeLabel}): ${w.babyDevelopment.length}+${w.motherChanges.length} belgi`);
+    }
+    const avg = Math.round(WEEKS.reduce((s, w) => s + w.babyDevelopment.length + w.motherChanges.length, 0) / WEEKS.length);
+    console.log(`\n${WEEKS.length} ta hafta tayyor, o'rtacha ${avg} belgi. Yozish uchun: -- --write`);
+    process.exit(0);
+  }
   for (const w of WEEKS) {
     await upsertPregnancyWeekContent(w.week, { sizeLabel: w.sizeLabel, babyDevelopment: w.babyDevelopment, motherChanges: w.motherChanges });
-    console.log(`✓ ${w.week}-hafta yozildi`);
+    console.log(`\u2713 ${w.week}-hafta yozildi`);
   }
   console.log(`\n${WEEKS.length} ta hafta muvaffaqiyatli yozildi.`);
   process.exit(0);
 }
 
 // To'g'ridan-to'g'ri `tsx` bilan ishga tushirilgandagina avtomatik ishlaydi —
-// boshqa skript (masalan bir martalik tarmoq-muammosi uchun ishlatiladigan
-// muqobil yo'l) `WEEKS`ni import qilsa, qayta ishga tushib ketmasligi uchun.
+// boshqa skript `WEEKS`ni import qilsa, qayta ishga tushib ketmasligi uchun.
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {
     console.error("Xatolik:", error);

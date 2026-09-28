@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { Bookmark, BookmarkBorder } from "@mui/icons-material";
 import type { Article } from "@mammoai/shared";
 import { ArticleBody } from "@/components/articles/ArticleBody";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { Badge, Card, LoadingSpinner, ErrorState } from "@/components/ui";
+import { Badge, Card, LoadingSpinner, ErrorState, Toast } from "@/components/ui";
 import { ArticleComments } from "@/components/screens/ArticleComments";
 
 export default function ArticleDetailPage() {
@@ -24,6 +25,7 @@ export default function ArticleDetailPage() {
    * explore"). Ilgari maqola tugagach faqat izohlar bo'lardi va
    * o'qishning davomi yo'q edi. */
   const [related, setRelated] = useState<Article[]>([]);
+  const [saveError, setSaveError] = useState(false);
 
   const load = useCallback(() => {
     setLoadError(false);
@@ -33,6 +35,24 @@ export default function ArticleDetailPage() {
     // shuning uchun xatosi `loadError`ga ta'sir qilmaydi.
     api.articles.list().then(setRelated).catch(() => setRelated([]));
   }, [params.slug]);
+
+  /**
+   * BOOKMARK-01: belgi DARHOL almashadi, so'rov keyin ketadi — sekin
+   * tarmoqda tugma "o'lik" bo'lib tuyulmasligi uchun. So'rov yiqilsa
+   * holat ORQAGA qaytariladi va bu AYTILADI, jim qoldirilmaydi.
+   */
+  const toggleBookmark = useCallback(() => {
+    setSaveError(false);
+    setArticle((prev) => {
+      if (!prev) return prev;
+      const next = !prev.isBookmarked;
+      api.articles.setBookmark(prev.slug, next).catch(() => {
+        setSaveError(true);
+        setArticle((cur) => (cur ? { ...cur, isBookmarked: !next } : cur));
+      });
+      return { ...prev, isBookmarked: next };
+    });
+  }, []);
 
   useEffect(() => {
     // setTimeout(0): `load()` sinxron `setState` chaqiradi (loadError/article
@@ -50,7 +70,22 @@ export default function ArticleDetailPage() {
 
   return (
     <div className="space-y-4 pb-6">
-      <Badge>{dict.articles.categories[article.category]}</Badge>
+      <div className="flex items-start justify-between gap-3">
+        <Badge>{dict.articles.categories[article.category]}</Badge>
+        <button
+          type="button"
+          aria-label={article.isBookmarked ? dict.articles.unsaveAction : dict.articles.saveAction}
+          aria-pressed={article.isBookmarked}
+          className="-m-2 shrink-0 p-2 text-text-muted transition-colors hover:text-primary"
+          onClick={toggleBookmark}
+        >
+          {article.isBookmarked ? (
+            <Bookmark sx={{ fontSize: 22 }} className="text-primary" />
+          ) : (
+            <BookmarkBorder sx={{ fontSize: 22 }} />
+          )}
+        </button>
+      </div>
       <h1 className="text-2xl font-bold text-text-primary">{article.title}</h1>
 
       {/* CONTENT-01: kim tekshirgani va qancha vaqt olishi — sarlavha
@@ -128,6 +163,8 @@ export default function ArticleDetailPage() {
       })()}
 
       <ArticleComments slug={article.slug} />
+
+      {saveError && <Toast message={dict.articles.saveFailed} tone="error" />}
     </div>
   );
 }

@@ -79,8 +79,15 @@ export default function AdminFeedbackPage() {
             <Card key={entry.id} className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <Badge tone={entry.trigger === "manual" ? "primary" : "muted"}>
-                    {entry.trigger === "manual" ? "Menyu" : "AI chat"}
+                  {/* PREMIUM-01: Premium so'rovi ALOHIDA ajralib turishi
+                      kerak — bu fikr emas, sotuv signali. Ilgari bu yerda
+                      faqat ikki tur bor edi va yangi tur "AI chat" bo'lib
+                      ko'rinardi, ya'ni to'lovga tayyor ayol umumiy
+                      fikrlar orasida yo'qolardi. */}
+                  <Badge
+                    tone={entry.trigger === "premium_request" ? "warning" : entry.trigger === "manual" ? "primary" : "muted"}
+                  >
+                    {entry.trigger === "premium_request" ? "Premium so'rovi" : entry.trigger === "manual" ? "Menyu" : "AI chat"}
                   </Badge>
                   {entry.rating !== null && (
                     <Badge tone={entry.trigger === "chat_prompt" ? (entry.rating ? "success" : "danger") : "warning"}>

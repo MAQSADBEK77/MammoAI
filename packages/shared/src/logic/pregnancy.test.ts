@@ -157,3 +157,44 @@ describe("resolvePregnancyState — PREG-STATE-01", () => {
     expect(state).toEqual({ isPregnant: false, isPostpartum: false, daysSinceDue: null, status: null });
   });
 });
+
+describe("resolvePregnancyState — PREG-END-01: ayolning o'z gapi", () => {
+  const profile = { lastMenstrualPeriod: "2026-01-01", dueDate: "2026-10-08" };
+
+  it("homiladorlik to'xtagan bo'lsa hech qanday hafta ko'rsatilmaydi", () => {
+    // Ilgari ilova taxminiy sanadan 14 kun o'tgunga qadar
+    // "bolangiz endi bodring kattaligida" deb yozishda davom etardi.
+    const s = resolvePregnancyState({ declaredPregnant: true, profile, outcome: "loss", endedOn: "2026-06-01" }, "2026-06-20");
+    expect(s.isPregnant).toBe(false);
+    expect(s.status).toBe(null);
+  });
+
+  it("to'xtaganda tug'ruqdan keyingi bandlar ham ochilmaydi", () => {
+    // Chaqaloq ko'rigi va emizish eslatmasi bu holatda zarar keltiradi.
+    const s = resolvePregnancyState({ declaredPregnant: true, profile, outcome: "loss", endedOn: "2026-06-01" }, "2026-10-20");
+    expect(s.isPostpartum).toBe(false);
+  });
+
+  it("tug'ruqdan keyingi oyna HAQIQIY sanadan hisoblanadi", () => {
+    // Muddatidan oldin tug'gan ayol: taxminiy sana 8-oktabr, haqiqiy 10-sentabr.
+    const born = { declaredPregnant: true, profile, outcome: "birth" as const, endedOn: "2026-09-10" };
+    expect(resolvePregnancyState(born, "2026-09-11").isPostpartum).toBe(true);
+    expect(resolvePregnancyState(born, "2026-10-20").isPostpartum).toBe(true); // 40-kun
+    expect(resolvePregnancyState(born, "2026-10-25").isPostpartum).toBe(false); // 45-kun
+  });
+
+  it("tug'gandan keyin homiladorlik holati darhol tugaydi", () => {
+    const s = resolvePregnancyState(
+      { declaredPregnant: true, profile, outcome: "birth", endedOn: "2026-09-10" },
+      "2026-09-11"
+    );
+    expect(s.isPregnant).toBe(false);
+    expect(s.status).toBe(null);
+  });
+
+  it("natija aytilmagan bo'lsa eski xatti-harakat saqlanadi", () => {
+    const s = resolvePregnancyState({ declaredPregnant: true, profile }, "2026-06-20");
+    expect(s.isPregnant).toBe(true);
+    expect(s.status?.currentWeek).toBeGreaterThan(0);
+  });
+});

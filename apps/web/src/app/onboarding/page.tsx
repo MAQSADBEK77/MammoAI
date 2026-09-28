@@ -34,6 +34,7 @@ import {
   extractUzPhoneDigits,
   ApiError,
   resolveRestoreStep,
+  resolveNotificationsChoice,
 } from "@mammoai/shared";
 import { TodayBackdrop } from "@/components/screens/TodayBackdrop";
 import { useI18n } from "@/lib/i18n";
@@ -981,7 +982,11 @@ function OnboardingPageInner() {
         heightCm: survey.useImperialUnits ? feetInchesToCm(survey.heightFeet, survey.heightInches) : Number(survey.heightCm) || null,
         weightKg: survey.useImperialUnits ? lbToKg(survey.weightLb) : Number(survey.weightKg) || null,
         bloodType: null,
-        notificationsEnabled: !!survey.notificationsEnabled,
+        // ONB-NOTIF-02: qaror `resolveNotificationsChoice`da, testlar
+        // bilan qotirilgan (packages/shared). Ilgari bu yerda
+        // `!!survey.notificationsEnabled` turardi va tanlanmagan holat
+        // jimgina O'CHIRISHGA aylanardi.
+        notificationsEnabled: resolveNotificationsChoice(survey.notificationsEnabled),
       });
       applyMeResponse(res);
       clearOnboardingDraft();
@@ -1837,6 +1842,7 @@ function OnboardingPageInner() {
               {survey.useImperialUnits ? (
                 <div className="mx-auto flex w-full max-w-xs gap-3">
                   <WheelPicker
+                    rows={3}
                     compact
                     options={HEIGHT_FEET_OPTIONS}
                     value={survey.heightFeet}
@@ -1844,6 +1850,7 @@ function OnboardingPageInner() {
                     onChange={(feet) => setSurvey((s) => ({ ...s, heightFeet: feet }))}
                   />
                   <WheelPicker
+                    rows={3}
                     compact
                     options={HEIGHT_INCHES_OPTIONS}
                     value={survey.heightInches}
@@ -1853,6 +1860,7 @@ function OnboardingPageInner() {
                 </div>
               ) : (
                 <WheelPicker
+                  rows={3}
                   options={HEIGHT_CM_OPTIONS}
                   value={Number(survey.heightCm) || 165}
                   suffix={dict.onboarding.unitCm}
@@ -1865,6 +1873,7 @@ function OnboardingPageInner() {
               <p className="text-center text-sm font-semibold text-text-secondary">{dict.onboarding.weightLabel}</p>
               {survey.useImperialUnits ? (
                 <WheelPicker
+                  rows={3}
                   options={WEIGHT_LB_OPTIONS}
                   value={survey.weightLb}
                   suffix={dict.onboarding.unitLb}
@@ -1872,6 +1881,7 @@ function OnboardingPageInner() {
                 />
               ) : (
                 <WheelPicker
+                  rows={3}
                   options={WEIGHT_KG_OPTIONS}
                   value={Number(survey.weightKg) || 60}
                   suffix={dict.onboarding.unitKg}
@@ -1960,6 +1970,22 @@ function OnboardingPageInner() {
           ) : step === "phone_verify" ? (
             <Button className="w-full" onClick={submitVerifyCode} disabled={submitting || !canProceed()}>
               {dict.common.continueButton}
+            </Button>
+          ) : step === "notifications" ? (
+            // ONB-NOTIF-02: bu qadamda pastdagi tugma "Davom etish" emas,
+            // ANIQ rad javobi. Ilgari u qiymatni tegmasdan o'tkazib
+            // yuborardi va natija o'chirish bo'lardi — ya'ni ayol
+            // "keyinroq qarayman" deb o'ylab, aslida butunlay voz
+            // kechgan bo'lib chiqardi.
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                void requestNotificationPermission(false);
+                goNext();
+              }}
+            >
+              {dict.onboarding.notificationsDeclineButton}
             </Button>
           ) : step === "privacy" ? (
             // ONB-CONSENT-01: rozilik endi belgilarning O'ZIDA, shuning uchun

@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const rows = await listPregnancyAlbumPhotos(user.id);
     const photos: PregnancyAlbumPhoto[] = rows.map((r) => ({
       id: r.id,
+      kind: r.kind,
       pregnancyWeek: r.pregnancyWeek,
       photoUrl: `/api/pregnancy/album/${r.id}/photo`,
       note: r.note,
@@ -46,9 +47,15 @@ export async function POST(request: NextRequest) {
     const pathname = `pregnancy-album/${user.id}/${crypto.randomUUID()}.${ext}`;
     const blob = await put(pathname, file, { access: "private", contentType: file.type });
 
-    const entry = await addPregnancyAlbumPhoto(user.id, { pregnancyWeek, blobPathname: blob.pathname, note });
+    // PREG-ALBUM-02: qorin surati yoki UZI. Noma'lum qiymat qabul
+    // qilinmaydi — u ro'yxatni ikkiga ajratishni buzardi.
+    const kindRaw = form.get("kind");
+    const kind = kindRaw === "ultrasound" ? "ultrasound" : "bump";
+
+    const entry = await addPregnancyAlbumPhoto(user.id, { pregnancyWeek, blobPathname: blob.pathname, note, kind });
     const photo: PregnancyAlbumPhoto = {
       id: entry.id,
+      kind: entry.kind,
       pregnancyWeek: entry.pregnancyWeek,
       photoUrl: `/api/pregnancy/album/${entry.id}/photo`,
       note: entry.note,

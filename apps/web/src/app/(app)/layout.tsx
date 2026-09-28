@@ -28,7 +28,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   //
   // Endi shart EKRANGA qarab: global panel faqat o'z tugmasi bor
   // CycleScreen ko'rsatilayotgandagina yashiriladi.
-  const homeShowsOwnDrawerButton = pathname === "/asosiy" && onboardingProfile?.primaryGoal !== "pregnancy";
+  // PREG-HERO-02: homiladorlik ekrani ham endi O'Z burger tugmasiga ega
+  // (hero'ning ichida) — ilgari u yo'q edi va shuning uchun global panel
+  // ko'rsatilardi. Natijada gradient tepadan oq chiziq bilan uzilib
+  // qolardi, referenslarda esa fon ekranning eng tepasidan boshlanadi.
+  const homeShowsOwnDrawerButton = pathname === "/asosiy";
   const showGlobalDrawerBar = !homeShowsOwnDrawerButton;
 
   useEffect(() => {

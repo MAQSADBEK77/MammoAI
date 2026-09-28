@@ -324,18 +324,25 @@ export function StatTile({
   label: string;
   value: string;
   unit?: string;
-  tone?: "primary" | "secondary" | "accent" | "muted";
+  /** CHECKUPS-01: `success`/`danger` — HOLAT ranglari. Ular rejimga
+   * qarab o'zgarmaydi, `primary`/`accent` esa o'zgaradi va ba'zi
+   * rejimlarda bir xil (#0d9488) bo'lib qoladi. */
+  tone?: "primary" | "secondary" | "accent" | "muted" | "success" | "danger";
   active?: boolean;
   /** Karta bosiladigan bo'lsa (masalan qiymat kiritish uchun) true qiling. */
   interactive?: boolean;
 }) {
   const toneBg = active
-    ? tone === "primary"
-      ? "var(--color-primary)"
-      : tone === "secondary"
-        ? "var(--color-secondary)"
-        : tone === "accent"
-          ? "var(--color-accent)"
+    ? tone === "success"
+      ? "var(--color-success)"
+      : tone === "danger"
+        ? "var(--color-danger)"
+        : tone === "primary"
+          ? "var(--color-primary)"
+          : tone === "secondary"
+            ? "var(--color-secondary)"
+            : tone === "accent"
+              ? "var(--color-accent)"
           : "var(--color-nav)"
     : "var(--color-surface)";
   return (
@@ -684,6 +691,7 @@ export function WheelPicker<T>({
   placeholder,
   restIndex,
   bandless,
+  rows: visibleRows = WHEEL_VISIBLE_ROWS,
 }: {
   options: T[];
   /** `null` — hali hech narsa tanlanmagan (markazda `placeholder` turadi). */
@@ -697,6 +705,12 @@ export function WheelPicker<T>({
    * markazlashtirilgan `max-w-xs` o'rniga to'liq enini egallaydi, tashqi flex
    * konteyner eni belgilaydi. */
   compact?: boolean;
+  /** ONB-HW-01: ko'rinadigan qatorlar soni. Standart 5 (240px). Bitta
+   * ekranda IKKITA g'ildirak turganda (bo'y + vazn) 5 qator sig'maydi
+   * va pastdagisi ekrandan chiqib ketadi — unga yetib ham bo'lmaydi,
+   * chunki g'ildirakni bosganda sahifa emas, g'ildirakning O'ZI
+   * aylanadi. Toq son bo'lishi shart (markazda bitta qator turadi). */
+  rows?: number;
   /** `value` bo'sh bo'lganda markazda ko'rinadigan yozuv (masalan "Tanlang"). */
   placeholder?: string;
   /** Markaziy kulrang bandni chizmaslik. `DateWheelPicker` uchun: u uchta
@@ -713,7 +727,7 @@ export function WheelPicker<T>({
   /** Ayol g'ildirakka HAQIQATAN tegdimi. Shusiz hech qachon `onChange`
    * chaqirilmaydi — yuqoridagi (1) izohga qarang. */
   const touched = useRef(false);
-  const padCount = Math.floor(WHEEL_VISIBLE_ROWS / 2);
+  const padCount = Math.floor(visibleRows / 2);
   const index = value === null ? -1 : options.indexOf(value);
 
   const showPlaceholder = value === null && !!placeholder;
@@ -814,7 +828,7 @@ export function WheelPicker<T>({
   }, [value]);
 
   return (
-    <div className={clsx("relative w-full", !compact && "mx-auto max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ROWS }}>
+    <div className={clsx("relative w-full", !compact && "mx-auto max-w-xs")} style={{ height: WHEEL_ITEM_HEIGHT * visibleRows }}>
       {/* Markaziy tanlangan qatorni ko'rsatuvchi doimiy band — scroll ostida.
           ONB-PLAIN-01: ilgari band pushti RAMKA bilan chizilgan edi. Endi u
           shunchaki yumshoq kulrang maydon: tanlangan qiymatning o'zi yirik va
