@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { sizeArtSlug } from "@mammoai/shared";
 import { Emoji } from "@/components/Emoji";
 
 /**
@@ -17,12 +18,13 @@ import { Emoji } from "@/components/Emoji";
  * tayyor bo'lishidan OLDIN ham xavfsiz joylashtirish mumkin.
  */
 export function SizeFruitImage({
-  week,
+  label,
   emoji,
   size = 30,
   fallback = "emoji",
 }: {
-  week: number;
+  /** Bazadagi nom ("qovun"). Rasm SHUNGA bog'langan — hafta raqamiga emas. */
+  label: string | null | undefined;
   emoji: string;
   size?: number;
   /**
@@ -37,12 +39,13 @@ export function SizeFruitImage({
   fallback?: "emoji" | "none";
 }) {
   const [failed, setFailed] = useState(false);
-  if (failed) return fallback === "emoji" ? <Emoji e={emoji} size={size} /> : null;
+  const slug = sizeArtSlug(label);
+  if (!slug || failed) return fallback === "emoji" ? <Emoji e={emoji} size={size} /> : null;
 
   return (
     // eslint-disable-next-line @next/next/no-img-element -- statik hafta rasmi, next/image optimizatsiyasi kerak emas
     <img
-      src={`/size/week${Math.min(42, Math.max(1, Math.round(week)))}.png`}
+      src={`/size/${slug}.svg`}
       alt=""
       width={size}
       height={size}
