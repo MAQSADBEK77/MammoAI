@@ -318,7 +318,7 @@ export function PregnancyScreen() {
           <div className="mt-1 flex items-center justify-center gap-2">
             {showSizeComparison && (
               <SizeFruitImage
-                week={status.currentWeek}
+                label={sizeLabel}
                 emoji={
                   dict.pregnancy.sizeEmoji[
                     milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizeEmoji

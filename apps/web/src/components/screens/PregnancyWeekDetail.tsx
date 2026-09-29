@@ -126,7 +126,7 @@ export function PregnancyWeekDetail({ currentWeek, onClose }: { currentWeek: num
             <span className="bg-pregnancy-accent/10 grid h-16 w-16 shrink-0 place-items-center rounded-2xl">
               {/* SIZE-IMG-01: hafta rasmi bo'lsa — rasm, bo'lmasa emoji. */}
               <SizeFruitImage
-                week={week}
+                label={sizeLabel}
                 emoji={
                   dict.pregnancy.sizeEmoji[
                     milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizeEmoji
