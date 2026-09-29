@@ -7,7 +7,7 @@ import { fetalSizeForWeek, getMilestoneForWeek, type PregnancyWeekContent } from
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { PregnancyWeekImage } from "@/components/PregnancyWeekImage";
-import { Emoji } from "@/components/Emoji";
+import { SizeFruitImage } from "@/components/SizeFruitImage";
 import { LoadingSpinner } from "@/components/ui";
 
 /**
@@ -124,7 +124,16 @@ export function PregnancyWeekDetail({ currentWeek, onClose }: { currentWeek: num
         {size && (
           <div className="mt-4 flex items-center gap-4">
             <span className="bg-pregnancy-accent/10 grid h-16 w-16 shrink-0 place-items-center rounded-2xl">
-              <Emoji e={dict.pregnancy.sizeEmoji[milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizeEmoji] ?? "🍋"} size={30} />
+              {/* SIZE-IMG-01: hafta rasmi bo'lsa — rasm, bo'lmasa emoji. */}
+              <SizeFruitImage
+                week={week}
+                emoji={
+                  dict.pregnancy.sizeEmoji[
+                    milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizeEmoji
+                  ] ?? "🍋"
+                }
+                size={34}
+              />
             </span>
             <div className="min-w-0 space-y-0.5 text-sm">
               <p className="font-bold text-text-primary">{dict.pregnancy.sizeComparison(sizeLabel)}</p>

@@ -19,6 +19,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useIllustrations } from "@/lib/illustrations";
 import { Emoji } from "@/components/Emoji";
+import { SizeFruitImage } from "@/components/SizeFruitImage";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, DateWheelPicker, FloatingTag, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { PregnancyHero } from "@/components/screens/PregnancyHero";
@@ -311,9 +312,26 @@ export function PregnancyScreen() {
       <div className="space-y-5">
         <div className="text-center">
           <p className="text-sm font-semibold text-text-secondary">{dict.pregnancy.trimester(status.trimester)}</p>
-          <p className="mt-1 text-base font-bold text-text-primary">
-            {showSizeComparison ? dict.pregnancy.sizeComparison(sizeLabel) : dict.pregnancy.earlyWeekNote}
-          </p>
+          {/* SIZE-IMG-01: taqqoslash matni yonida o'sha haftaning rasmi.
+              Rasm hali yaratilmagan bo'lsa komponent emojiga tushadi,
+              ya'ni ekran hozirgidek ishlayveradi. */}
+          <div className="mt-1 flex items-center justify-center gap-2">
+            {showSizeComparison && (
+              <SizeFruitImage
+                week={status.currentWeek}
+                emoji={
+                  dict.pregnancy.sizeEmoji[
+                    milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizeEmoji
+                  ] ?? "🍋"
+                }
+                size={26}
+                fallback="none"
+              />
+            )}
+            <p className="text-base font-bold text-text-primary">
+              {showSizeComparison ? dict.pregnancy.sizeComparison(sizeLabel) : dict.pregnancy.earlyWeekNote}
+            </p>
+          </div>
         </div>
 
         <div className="flex justify-center gap-3">
