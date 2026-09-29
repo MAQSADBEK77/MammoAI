@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { extractUzPhoneDigits, type Language } from "@mammoai/shared";
+import { normalizeKnownPhone, type Language } from "@mammoai/shared";
 import { jsonError } from "@/server/api-utils";
 import { checkPhoneCodeStartRateLimit, createPhoneVerification } from "@/server/repo";
 import { getTelegramBotUsername } from "@/server/telegram-bot";
@@ -34,7 +34,10 @@ export async function POST(request: NextRequest) {
     // ularni bir xil deb topa olmay, YANGI (bo'sh) akkaunt yaratardi. Endi
     // Telegram Mini App oqimidagi bilan bir xil funksiya — yagona kanonik
     // formatga ("+998XXXXXXXXX") keltiradi (yoki noto'g'ri bo'lsa null).
-    const identifier = extractUzPhoneDigits(body.identifier ?? "");
+    // PHONE-02: endi O'zbekiston (+998) va Qirg'iziston (+996) raqamlari
+    // qabul qilinadi. Server mijozning tanloviga ISHONMAYDI — raqam
+    // qo'llab-quvvatlanadigan kodlardan biriga to'liq mos kelishi shart.
+    const identifier = normalizeKnownPhone(body.identifier ?? "");
     if (!identifier) {
       return NextResponse.json({ error: "To'g'ri telefon raqam kiriting" }, { status: 400 });
     }

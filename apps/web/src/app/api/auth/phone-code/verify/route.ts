@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { extractUzPhoneDigits } from "@mammoai/shared";
+import { normalizeKnownPhone } from "@mammoai/shared";
 import { jsonError, ApiError } from "@/server/api-utils";
 import { createUserWithIdentifier, findUserByIdentifier, getOnboardingProfile, hasPremiumAccess, verifyPhoneCode } from "@/server/repo";
 import { signSession, SESSION_COOKIE, sessionCookieOptions } from "@/server/session";
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // FIX-05: /start endi kanonik formatda saqlaydi, lekin shu yerda ham
     // qayta o'tkazish — Mini App oqimi bilan bir xil formatga kafolatlangan
     // moslikni ta'minlaydi (izoh: apps/web/src/app/api/auth/phone-code/start/route.ts).
-    const identifier = extractUzPhoneDigits(result.phone) ?? result.phone;
+    const identifier = normalizeKnownPhone(result.phone) ?? result.phone;
     const existing = await findUserByIdentifier(identifier);
     const { user, tokenVersion } = existing
       ? { user: existing, tokenVersion: existing.tokenVersion }
