@@ -89,6 +89,7 @@ const today = () => tashkentDateStr();
 
 interface UserRow {
   telegram_user_id: string | null;
+  is_test_account?: boolean | null;
   id: string;
   phone: string | null;
   email: string | null;
@@ -2431,6 +2432,13 @@ export interface AdminUserSummary extends User {
   primaryGoal: OnboardingProfile["primaryGoal"] | null;
   cycleLogsCount: number;
   lastActiveAt: string | null;
+  /**
+   * ADMIN-03: sinov hisobimi. Ro'yxatda KO'RSATILADI — ilgari u faqat
+   * statistikadan chiqarib tashlanardi, lekin jadvalda oddiy
+   * foydalanuvchi kabi turardi. Natijada egasi "bular kim?" deb
+   * so'radi, men esa har safar bazadan qarab berishga majbur edim.
+   */
+  isTestAccount: boolean;
 }
 
 export async function listUsersAdmin(params: { search?: string; limit?: number; offset?: number }): Promise<{
@@ -2501,6 +2509,7 @@ export async function listUsersAdmin(params: { search?: string; limit?: number; 
       primaryGoal: row.primary_goal,
       cycleLogsCount: row.cycle_logs_count,
       lastActiveAt: row.last_active_at,
+      isTestAccount: !!row.is_test_account,
     })),
   };
 }
