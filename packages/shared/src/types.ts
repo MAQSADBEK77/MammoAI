@@ -64,6 +64,15 @@ export interface User {
   avatarUrl: string | null;
   /** Admin panel — moderatsiya uchun bloklangan bo'lsa true (API kirishi rad etiladi). */
   isBlocked: boolean;
+  /**
+   * AUTH-04: Telegram hisobga bog'langanmi. Faqat BOR/YO'Q — id'ning
+   * o'zi mijozga yuborilmaydi (kerak emas, va u boshqa foydalanuvchini
+   * aniqlash uchun ishlatilishi mumkin edi).
+   *
+   * Telefon bilan birga "ro'yxatdan o'tganmi" degan savolga javob
+   * beradi (`isRegisteredUser`).
+   */
+  hasTelegram: boolean;
   /** PET-01/02: bosh ekrandagi uy hayvoni — faqat 18 yoshgacha ko'rsatiladi.
    * Ko'rsatish uchun `resolvePet()` orqali o'qing (null → standart mushukcha). */
   pet: PetChoice | null;

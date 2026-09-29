@@ -88,6 +88,7 @@ const today = () => tashkentDateStr();
 // ---------------------------------------------------------------------------
 
 interface UserRow {
+  telegram_user_id: string | null;
   id: string;
   phone: string | null;
   email: string | null;
@@ -121,6 +122,7 @@ function userFromRow(row: UserRow): User {
     createdAt: row.created_at,
     avatarUrl: row.avatar_url,
     isBlocked: !!row.is_blocked,
+    hasTelegram: !!row.telegram_user_id,
     lastLocationLat: row.last_location_lat,
     lastLocationLng: row.last_location_lng,
     lastLocationAt: row.last_location_at,
@@ -150,6 +152,7 @@ export async function createAnonymousUser(language: Language): Promise<{ user: U
       createdAt,
       avatarUrl: null,
       isBlocked: false,
+      hasTelegram: false,
       lastLocationLat: null,
       lastLocationLng: null,
       lastLocationAt: null,
@@ -209,6 +212,49 @@ export async function moveTelegramLink(fromUserId: string, toUserId: string): Pr
   });
 }
 
+/**
+ * Chegara KENG qo'yilgan va buning sababi bor: O'zbekistonda mobil
+ * operatorlar yuzlab abonentni bitta tashqi IP ortida ushlaydi (CGNAT),
+ * xuddi shunday — universitet yoki ofis Wi-Fi. Tor chegara (soatiga
+ * 10 ta) haqiqiy ayollarni ilovaga kirita olmasdi.
+ *
+ * Bu yerda himoya qilinayotgan narsa — bazani bo'sh qatorlar bilan
+ * to'ldirib yuborish, ya'ni chegara "bot toshqinini" to'xtatsa yetarli.
+ * Blok ham qisqa: 10 daqiqa.
+ */
+const ANON_SIGNUP_MAX_ATTEMPTS = 60;
+const ANON_SIGNUP_WINDOW_SECONDS = 60 * 60;
+const ANON_SIGNUP_BLOCK_SECONDS = 10 * 60;
+
+export async function checkAnonymousSignupRateLimit(ipKey: string): Promise<void> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT attempt_count, window_start, blocked_until FROM anonymous_signup_attempts WHERE ip_key = ${ipKey}
+  `) as unknown as { attempt_count: number; window_start: string; blocked_until: string | null }[];
+  const row = rows[0];
+  const nowMs = Date.now();
+
+  if (row?.blocked_until && new Date(row.blocked_until).getTime() > nowMs) {
+    throw new ApiError(429, "Juda ko'p urinish — birozdan keyin qayta urinib ko'ring");
+  }
+  const windowExpired = !row || new Date(row.window_start).getTime() + ANON_SIGNUP_WINDOW_SECONDS * 1000 < nowMs;
+  if (windowExpired) {
+    await sql`
+      INSERT INTO anonymous_signup_attempts (ip_key, attempt_count, window_start, blocked_until)
+      VALUES (${ipKey}, 1, ${new Date(nowMs).toISOString()}, NULL)
+      ON CONFLICT (ip_key) DO UPDATE SET attempt_count = 1, window_start = EXCLUDED.window_start, blocked_until = NULL
+    `;
+    return;
+  }
+  const newCount = (row?.attempt_count ?? 0) + 1;
+  if (newCount > ANON_SIGNUP_MAX_ATTEMPTS) {
+    const blockedUntil = new Date(nowMs + ANON_SIGNUP_BLOCK_SECONDS * 1000).toISOString();
+    await sql`UPDATE anonymous_signup_attempts SET attempt_count = ${newCount}, blocked_until = ${blockedUntil} WHERE ip_key = ${ipKey}`;
+    throw new ApiError(429, "Juda ko'p urinish — birozdan keyin qayta urinib ko'ring");
+  }
+  await sql`UPDATE anonymous_signup_attempts SET attempt_count = ${newCount} WHERE ip_key = ${ipKey}`;
+}
+
 export async function createTelegramUser(
   telegramUserId: string,
   language: Language,
@@ -236,6 +282,7 @@ export async function createTelegramUser(
       createdAt,
       avatarUrl,
       isBlocked: false,
+      hasTelegram: true,
       lastLocationLat: null,
       lastLocationLng: null,
       lastLocationAt: null,
@@ -268,6 +315,7 @@ export async function createUserWithIdentifier(
       createdAt,
       avatarUrl: null,
       isBlocked: false,
+      hasTelegram: false,
       lastLocationLat: null,
       lastLocationLng: null,
       lastLocationAt: null,

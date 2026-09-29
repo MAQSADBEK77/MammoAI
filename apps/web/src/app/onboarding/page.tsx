@@ -569,6 +569,33 @@ function OnboardingPageInner() {
   const router = useRouter();
 
   /**
+   * AUTH-04: sessiya bo'lmasa ANONIM hisob ochiladi.
+   *
+   * Shusiz onboardingning oxiridagi saqlash (PATCH /api/onboarding) 401
+   * bilan yiqilardi va ayol "kira olmadim" holatida qolardi — aynan
+   * shu holatni foydalanuvchi ko'rsatdi.
+   */
+  const anonymousStartedRef = useRef(false);
+  useEffect(() => {
+    // DIQQAT: `status === "anonymous"` — "ONBOARDINGNI TUGATMAGAN"
+    // degani, "sessiyasi yo'q" degani EMAS (lib/session.tsx). Shuni
+    // chalkashtirib, har ochilishda YANGI anonim hisob ochib yuborgan
+    // edim — sinovda bitta o'tishda ikkita hisob paydo bo'ldi.
+    // Shuning uchun shart FOYDALANUVCHINING O'ZIGA qaraydi.
+    if (user || sessionStatus === "loading" || sessionStatus === "error") return;
+    if (anonymousStartedRef.current) return;
+    anonymousStartedRef.current = true;
+    api.auth
+      .anonymous(language)
+      .then(applyMeResponse)
+      .catch(() => {
+        // Tarmoq yiqildi — keyingi urinish oxirgi qadamda (saqlashda)
+        // bo'ladi va u yerda xato ayolga ko'rsatiladi.
+        anonymousStartedRef.current = false;
+      });
+  }, [user, sessionStatus, language, applyMeResponse]);
+
+  /**
    * ONB-GUARD-01: onboardingni ALLAQACHON tugatgan ayol bu sahifaga
    * tushmasligi kerak.
    *
@@ -685,7 +712,14 @@ function OnboardingPageInner() {
     const base: Step[] = [
       "welcome",
       "language",
-      "account_choice",
+      // AUTH-04: "account_choice" (kirish ekrani) ro'yxatdan OLIB
+      // TASHLANDI. U ilovaning eshigida turardi: ayol hali bironta
+      // ekranni ko'rmasdan turib Telegram bilan kirishi kerak edi, veb
+      // foydalanuvchisi esa umuman kira olmasdi (Google "tez kunda").
+      //
+      // Endi onboarding shunchaki savollardan iborat, sessiya esa fonda
+      // ANONIM ochiladi. Hisob keyin, ayrim funksiyalar uchun so'raladi
+      // ("Menda akkaunt bor" havolasi til qadamida turadi).
       // ONB-PHONE-01: `account_identifier` va `phone_verify` ro'yxatdan
       // olib tashlandi — kirish ekranida telefon varianti yo'q, ya'ni bu
       // ikki qadamga boradigan yo'l qolmagan. Ro'yxatda qoldirilsa, ular
