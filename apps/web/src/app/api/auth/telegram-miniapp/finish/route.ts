@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { normalizeKnownPhone } from "@mammoai/shared";
-import { ApiError, jsonError } from "@/server/api-utils";
+import { normalizeKnownPhone, resolvePhoneLink } from "@mammoai/shared";
+import { ApiError, getAuthenticatedUser, jsonError } from "@/server/api-utils";
 import {
   createUserWithIdentifier,
   deleteMiniAppPending,
@@ -10,6 +10,8 @@ import {
   getUserById,
   hasPremiumAccess,
   linkTelegramToUser,
+  moveTelegramLink,
+  updateUser,
 } from "@/server/repo";
 import { requireVerifiedTelegramUser } from "@/server/telegram-miniapp-auth";
 import { signSession, SESSION_COOKIE, sessionCookieOptions } from "@/server/session";
@@ -51,9 +53,42 @@ export async function POST(request: NextRequest) {
     // (fromTelegram=1 bo'lsa ham SAQLANADI, boshqa Telegram-orqali
     // qadamlardan farqli — apps/web/src/app/onboarding/page.tsx) o'zi tanlaydi.
     const existing = await findUserByIdentifier(phone);
-    const { user, tokenVersion } = existing
-      ? { user: existing, tokenVersion: existing.tokenVersion }
-      : await createUserWithIdentifier(phone, "uz");
+
+    // AUTH-04: bu paytda ayol ALLAQACHON anonim hisob bilan ishlayotgan
+    // bo'lishi mumkin (va unda sikl yozuvlari bo'lishi mumkin). Shuning
+    // uchun "telefon bo'yicha yangi hisob ochish" — noto'g'ri standart:
+    // u ayolning ma'lumotini ko'rinmas qilib qo'yardi. Qaror
+    // `resolvePhoneLink`da, testlar bilan.
+    const current = await getAuthenticatedUser(request);
+    const action = resolvePhoneLink({
+      currentUserId: current?.id ?? null,
+      currentUserHasPhone: !!current?.phone,
+      existingUserId: existing?.id ?? null,
+    });
+
+    let user;
+    let tokenVersion;
+    switch (action.kind) {
+      case "switch-to-existing":
+        if (action.moveTelegramFrom) await moveTelegramLink(action.moveTelegramFrom, action.userId);
+        user = existing!;
+        tokenVersion = existing!.tokenVersion;
+        break;
+      case "attach-phone":
+        await updateUser(action.userId, { phone });
+        user = (await getUserById(action.userId))!;
+        tokenVersion = user.tokenVersion;
+        break;
+      case "already-linked":
+        user = current!;
+        tokenVersion = current!.tokenVersion;
+        break;
+      default: {
+        const created = await createUserWithIdentifier(phone, "uz");
+        user = created.user;
+        tokenVersion = created.tokenVersion;
+      }
+    }
 
     await linkTelegramToUser(user.id, { telegramUserId, name: fullName, avatarUrl: tgUser.photo_url ?? null });
     await deleteMiniAppPending(telegramUserId);
@@ -66,7 +101,7 @@ export async function POST(request: NextRequest) {
       onboardingProfile,
       hasPremium,
       token,
-      isNewAccount: !existing,
+      isNewAccount: action.kind === "create-account",
     });
     res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
     return res;

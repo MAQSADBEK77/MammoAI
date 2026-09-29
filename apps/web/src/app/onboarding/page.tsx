@@ -36,6 +36,7 @@ import {
   resolveRestoreStep,
   resolveNotificationsChoice,
 } from "@mammoai/shared";
+import type { Dictionary, Language } from "@mammoai/shared";
 import { TodayBackdrop } from "@/components/screens/TodayBackdrop";
 import { useI18n } from "@/lib/i18n";
 import { useTelegram } from "@/lib/telegram";
@@ -76,7 +77,8 @@ type Step =
   | "family_history"
   | "sexually_active"
   | "last_checkup"
-  | "height_weight"
+  | "height"
+  | "weight"
   | "notifications"
   | "analyzing";
 
@@ -107,7 +109,8 @@ const CANONICAL_STEPS: Step[] = [
   "family_history",
   "sexually_active",
   "last_checkup",
-  "height_weight",
+  "height",
+  "weight",
   "notifications",
   "analyzing",
 ];
@@ -380,7 +383,8 @@ const STEP_SECTION: Partial<Record<Step, 0 | 1 | 2>> = {
   family_history: 2,
   sexually_active: 2,
   last_checkup: 2,
-  height_weight: 2,
+  height: 2,
+  weight: 2,
   notifications: 2,
 };
 
@@ -575,6 +579,26 @@ function OnboardingPageInner() {
    * bilan yiqilardi va ayol "kira olmadim" holatida qolardi — aynan
    * shu holatni foydalanuvchi ko'rsatdi.
    */
+  /**
+   * ONB-LANG-01: tanlangan til SERVERGA ham yoziladi.
+   *
+   * Foydalanuvchi ko'rsatgan xato: onboardingda rus tili tanlangan, lekin
+   * ilovaga kirgach hammasi yana o'zbekchaga qaytgan. Sabab — til faqat
+   * mijozda (i18n holatida) o'zgarardi, `/api/onboarding` esa uni
+   * saqlamasdi. Ilova yuklanganda `applyMeResponse` serverdagi qiymatni
+   * (standart "uz") qo'yib, tanlovni bosib ketardi.
+   *
+   * Endi tanlash paytining o'zida saqlanadi: shunda onboarding yarmida
+   * tashlab ketilsa ham til joyida qoladi.
+   */
+  const chooseLanguage = (next: Language) => {
+    setLanguage(next);
+    api.me.update({ language: next }).catch(() => {
+      // Saqlanmadi — mijozdagi tanlov baribir amal qiladi, keyingi
+      // yangilanishda qayta urinamiz.
+    });
+  };
+
   const anonymousStartedRef = useRef(false);
   useEffect(() => {
     // DIQQAT: `status === "anonymous"` — "ONBOARDINGNI TUGATMAGAN"
@@ -805,7 +829,7 @@ function OnboardingPageInner() {
         // ya'ni bachadon bo'yni skriningi baribir tavsiya qilinadi.
         tail.push("last_checkup");
       }
-      tail.push("height_weight");
+      tail.push("height", "weight");
       tail.push("notifications", "analyzing");
       return [...list, ...tail];
     }
@@ -1154,8 +1178,10 @@ function OnboardingPageInner() {
         return survey.sexuallyActive !== null;
       case "last_checkup":
         return survey.lastCheckup !== null;
-      case "height_weight":
-        return survey.heightCm.length > 0 && survey.weightKg.length > 0;
+      case "height":
+        return survey.heightCm.length > 0;
+      case "weight":
+        return survey.weightKg.length > 0;
       case "notifications":
         // Endi majburiy tanlov emas — "Yoqish" tugmasi ixtiyoriy, pastdagi
         // "Keyingisi" bilan har doim davom etish mumkin (Flo/Clue uslubidagi
@@ -1191,7 +1217,12 @@ function OnboardingPageInner() {
         isSheet ? "" : "px-6 pb-[calc(env(safe-area-inset-bottom)+3rem)]",
         step === "welcome" ? "h-dvh bg-aurora-cycle" : step === "account_choice" ? "h-dvh" : "h-dvh bg-background"
       )}
-      style={{ paddingTop: isSheet ? 0 : "calc(var(--tg-safe-area-top) + 2rem)" }}
+      // ONB-SPACING-01: ilgari bu yerda `+ 2rem` turardi. `--tg-safe-area-top`
+      // ning O'ZI allaqachon qurilma tirqishi VA Telegram sarlavha panelini
+      // qo'shib beradi (lib/telegram.ts), ya'ni 2rem — shundan keyingi
+      // QO'SHIMCHA bo'sh joy edi. Telegram to'liq ekranda natija: tepada
+      // 32 px quruq oq maydon (foydalanuvchi skrinshot bilan ko'rsatdi).
+      style={{ paddingTop: isSheet ? 0 : "calc(var(--tg-safe-area-top) + 0.5rem)" }}
     >
       {/* ONB-LOOK-01: bosh sahifaning ("Bugun") foni — nusxa emas, O'SHA
           komponent. Shu sababli kirish ekranidagi gradient va sekin suzuvchi
@@ -1209,7 +1240,7 @@ function OnboardingPageInner() {
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 z-0 px-6 text-center"
-          style={{ paddingTop: "calc(var(--tg-safe-area-top) + 3rem)" }}
+          style={{ paddingTop: "calc(var(--tg-safe-area-top) + 1.5rem)" }}
         >
           <p className="text-xl font-extrabold leading-snug text-text-primary/70">
             {dict.onboarding.backdropCycle}
@@ -1348,10 +1379,10 @@ function OnboardingPageInner() {
         {step === "language" && (
           <div className="flex flex-1 flex-col items-center justify-start gap-4">
             <h2 className="text-center mb-2 text-2xl font-bold text-text-primary">{dict.onboarding.languageTitle}</h2>
-            <LangOption flag="🇺🇿" label="O'zbekcha (lotin)" active={language === "uz"} onClick={() => setLanguage("uz")} />
-            <LangOption flag="🇺🇿" label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onClick={() => setLanguage("uz-cyrl")} />
-            <LangOption flag="🇷🇺" label="Русский" active={language === "ru"} onClick={() => setLanguage("ru")} />
-            <LangOption flag="🇺🇸" label="English" active={language === "en"} onClick={() => setLanguage("en")} />
+            <LangOption flag="🇺🇿" label="O'zbekcha (lotin)" active={language === "uz"} onClick={() => chooseLanguage("uz")} />
+            <LangOption flag="🇺🇿" label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onClick={() => chooseLanguage("uz-cyrl")} />
+            <LangOption flag="🇷🇺" label="Русский" active={language === "ru"} onClick={() => chooseLanguage("ru")} />
+            <LangOption flag="🇺🇸" label="English" active={language === "en"} onClick={() => chooseLanguage("en")} />
 
             {/* AUTH-03: endi ilovaga TELEFONSIZ kiriladi, ya'ni ilgari
                 telefon bilan ro'yxatdan o'tgan ayolga yangi, bo'sh hisob
@@ -1868,99 +1899,71 @@ function OnboardingPageInner() {
           />
         )}
 
-        {step === "height_weight" && (
-          <div className="flex flex-1 flex-col justify-start gap-5">
-            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">{dict.onboarding.heightWeightTitle}</h2>
-
-            {/* Metrik/Imperial birlik tanlovi — bosilganda joriy qiymat bir martagina
-                boshqa birlikka o'giriladi, keyin har bir tizim o'z holatini saqlaydi. */}
-            <div className="mx-auto flex rounded-full border border-border bg-surface p-1">
-              <button
-                type="button"
-                onClick={() =>
-                  setSurvey((s) =>
-                    s.useImperialUnits
-                      ? { ...s, useImperialUnits: false, heightCm: String(feetInchesToCm(s.heightFeet, s.heightInches)), weightKg: String(lbToKg(s.weightLb)) }
-                      : s
-                  )
-                }
-                className={clsx(
-                  "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
-                  !survey.useImperialUnits ? "bg-primary text-white" : "text-text-secondary"
-                )}
-              >
-                {dict.onboarding.unitsMetric}
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setSurvey((s) => {
-                    if (s.useImperialUnits) return s;
-                    const { feet, inches } = cmToFeetInches(Number(s.heightCm) || 165);
-                    return { ...s, useImperialUnits: true, heightFeet: feet, heightInches: inches, weightLb: kgToLb(Number(s.weightKg) || 60) };
-                  })
-                }
-                className={clsx(
-                  "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
-                  survey.useImperialUnits ? "bg-primary text-white" : "text-text-secondary"
-                )}
-              >
-                {dict.onboarding.unitsImperial}
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <p className="text-center text-sm font-semibold text-text-secondary">{dict.onboarding.heightLabel}</p>
-              {survey.useImperialUnits ? (
-                <div className="mx-auto flex w-full max-w-xs gap-3">
-                  <WheelPicker
-                    rows={3}
-                    compact
-                    options={HEIGHT_FEET_OPTIONS}
-                    value={survey.heightFeet}
-                    suffix={dict.onboarding.unitFeet}
-                    onChange={(feet) => setSurvey((s) => ({ ...s, heightFeet: feet }))}
-                  />
-                  <WheelPicker
-                    rows={3}
-                    compact
-                    options={HEIGHT_INCHES_OPTIONS}
-                    value={survey.heightInches}
-                    suffix={dict.onboarding.unitInches}
-                    onChange={(inches) => setSurvey((s) => ({ ...s, heightInches: inches }))}
-                  />
-                </div>
-              ) : (
+        {/* ONB-SPLIT-01: bo'y va vazn ALOHIDA ekranlarda.
+            Ilgari ikkalasi bitta oynada, ikkita g'ildirak ustma-ust
+            turardi — kichik ekranda ular siqilib, pastdagi tugma bilan
+            deyarli qo'shilib ketardi va qaysi g'ildirak nimaniki ekani
+            darrov tushunarsiz edi. Foydalanuvchi ikki marta so'radi. */}
+        {step === "height" && (
+          <div className="flex flex-1 flex-col justify-start gap-6">
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">
+              {dict.onboarding.heightTitle}
+            </h2>
+            <UnitsToggle survey={survey} setSurvey={setSurvey} dict={dict} />
+            {survey.useImperialUnits ? (
+              <div className="mx-auto flex w-full max-w-xs gap-3">
                 <WheelPicker
-                  rows={3}
-                  options={HEIGHT_CM_OPTIONS}
-                  value={Number(survey.heightCm) || 165}
-                  suffix={dict.onboarding.unitCm}
-                  onChange={(v) => setSurvey((s) => ({ ...s, heightCm: String(v) }))}
+                  rows={5}
+                  compact
+                  options={HEIGHT_FEET_OPTIONS}
+                  value={survey.heightFeet}
+                  suffix={dict.onboarding.unitFeet}
+                  onChange={(feet) => setSurvey((s) => ({ ...s, heightFeet: feet }))}
                 />
-              )}
-            </div>
+                <WheelPicker
+                  rows={5}
+                  compact
+                  options={HEIGHT_INCHES_OPTIONS}
+                  value={survey.heightInches}
+                  suffix={dict.onboarding.unitInches}
+                  onChange={(inches) => setSurvey((s) => ({ ...s, heightInches: inches }))}
+                />
+              </div>
+            ) : (
+              <WheelPicker
+                rows={5}
+                options={HEIGHT_CM_OPTIONS}
+                value={Number(survey.heightCm) || 165}
+                suffix={dict.onboarding.unitCm}
+                onChange={(v) => setSurvey((s) => ({ ...s, heightCm: String(v) }))}
+              />
+            )}
+          </div>
+        )}
 
-            <div className="flex flex-col gap-2">
-              <p className="text-center text-sm font-semibold text-text-secondary">{dict.onboarding.weightLabel}</p>
-              {survey.useImperialUnits ? (
-                <WheelPicker
-                  rows={3}
-                  options={WEIGHT_LB_OPTIONS}
-                  value={survey.weightLb}
-                  suffix={dict.onboarding.unitLb}
-                  onChange={(lb) => setSurvey((s) => ({ ...s, weightLb: lb }))}
-                />
-              ) : (
-                <WheelPicker
-                  rows={3}
-                  options={WEIGHT_KG_OPTIONS}
-                  value={Number(survey.weightKg) || 60}
-                  suffix={dict.onboarding.unitKg}
-                  onChange={(v) => setSurvey((s) => ({ ...s, weightKg: String(v) }))}
-                />
-              )}
-            </div>
+        {step === "weight" && (
+          <div className="flex flex-1 flex-col justify-start gap-6">
+            <h2 className="text-center text-[1.75rem] font-extrabold leading-tight text-text-primary">
+              {dict.onboarding.weightTitle}
+            </h2>
+            <UnitsToggle survey={survey} setSurvey={setSurvey} dict={dict} />
+            {survey.useImperialUnits ? (
+              <WheelPicker
+                rows={5}
+                options={WEIGHT_LB_OPTIONS}
+                value={survey.weightLb}
+                suffix={dict.onboarding.unitLb}
+                onChange={(lb) => setSurvey((s) => ({ ...s, weightLb: lb }))}
+              />
+            ) : (
+              <WheelPicker
+                rows={5}
+                options={WEIGHT_KG_OPTIONS}
+                value={Number(survey.weightKg) || 60}
+                suffix={dict.onboarding.unitKg}
+                onChange={(v) => setSurvey((s) => ({ ...s, weightKg: String(v) }))}
+              />
+            )}
           </div>
         )}
 
@@ -2567,5 +2570,63 @@ function GoogleIcon() {
       <path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C1 16.3 0 20 0 24s1 7.7 2.6 10.8l7.9-6.1z" />
       <path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.5-5.9l-7.6-5.9c-2 1.4-4.7 2.4-7.9 2.4-6.4 0-11.7-3.7-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z" />
     </svg>
+  );
+}
+
+/**
+ * ONB-SPLIT-01: metrik/imperial tanlovi — bo'y va vazn ekranlarida
+ * BIR XIL. Alohida komponent, chunki ikkita nusxa bo'lsa biri
+ * o'zgarganda ikkinchisi ortda qolardi (bu fayl tarixida shunday
+ * xato allaqachon bo'lgan).
+ */
+function UnitsToggle({
+  survey,
+  setSurvey,
+  dict,
+}: {
+  survey: SurveyState;
+  setSurvey: React.Dispatch<React.SetStateAction<SurveyState>>;
+  dict: Dictionary;
+}) {
+  return (
+    <div className="mx-auto flex rounded-full border border-border bg-surface p-1">
+      <button
+        type="button"
+        onClick={() =>
+          setSurvey((s) =>
+            s.useImperialUnits
+              ? {
+                  ...s,
+                  useImperialUnits: false,
+                  heightCm: String(feetInchesToCm(s.heightFeet, s.heightInches)),
+                  weightKg: String(lbToKg(s.weightLb)),
+                }
+              : s
+          )
+        }
+        className={clsx(
+          "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
+          !survey.useImperialUnits ? "bg-primary text-white" : "text-text-secondary"
+        )}
+      >
+        {dict.onboarding.unitsMetric}
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          setSurvey((s) => {
+            if (s.useImperialUnits) return s;
+            const { feet, inches } = cmToFeetInches(Number(s.heightCm) || 165);
+            return { ...s, useImperialUnits: true, heightFeet: feet, heightInches: inches, weightLb: kgToLb(Number(s.weightKg) || 60) };
+          })
+        }
+        className={clsx(
+          "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
+          survey.useImperialUnits ? "bg-primary text-white" : "text-text-secondary"
+        )}
+      >
+        {dict.onboarding.unitsImperial}
+      </button>
+    </div>
   );
 }
