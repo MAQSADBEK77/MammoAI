@@ -28,6 +28,7 @@ export * from "./logic/doctor-report";
 export * from "./logic/memoize-async";
 export * from "./logic/notification-choice";
 export * from "./logic/onboarding-steps";
+export * from "./logic/phone-link";
 export * from "./logic/risk-quiz";
 export * from "./logic/goal";
 export * from "./logic/clinic-display";

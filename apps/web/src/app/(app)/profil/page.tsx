@@ -351,7 +351,17 @@ export default function ProfilePage() {
             )}
             {/* FIX-02: telefon endi doim faqat ko'rsatish uchun — o'zgartirish
                 qayta tasdiqlashsiz xavfli (apps/web/src/app/api/me/route.ts). */}
-            <p className="truncate text-sm text-white/80">{user.phone || dict.profile.phonePlaceholder}</p>
+            {/* AUTH-03: endi telefon IXTIYORIY (Telegram'dan telefonsiz
+                kirish mumkin). Raqami yo'q ayolga uni ulash yo'li
+                ko'rinib tursin: bu hisobni boshqa qurilmada ochish va
+                tiklashning yagona yo'li. */}
+            {user.phone ? (
+              <p className="truncate text-sm text-white/80">{user.phone}</p>
+            ) : (
+              <Link href="/kirish" className="truncate text-sm font-semibold text-white/90 underline underline-offset-4">
+                {dict.auth.linkTitle}
+              </Link>
+            )}
           </div>
 
           <button

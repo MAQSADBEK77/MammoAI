@@ -171,6 +171,80 @@ export async function findUserByIdentifier(identifier: string): Promise<(User & 
  * kelishi shart emas"). Xavfsizlik pasayadi (identifikator bilishning o'zi
  * kirish uchun yetarli), lekin bu ongli tanlangan tezkor-ro'yxatdan o'tish yechimi.
  */
+/**
+ * AUTH-03: Telegram shaxsi bo'yicha hisob — TELEFONSIZ.
+ *
+ * Nega telefon so'ralmaydi: Telegram `initData` imzolangan va biz uni bot
+ * tokeni bilan tekshiramiz, ya'ni shaxs ALLAQACHON tasdiqlangan. Telefon
+ * bu yerda hech qanday xavfsizlik qo'shmasdi — faqat ilovaning eng
+ * birinchi qadamida eng maxfiy ma'lumotni so'rardi.
+ *
+ * O'lchandi (production, 2026-09-29): 188 ayolning hammasi telefon bergan,
+ * ularning 40 tasi (21%) shundan keyin onboardingni tashlab ketgan.
+ *
+ * Telefon endi IXTIYORIY: ayol keyinchalik uni hisobni tiklash yoki veb
+ * orqali kirish uchun qo'shishi mumkin.
+ */
+/**
+ * AUTH-03: Telegram bog'lanishini bir hisobdan boshqasiga ko'chiradi.
+ *
+ * Kerak bo'ladigan holat: ayol ilgari TELEFON bilan ro'yxatdan o'tgan,
+ * endi Mini App unga yangi bo'sh hisob ochib bergan. Raqamini
+ * tasdiqlagach, Telegram bog'lanishi ESKI hisobga o'tishi kerak — aks
+ * holda u keyingi safar yana bo'sh hisobga tushib qolardi.
+ *
+ * `telegram_user_id` ustunida UNIQUE indeks bor, shuning uchun avval
+ * eskisidan uziladi, keyin yangisiga bog'lanadi — bitta tranzaksiyada.
+ */
+export async function moveTelegramLink(fromUserId: string, toUserId: string): Promise<void> {
+  await ensureSchema();
+  await sql.begin(async (tx) => {
+    const rows = (await tx`SELECT telegram_user_id FROM users WHERE id = ${fromUserId}`) as unknown as {
+      telegram_user_id: string | null;
+    }[];
+    const telegramUserId = rows[0]?.telegram_user_id ?? null;
+    if (!telegramUserId) return;
+    await tx`UPDATE users SET telegram_user_id = NULL WHERE id = ${fromUserId}`;
+    await tx`UPDATE users SET telegram_user_id = ${telegramUserId} WHERE id = ${toUserId}`;
+  });
+}
+
+export async function createTelegramUser(
+  telegramUserId: string,
+  language: Language,
+  name: string | null,
+  avatarUrl: string | null
+): Promise<{ user: User; tokenVersion: number }> {
+  await ensureSchema();
+  const id = randomUUID();
+  const createdAt = now();
+  await sql`
+    INSERT INTO users (id, language, created_at, telegram_user_id, name, avatar_url)
+    VALUES (${id}, ${language}, ${createdAt}, ${telegramUserId}, ${name}, ${avatarUrl})
+  `;
+  return {
+    user: {
+      id,
+      phone: null,
+      email: null,
+      name,
+      region: null,
+      language,
+      fontScale: "normal",
+      theme: "system",
+      notificationsEnabled: true,
+      createdAt,
+      avatarUrl,
+      isBlocked: false,
+      lastLocationLat: null,
+      lastLocationLng: null,
+      lastLocationAt: null,
+      pet: null,
+    },
+    tokenVersion: 0,
+  };
+}
+
 export async function createUserWithIdentifier(
   identifier: string,
   language: Language

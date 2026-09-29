@@ -1,7 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { normalizeKnownPhone } from "@mammoai/shared";
-import { jsonError, ApiError } from "@/server/api-utils";
-import { createUserWithIdentifier, findUserByIdentifier, getOnboardingProfile, hasPremiumAccess, verifyPhoneCode } from "@/server/repo";
+import { normalizeKnownPhone, resolvePhoneLink } from "@mammoai/shared";
+import { jsonError, ApiError, getAuthenticatedUser } from "@/server/api-utils";
+import {
+  createUserWithIdentifier,
+  findUserByIdentifier,
+  getOnboardingProfile,
+  getUserById,
+  hasPremiumAccess,
+  moveTelegramLink,
+  updateUser,
+  verifyPhoneCode,
+} from "@/server/repo";
 import { signSession, SESSION_COOKIE, sessionCookieOptions } from "@/server/session";
 
 interface VerifyBody {
@@ -28,9 +37,46 @@ export async function POST(request: NextRequest) {
     // moslikni ta'minlaydi (izoh: apps/web/src/app/api/auth/phone-code/start/route.ts).
     const identifier = normalizeKnownPhone(result.phone) ?? result.phone;
     const existing = await findUserByIdentifier(identifier);
-    const { user, tokenVersion } = existing
-      ? { user: existing, tokenVersion: existing.tokenVersion }
-      : await createUserWithIdentifier(identifier, result.language);
+
+    // AUTH-03: endi Telegram'dan kirgan ayolda TELEFONSIZ hisob bo'lishi
+    // mumkin, ya'ni bu yerda u allaqachon tizimda bo'lishi mumkin. Qaror
+    // `resolvePhoneLink`da (packages/shared), testlar bilan — bu yerda
+    // faqat bajariladi.
+    const current = await getAuthenticatedUser(request);
+    const action = resolvePhoneLink({
+      currentUserId: current?.id ?? null,
+      currentUserHasPhone: !!current?.phone,
+      existingUserId: existing?.id ?? null,
+    });
+
+    let user;
+    let tokenVersion;
+    switch (action.kind) {
+      case "switch-to-existing": {
+        if (action.moveTelegramFrom) await moveTelegramLink(action.moveTelegramFrom, action.userId);
+        user = existing!;
+        tokenVersion = existing!.tokenVersion;
+        break;
+      }
+      case "attach-phone": {
+        await updateUser(action.userId, { phone: identifier });
+        const refreshed = await getUserById(action.userId);
+        if (!refreshed) throw new ApiError(500, "Hisob topilmadi");
+        user = refreshed;
+        tokenVersion = refreshed.tokenVersion;
+        break;
+      }
+      case "already-linked": {
+        user = current!;
+        tokenVersion = current!.tokenVersion;
+        break;
+      }
+      default: {
+        const created = await createUserWithIdentifier(identifier, result.language);
+        user = created.user;
+        tokenVersion = created.tokenVersion;
+      }
+    }
 
     const token = signSession({ sub: user.id, tokenVersion });
     const [onboardingProfile, hasPremium] = await Promise.all([getOnboardingProfile(user.id), hasPremiumAccess(user.id)]);
@@ -39,7 +85,7 @@ export async function POST(request: NextRequest) {
       onboardingProfile,
       hasPremium,
       token,
-      isNewAccount: !existing,
+      isNewAccount: action.kind === "create-account",
     });
     res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
     return res;

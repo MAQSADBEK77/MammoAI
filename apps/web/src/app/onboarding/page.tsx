@@ -1298,6 +1298,18 @@ function OnboardingPageInner() {
             <LangOption flag="🇺🇿" label="Ўзбекча (кирилл)" active={language === "uz-cyrl"} onClick={() => setLanguage("uz-cyrl")} />
             <LangOption flag="🇷🇺" label="Русский" active={language === "ru"} onClick={() => setLanguage("ru")} />
             <LangOption flag="🇺🇸" label="English" active={language === "en"} onClick={() => setLanguage("en")} />
+
+            {/* AUTH-03: endi ilovaga TELEFONSIZ kiriladi, ya'ni ilgari
+                telefon bilan ro'yxatdan o'tgan ayolga yangi, bo'sh hisob
+                ochiladi. Uning eski tarixiga qaytadigan yo'l KO'RINIB
+                turishi kerak — aks holda u ilovani "ma'lumotlarim
+                yo'qolibdi" deb yopardi. */}
+            <Link
+              href="/kirish"
+              className="mt-2 text-sm font-semibold text-text-muted underline underline-offset-4"
+            >
+              {dict.auth.haveAccount}
+            </Link>
           </div>
         )}
 
