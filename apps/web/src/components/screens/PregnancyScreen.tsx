@@ -324,7 +324,7 @@ export function PregnancyScreen() {
                     milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizeEmoji
                   ] ?? "🍋"
                 }
-                size={26}
+                size={40}
                 fallback="none"
               />
             )}
