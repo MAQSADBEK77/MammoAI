@@ -132,7 +132,7 @@ export function PregnancyWeekDetail({ currentWeek, onClose }: { currentWeek: num
                     milestone.sizeComparisonKey.replace("size.", "") as keyof typeof dict.pregnancy.sizeEmoji
                   ] ?? "🍋"
                 }
-                size={34}
+                size={48}
               />
             </span>
             <div className="min-w-0 space-y-0.5 text-sm">
