@@ -563,10 +563,30 @@ export default function OnboardingPage() {
 
 function OnboardingPageInner() {
   const { dict, language, setLanguage } = useI18n();
-  const { applyMeResponse, user } = useSession();
+  const { applyMeResponse, user, status: sessionStatus, onboardingProfile } = useSession();
   const searchParams = useSearchParams();
   const { resolve: resolveIllustration } = useIllustrations();
   const router = useRouter();
+
+  /**
+   * ONB-GUARD-01: onboardingni ALLAQACHON tugatgan ayol bu sahifaga
+   * tushmasligi kerak.
+   *
+   * Foydalanuvchi ko'rsatgan holat ("kirishni bosaman, yuklanadi va yana
+   * o'sha sahifaga qaytadi"): Telegram'dan kirgach `/tg` uni
+   * `/onboarding`ga yuborardi, bu sahifa esa sessiyaga qaramasdan
+   * birinchi savoldan boshlardi. Ayol ilovaga kira olmay, aylanib
+   * qolardi.
+   *
+   * Endi sessiya "onboarded" bo'lsa — to'g'ridan-to'g'ri ilovaga.
+   */
+  useEffect(() => {
+    if (sessionStatus !== "onboarded" || !onboardingProfile) return;
+    const timeout = setTimeout(() => {
+      router.replace(landingPath(onboardingProfile.primaryGoal));
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [sessionStatus, onboardingProfile, router]);
 
   const [survey, setSurvey] = useState<SurveyState>(INITIAL_SURVEY);
   const [stepIndex, setStepIndex] = useState(0);
