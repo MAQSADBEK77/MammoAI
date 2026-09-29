@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { extractUzPhoneDigits } from "@mammoai/shared";
+import { normalizeKnownPhone } from "@mammoai/shared";
 import { ApiError, jsonError } from "@/server/api-utils";
 import {
   createUserWithIdentifier,
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Telegram kontaktidan kelgan raqam "+" siz keladi (masalan "998901234567") —
     // saytdagi/mobildagi bilan BIR XIL "+998XXXXXXXXX" formatiga o'giriladi,
     // aks holda bir xil odam ikki xil qatorli akkaunt bilan tugashi mumkin edi.
-    const phone = extractUzPhoneDigits(rawPhone);
+    const phone = normalizeKnownPhone(rawPhone);
     if (!phone) throw new ApiError(400, "Faqat O'zbekiston telefon raqamlari qo'llab-quvvatlanadi");
 
     const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ").trim() || null;
