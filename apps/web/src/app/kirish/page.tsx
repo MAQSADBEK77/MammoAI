@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import {
@@ -36,7 +36,7 @@ export default function LinkAccountPage() {
   const router = useRouter();
   const t = dict.auth;
 
-  const { webApp, isTelegram, initData } = useTelegram();
+  const { webApp, isTelegram, initData, status: telegramStatus } = useTelegram();
   const { applyMeResponse } = useSession();
   /**
    * AUTH-05: Telegram ichida raqamni QO'LDA yozish va kod kutish ortiqcha —
@@ -48,6 +48,19 @@ export default function LinkAccountPage() {
    */
   const [tgBusy, setTgBusy] = useState(false);
   const [tgError, setTgError] = useState<string | null>(null);
+
+  /**
+   * AUTH-06: Telegram ichida telefon+kod yo'li KO'RINMAYDI.
+   *
+   * Foydalanuvchi: "bitta yoki uzog'i ikkita click bilan qiladigan
+   * qilish kerak... alohida telegram botga qaytadigan emas".
+   *
+   * Telegram raqamni o'zi, bitta oynada beradi (`requestContact`) —
+   * botga qaytish ham, kod terish ham shart emas. Telefon+kod esa
+   * VEB uchun kerak, shuning uchun u yo'qotilmadi: kichik havola
+   * ortida turadi.
+   */
+  const [showPhoneForm, setShowPhoneForm] = useState(false);
 
   const [country, setCountry] = useState<PhoneCountry>(DEFAULT_PHONE_COUNTRY);
   const [phone, setPhone] = useState(DEFAULT_PHONE_COUNTRY.dial);
@@ -104,6 +117,23 @@ export default function LinkAccountPage() {
     });
   }
 
+  /**
+   * AUTH-06: Mini App ichida oyna O'ZI ochiladi.
+   *
+   * Foydalanuvchi "Hisobimni ulash"ni bosib shu sahifaga keldi — niyati
+   * allaqachon aniq. Yana bitta tugma qo'yish ortiqcha bosish bo'lardi,
+   * u esa "bitta bosishda bo'lsin" degandi. Tugma baribir qoladi:
+   * oynani yopib qo'ysa yoki xato chiqsa, qayta urinish uchun.
+   */
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (!isTelegram || !webApp || !initData || autoStartedRef.current) return;
+    autoStartedRef.current = true;
+    const timer = setTimeout(() => linkWithTelegram(), 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- faqat bir marta, Telegram tayyor bo'lganda
+  }, [isTelegram, webApp, initData]);
+
   async function start() {
     if (!e164) return;
     setBusy(true);
@@ -141,20 +171,33 @@ export default function LinkAccountPage() {
       <h1 className="text-2xl font-extrabold text-text-primary">{t.linkTitle}</h1>
       <p className="mt-2 text-sm leading-relaxed text-text-secondary">{t.linkSubtitle}</p>
 
+      {/* Telegram aniqlanmaguncha telefon formasini KO'RSATMAYMIZ:
+          aks holda Mini App'da ayol avval "raqamingizni yozing" ni
+          ko'rib, keyin tugma paydo bo'lardi — aynan shu chalkashlikni
+          foydalanuvchi ko'rsatdi. */}
+      {telegramStatus === "checking" && <p className="mt-8 text-center text-sm text-text-muted">{dict.common.loading}</p>}
+
       {isTelegram && (
-        <div className="mt-7 space-y-2">
+        <div className="mt-7 space-y-3">
           <Button onClick={linkWithTelegram} disabled={tgBusy}>
-            {t.linkTelegram}
+            {tgBusy ? dict.common.loading : t.linkTelegram}
           </Button>
           <p className="text-center text-xs leading-relaxed text-text-muted">{t.linkTelegramHint}</p>
           {tgError && <p className="text-center text-sm font-medium text-danger">{tgError}</p>}
-          <p className="pt-3 text-center text-xs font-semibold uppercase tracking-wide text-text-muted">
-            {t.linkByPhone}
-          </p>
+          {!showPhoneForm && (
+            <button
+              type="button"
+              onClick={() => setShowPhoneForm(true)}
+              className="w-full pt-2 text-center text-xs font-semibold text-text-muted underline underline-offset-4"
+            >
+              {t.linkByPhone}
+            </button>
+          )}
         </div>
       )}
 
-      {!token ? (
+      {(!isTelegram && telegramStatus !== "checking") || showPhoneForm ? (
+        !token ? (
         <div className="mt-4 space-y-4">
           <div className="flex gap-2">
             {PHONE_COUNTRIES.map((c) => (
@@ -211,7 +254,8 @@ export default function LinkAccountPage() {
             {t.confirm}
           </Button>
         </div>
-      )}
+        )
+      ) : null}
 
       {error && <p className="mt-4 text-sm font-medium text-danger">{error}</p>}
 
