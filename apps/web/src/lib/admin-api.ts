@@ -25,6 +25,8 @@ export interface AdminUserSummary extends User {
   primaryGoal: OnboardingProfile["primaryGoal"] | null;
   cycleLogsCount: number;
   lastActiveAt: string | null;
+  /** ADMIN-03: sinov hisobimi — ro'yxatda ko'rsatiladi. */
+  isTestAccount: boolean;
 }
 
 // ADMIN-001 — alohida admin hisoblari va audit-jurnal.

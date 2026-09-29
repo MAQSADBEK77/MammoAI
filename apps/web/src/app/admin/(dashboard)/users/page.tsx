@@ -132,6 +132,7 @@ export default function AdminUsersPage() {
               <tr className="border-b border-border text-xs font-semibold uppercase tracking-wide text-text-muted">
                 <th className="px-5 py-3">Foydalanuvchi</th>
                 <th className="px-5 py-3">Til</th>
+                <th className="px-5 py-3">Hisob turi</th>
                 <th className="px-5 py-3">Maqsad</th>
                 {/* OVERNIGHT-18: Klinikalar bo'limidagi "eng yaqinlarini
                     topish" orqali (foydalanuvchi ruxsat bergandagina)
@@ -148,14 +149,14 @@ export default function AdminUsersPage() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={9} className="px-5 py-10 text-center text-text-muted">
+                  <td colSpan={10} className="px-5 py-10 text-center text-text-muted">
                     Yuklanmoqda…
                   </td>
                 </tr>
               )}
               {!loading && users.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-5 py-10 text-center text-text-muted">
+                  <td colSpan={10} className="px-5 py-10 text-center text-text-muted">
                     Hech narsa topilmadi
                   </td>
                 </tr>
@@ -171,6 +172,21 @@ export default function AdminUsersPage() {
                       <Badge tone="muted">
                         {u.language === "ru" ? "RU" : u.language === "en" ? "EN" : u.language === "uz-cyrl" ? "UZ (кирилл)" : "UZ"}
                       </Badge>
+                    </td>
+                    {/* ADMIN-03: hisob turi. Anonim rejim qo'shilgandan keyin
+                        ro'yxatda "Ism kiritilmagan" qatorlar paydo bo'ldi va
+                        ular kimligi ko'rinmasdi — sinov hisobimi, haqiqiy
+                        anonim foydalanuvchimi yoki ro'yxatdan o'tganmi. */}
+                    <td className="px-5 py-3">
+                      {u.isTestAccount ? (
+                        <Badge tone="warning">Sinov</Badge>
+                      ) : u.phone ? (
+                        <Badge tone="success">Telefon</Badge>
+                      ) : u.hasTelegram ? (
+                        <Badge tone="success">Telegram</Badge>
+                      ) : (
+                        <Badge tone="muted">Anonim</Badge>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-text-secondary">{u.primaryGoal ? (GOAL_LABELS[u.primaryGoal] ?? u.primaryGoal) : "—"}</td>
                     <td className="px-5 py-3 text-text-secondary">
