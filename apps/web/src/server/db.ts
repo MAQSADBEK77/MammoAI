@@ -871,6 +871,17 @@ async function initSchema() {
     // PREG-BAG-01: tug'ruqxona sumkasi ro'yxatidagi belgilar.
     // Ro'yxatning O'ZI kodda (kontent, tarjimalari bilan) — bazada
     // faqat foydalanuvchi nimani belgilagani turadi.
+    // AUTH-04: anonim hisob yaratish — hech qanday shaxs talab
+    // qilinmaydi, ya'ni uni bot ham chaqira oladi. IP bo'yicha cheklov
+    // bazadagi "bo'sh hisob" toshqinining oldini oladi.
+    () => sql`
+      CREATE TABLE IF NOT EXISTS anonymous_signup_attempts (
+        ip_key TEXT PRIMARY KEY,
+        attempt_count INTEGER NOT NULL,
+        window_start TEXT NOT NULL,
+        blocked_until TEXT
+      )
+    `,
     () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_bag_items (
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

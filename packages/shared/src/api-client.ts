@@ -231,6 +231,11 @@ export function createApiClient(config: ApiClientConfig) {
 
   return {
     auth: {
+      /** AUTH-04: ro'yxatdan o'tmasdan kirish — ilovaning eshigidagi
+       *  to'siqni olib tashlaydi. Hisob serverda ochiladi, lekin unda
+       *  na telefon, na Telegram bo'ladi. */
+      anonymous: (language: Language) =>
+        request<MeResponse>("/api/auth/anonymous", { method: "POST", body: JSON.stringify({ language }) }),
       /** 1-qadam — telefon raqam yuboriladi, Telegram botga olib boradigan
        * chuqur havola qaytadi. Foydalanuvchi shuni bosib, botda "Start"
        * bosishi kerak (shundagina kod yuboriladi). */
