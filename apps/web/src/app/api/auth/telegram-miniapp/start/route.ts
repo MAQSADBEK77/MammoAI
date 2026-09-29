@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jsonError } from "@/server/api-utils";
-import { findUserByTelegramId, getOnboardingProfile, upsertMiniAppPending } from "@/server/repo";
+import { createTelegramUser, findUserByTelegramId, getOnboardingProfile } from "@/server/repo";
 import { requireVerifiedTelegramUser } from "@/server/telegram-miniapp-auth";
 import { signSession, SESSION_COOKIE, sessionCookieOptions } from "@/server/session";
 
@@ -10,9 +10,20 @@ interface StartBody {
 
 /**
  * Mini App ochilganda birinchi chaqiriladigan endpoint — `initData`ni
- * tasdiqlaydi. Bu Telegram akkaunt allaqachon akkauntga bog'langan bo'lsa
- * (`users.telegram_user_id`) — sessiya darhol o'rnatiladi, tugadi. Aks holda
- * telefon raqamni Telegram orqali (requestContact) olish kerak bo'ladi.
+ * tasdiqlaydi va sessiyani o'rnatadi.
+ *
+ * AUTH-03: ilgari YANGI foydalanuvchidan avval TELEFON so'ralardi
+ * (`needsContact: true` -> Telegram kontakt oynasi). Endi so'ralmaydi.
+ *
+ * Nega: `initData` bot tokeni bilan imzolangan va biz uni tekshiramiz,
+ * ya'ni shaxs allaqachon tasdiqlangan — telefon hech qanday xavfsizlik
+ * qo'shmasdi. U faqat ilovaning eng birinchi qadamida, hali hech narsa
+ * ko'rsatilmasdan turib, eng maxfiy ma'lumotni so'rardi. O'lchandi:
+ * telefon bergan 188 ayolning 40 tasi (21%) shundan keyin onboardingni
+ * tashlab ketgan.
+ *
+ * Telefon endi ixtiyoriy va KEYINROQ so'raladi — hisobni tiklash yoki
+ * veb orqali kirish kerak bo'lganda (kontakt oqimi o'z joyida qoldi).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -21,18 +32,25 @@ export async function POST(request: NextRequest) {
     const telegramUserId = String(tgUser.id);
 
     const existing = await findUserByTelegramId(telegramUserId);
-    if (existing) {
-      const token = signSession({ sub: existing.id, tokenVersion: existing.tokenVersion });
-      const res = NextResponse.json({
-        loggedIn: true,
-        onboarded: !!(await getOnboardingProfile(existing.id)),
-      });
-      res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
-      return res;
-    }
+    const account =
+      existing ??
+      (
+        await createTelegramUser(
+          telegramUserId,
+          tgUser.language_code === "ru" ? "ru" : "uz",
+          [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ") || null,
+          tgUser.photo_url ?? null
+        )
+      ).user;
+    const tokenVersion = existing ? existing.tokenVersion : 0;
 
-    await upsertMiniAppPending(telegramUserId);
-    return NextResponse.json({ loggedIn: false, needsContact: true });
+    const token = signSession({ sub: account.id, tokenVersion });
+    const res = NextResponse.json({
+      loggedIn: true,
+      onboarded: !!(await getOnboardingProfile(account.id)),
+    });
+    res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
+    return res;
   } catch (error) {
     return jsonError(error);
   }
