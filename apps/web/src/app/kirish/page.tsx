@@ -11,6 +11,8 @@ import {
   type PhoneCountry,
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
+import { useTelegram } from "@/lib/telegram";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui";
 
@@ -34,6 +36,19 @@ export default function LinkAccountPage() {
   const router = useRouter();
   const t = dict.auth;
 
+  const { webApp, isTelegram, initData } = useTelegram();
+  const { applyMeResponse } = useSession();
+  /**
+   * AUTH-05: Telegram ichida raqamni QO'LDA yozish va kod kutish ortiqcha —
+   * Telegram buni bir bosishda beradi (`requestContact`). Foydalanuvchi
+   * ko'rsatdi: kod kelmadi va u shu ekranda qolib ketdi.
+   *
+   * Shuning uchun Mini App ichida ASOSIY yo'l — Telegram tugmasi;
+   * telefon+kod esa pastda, zaxira sifatida qoladi (veb uchun).
+   */
+  const [tgBusy, setTgBusy] = useState(false);
+  const [tgError, setTgError] = useState<string | null>(null);
+
   const [country, setCountry] = useState<PhoneCountry>(DEFAULT_PHONE_COUNTRY);
   const [phone, setPhone] = useState(DEFAULT_PHONE_COUNTRY.dial);
   const [token, setToken] = useState<string | null>(null);
@@ -48,6 +63,45 @@ export default function LinkAccountPage() {
     setCountry(next);
     // Raqamning milliy qismi saqlanadi, faqat prefiks almashadi.
     setPhone(formatPhoneInput(phone.replace(country.dial, ""), next));
+  }
+
+  function linkWithTelegram() {
+    if (!webApp || !initData) return;
+    setTgError(null);
+    setTgBusy(true);
+    webApp.requestContact((shared) => {
+      if (!shared) {
+        setTgBusy(false);
+        return;
+      }
+      // Raqam webhook orqali keladi — tayyor bo'lgunga qadar so'rab
+      // turamiz (Telegram javobi darhol emas).
+      let tries = 0;
+      const timer = setInterval(async () => {
+        tries += 1;
+        try {
+          const status = await api.auth.telegramMiniAppStatus(initData);
+          if (!status.phoneReady) {
+            if (tries > 30) {
+              clearInterval(timer);
+              setTgBusy(false);
+              setTgError(t.linkTelegramFailed);
+            }
+            return;
+          }
+          clearInterval(timer);
+          const res = await api.auth.telegramMiniAppFinish(initData);
+          applyMeResponse(res);
+          router.replace("/asosiy");
+        } catch {
+          if (tries > 30) {
+            clearInterval(timer);
+            setTgBusy(false);
+            setTgError(t.linkTelegramFailed);
+          }
+        }
+      }, 2000);
+    });
   }
 
   async function start() {
@@ -87,8 +141,21 @@ export default function LinkAccountPage() {
       <h1 className="text-2xl font-extrabold text-text-primary">{t.linkTitle}</h1>
       <p className="mt-2 text-sm leading-relaxed text-text-secondary">{t.linkSubtitle}</p>
 
+      {isTelegram && (
+        <div className="mt-7 space-y-2">
+          <Button onClick={linkWithTelegram} disabled={tgBusy}>
+            {t.linkTelegram}
+          </Button>
+          <p className="text-center text-xs leading-relaxed text-text-muted">{t.linkTelegramHint}</p>
+          {tgError && <p className="text-center text-sm font-medium text-danger">{tgError}</p>}
+          <p className="pt-3 text-center text-xs font-semibold uppercase tracking-wide text-text-muted">
+            {t.linkByPhone}
+          </p>
+        </div>
+      )}
+
       {!token ? (
-        <div className="mt-7 space-y-4">
+        <div className="mt-4 space-y-4">
           <div className="flex gap-2">
             {PHONE_COUNTRIES.map((c) => (
               <button
