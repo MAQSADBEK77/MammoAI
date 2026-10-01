@@ -23,6 +23,10 @@ export type ReminderKind =
   | { kind: "period-soon"; days: number }
   | { kind: "period-late"; days: number }
   | { kind: "period-confirm" }
+  /** Hayz boshlangan, bugun belgilanmagan — davom etyaptimi? */
+  | { kind: "period-ongoing"; day: number }
+  /** Kutilgan davomiylik tugadi, lekin "tugadi" deb belgilanmagan. */
+  | { kind: "period-ended-ask" }
   | { kind: "fertile-window" }
   /** Bugun hech narsa belgilanmagan. */
   | { kind: "log-today" }
@@ -59,6 +63,20 @@ export interface ReminderInput {
    * ilovaga ishonchni yo'qotadi.
    */
   daysSinceLastFlowLog: number | null;
+  /**
+   * PERIOD-TRACK-01: hozir davom etayotgan hayz.
+   *
+   * Nega kerak: ayol odatda faqat BIRINCHI kunni belgilaydi, keyin
+   * unutadi. Natijada kalendarda bitta kun to'liq bo'yalgan, qolgani
+   * chiziqcha-chiziqcha (bashorat) bo'lib qoladi — foydalanuvchi aynan
+   * shuni so'radi: "boshlangan bo'lsa nega hali ham bashoratdek?".
+   *
+   * Ikkinchi oqibati jiddiyroq: hayz DAVOMIYLIGI hech qachon
+   * o'rganilmaydi, ya'ni bashorat yaxshilanmaydi.
+   *
+   * `dayIndex` — hayzning nechanchi kuni (1 dan).
+   */
+  periodInProgress: { dayIndex: number; expectedLength: number; loggedToday: boolean } | null;
   prediction: {
     daysUntilNextPeriod: number;
     fertileWindowStart: string;
@@ -160,6 +178,17 @@ export function resolveReminder(input: ReminderInput): ReminderKind {
     (input.daysSinceCheckupNudge === null || input.daysSinceCheckupNudge >= CHECKUP_NUDGE_INTERVAL_DAYS)
   ) {
     return { kind: "checkup-overdue", count: input.overdueCheckups };
+  }
+
+  // PERIOD-TRACK-01: davom etayotgan hayz haqidagi savol sikl VAQTI
+  // haqidagi xabarlardan OLDIN turadi — u bashorat emas, ayolning o'z
+  // qaydini davom ettirish taklifi, ya'ni hech qanday ziddiyat yo'q.
+  const inProgress = input.periodInProgress;
+  if (inProgress && !inProgress.loggedToday) {
+    if (inProgress.dayIndex <= inProgress.expectedLength) {
+      return { kind: "period-ongoing", day: inProgress.dayIndex };
+    }
+    return { kind: "period-ended-ask" };
   }
 
   const p = input.prediction;
