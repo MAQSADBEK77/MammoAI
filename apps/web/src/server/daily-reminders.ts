@@ -7,7 +7,7 @@
 // kelishilgan). Ustuvorlik: hayz/unumdor kun yaqinlashgani > bugun hali
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
-import { daysBetween, detectPeriodStarts, deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
+import { daysBetween, lastFlowStreakStart, deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
 import {
   createSystemNotification,
@@ -97,8 +97,9 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
    * davomiylikdan ikki kun ko'p bo'lsa, hayz tugagan deb hisoblaymiz va
    * boshqa so'ramaymiz (aks holda savol cheksiz takrorlanardi).
    */
-  const periodStarts = needsCycleData ? detectPeriodStarts(logs) : [];
-  const lastStart = periodStarts[periodStarts.length - 1] ?? null;
+  // PERIOD-TRACK-03: dog'lanish ham savol berish uchun yetarli — ekrandagi
+  // karta bilan BIR XIL qoida (packages/shared/logic/flow-streak.ts).
+  const lastStart = needsCycleData ? lastFlowStreakStart(logs) : null;
   const expectedLength = prediction?.averagePeriodLength ?? settings?.averagePeriodLength ?? 5;
   const dayIndex = lastStart ? daysBetween(lastStart, tashkentDateStr()) + 1 : null;
   const periodInProgress =

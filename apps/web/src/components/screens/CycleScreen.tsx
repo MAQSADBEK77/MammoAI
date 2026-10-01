@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
-import { detectPeriodStarts as buildPeriodStarts, daysBetween, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { lastFlowStreakStart, daysBetween, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/analytics";
 import { useConfirm } from "@/lib/confirm";
@@ -531,8 +531,13 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
    *
    * Yechim — bitta bosish: "ha, davom etyapti".
    */
-  const periodStartsLogged = buildPeriodStarts(data.logs);
-  const lastLoggedStart = periodStartsLogged[periodStartsLogged.length - 1] ?? null;
+  // PERIOD-TRACK-03: savol uchun DOG'LANISH ham yetarli. `detectPeriodStarts`
+  // uni ataylab e'tiborsiz qoldiradi (bashorat uchun to'g'ri), lekin ayol
+  // uni belgilagan va kalendar uni to'liq bo'yab ko'rsatadi — shundan keyin
+  // ilovaning jim qolishi "belgilash hech narsani o'zgartirmadi" degan
+  // taassurot berardi. O'lchandi: oxirgi 7 kunda qayd qilgan 35 ayoldan
+  // 5 tasi FAQAT dog'lanish belgilagan.
+  const lastLoggedStart = lastFlowStreakStart(data.logs);
   const expectedPeriodLength = data.prediction?.averagePeriodLength ?? data.settings.averagePeriodLength ?? 5;
   const ongoingDayIndex = lastLoggedStart ? daysBetween(lastLoggedStart, today) + 1 : null;
   const showOngoingPrompt =
