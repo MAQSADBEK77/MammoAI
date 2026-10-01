@@ -69,6 +69,15 @@ export interface TodayHeaderProps {
    * hayz paytida "Edit period dates"). `null` — hech narsa ko'rsatilmaydi
    * (masalan ma'lumot yetarli emas va da'vo qilish noto'g'ri bo'lardi). */
   heroChip: { label: string; onClick?: () => void; solid?: boolean } | null;
+  /**
+   * PERIOD-TRACK-02: hero ostidagi, AMALLARDAN OLDINGI joy.
+   *
+   * Foydalanuvchi "hayzingiz davom etyaptimi?" kartasini ko'rmadi:
+   * u amal tugmalaridan KEYIN turardi va telefon ekranida pastda
+   * qolib ketardi ("why still it is not applied"). Eng muhim savol
+   * aylantirishni talab qilmasligi kerak.
+   */
+  heroSlot?: React.ReactNode;
   /** PET-01: 18 yoshgacha bo'lgan foydalanuvchining uy hayvoni. `null` —
    * ko'rsatilmaydi (tanlanmagan yoki foydalanuvchi katta yoshda). */
   pet: Pet | null;
@@ -105,6 +114,7 @@ export function TodayHeader({
   onHeroClick,
   heroStatus,
   heroChip,
+  heroSlot,
   pet,
   onPetTap,
   actions,
@@ -395,6 +405,8 @@ export function TodayHeader({
       </div>
 
       {/* 4. Tezkor amallar — dumaloq tugmalar, yozuv doira OSTIDA. */}
+      {heroSlot}
+
       <div className="flex items-start justify-center gap-5 sm:gap-7">
         {actions.map(({ key, icon, label, onClick, primary, active }) => (
           <button
