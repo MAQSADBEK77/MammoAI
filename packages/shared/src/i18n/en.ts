@@ -1466,6 +1466,7 @@ const en: Dictionary = {
     periodToday: "Your period is expected to start today 🩷",
     periodTomorrow: "Your period is expected to start tomorrow — get ready 🩷",
     periodSoon: (days: number) => `Your period starts in ${days} days 🩷`,
+    periodConfirm: "Your period is expected around now. If it has started, log it — that makes the forecast more accurate 🩷",
     periodLate: (days: number) => `Your period is ${days} day${days === 1 ? "" : "s"} late — that can be normal too, but keep an eye on it 🩷`,
     fertileWindow: "You're currently in your fertile window. If you notice ovulation signs, log them in the app — it sharpens the prediction 🌸",
     finishSetup: "You haven't finished setting up. A couple of questions left — then cycle predictions and reminders start working 🌸",

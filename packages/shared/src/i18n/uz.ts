@@ -1612,6 +1612,7 @@ const uz = {
     periodToday: "Bugun hayzingiz boshlanishi kutilmoqda 🩷",
     periodTomorrow: "Ertaga hayzingiz boshlanishi kutilmoqda — tayyorgarlik ko'ring 🩷",
     periodSoon: (days: number) => `${days} kundan keyin hayzingiz boshlanadi 🩷`,
+    periodConfirm: "Hayzingiz shu kunlarda kutilyapti. Boshlangan bo'lsa, belgilab qo'ying — shunda bashorat aniqroq bo'ladi 🩷",
     periodLate: (days: number) => `Hayzingiz ${days} kun kechikmoqda — bu me'yorda bo'lishi ham mumkin, lekin kuzatib boring 🩷`,
     // CYCLE-ALGO-12: ovulyatsiya signalini qayd etishga nozik taklif —
     // ilovaga qaytganda bashoratni aniqlashtirish imkoniyatini eslatadi.

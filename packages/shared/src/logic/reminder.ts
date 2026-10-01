@@ -22,6 +22,7 @@ export type ReminderKind =
   | { kind: "period-tomorrow" }
   | { kind: "period-soon"; days: number }
   | { kind: "period-late"; days: number }
+  | { kind: "period-confirm" }
   | { kind: "fertile-window" }
   /** Bugun hech narsa belgilanmagan. */
   | { kind: "log-today" }
@@ -43,10 +44,42 @@ export interface ReminderInput {
   /** Tekshiruv haqida oxirgi marta necha kun oldin eslatilgan. Hech qachon
    * eslatilmagan bo'lsa `null`. */
   daysSinceCheckupNudge: number | null;
+  /**
+   * REMIND-03: oxirgi hayz qaydidan beri necha kun o'tgan (dog'lanish ham
+   * hisoblanadi). Hech qachon qayd qilmagan bo'lsa `null`.
+   *
+   * Nega kerak: ayol hayzini belgilaganda ham bot "hayzingiz kechikmoqda"
+   * deb yozardi. O'lchandi (production, 2026-10-01): "kechikmoqda" xabarini
+   * oladigan 20 ayolning uchtasida oxirgi 10 kun ichida hayz qaydi bor edi.
+   * Ulardan biri 2 kun oldin dog'lanish belgilagan — va ertasiga
+   * "kechikmoqda" xabarini olgan.
+   *
+   * Sabab: dog'lanish ATAYLAB sikl boshlanishi hisoblanmaydi (tibbiy
+   * jihatdan to'g'ri), lekin xabar ayolning o'z qaydiga ZID chiqadi va
+   * ilovaga ishonchni yo'qotadi.
+   */
+  daysSinceLastFlowLog: number | null;
   prediction: {
     daysUntilNextPeriod: number;
     fertileWindowStart: string;
     fertileWindowEnd: string;
+    /**
+     * Bashorat eskirganmi (STALE_PREDICTION_DAYS dan ko'p kechikish).
+     * Ekranda bunday holatda "ma'lumot eskirgan, oxirgi hayzni yangilang"
+     * deyiladi — bot esa shu paytgacha "kechikmoqda" deb yozaverardi.
+     * Ikki joyda ikki xil gap.
+     */
+    isStale: boolean;
+    /**
+     * Ilova kamida bitta TO'LIQ siklni ko'rganmi.
+     *
+     * O'lchandi (production, 2026-10-01): "kechikmoqda" xabarini oladigan
+     * 15 ayolning HAMMASIDA bu nol edi — ya'ni kechikish bitta onboarding
+     * javobidan va standart 28 kundan taxmin qilingan. Bunday holatda
+     * "hayzingiz 5 kun kechikmoqda" deyish asossiz va qo'rqitadi
+     * (kechikish — ko'pchilik uchun avvalo homiladorlik savoli).
+     */
+    cyclesAnalyzed: number;
   } | null;
 }
 
@@ -60,6 +93,16 @@ export const PERIOD_SOON_DAYS_AHEAD = 2;
  * emas, zerikarli.
  */
 export const PERIOD_LATE_MAX_DAYS_TO_NOTIFY = 7;
+
+/**
+ * REMIND-03: hayz qaydidan keyin necha kun davomida sikl vaqti haqidagi
+ * xabarlar YUBORILMAYDI.
+ *
+ * Uch kun: hayz qayd etilgan bo'lsa, keyingi uch kun ichida "kechikmoqda"
+ * ham, "ertaga boshlanadi" ham ayolning o'z qaydiga zid bo'ladi. Bu
+ * davrda kundalik belgilashga chaqirish mazmunliroq.
+ */
+export const RECENT_FLOW_QUIET_DAYS = 3;
 
 /**
  * Onboardingni tugatmaganlarga yuboriladigan eng ko'p xabar soni.
@@ -120,14 +163,24 @@ export function resolveReminder(input: ReminderInput): ReminderKind {
   }
 
   const p = input.prediction;
-  if (p) {
+  // REMIND-03: ikkita holatda sikl VAQTI haqidagi xabarlar umuman
+  // yuborilmaydi — ular ayolning o'z qaydiga yoki ilovaning o'z
+  // ekraniga zid chiqardi:
+  //   1) bashorat eskirgan (ekranda "ma'lumot eskirgan" deyiladi);
+  //   2) ayol yaqinda hayz qaydini kiritgan.
+  const recentlyLoggedFlow =
+    input.daysSinceLastFlowLog !== null && input.daysSinceLastFlowLog <= RECENT_FLOW_QUIET_DAYS;
+  if (p && !p.isStale && !recentlyLoggedFlow) {
     if (p.daysUntilNextPeriod === 0) return { kind: "period-today" };
     if (p.daysUntilNextPeriod === 1) return { kind: "period-tomorrow" };
     if (p.daysUntilNextPeriod > 1 && p.daysUntilNextPeriod <= PERIOD_SOON_DAYS_AHEAD) {
       return { kind: "period-soon", days: p.daysUntilNextPeriod };
     }
     if (p.daysUntilNextPeriod < 0 && p.daysUntilNextPeriod >= -PERIOD_LATE_MAX_DAYS_TO_NOTIFY) {
-      return { kind: "period-late", days: -p.daysUntilNextPeriod };
+      // Hech qanday to'liq sikl kuzatilmagan bo'lsa, "kechikmoqda" deb
+      // DA'VO qilmaymiz — buni bilmaymiz. O'rniga tasdiqlashni so'raymiz:
+      // bu ham foydali (bashoratni aniqlashtiradi), ham halol.
+      return p.cyclesAnalyzed > 0 ? { kind: "period-late", days: -p.daysUntilNextPeriod } : { kind: "period-confirm" };
     }
     if (input.today >= p.fertileWindowStart && input.today <= p.fertileWindowEnd) {
       return { kind: "fertile-window" };

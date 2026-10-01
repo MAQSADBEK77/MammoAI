@@ -7,7 +7,7 @@
 // kelishilgan). Ustuvorlik: hayz/unumdor kun yaqinlashgani > bugun hali
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
-import { deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
+import { daysBetween, deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
 import {
   createSystemNotification,
@@ -82,6 +82,21 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
   const adaptive = needsCycleData && settings ? deriveAdaptiveCycleSettings(logs, settings) : null;
   const prediction = adaptive ? predictCycle(adaptive) : null;
 
+  /**
+   * REMIND-03: oxirgi hayz qaydidan beri necha kun o'tgan.
+   *
+   * Dog'lanish ham hisoblanadi — u sikl boshlanishi SANALMAYDI (tibbiy
+   * jihatdan to'g'ri), lekin ayol uchun bu "men belgiladim" degani va
+   * shundan keyin "kechikmoqda" xabarini olish ilovaga bo'lgan ishonchni
+   * yo'q qiladi.
+   */
+  const lastFlowDate = logs
+    .filter((l) => l.flow)
+    .map((l) => l.date)
+    .sort()
+    .pop();
+  const daysSinceLastFlowLog = lastFlowDate ? daysBetween(lastFlowDate, tashkentDateStr()) : null;
+
   const decision = resolveReminder({
     today: tashkentDateStr(),
     hasOnboarding: !!onboarding,
@@ -96,8 +111,11 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
           daysUntilNextPeriod: prediction.daysUntilNextPeriod,
           fertileWindowStart: prediction.fertileWindowStart,
           fertileWindowEnd: prediction.fertileWindowEnd,
+          isStale: prediction.isStale,
+          cyclesAnalyzed: prediction.cyclesAnalyzed,
         }
       : null,
+    daysSinceLastFlowLog,
   });
 
   switch (decision.kind) {
@@ -123,6 +141,8 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
       return log(dict.reminders.periodSoon(decision.days));
     case "period-late":
       return log(dict.reminders.periodLate(decision.days));
+    case "period-confirm":
+      return log(dict.reminders.periodConfirm);
     case "fertile-window":
       return log(dict.reminders.fertileWindow);
     case "log-today":
