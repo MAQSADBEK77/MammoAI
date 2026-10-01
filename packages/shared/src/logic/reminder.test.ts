@@ -12,6 +12,7 @@ function base(over: Partial<ReminderInput> = {}): ReminderInput {
     overdueCheckups: 0,
     daysSinceCheckupNudge: null,
     daysSinceLastFlowLog: null,
+    periodInProgress: null,
     prediction: { daysUntilNextPeriod: 18, fertileWindowStart: "2026-10-05", fertileWindowEnd: "2026-10-11", isStale: false, cyclesAnalyzed: 3 },
     ...over,
   };
@@ -179,5 +180,35 @@ describe("REMIND-03 — asossiz 'kechikmoqda' da'vosi", () => {
     const p = { daysUntilNextPeriod: -4, fertileWindowStart: "2026-10-05", fertileWindowEnd: "2026-10-11", isStale: false };
     expect(resolveReminder(base({ prediction: { ...p, cyclesAnalyzed: 0 } })).kind).toBe("period-confirm");
     expect(resolveReminder(base({ prediction: { ...p, cyclesAnalyzed: 2 } })).kind).toBe("period-late");
+  });
+});
+
+describe("PERIOD-TRACK-01 — davom etayotgan hayz", () => {
+  it("boshlangan va bugun belgilanmagan bo'lsa — davom etyaptimi deb so'raydi", () => {
+    // Foydalanuvchi: "boshlangan bo'lsa nega hali ham bashoratdek
+    // chiziqcha-chiziqcha?" — chunki qolgan kunlar belgilanmagan.
+    const r = resolveReminder(base({ periodInProgress: { dayIndex: 2, expectedLength: 5, loggedToday: false } }));
+    expect(r).toEqual({ kind: "period-ongoing", day: 2 });
+  });
+
+  it("bugun allaqachon belgilangan bo'lsa bezovta qilmaydi", () => {
+    const r = resolveReminder(base({ periodInProgress: { dayIndex: 2, expectedLength: 5, loggedToday: true } }));
+    expect(r.kind).not.toBe("period-ongoing");
+  });
+
+  it("kutilgan davomiylik tugagach — 'tugadimi?' deb so'raydi", () => {
+    // Bu savolsiz hayz DAVOMIYLIGI hech qachon o'rganilmaydi.
+    const r = resolveReminder(base({ periodInProgress: { dayIndex: 7, expectedLength: 5, loggedToday: false } }));
+    expect(r).toEqual({ kind: "period-ended-ask" });
+  });
+
+  it("davom etayotgan hayz sikl bashoratidan ustun", () => {
+    // Aks holda "ertaga boshlanadi" kabi xabar hayz ketayotgan paytda
+    // chiqib qolardi.
+    const r = resolveReminder(base({
+      periodInProgress: { dayIndex: 3, expectedLength: 5, loggedToday: false },
+      prediction: { daysUntilNextPeriod: 1, fertileWindowStart: "2026-10-05", fertileWindowEnd: "2026-10-11", isStale: false, cyclesAnalyzed: 3 },
+    }));
+    expect(r.kind).toBe("period-ongoing");
   });
 });

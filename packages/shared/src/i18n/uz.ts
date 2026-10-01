@@ -400,6 +400,10 @@ const uz = {
     // 2026-09-18 UX qayta qurish: bosh ekrandagi 3 ta tezkor amal tugmasi
     // uchun — "Batafsil kiritish" bo'limining flowCardLabel/symptomsCardLabel'idan
     // farqli, qisqaroq tugma matnlari.
+    ongoingTitle: "Hayzingiz davom etyaptimi?",
+    ongoingSubtitle: (day: number) => `${day}-kun. Belgilansa, kalendarda bashorat emas, haqiqiy kun bo'lib qoladi.`,
+    ongoingYes: "Ha, davom etyapti",
+    ongoingEnded: "Tugadi",
     logFlowButton: "Sikl belgilash",
     checkinButton: "Check-in",
     // TODAY-01: bosh ekranning ikki qatorli markaziy bloki — kichik yorliq
@@ -1612,6 +1616,8 @@ const uz = {
     periodToday: "Bugun hayzingiz boshlanishi kutilmoqda 🩷",
     periodTomorrow: "Ertaga hayzingiz boshlanishi kutilmoqda — tayyorgarlik ko'ring 🩷",
     periodSoon: (days: number) => `${days} kundan keyin hayzingiz boshlanadi 🩷`,
+    periodOngoing: (day: number) => `Hayzingizning ${day}-kuni. Bugun ham davom etyaptimi? Bir bosishda belgilab qo'ying 🩷`,
+    periodEndedAsk: "Hayzingiz tugadimi? Oxirgi kunini belgilab qo'ysangiz, keyingi bashorat aniqroq bo'ladi 🩷",
     periodConfirm: "Hayzingiz shu kunlarda kutilyapti. Boshlangan bo'lsa, belgilab qo'ying — shunda bashorat aniqroq bo'ladi 🩷",
     periodLate: (days: number) => `Hayzingiz ${days} kun kechikmoqda — bu me'yorda bo'lishi ham mumkin, lekin kuzatib boring 🩷`,
     // CYCLE-ALGO-12: ovulyatsiya signalini qayd etishga nozik taklif —

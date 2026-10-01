@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
-import { fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { detectPeriodStarts as buildPeriodStarts, daysBetween, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/analytics";
 import { useConfirm } from "@/lib/confirm";
@@ -161,6 +161,8 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   const [predictionsUpdated, setPredictionsUpdated] = useState(false);
   // PET-01: uy hayvonini tanlash varag'i — faqat 18 yoshgacha.
   const [showPetPicker, setShowPetPicker] = useState(false);
+  /** PERIOD-TRACK-01: "tugadi" deyilgach shu sessiyada qayta so'ramaymiz. */
+  const [ongoingDismissed, setOngoingDismissed] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   /** TODAY-09: homiladorlik ehtimoli qatoridagi ⓘ oynasi. */
   const [showChanceInfo, setShowChanceInfo] = useState(false);
@@ -515,6 +517,31 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // darajasi" Badge'i va alohida "hayz kuni" Badge'i BUTUNLAY OLIB
   // TASHLANDI — ularning ma'nosi endi to'g'ridan-to'g'ri sarlavhaning
   // o'ziga singdirilgan.
+  /**
+   * PERIOD-TRACK-01 — davom etayotgan hayzni bir bosishda belgilash.
+   *
+   * Foydalanuvchi so'radi: "boshlangan bo'lsa va belgilangan bo'lsa, nega
+   * hali ham bashoratdek chiziqcha-chiziqcha turibdi?". Sabab oddiy:
+   * ayol odatda FAQAT birinchi kunni belgilaydi, qolgan kunlar esa
+   * belgilanmagan — shuning uchun kalendar ularni bashorat sifatida
+   * ko'rsatadi (haqiqatan ham shunday).
+   *
+   * Ikkinchi oqibati jiddiyroq: hayz DAVOMIYLIGI hech qachon
+   * o'rganilmaydi, ya'ni bashorat yillab yaxshilanmaydi.
+   *
+   * Yechim — bitta bosish: "ha, davom etyapti".
+   */
+  const periodStartsLogged = buildPeriodStarts(data.logs);
+  const lastLoggedStart = periodStartsLogged[periodStartsLogged.length - 1] ?? null;
+  const expectedPeriodLength = data.prediction?.averagePeriodLength ?? data.settings.averagePeriodLength ?? 5;
+  const ongoingDayIndex = lastLoggedStart ? daysBetween(lastLoggedStart, today) + 1 : null;
+  const showOngoingPrompt =
+    ongoingDayIndex !== null &&
+    ongoingDayIndex >= 2 &&
+    ongoingDayIndex <= expectedPeriodLength + 2 &&
+    !hasTodayLog &&
+    !ongoingDismissed;
+
   const isOnPeriod = periodDay !== null;
 
   // 0-BOSQICH: kutilgan sana KELGAN yoki O'TGAN, lekin hech narsa qayd
@@ -1249,6 +1276,44 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
 
       {/* 5. Kunlik maslahat kartasi — iliq, "sizga atalgan" ohangdagi matn
           (dict.cycle.dailyInsights, mazmuni o'zgarmagan, faqat ohang). */}
+      {/* PERIOD-TRACK-01: hayz davom etayotgan bo'lsa — bitta bosish.
+          Shu bitta tugma kalendardagi "chiziqcha-chiziqcha" kunni haqiqiy
+          kunga aylantiradi va hayz davomiyligini o'rgatadi. */}
+      {showOngoingPrompt && (
+        <Card className="space-y-3">
+          <div>
+            <p className="text-base font-bold text-text-primary">{dict.cycle.ongoingTitle}</p>
+            <p className="mt-0.5 text-sm leading-relaxed text-text-secondary">
+              {dict.cycle.ongoingSubtitle(ongoingDayIndex!)}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                // Oqim darajasi oldingi kundan olinadi — ayoldan yana
+                // so'rash bu tugmaning butun ma'nosini yo'qotardi.
+                const prev = [...data.logs]
+                  .filter((l) => l.flow && l.date < today)
+                  .sort((a, b) => a.date.localeCompare(b.date))
+                  .pop();
+                setData(await api.cycle.logDay({ date: today, flow: prev?.flow ?? "medium", mood: null, symptoms: [] }));
+              }}
+              className="tap-target flex-1 rounded-full bg-primary text-sm font-bold text-white active:scale-[0.98]"
+            >
+              {dict.cycle.ongoingYes}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOngoingDismissed(true)}
+              className="tap-target flex-1 rounded-full bg-surface-muted text-sm font-semibold text-text-secondary active:scale-[0.98]"
+            >
+              {dict.cycle.ongoingEnded}
+            </button>
+          </div>
+        </Card>
+      )}
+
       <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
 
       {/* SUMMARY-01 — "Mening sikllarim". Referensda (Flo) bosh ekranning

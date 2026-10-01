@@ -7,7 +7,7 @@
 // kelishilgan). Ustuvorlik: hayz/unumdor kun yaqinlashgani > bugun hali
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
-import { daysBetween, deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
+import { daysBetween, detectPeriodStarts, deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
 import {
   createSystemNotification,
@@ -90,6 +90,26 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
    * shundan keyin "kechikmoqda" xabarini olish ilovaga bo'lgan ishonchni
    * yo'q qiladi.
    */
+  /**
+   * PERIOD-TRACK-01: hozir hayz ketyaptimi.
+   *
+   * Oxirgi aniqlangan boshlanishdan beri o'tgan kunlar — kutilgan
+   * davomiylikdan ikki kun ko'p bo'lsa, hayz tugagan deb hisoblaymiz va
+   * boshqa so'ramaymiz (aks holda savol cheksiz takrorlanardi).
+   */
+  const periodStarts = needsCycleData ? detectPeriodStarts(logs) : [];
+  const lastStart = periodStarts[periodStarts.length - 1] ?? null;
+  const expectedLength = prediction?.averagePeriodLength ?? settings?.averagePeriodLength ?? 5;
+  const dayIndex = lastStart ? daysBetween(lastStart, tashkentDateStr()) + 1 : null;
+  const periodInProgress =
+    dayIndex !== null && dayIndex >= 2 && dayIndex <= expectedLength + 2
+      ? {
+          dayIndex,
+          expectedLength,
+          loggedToday: logs.some((l) => l.date === tashkentDateStr() && !!l.flow),
+        }
+      : null;
+
   const lastFlowDate = logs
     .filter((l) => l.flow)
     .map((l) => l.date)
@@ -116,6 +136,7 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
         }
       : null,
     daysSinceLastFlowLog,
+    periodInProgress,
   });
 
   switch (decision.kind) {
@@ -143,6 +164,10 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
       return log(dict.reminders.periodLate(decision.days));
     case "period-confirm":
       return log(dict.reminders.periodConfirm);
+    case "period-ongoing":
+      return log(dict.reminders.periodOngoing(decision.day));
+    case "period-ended-ask":
+      return log(dict.reminders.periodEndedAsk);
     case "fertile-window":
       return log(dict.reminders.fertileWindow);
     case "log-today":
