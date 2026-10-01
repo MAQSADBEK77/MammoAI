@@ -663,6 +663,49 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
     maxSymptoms: 2,
   });
 
+  /**
+   * PERIOD-TRACK-02: savol HERO OSTIDA, amal tugmalaridan OLDIN.
+   *
+   * Ilgari u tugmalardan keyin turardi va telefon ekranida pastda
+   * qolib ketardi — foydalanuvchi uni umuman ko'rmadi.
+   */
+  // PERIOD-TRACK-01: shu bitta tugma kalendardagi "chiziqcha-chiziqcha"
+  // kunni haqiqiy kunga aylantiradi va hayz davomiyligini o'rgatadi.
+  const ongoingPrompt = showOngoingPrompt ? (
+        <Card className="space-y-3">
+          <div>
+            <p className="text-base font-bold text-text-primary">{dict.cycle.ongoingTitle}</p>
+            <p className="mt-0.5 text-sm leading-relaxed text-text-secondary">
+              {dict.cycle.ongoingSubtitle(ongoingDayIndex!)}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                // Oqim darajasi oldingi kundan olinadi — ayoldan yana
+                // so'rash bu tugmaning butun ma'nosini yo'qotardi.
+                const prev = [...data.logs]
+                  .filter((l) => l.flow && l.date < today)
+                  .sort((a, b) => a.date.localeCompare(b.date))
+                  .pop();
+                setData(await api.cycle.logDay({ date: today, flow: prev?.flow ?? "medium", mood: null, symptoms: [] }));
+              }}
+              className="tap-target flex-1 rounded-full bg-primary text-sm font-bold text-white active:scale-[0.98]"
+            >
+              {dict.cycle.ongoingYes}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOngoingDismissed(true)}
+              className="tap-target flex-1 rounded-full bg-surface-muted text-sm font-semibold text-text-secondary active:scale-[0.98]"
+            >
+              {dict.cycle.ongoingEnded}
+            </button>
+          </div>
+        </Card>
+  ) : null;
+
   const heroTapHintText = periodExpectedButUnlogged
     ? dict.cycle.heroPeriodStartedCta
     : dict.cycle.heroTapHint;
@@ -939,6 +982,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           onHeroClick={heroIsCallToAction ? heroAction : null}
           heroStatus={predictionsUpdated ? { label: dict.cycle.predictionsUpdatedLabel, done: true } : null}
           heroChip={heroChip}
+          heroSlot={ongoingPrompt}
           pet={isMinor ? resolvePet(user?.pet) : null}
           onPetTap={() => setShowPetPicker(true)}
           actions={[
@@ -1276,44 +1320,6 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
 
       {/* 5. Kunlik maslahat kartasi — iliq, "sizga atalgan" ohangdagi matn
           (dict.cycle.dailyInsights, mazmuni o'zgarmagan, faqat ohang). */}
-      {/* PERIOD-TRACK-01: hayz davom etayotgan bo'lsa — bitta bosish.
-          Shu bitta tugma kalendardagi "chiziqcha-chiziqcha" kunni haqiqiy
-          kunga aylantiradi va hayz davomiyligini o'rgatadi. */}
-      {showOngoingPrompt && (
-        <Card className="space-y-3">
-          <div>
-            <p className="text-base font-bold text-text-primary">{dict.cycle.ongoingTitle}</p>
-            <p className="mt-0.5 text-sm leading-relaxed text-text-secondary">
-              {dict.cycle.ongoingSubtitle(ongoingDayIndex!)}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={async () => {
-                // Oqim darajasi oldingi kundan olinadi — ayoldan yana
-                // so'rash bu tugmaning butun ma'nosini yo'qotardi.
-                const prev = [...data.logs]
-                  .filter((l) => l.flow && l.date < today)
-                  .sort((a, b) => a.date.localeCompare(b.date))
-                  .pop();
-                setData(await api.cycle.logDay({ date: today, flow: prev?.flow ?? "medium", mood: null, symptoms: [] }));
-              }}
-              className="tap-target flex-1 rounded-full bg-primary text-sm font-bold text-white active:scale-[0.98]"
-            >
-              {dict.cycle.ongoingYes}
-            </button>
-            <button
-              type="button"
-              onClick={() => setOngoingDismissed(true)}
-              className="tap-target flex-1 rounded-full bg-surface-muted text-sm font-semibold text-text-secondary active:scale-[0.98]"
-            >
-              {dict.cycle.ongoingEnded}
-            </button>
-          </div>
-        </Card>
-      )}
-
       <DailyInsightsCarousel phase={!isPerimenopause && !data.prediction?.isStale ? phaseForDate(today) : null} />
 
       {/* SUMMARY-01 — "Mening sikllarim". Referensda (Flo) bosh ekranning
