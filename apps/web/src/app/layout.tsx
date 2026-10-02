@@ -1,3 +1,4 @@
+import { VersionGuard } from "@/components/VersionGuard";
 import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import Script from "next/script";
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="uz" className={nunito.variable} suppressHydrationWarning>
       <body>
+        <VersionGuard />
         {/* Sahifa bo'yalishidan OLDIN (hidratsiyadan oldin) ishlaydi — aks holda
             <html> har doim yorug' rejimda chizilib, keyin qorong'u rejimga
             "yaltirab" o'tadi (foydalanuvchi tanlovi `/api/me` javob bergunga

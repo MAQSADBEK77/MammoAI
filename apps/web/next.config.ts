@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // DEPLOY-02: ishlab turgan to'plam qaysi commit'dan yig'ilganini
+  // mijoz ham bilishi kerak — `VersionGuard` shuni jonli server bilan
+  // solishtiradi. Vercel bu o'zgaruvchini build paytida beradi.
+  env: { NEXT_PUBLIC_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA ?? "local" },
+
   // Dev serverni lokal tarmoqdagi boshqa qurilmadan (masalan telefondan,
   // mobil ilovani real qurilmada sinash uchun) ochish mumkin bo'lishi uchun —
   // Next.js standart holatda faqat localhost'dan so'rovlarga ruxsat beradi,
