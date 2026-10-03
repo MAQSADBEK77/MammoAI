@@ -16,6 +16,17 @@ import { getCycleSettings, upsertCycleLog, deleteCycleLog, listCycleLogs, update
 import { countCycleLogs, getMaxCycleLogUpdatedAt } from "../src/server/repo";
 import { getPregnancyWeekContent, upsertPregnancyWeekContent } from "../src/server/repo";
 import {
+  createDoctor,
+  updateDoctor,
+  setDoctorActive,
+  listDoctors,
+  listDoctorsAdmin,
+  recordDoctorVisitIntent,
+  confirmDoctorVisit,
+  hasConfirmedDoctorVisit,
+  rateDoctor,
+} from "../src/server/repo";
+import {
   createCommunityPost,
   createCommunityReport,
   blockCommunityPostAuthor,
@@ -775,6 +786,95 @@ async function main() {
     );
   } finally {
     await sql`DELETE FROM users WHERE id = ${chatUserId}`;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // DOC-01 — shifokorlar katalogi va "faqat tasdiqlangan tashrifdan keyin
+  // baho" qoidasi.
+  //
+  // Nega integratsiya testida: qoidaning o'zi sof funksiyada (doctor-rating.ts)
+  // sinaladi, lekin uni HIMOYA qiladigan narsa — bazadagi tashrif yozuvi va
+  // UNIQUE(user_id, doctor_id) cheklovi. Bu ikkalasi faqat shu qatlamda
+  // ko'rinadi, ya'ni unit test ularni umuman ushlay olmaydi.
+  // ══════════════════════════════════════════════════════════════════════
+  const { id: doctorId } = await createDoctor({
+    fullName: "Integratsiya Testova",
+    specialty: "gynecology",
+    clinicId: null,
+    qualification: "oliy toifa",
+    experienceYears: 12,
+    languages: ["O'zbek", "Rus"],
+    photoUrl: null,
+    about: null,
+    isActive: true,
+  });
+  try {
+    assert(
+      (await listDoctors(realAccountId)).some((d) => d.id === doctorId),
+      "DOC-01: yangi qo'shilgan faol shifokor ayolning ro'yxatida ko'rinadi"
+    );
+
+    assert(
+      !(await hasConfirmedDoctorVisit(realAccountId, doctorId)),
+      "DOC-01: tashrif yozilmagan bo'lsa tasdiqlangan tashrif ham yo'q"
+    );
+
+    // Faqat "boraman" deyish YETARLI EMAS — tasdiq alohida qadam.
+    await recordDoctorVisitIntent(realAccountId, doctorId);
+    assert(
+      !(await hasConfirmedDoctorVisit(realAccountId, doctorId)),
+      "DOC-01: 'boraman' bosilgani baho berish huquqini BERMAYDI"
+    );
+
+    await confirmDoctorVisit(realAccountId, doctorId);
+    assert(
+      await hasConfirmedDoctorVisit(realAccountId, doctorId),
+      "DOC-01: tashrif tasdiqlangandan keyin baho berish mumkin"
+    );
+
+    await rateDoctor(realAccountId, doctorId, 5, null);
+    await rateDoctor(realAccountId, doctorId, 3, null);
+    const [mine] = (await sql`
+      SELECT COUNT(*)::int AS n, MAX(rating)::int AS last FROM doctor_ratings
+      WHERE user_id = ${realAccountId} AND doctor_id = ${doctorId}
+    `) as unknown as { n: number; last: number }[];
+    assert(
+      mine.n === 1 && mine.last === 5,
+      "DOC-01: UNIQUE(user_id, doctor_id) — bir ayol bitta baho qoldiradi, ikkinchi urinish BIRINCHISINI o'zgartirmaydi"
+    );
+
+    // Ro'yxatdan olish — o'chirish EMAS: baho tarixi joyida qolishi kerak,
+    // aks holda yomon baho olgan shifokorni o'chirib-qayta qo'shish orqali
+    // tarixini tozalash mumkin bo'lardi.
+    await setDoctorActive(doctorId, false);
+    assert(
+      !(await listDoctors(realAccountId)).some((d) => d.id === doctorId),
+      "DOC-01: ro'yxatdan olingan shifokor ayolga ko'rinmaydi"
+    );
+    const adminRow = (await listDoctorsAdmin()).find((d) => d.id === doctorId);
+    assert(
+      !!adminRow && !adminRow.isActive && adminRow.ratings.length === 1 && adminRow.visitCount === 1,
+      "DOC-01: ro'yxatdan olingandan keyin ham admin uni, bahosini va tashrifini ko'radi"
+    );
+
+    await updateDoctor(doctorId, {
+      fullName: "Integratsiya Testova (tahrirlangan)",
+      specialty: "endocrinology",
+      clinicId: null,
+      qualification: null,
+      experienceYears: null,
+      languages: [],
+      photoUrl: null,
+      about: null,
+      isActive: true,
+    });
+    const edited = (await listDoctorsAdmin()).find((d) => d.id === doctorId);
+    assert(
+      edited?.specialty === "endocrinology" && edited.experienceYears === null && edited.ratings.length === 1,
+      "DOC-01: tahrirlash maydonlarni yangilaydi, baholarga TEGMAYDI"
+    );
+  } finally {
+    await sql`DELETE FROM doctors WHERE id = ${doctorId}`;
   }
 
   const communityPost = await createCommunityPost(realAccountId, { tag: "general", body: "DATA-ACCURACY-06 test posti", isAnonymous: false });

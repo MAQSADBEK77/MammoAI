@@ -47,11 +47,30 @@ import type {
   SymptomPattern,
   User,
   WellnessLog,
-  ArticleComment,} from "./types";
+  ArticleComment,
+  ClinicSpecialty,
+} from "./types";
 import type { DoctorReport } from "./logic/doctor-report";
 
 /** DOC-01: ro'yxatdagi shifokor. Baholar XOM holda keladi — o'rtacha
  *  `summarizeDoctorRating` da hisoblanadi, ya'ni qoida bitta joyda. */
+/** Admin paneli uchun — faolsizlari ham, baholari ham ko'rinadi. */
+export interface AdminDoctor {
+  id: string;
+  fullName: string;
+  specialty: ClinicSpecialty;
+  clinicId: string | null;
+  clinicName: string | null;
+  qualification: string | null;
+  experienceYears: number | null;
+  languages: string[];
+  photoUrl: string | null;
+  about: string | null;
+  isActive: boolean;
+  ratings: number[];
+  visitCount: number;
+}
+
 export interface DoctorListItem {
   id: string;
   fullName: string;

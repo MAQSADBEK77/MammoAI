@@ -50,7 +50,14 @@ export function DoctorsScreen() {
     );
   }
 
-  const specialties = [...new Set(doctors.map((d) => d.specialty))].sort();
+  // Bazada mutaxassislik ENUM qiymat sifatida saqlanadi ("gynecology"), ayolga
+  // esa uning tilidagi nomi ko'rsatilishi kerak. Mos tarjima topilmasa xom
+  // qiymat chiqadi — eski/qo'lda kiritilgan yozuv bo'lsa ham ekran buzilmaydi.
+  const specialtyLabel = (value: string) =>
+    (dict.concerns.specialists as Record<string, string | undefined>)[value] ?? value;
+  const specialties = [...new Set(doctors.map((d) => d.specialty))].sort((a, b) =>
+    specialtyLabel(a).localeCompare(specialtyLabel(b))
+  );
   const visible = sortDoctorsByRating(
     doctors
       .filter((d) => !specialty || d.specialty === specialty)
@@ -88,7 +95,7 @@ export function DoctorsScreen() {
                     specialty === s ? "bg-primary text-white" : "bg-surface text-text-secondary"
                   )}
                 >
-                  {s ?? t.all}
+                  {s === null ? t.all : specialtyLabel(s)}
                 </button>
               ))}
             </div>
@@ -101,7 +108,7 @@ export function DoctorsScreen() {
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-base font-bold leading-snug text-text-primary">{d.fullName}</p>
-                  <p className="text-xs font-semibold text-primary">{d.specialty}</p>
+                  <p className="text-xs font-semibold text-primary">{specialtyLabel(d.specialty)}</p>
                   {d.qualification && <p className="mt-0.5 text-xs text-text-secondary">{d.qualification}</p>}
                   {d.experienceYears !== null && (
                     <p className="text-xs text-text-muted">{t.years(d.experienceYears)}</p>
