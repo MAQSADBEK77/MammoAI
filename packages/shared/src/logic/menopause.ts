@@ -147,3 +147,76 @@ export function shouldSeeDoctorForMenopause(result: MrsResult): boolean {
 export function isPostmenopausalBleeding(stage: MenopauseStage, hasBleeding: boolean): boolean {
   return hasBleeding && (stage === "menopause" || stage === "postmenopause");
 }
+
+/**
+ * MENO-02 — rejimni TAKLIF qilish qarori (UI uchun).
+ *
+ * `shouldSuggestMenopauseMode()` faqat biologik signalga qaraydi. Bu
+ * funksiya esa KONTEKSTNI qo'shadi, chunki signal to'g'ri bo'lsa ham
+ * taklif noo'rin bo'lishi mumkin:
+ *
+ *   - Homilador yoki homiladorlikka tayyorlanayotgan ayolga "klimaks
+ *     rejimiga o'tasizmi?" deb chiqish shafqatsiz bo'lardi. 45+ yoshda
+ *     homiladorlikka harakat qilish esa kam uchraydigan holat emas.
+ *   - Hamkor rejimida ayolning o'zi emas, boshqa odam ko'radi.
+ *   - Bir marta "hozir emas" deyilgan bo'lsa, qayta so'ralmaydi.
+ */
+export interface MenopauseSuggestionInput extends StageInput {
+  /** Foydalanuvchining joriy rejimi (`primaryGoal`). */
+  currentGoal: string | null;
+  /** Ayol taklifni oldin yopganmi. */
+  dismissed: boolean;
+}
+
+/** Taklif ko'rsatilmaydigan rejimlar — yuqoridagi izohga qarang. */
+const SUGGESTION_BLOCKED_GOALS = ["pregnancy", "planning_pregnancy", "partner_tracking", "perimenopause"];
+
+/**
+ * Taklif uchun eng kichik yosh.
+ *
+ * `resolveMenopauseStage()` 12 oy hayzsizlikni YOSHDAN QAT'I NAZAR
+ * menopauza deb oladi — bosqich ta'rifi (STRAW+10) shunday. Lekin TAKLIF
+ * uchun bu xavfli: brauzer sinovida 22 yoshli test akkauntga ham taklif
+ * chiqdi, chunki uning oxirgi qayd etilgan hayzi bir yildan eski edi.
+ *
+ * Yosh ayolda 12 oy hayzsizlik klimaks emas — bu amenoreya, va u
+ * tekshirilishi kerak bo'lgan ALOHIDA holat (qalqonsimon bez, PCOS, vazn,
+ * prolaktin). Bundan tashqari ayol shunchaki qayd qilishni to'xtatgan
+ * bo'lishi ham mumkin, ya'ni sana eskirgan bo'ladi. Ikkala holatda ham
+ * "klimaks rejimiga o'tasizmi?" degan taklif xato va haqoratli.
+ *
+ * 40 tanlandi: erta tuxumdonlar yetishmovchiligi aynan shu yoshgacha
+ * deb ta'riflanadi, ya'ni 40 dan pastda javob rejim emas, shifokor.
+ */
+const SUGGESTION_MIN_AGE = 40;
+
+export function shouldShowMenopauseSuggestion(input: MenopauseSuggestionInput): boolean {
+  if (input.dismissed) return false;
+  if (input.currentGoal !== null && SUGGESTION_BLOCKED_GOALS.includes(input.currentGoal)) return false;
+  // Yosh noma'lum bo'lsa ham taklif qilinmaydi — taxmin qilib xato
+  // qilishdan ko'ra jim turgan yaxshiroq.
+  if (input.age === null || input.age < SUGGESTION_MIN_AGE) return false;
+  return shouldSuggestMenopauseMode(input);
+}
+
+/**
+ * Oxirgi hayz sanasidan beri o'tgan to'liq oylar.
+ *
+ * Kun farqini 30.44 ga bo'lish emas, kalendar oylari bo'yicha
+ * hisoblanadi — "12 oy" chegarasi tibbiy ta'rif (STRAW+10) bo'lgani
+ * uchun u kalendar ma'nosida bo'lishi kerak, aks holda ayol chegaradan
+ * bir necha kun oldin yoki keyin tasodifan o'tib ketardi.
+ *
+ * Sana noma'lum bo'lsa `null` — "0 oy" deb taxmin qilish xato bo'lardi,
+ * chunki bu "yaqinda hayz bo'lgan" degan ma'noni berib, taklifni
+ * noto'g'ri bekor qilardi.
+ */
+export function monthsSinceDate(lastPeriodStart: string | null | undefined, today: string): number | null {
+  if (!lastPeriodStart) return null;
+  const from = new Date(`${lastPeriodStart}T00:00:00`);
+  const to = new Date(`${today}T00:00:00`);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return null;
+  let months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+  if (to.getDate() < from.getDate()) months -= 1;
+  return months < 0 ? 0 : months;
+}

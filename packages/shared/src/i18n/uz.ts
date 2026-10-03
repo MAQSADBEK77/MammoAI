@@ -493,6 +493,12 @@ const uz = {
     irregularPredictionNote:
       "Aniq sanani bashorat qilish qiyin — siklingiz tabiiy ravishda o'zgaruvchan. Buning o'rniga umumiy naqshlaringizni kuzatamiz.",
     irregularCheckupLink: "Tekshiruvlar bo'limiga o'tish",
+    menopauseSuggestTitle: "Bu davr uchun alohida rejim bor",
+    menopauseSuggestBody:
+      "Siklingiz o'zgaruvchan bo'lib qolgan. Shu yoshda bashorat o'rniga belgilaringizni (issiqlik bosishi, uyqu, kayfiyat) kuzatish va kerakli tekshiruvlardan o'tish ancha foydaliroq.",
+    menopauseSuggestSwitch: "Shu rejimga o'tish",
+    menopauseSuggestDismiss: "Hozir emas",
+    menopauseSuggestNote: "Rejimni istalgan vaqtda profildan qaytarib o'zgartirasiz.",
     perimenopauseCardTitle: "Perimenopauza kuzatuvi",
     perimenopauseCardBody: "Bu davrda tsikl tartibsizlashishi — tabiiy holat. Bashorat o'rniga belgilaringizni (issiqlik bosishi, uyqu, kayfiyat) kuzatib boring.",
     // OVERNIGHT-23: haqiqiy "hech narsa yo'q" holatida (`!data.prediction`)
@@ -1779,6 +1785,7 @@ const uz = {
       cycle: "Hayz",
       pregnancy: "Homiladorlik",
       planning_pregnancy: "Tayyorgarlik",
+      perimenopause: "Klimaks",
     },
     modeChangeConfirm: "Rejimni almashtirishni tasdiqlaysizmi?",
     personalInfoTitle: "Shaxsiy ma'lumotlar",

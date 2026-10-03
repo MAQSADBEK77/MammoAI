@@ -24,12 +24,19 @@ const THEME_OPTIONS: { value: "light" | "dark" | "system"; labelKey: "themeLight
   { value: "system", labelKey: "themeSystem", emoji: "⚙️" },
 ];
 
-// Profil "REJIMNI TANLANG" — App.pdf §5 dagi 7 ta maqsaddan uchtasi shu yerdan
-// tezkor almashtiriladi (qolganlari faqat onboarding'da tanlanadi).
+// Profil "REJIMNI TANLANG" — App.pdf §5 dagi 7 ta maqsaddan to'rttasi shu
+// yerdan tezkor almashtiriladi (qolganlari faqat onboarding'da tanlanadi).
+//
+// MENO-02: `perimenopause` ilgari FAQAT onboarding'da tanlanishi mumkin edi.
+// Bu amalda uni yopiq qilib qo'yardi — bu davrga kirgan ayol allaqachon
+// ro'yxatdan o'tgan bo'ladi va onboarding'ni qaytadan o'tmaydi, ya'ni
+// hayotining aynan shu bosqichida rejimga yo'l yo'q edi. Qaytarib
+// o'zgartirish ham shu yerdan, chunki ayol adashib bosishi mumkin.
 const MODES: { goal: Goal; icon: string }[] = [
   { goal: "cycle", icon: "🌸" },
   { goal: "pregnancy", icon: "🤰" },
   { goal: "planning_pregnancy", icon: "🌱" },
+  { goal: "perimenopause", icon: "🌷" },
 ];
 
 // Til tanlash — qon guruhi kabi oddiy dropdown (App.pdf'dan tashqari, foydalanuvchi
