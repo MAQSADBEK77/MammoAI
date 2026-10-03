@@ -14,7 +14,7 @@ import { sql, ensureSchema } from "../src/server/db";
 import { ApiError } from "../src/server/api-utils";
 import { getCycleSettings, upsertCycleLog, deleteCycleLog, listCycleLogs, updateCycleSettings } from "../src/server/repo";
 import { countCycleLogs, getMaxCycleLogUpdatedAt } from "../src/server/repo";
-import { getPregnancyWeekContent, upsertPregnancyWeekContent } from "../src/server/repo";
+import { getPregnancyWeekContent, upsertPregnancyWeekContent, listPregnancyWeekContentAllLanguages } from "../src/server/repo";
 import {
   createDoctor,
   updateDoctor,
@@ -275,6 +275,48 @@ async function main() {
   await upsertPregnancyWeekContent(17, { sizeLabel: "olma", babyDevelopment: "Yangilangan matn", motherChanges: "Yangilangan matn 2" });
   const updated = await getPregnancyWeekContent(17);
   assert(updated?.sizeLabel === "olma", "qayta yozish (upsert) eskisini yangilaydi, ikkinchi qator yaratmaydi");
+
+  // --- PREG-I18N: haftalik kontent endi uch tilda ---
+  //
+  // Nega integratsiya testida: tanlash QOIDASI sof funksiyada sinaladi
+  // (logic/pregnancy-i18n.ts), lekin USTUNLAR va ularning yozilishi faqat
+  // baza bilan birga ko'rinadi. Ayniqsa muhimi: o'zbekchani tahrirlash
+  // tarjimani JIM O'CHIRIB yubormasligi kerak.
+  assert(
+    (await getPregnancyWeekContent(17, "ru"))?.sizeLabel === "olma",
+    "PREG-I18N: tarjima yo'q bo'lsa rus tilidagi ayol o'zbekcha matnni ko'radi (bo'sh ekran emas)"
+  );
+
+  await upsertPregnancyWeekContent(17, {
+    sizeLabel: "olma",
+    babyDevelopment: "Yangilangan matn",
+    motherChanges: "Yangilangan matn 2",
+    ru: { sizeLabel: "яблоко", babyDevelopment: "Русский текст", motherChanges: "Русский текст 2" },
+    en: { sizeLabel: "an apple", babyDevelopment: "English text", motherChanges: "English text 2" },
+  });
+  assert((await getPregnancyWeekContent(17, "ru"))?.sizeLabel === "яблоко", "PREG-I18N: ruscha tarjima qaytadi");
+  assert((await getPregnancyWeekContent(17, "en"))?.babyDevelopment === "English text", "PREG-I18N: inglizcha tarjima qaytadi");
+  assert((await getPregnancyWeekContent(17, "uz"))?.sizeLabel === "olma", "PREG-I18N: o'zbekchasi o'zgarmaydi");
+  assert(
+    (await getPregnancyWeekContent(17, "uz-cyrl"))?.sizeLabel === "olma",
+    "PREG-I18N: kirill uchun alohida ustun yo'q — lotinchasi beriladi, o'girish i18n qatlamida"
+  );
+
+  // Faqat o'zbekchani yangilaymiz — tarjimalar JOYIDA qolishi kerak.
+  await upsertPregnancyWeekContent(17, { sizeLabel: "shaftoli", babyDevelopment: "Uzb 2", motherChanges: "Uzb 3" });
+  assert(
+    (await getPregnancyWeekContent(17, "ru"))?.sizeLabel === "яблоко",
+    "PREG-I18N: faqat o'zbekchani tahrirlash tarjimani JIM O'CHIRMAYDI"
+  );
+  assert((await getPregnancyWeekContent(17, "uz"))?.sizeLabel === "shaftoli", "PREG-I18N: o'zbekchasi esa yangilandi");
+
+  const adminRows = await listPregnancyWeekContentAllLanguages();
+  const adminWeek = adminRows.find((r) => r.week === 17);
+  assert(
+    !!adminWeek && adminWeek.uz.sizeLabel === "shaftoli" && adminWeek.ru?.sizeLabel === "яблоко" && adminWeek.en?.sizeLabel === "an apple",
+    "PREG-I18N: admin uchta tilni ham xom holda ko'radi"
+  );
+
   await sql`DELETE FROM pregnancy_week_content WHERE week = 17`;
 
   // --- FIX-03: hamkor kodini qo'pol kuch bilan sinashga qarshi rate-limit ---

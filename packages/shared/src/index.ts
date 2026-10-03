@@ -30,6 +30,7 @@ export * from "./logic/doctor-rating";
 export * from "./logic/doctor-report";
 export * from "./logic/memoize-async";
 export * from "./logic/menopause";
+export * from "./logic/pregnancy-i18n";
 export * from "./logic/notification-choice";
 export * from "./logic/onboarding-steps";
 export * from "./logic/phone-link";

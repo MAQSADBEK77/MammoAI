@@ -2,9 +2,10 @@ import { randomUUID } from "node:crypto";
 import { sql, ensureSchema } from "./db";
 import { ApiError } from "./api-utils";
 import type { AlbumPhotoKind, CheckinResponse, Contraction } from "@mammoai/shared";
-import { PET_IDS, type PetChoice } from "@mammoai/shared";
+import { PET_IDS, resolvePregnancyText, type PetChoice } from "@mammoai/shared";
 import type {
   AdminDoctor,
+  AdminPregnancyWeek,
   ChronicCondition,
   ClinicSpecialty,
   CommunityFeedScope,
@@ -4316,46 +4317,81 @@ export async function countOpenCommunityReports(): Promise<number> {
 
 // --- CONTENT-001: homiladorlik haftalik kontenti ----------------------------
 
-function pregnancyWeekContentFromRow(row: {
+/** Bazadagi xom qator — har bir maydonning uch tilgacha varianti bilan. */
+export interface PregnancyWeekContentRow {
   week: number;
   size_label: string;
   baby_development: string;
   mother_changes: string;
   updated_at: string;
-}): PregnancyWeekContent {
-  return { week: row.week, sizeLabel: row.size_label, babyDevelopment: row.baby_development, motherChanges: row.mother_changes, updatedAt: row.updated_at };
+  size_label_ru?: string | null;
+  baby_development_ru?: string | null;
+  mother_changes_ru?: string | null;
+  size_label_en?: string | null;
+  baby_development_en?: string | null;
+  mother_changes_en?: string | null;
+}
+
+/** Tanlash QOIDASI sof funksiyada va test bilan qoplangan
+ *  (logic/pregnancy-i18n.ts) — bu yerda faqat qatorni unga moslash. */
+function pregnancyWeekContentFromRow(row: PregnancyWeekContentRow, language: Language = "uz"): PregnancyWeekContent {
+  const text = resolvePregnancyText(
+    {
+      uz: { sizeLabel: row.size_label, babyDevelopment: row.baby_development, motherChanges: row.mother_changes },
+      ru: { sizeLabel: row.size_label_ru ?? undefined, babyDevelopment: row.baby_development_ru ?? undefined, motherChanges: row.mother_changes_ru ?? undefined },
+      en: { sizeLabel: row.size_label_en ?? undefined, babyDevelopment: row.baby_development_en ?? undefined, motherChanges: row.mother_changes_en ?? undefined },
+    },
+    language
+  );
+  return { week: row.week, ...text, updatedAt: row.updated_at };
 }
 
 /** `null` — hali admin panel/seed orqali kiritilmagan (chaqiruvchi eski
  * statik meva-qiyoslash tizimiga tushadi — PregnancyWeekImage/getMilestoneForWeek). */
-export async function getPregnancyWeekContent(week: number): Promise<PregnancyWeekContent | null> {
+export async function getPregnancyWeekContent(week: number, language: Language = "uz"): Promise<PregnancyWeekContent | null> {
   await ensureSchema();
   const clamped = Math.min(42, Math.max(1, Math.round(week)));
-  const rows = (await sql`SELECT * FROM pregnancy_week_content WHERE week = ${clamped}`) as unknown as {
-    week: number;
-    size_label: string;
-    baby_development: string;
-    mother_changes: string;
-    updated_at: string;
-  }[];
-  return rows[0] ? pregnancyWeekContentFromRow(rows[0]) : null;
+  const rows = (await sql`SELECT * FROM pregnancy_week_content WHERE week = ${clamped}`) as unknown as PregnancyWeekContentRow[];
+  return rows[0] ? pregnancyWeekContentFromRow(rows[0], language) : null;
 }
 
-export async function listPregnancyWeekContent(): Promise<PregnancyWeekContent[]> {
+export async function listPregnancyWeekContent(language: Language = "uz"): Promise<PregnancyWeekContent[]> {
   await ensureSchema();
-  const rows = (await sql`SELECT * FROM pregnancy_week_content ORDER BY week ASC`) as unknown as {
-    week: number;
-    size_label: string;
-    baby_development: string;
-    mother_changes: string;
-    updated_at: string;
-  }[];
-  return rows.map(pregnancyWeekContentFromRow);
+  const rows = (await sql`SELECT * FROM pregnancy_week_content ORDER BY week ASC`) as unknown as PregnancyWeekContentRow[];
+  return rows.map((r) => pregnancyWeekContentFromRow(r, language));
+}
+
+/** Admin uchun — bitta hafta, uch tilda (tahrirlash oynasi uchun). */
+export async function listPregnancyWeekContentAllLanguages(): Promise<AdminPregnancyWeek[]> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM pregnancy_week_content ORDER BY week ASC`) as unknown as PregnancyWeekContentRow[];
+  const text = (size?: string | null, baby?: string | null, mother?: string | null) => {
+    // Uchalasi ham bo'sh bo'lsa — tarjima umuman yo'q. Qisman to'ldirilgan
+    // bo'lsa qaytariladi: admin nimasi yetishmayotganini ko'rishi kerak.
+    if (!size?.trim() && !baby?.trim() && !mother?.trim()) return null;
+    return { sizeLabel: size ?? "", babyDevelopment: baby ?? "", motherChanges: mother ?? "" };
+  };
+  return rows.map((r) => ({
+    week: r.week,
+    updatedAt: r.updated_at,
+    uz: { sizeLabel: r.size_label, babyDevelopment: r.baby_development, motherChanges: r.mother_changes },
+    ru: text(r.size_label_ru, r.baby_development_ru, r.mother_changes_ru),
+    en: text(r.size_label_en, r.baby_development_en, r.mother_changes_en),
+  }));
+}
+
+export interface PregnancyWeekContentPatch {
+  sizeLabel: string;
+  babyDevelopment: string;
+  motherChanges: string;
+  /** PREG-I18N: tarjimalar ixtiyoriy — berilmasa mavjudi O'ZGARMAYDI. */
+  ru?: { sizeLabel: string; babyDevelopment: string; motherChanges: string } | null;
+  en?: { sizeLabel: string; babyDevelopment: string; motherChanges: string } | null;
 }
 
 export async function upsertPregnancyWeekContent(
   week: number,
-  patch: { sizeLabel: string; babyDevelopment: string; motherChanges: string }
+  patch: PregnancyWeekContentPatch
 ): Promise<PregnancyWeekContent> {
   await ensureSchema();
   const updatedAt = now();
@@ -4366,7 +4402,34 @@ export async function upsertPregnancyWeekContent(
       size_label = EXCLUDED.size_label, baby_development = EXCLUDED.baby_development,
       mother_changes = EXCLUDED.mother_changes, updated_at = EXCLUDED.updated_at
   `;
-  return { week, ...patch, updatedAt };
+  // Tarjimalar ALOHIDA yoziladi: `undefined` bo'lsa tegilmaydi, shuning
+  // uchun faqat o'zbekchani tahrirlagan admin tarjimani bilmasdan
+  // o'chirib yubormaydi.
+  if (patch.ru) {
+    await sql`
+      UPDATE pregnancy_week_content SET
+        size_label_ru = ${patch.ru.sizeLabel},
+        baby_development_ru = ${patch.ru.babyDevelopment},
+        mother_changes_ru = ${patch.ru.motherChanges}
+      WHERE week = ${week}
+    `;
+  }
+  if (patch.en) {
+    await sql`
+      UPDATE pregnancy_week_content SET
+        size_label_en = ${patch.en.sizeLabel},
+        baby_development_en = ${patch.en.babyDevelopment},
+        mother_changes_en = ${patch.en.motherChanges}
+      WHERE week = ${week}
+    `;
+  }
+  return {
+    week,
+    sizeLabel: patch.sizeLabel,
+    babyDevelopment: patch.babyDevelopment,
+    motherChanges: patch.motherChanges,
+    updatedAt,
+  };
 }
 
 // --- ADMIN-001: alohida admin hisoblari va audit-jurnal ---------------------

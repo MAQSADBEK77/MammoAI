@@ -7,7 +7,7 @@ import { getPregnancyWeekContent } from "@/server/repo";
  * kiritilmagan, klient eski statik meva-qiyoslash tizimiga tushadi. */
 export async function GET(request: NextRequest, context: { params: Promise<{ week: string }> }) {
   try {
-    await requireUser(request);
+    const user = await requireUser(request);
     const { week } = await context.params;
     const weekNum = Number(week);
     // FIX-06: noto'g'ri qiymat (masalan "/week-content/abc") to'g'ridan-to'g'ri
@@ -17,7 +17,9 @@ export async function GET(request: NextRequest, context: { params: Promise<{ wee
     if (!Number.isInteger(weekNum) || weekNum < 1 || weekNum > 42) {
       return NextResponse.json({ content: null });
     }
-    const content = await getPregnancyWeekContent(weekNum);
+    // PREG-I18N: matn endi foydalanuvchining tilida qaytadi. Tarjima
+    // bo'lmasa o'zbekchasi beriladi — bo'sh ekran chiqmaydi.
+    const content = await getPregnancyWeekContent(weekNum, user.language);
     return NextResponse.json({ content });
   } catch (error) {
     return jsonError(error);

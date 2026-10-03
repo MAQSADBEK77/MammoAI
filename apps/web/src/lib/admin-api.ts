@@ -3,6 +3,7 @@
 
 import type {
   AdminDoctor,
+  AdminPregnancyWeek,
   AnalyticsSummary,
   AnalyticsUserSummary,
   Article,
@@ -224,9 +225,18 @@ export const adminApi = {
   },
   // CONTENT-001 — homiladorlik haftalik kontenti.
   pregnancyContent: {
-    list: () => request<{ weeks: PregnancyWeekContent[] }>("/pregnancy-content"),
-    update: (week: number, patch: { sizeLabel: string; babyDevelopment: string; motherChanges: string }) =>
-      request<{ content: PregnancyWeekContent }>(`/pregnancy-content/${week}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    list: () => request<{ weeks: AdminPregnancyWeek[] }>("/pregnancy-content"),
+    /** `ru`/`en` berilmasa mavjud tarjima O'ZGARMAYDI. */
+    update: (
+      week: number,
+      patch: {
+        sizeLabel: string;
+        babyDevelopment: string;
+        motherChanges: string;
+        ru?: { sizeLabel: string; babyDevelopment: string; motherChanges: string } | null;
+        en?: { sizeLabel: string; babyDevelopment: string; motherChanges: string } | null;
+      }
+    ) => request<{ content: PregnancyWeekContent }>(`/pregnancy-content/${week}`, { method: "PATCH", body: JSON.stringify(patch) }),
   },
   users: {
     list: (params: { search?: string; limit?: number; offset?: number }) => {

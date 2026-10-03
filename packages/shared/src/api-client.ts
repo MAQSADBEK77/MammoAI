@@ -54,6 +54,25 @@ import type { DoctorReport } from "./logic/doctor-report";
 
 /** DOC-01: ro'yxatdagi shifokor. Baholar XOM holda keladi — o'rtacha
  *  `summarizeDoctorRating` da hisoblanadi, ya'ni qoida bitta joyda. */
+/**
+ * PREG-I18N: admin tahrirlash oynasi uchun — bitta hafta, uch tilda.
+ * `ru`/`en` `null` bo'lsa tarjima hali yo'q va ilova o'zbekchasini
+ * ko'rsatadi (bo'sh ekran chiqmaydi).
+ */
+export interface AdminPregnancyWeek {
+  week: number;
+  updatedAt: string;
+  uz: PregnancyWeekText;
+  ru: PregnancyWeekText | null;
+  en: PregnancyWeekText | null;
+}
+
+export interface PregnancyWeekText {
+  sizeLabel: string;
+  babyDevelopment: string;
+  motherChanges: string;
+}
+
 /** Admin paneli uchun — faolsizlari ham, baholari ham ko'rinadi. */
 export interface AdminDoctor {
   id: string;
