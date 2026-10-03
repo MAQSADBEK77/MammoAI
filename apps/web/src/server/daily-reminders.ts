@@ -7,7 +7,7 @@
 // kelishilgan). Ustuvorlik: hayz/unumdor kun yaqinlashgani > bugun hali
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
-import { daysBetween, lastFlowStreakStart, deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
+import { daysBetween, lastFlowStreak, deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
 import {
   createSystemNotification,
@@ -99,15 +99,18 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
    */
   // PERIOD-TRACK-03: dog'lanish ham savol berish uchun yetarli — ekrandagi
   // karta bilan BIR XIL qoida (packages/shared/logic/flow-streak.ts).
-  const lastStart = needsCycleData ? lastFlowStreakStart(logs) : null;
+  const streak = needsCycleData ? lastFlowStreak(logs) : null;
   const expectedLength = prediction?.averagePeriodLength ?? settings?.averagePeriodLength ?? 5;
-  const dayIndex = lastStart ? daysBetween(lastStart, tashkentDateStr()) + 1 : null;
+  const dayIndex = streak ? daysBetween(streak.start, tashkentDateStr()) + 1 : null;
   const periodInProgress =
-    dayIndex !== null && dayIndex >= 2 && dayIndex <= expectedLength + 2
+    dayIndex !== null && streak !== null && dayIndex >= 2 && dayIndex <= expectedLength + 2
       ? {
           dayIndex,
           expectedLength,
           loggedToday: logs.some((l) => l.date === tashkentDateStr() && !!l.flow),
+          // PERIOD-TRACK-04: xabar matni shunga qarab tanlanadi — dog'lanish
+          // "hayzingizning N-kuni" degan da'voga asos bo'la olmaydi.
+          spottingOnly: streak.spottingOnly,
         }
       : null;
 
@@ -165,6 +168,8 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
       return log(dict.reminders.periodLate(decision.days));
     case "period-confirm":
       return log(dict.reminders.periodConfirm);
+    case "spotting-ongoing":
+      return log(dict.reminders.spottingOngoing);
     case "period-ongoing":
       return log(dict.reminders.periodOngoing(decision.day));
     case "period-ended-ask":

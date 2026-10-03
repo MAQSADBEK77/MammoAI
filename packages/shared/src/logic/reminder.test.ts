@@ -187,18 +187,18 @@ describe("PERIOD-TRACK-01 — davom etayotgan hayz", () => {
   it("boshlangan va bugun belgilanmagan bo'lsa — davom etyaptimi deb so'raydi", () => {
     // Foydalanuvchi: "boshlangan bo'lsa nega hali ham bashoratdek
     // chiziqcha-chiziqcha?" — chunki qolgan kunlar belgilanmagan.
-    const r = resolveReminder(base({ periodInProgress: { dayIndex: 2, expectedLength: 5, loggedToday: false } }));
+    const r = resolveReminder(base({ periodInProgress: { dayIndex: 2, expectedLength: 5, loggedToday: false, spottingOnly: false } }));
     expect(r).toEqual({ kind: "period-ongoing", day: 2 });
   });
 
   it("bugun allaqachon belgilangan bo'lsa bezovta qilmaydi", () => {
-    const r = resolveReminder(base({ periodInProgress: { dayIndex: 2, expectedLength: 5, loggedToday: true } }));
+    const r = resolveReminder(base({ periodInProgress: { dayIndex: 2, expectedLength: 5, loggedToday: true, spottingOnly: false } }));
     expect(r.kind).not.toBe("period-ongoing");
   });
 
   it("kutilgan davomiylik tugagach — 'tugadimi?' deb so'raydi", () => {
     // Bu savolsiz hayz DAVOMIYLIGI hech qachon o'rganilmaydi.
-    const r = resolveReminder(base({ periodInProgress: { dayIndex: 7, expectedLength: 5, loggedToday: false } }));
+    const r = resolveReminder(base({ periodInProgress: { dayIndex: 7, expectedLength: 5, loggedToday: false, spottingOnly: false } }));
     expect(r).toEqual({ kind: "period-ended-ask" });
   });
 
@@ -206,7 +206,7 @@ describe("PERIOD-TRACK-01 — davom etayotgan hayz", () => {
     // Aks holda "ertaga boshlanadi" kabi xabar hayz ketayotgan paytda
     // chiqib qolardi.
     const r = resolveReminder(base({
-      periodInProgress: { dayIndex: 3, expectedLength: 5, loggedToday: false },
+      periodInProgress: { dayIndex: 3, expectedLength: 5, loggedToday: false, spottingOnly: false },
       prediction: { daysUntilNextPeriod: 1, fertileWindowStart: "2026-10-05", fertileWindowEnd: "2026-10-11", isStale: false, cyclesAnalyzed: 3 },
     }));
     expect(r.kind).toBe("period-ongoing");
@@ -236,5 +236,51 @@ describe("erta 'eskirgan' belgisi eslatmani JIMLATMAYDI", () => {
     // chegaradan tashqarida va sikl xabari yuborilmaydi.
     expect(late20(false)).toBe(late20(true));
     expect(late20(true)).toBe("log-today");
+  });
+});
+
+// PERIOD-TRACK-04 — PRODUCTION'DA TOPILGAN XATO (2026-10-03).
+// Ayol 2-oktabrda bitta dog'lanish kunini belgiladi; 3-oktabrda Telegram'ga
+// "Hayzingizning 2-kuni. Bugun ham davom etyaptimi?" xabari ketdi. Hayzi
+// boshlanmagan edi. O'sha kuni shunday xabar olgan 12 ayoldan 4 tasida
+// oxirgi qayd faqat dog'lanish edi.
+describe("dog'lanish 'hayzingizning N-kuni' deb e'lon qilinmaydi", () => {
+  const withStreak = (spottingOnly: boolean, dayIndex = 2) =>
+    resolveReminder(
+      base({
+        loggedToday: false,
+        periodInProgress: { dayIndex, expectedLength: 5, loggedToday: false, spottingOnly },
+      })
+    );
+
+  it("faqat dog'lanish — kun soni aytilmaydi, alohida savol beriladi", () => {
+    const state = withStreak(true);
+    expect(state.kind).toBe("spotting-ongoing");
+    expect(state).not.toHaveProperty("day");
+  });
+
+  it("haqiqiy hayz — eski xatti-harakat o'zgarmaydi", () => {
+    expect(withStreak(false)).toEqual({ kind: "period-ongoing", day: 2 });
+  });
+
+  it("dog'lanish uchun 'Hayzingiz tugadimi?' ham so'ralmaydi", () => {
+    // 8-kun: hayz uchun bu "tugadimi?" degan savol bo'lardi.
+    expect(withStreak(true, 8).kind).not.toBe("period-ended-ask");
+    expect(withStreak(false, 8).kind).toBe("period-ended-ask");
+  });
+
+  it("dog'lanish haqida uzoq so'ralmaydi — 3 kundan keyin to'xtaydi", () => {
+    expect(withStreak(true, 3).kind).toBe("spotting-ongoing");
+    expect(withStreak(true, 4).kind).not.toBe("spotting-ongoing");
+  });
+
+  it("bugun belgilagan bo'lsa — hech qanday savol yo'q", () => {
+    const state = resolveReminder(
+      base({
+        loggedToday: true,
+        periodInProgress: { dayIndex: 2, expectedLength: 5, loggedToday: true, spottingOnly: true },
+      })
+    );
+    expect(state.kind).not.toBe("spotting-ongoing");
   });
 });
