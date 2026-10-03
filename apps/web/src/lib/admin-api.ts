@@ -2,6 +2,7 @@
 // mijozidan mustaqil (admin sessiyasi butunlay boshqa cookie/token orqali).
 
 import type {
+  AdminDoctor,
   AnalyticsSummary,
   AnalyticsUserSummary,
   Article,
@@ -169,6 +170,19 @@ export interface AdminStats {
   signupsByDay: { day: string; count: number }[];
 }
 
+/** Admin formasi yuboradigan to'plam — `DoctorInput` (server) bilan bir xil. */
+export interface DoctorPayload {
+  fullName: string;
+  specialty: ClinicSpecialty;
+  clinicId: string | null;
+  qualification: string | null;
+  experienceYears: number | null;
+  languages: string[];
+  photoUrl: string | null;
+  about: string | null;
+  isActive: boolean;
+}
+
 class AdminApiError extends Error {
   constructor(
     public status: number,
@@ -267,6 +281,15 @@ export const adminApi = {
     update: (id: string, patch: Partial<Omit<Clinic, "id" | "isSeedData">>) =>
       request<{ ok: true }>(`/clinics/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
     delete: (id: string) => request<{ ok: true }>(`/clinics/${id}`, { method: "DELETE" }),
+  },
+  /** DOC-01: shifokorlar katalogi. Shifokor O'CHIRILMAYDI — `deactivate`
+   *  faqat ro'yxatdan oladi, baholar tarixi joyida qoladi. */
+  doctors: {
+    list: () => request<AdminDoctor[]>("/doctors"),
+    create: (data: DoctorPayload) => request<{ id: string }>("/doctors", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: DoctorPayload) =>
+      request<{ ok: true }>(`/doctors/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deactivate: (id: string) => request<{ ok: true }>(`/doctors/${id}`, { method: "DELETE" }),
   },
   /** LIVE-01: jonli faollik oqimi. */
   activity: {

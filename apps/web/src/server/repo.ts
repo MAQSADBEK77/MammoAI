@@ -4,7 +4,9 @@ import { ApiError } from "./api-utils";
 import type { AlbumPhotoKind, CheckinResponse, Contraction } from "@mammoai/shared";
 import { PET_IDS, type PetChoice } from "@mammoai/shared";
 import type {
+  AdminDoctor,
   ChronicCondition,
+  ClinicSpecialty,
   CommunityFeedScope,
   AnalyticsEventInput,
   AnalyticsSummary,
@@ -266,6 +268,7 @@ export interface DoctorRow {
   languages: string | null;
   photo_url: string | null;
   about: string | null;
+  is_active: boolean;
 }
 
 export interface DoctorListItem {
@@ -327,6 +330,102 @@ export async function listDoctors(viewerId: string | null, specialty?: string): 
     visitConfirmed: visitRows.some((v) => v.doctor_id === r.id && !!v.confirmed_at),
     alreadyRated: ratingRows.some((x) => x.doctor_id === r.id && x.user_id === viewerId),
   }));
+}
+
+/**
+ * Admin ro'yxati — FAOLSIZLARI HAM ko'rinadi.
+ *
+ * Mijoz ro'yxatidan (`listDoctors`) ataylab alohida: u faqat faol
+ * shifokorlarni beradi va "men baholadimmi" kabi ayolga xos maydonlarni
+ * hisoblaydi. Ikkalasini bitta funksiyaga tiqish shartlarni chalkashtirib,
+ * bir kun faolsiz shifokorni ayolga ko'rsatib qo'yish xavfini tug'dirardi.
+ */
+export async function listDoctorsAdmin(): Promise<AdminDoctor[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT d.*, c.name AS clinic_name
+    FROM doctors d
+    LEFT JOIN clinics c ON c.id = d.clinic_id
+    ORDER BY d.is_active DESC, d.full_name ASC
+  `) as unknown as (DoctorRow & { clinic_name: string | null })[];
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+  const ratingRows = (await sql`
+    SELECT doctor_id, rating FROM doctor_ratings WHERE doctor_id = ANY(${ids})
+  `) as unknown as { doctor_id: string; rating: number }[];
+  const visitRows = (await sql`
+    SELECT doctor_id, COUNT(*)::int AS n FROM doctor_visits
+    WHERE doctor_id = ANY(${ids}) AND confirmed_at IS NOT NULL GROUP BY doctor_id
+  `) as unknown as { doctor_id: string; n: number }[];
+  return rows.map((r) => ({
+    id: r.id,
+    fullName: r.full_name,
+    specialty: r.specialty as ClinicSpecialty,
+    clinicId: r.clinic_id,
+    clinicName: r.clinic_name,
+    qualification: r.qualification,
+    experienceYears: r.experience_years,
+    languages: r.languages ? r.languages.split(",").map((x) => x.trim()).filter(Boolean) : [],
+    photoUrl: r.photo_url,
+    about: r.about,
+    isActive: r.is_active,
+    ratings: ratingRows.filter((x) => x.doctor_id === r.id).map((x) => x.rating),
+    visitCount: visitRows.find((v) => v.doctor_id === r.id)?.n ?? 0,
+  }));
+}
+
+export interface DoctorInput {
+  fullName: string;
+  specialty: string;
+  clinicId: string | null;
+  qualification: string | null;
+  experienceYears: number | null;
+  languages: string[];
+  photoUrl: string | null;
+  about: string | null;
+  isActive: boolean;
+}
+
+export async function createDoctor(input: DoctorInput): Promise<{ id: string }> {
+  await ensureSchema();
+  const id = randomUUID();
+  await sql`
+    INSERT INTO doctors (id, clinic_id, full_name, specialty, qualification, experience_years, languages, photo_url, about, is_active, created_at)
+    VALUES (${id}, ${input.clinicId}, ${input.fullName}, ${input.specialty}, ${input.qualification},
+            ${input.experienceYears}, ${input.languages.join(",")}, ${input.photoUrl}, ${input.about},
+            ${input.isActive}, ${now()})
+  `;
+  return { id };
+}
+
+export async function updateDoctor(id: string, input: DoctorInput): Promise<void> {
+  await ensureSchema();
+  await sql`
+    UPDATE doctors SET
+      clinic_id = ${input.clinicId},
+      full_name = ${input.fullName},
+      specialty = ${input.specialty},
+      qualification = ${input.qualification},
+      experience_years = ${input.experienceYears},
+      languages = ${input.languages.join(",")},
+      photo_url = ${input.photoUrl},
+      about = ${input.about},
+      is_active = ${input.isActive}
+    WHERE id = ${id}
+  `;
+}
+
+/**
+ * Shifokor O'CHIRILMAYDI, faqat faolsizlantiriladi.
+ *
+ * O'chirish `doctor_ratings`ni ham CASCADE bilan olib ketardi — ya'ni
+ * ayollar qoldirgan haqiqiy baholar yo'qolardi, va yomon baho olgan
+ * shifokorni "o'chirib, qaytadan qo'shish" orqali tarixini tozalash
+ * mumkin bo'lardi. Aynan shu narsa reytingning ma'nosini yo'q qiladi.
+ */
+export async function setDoctorActive(id: string, isActive: boolean): Promise<void> {
+  await ensureSchema();
+  await sql`UPDATE doctors SET is_active = ${isActive} WHERE id = ${id}`;
 }
 
 /** Ayol "shu shifokorga boraman" deganda — tashrif yoziladi. */
