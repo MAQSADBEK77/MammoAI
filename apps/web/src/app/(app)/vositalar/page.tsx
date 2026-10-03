@@ -47,6 +47,7 @@ export default function ToolsPage() {
 
   const tiles = [
     { href: "/maqolalar", label: t.articles, hint: t.articlesHint, Icon: ArticleOutlined, tint: "bg-primary/10", fg: "text-primary" },
+    { href: "/shifokorlar", label: t.doctorsTile, hint: t.doctorsTileHint, Icon: MedicalInformationOutlined, tint: "bg-primary/10", fg: "text-primary" },
     { href: "/klinikalar", label: t.clinics, hint: t.clinicsHint, Icon: LocationOnOutlined, tint: "bg-accent/10", fg: "text-accent" },
     { href: "/hisobot", label: t.report, hint: t.reportHint, Icon: MedicalInformationOutlined, tint: "bg-secondary/10", fg: "text-secondary" },
     { href: "/statistika", label: t.stats, hint: t.statsHint, Icon: InsightsOutlined, tint: "bg-primary/10", fg: "text-primary" },

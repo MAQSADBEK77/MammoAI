@@ -218,7 +218,7 @@ export function MenopauseScreen() {
           </button>
           <button
             type="button"
-            onClick={() => router.push("/klinikalar")}
+            onClick={() => router.push("/shifokorlar")}
             className="tap-target flex-1 rounded-full bg-surface-muted text-sm font-semibold text-text-primary"
           >
             {t.doctorsCta}
