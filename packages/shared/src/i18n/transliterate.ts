@@ -6,6 +6,23 @@
 
 const APOSTROPHES = new Set(["'", "ʻ", "ʼ", "‘", "’", "`", "´"]);
 
+/**
+ * Harfma-harf o'girilmaydigan ketma-ketliklar — digraflardan OLDIN
+ * tekshiriladi.
+ *
+ * "ksiya": lotincha -ksiya qo'shimchali o'zlashma so'zlar kirillda -кция
+ * bo'lib yoziladi (funksiya -> функция, infeksiya -> инфекция,
+ * reaksiya -> реакция, aksiya -> акция). Harfma-harf o'girilsa "функсия"
+ * chiqadi — o'qiladi, lekin noto'g'ri yozilgan. Lug'atda bu 17 joyda
+ * uchraydi, jumladan "infeksiya" kabi TIBBIY so'zda.
+ *
+ * ESLATMA: bu alohida so'zlar lug'ati emas, QOIDA — shuning uchun
+ * yangi matn qo'shilganda ham o'z-o'zidan to'g'ri ishlaydi.
+ */
+const SEQUENCES: Record<string, string> = {
+  ksiya: "кция",
+};
+
 const DIGRAPHS: Record<string, string> = {
   sh: "ш",
   ch: "ч",
@@ -70,10 +87,29 @@ export function latinToCyrillicUz(text: string): string {
       continue;
     }
 
+    // Ko'p harfli istisno ketma-ketliklar (SEQUENCES) — digraflardan oldin,
+    // aks holda "ya" digrafi "ksiya"ni bo'lib yuborardi.
+    let matchedSequence = false;
+    for (const [seq, mapped] of Object.entries(SEQUENCES)) {
+      if (text.slice(i, i + seq.length).toLowerCase() === seq) {
+        const firstUpper = c === c.toUpperCase() && /[a-z]/i.test(c);
+        result += firstUpper ? mapped.charAt(0).toUpperCase() + mapped.slice(1) : mapped;
+        i += seq.length;
+        matchedSequence = true;
+        break;
+      }
+    }
+    if (matchedSequence) continue;
+
     // 2 harfli digraflar: sh, ch, yo, yu, ya, ye
     if (next) {
       const pair = (lower1 + next.toLowerCase()) as keyof typeof DIGRAPHS;
-      if (DIGRAPHS[pair]) {
+      // "yo'" — bu "yo" digrafi EMAS, balki "y" + "o'" ("yo'q" -> "йўқ").
+      // Ilgari digraf oldin ishlab, "ёъқ" chiqardi: "yo" -> "ё", so'ng
+      // yolg'iz qolgan tutuq belgisi -> "ъ". Lug'atda bu 60 joyda, shundan
+      // 33 tasi eng keng tarqalgan "yo'q" so'zi.
+      const isYoApostrophe = pair === "yo" && APOSTROPHES.has(text[i + 2] ?? "");
+      if (DIGRAPHS[pair] && !isYoApostrophe) {
         let mapped = DIGRAPHS[pair];
         const bothUpper = c === c.toUpperCase() && next === next.toUpperCase() && /[a-z]/i.test(c);
         const firstUpper = c === c.toUpperCase() && /[a-z]/i.test(c);
