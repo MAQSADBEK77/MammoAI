@@ -25,6 +25,9 @@ export type ReminderKind =
   | { kind: "period-confirm" }
   /** Hayz boshlangan, bugun belgilanmagan — davom etyaptimi? */
   | { kind: "period-ongoing"; day: number }
+  // PERIOD-TRACK-04: seriyada faqat dog'lanish bo'lsa — "hayzingizning
+  // N-kuni" deb DA'VO qilib bo'lmaydi, shuning uchun alohida tur.
+  | { kind: "spotting-ongoing" }
   /** Kutilgan davomiylik tugadi, lekin "tugadi" deb belgilanmagan. */
   | { kind: "period-ended-ask" }
   | { kind: "fertile-window" }
@@ -76,7 +79,13 @@ export interface ReminderInput {
    *
    * `dayIndex` — hayzning nechanchi kuni (1 dan).
    */
-  periodInProgress: { dayIndex: number; expectedLength: number; loggedToday: boolean } | null;
+  periodInProgress: {
+    dayIndex: number;
+    expectedLength: number;
+    loggedToday: boolean;
+    /** PERIOD-TRACK-04: seriyada faqat dog'lanish bormi (logic/flow-streak.ts). */
+    spottingOnly: boolean;
+  } | null;
   prediction: {
     daysUntilNextPeriod: number;
     fertileWindowStart: string;
@@ -121,6 +130,16 @@ export const PERIOD_LATE_MAX_DAYS_TO_NOTIFY = 7;
  * davrda kundalik belgilashga chaqirish mazmunliroq.
  */
 export const RECENT_FLOW_QUIET_DAYS = 3;
+
+/**
+ * PERIOD-TRACK-04: dog'lanish haqida ko'pi bilan shuncha kun so'raymiz.
+ *
+ * Hayz uchun oyna "kutilgan davomiylik + 2 kun", chunki u qancha
+ * davom etishini taxminan bilamiz. Dog'lanish uchun bunday kutilma
+ * YO'Q — u bir kun ham, bir hafta ham bo'lishi mumkin. Shuning uchun
+ * qisqa oyna: javob bermasa, qayta-qayta so'rab bezovta qilmaymiz.
+ */
+export const SPOTTING_ASK_MAX_DAYS = 3;
 
 /**
  * Onboardingni tugatmaganlarga yuboriladigan eng ko'p xabar soni.
@@ -185,10 +204,19 @@ export function resolveReminder(input: ReminderInput): ReminderKind {
   // qaydini davom ettirish taklifi, ya'ni hech qanday ziddiyat yo'q.
   const inProgress = input.periodInProgress;
   if (inProgress && !inProgress.loggedToday) {
-    if (inProgress.dayIndex <= inProgress.expectedLength) {
+    // PERIOD-TRACK-04: faqat dog'lanish belgilangan bo'lsa, hayz haqida
+    // GAPIRMAYMIZ. Dog'lanish hayz boshlanishi sanalmaydi, shuning uchun
+    // "Hayzingizning 2-kuni" ham, "Hayzingiz tugadimi?" ham noto'g'ri
+    // da'vo bo'lardi. So'rash esa o'rinli — javob ilovaga haqiqatan nima
+    // bo'layotganini o'rgatadi.
+    if (inProgress.spottingOnly) {
+      if (inProgress.dayIndex <= SPOTTING_ASK_MAX_DAYS) return { kind: "spotting-ongoing" };
+      // Undan keyin jim qolmaymiz — pastdagi odatiy mantiq ishlaydi.
+    } else if (inProgress.dayIndex <= inProgress.expectedLength) {
       return { kind: "period-ongoing", day: inProgress.dayIndex };
+    } else {
+      return { kind: "period-ended-ask" };
     }
-    return { kind: "period-ended-ask" };
   }
 
   const p = input.prediction;

@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
-import { lastFlowStreakStart, daysBetween, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { lastFlowStreak, daysBetween, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/analytics";
 import { useConfirm } from "@/lib/confirm";
@@ -538,9 +538,13 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   // ilovaning jim qolishi "belgilash hech narsani o'zgartirmadi" degan
   // taassurot berardi. O'lchandi: oxirgi 7 kunda qayd qilgan 35 ayoldan
   // 5 tasi FAQAT dog'lanish belgilagan.
-  const lastLoggedStart = lastFlowStreakStart(data.logs);
+  const flowStreak = lastFlowStreak(data.logs);
   const expectedPeriodLength = data.prediction?.averagePeriodLength ?? data.settings.averagePeriodLength ?? 5;
-  const ongoingDayIndex = lastLoggedStart ? daysBetween(lastLoggedStart, today) + 1 : null;
+  const ongoingDayIndex = flowStreak ? daysBetween(flowStreak.start, today) + 1 : null;
+  // PERIOD-TRACK-04: faqat dog'lanish belgilangan bo'lsa, karta "N-kun"
+  // demaydi — dog'lanish hayz boshlanishi sanalmaydi va bu da'vo noto'g'ri
+  // bo'lardi (production'da aynan shu xato topilgan).
+  const ongoingSpottingOnly = !!flowStreak?.spottingOnly;
   const showOngoingPrompt =
     ongoingDayIndex !== null &&
     ongoingDayIndex >= 2 &&
@@ -680,9 +684,11 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   const ongoingPrompt = showOngoingPrompt ? (
         <Card className="space-y-3">
           <div>
-            <p className="text-base font-bold text-text-primary">{dict.cycle.ongoingTitle}</p>
+            <p className="text-base font-bold text-text-primary">
+              {ongoingSpottingOnly ? dict.cycle.ongoingSpottingTitle : dict.cycle.ongoingTitle}
+            </p>
             <p className="mt-0.5 text-sm leading-relaxed text-text-secondary">
-              {dict.cycle.ongoingSubtitle(ongoingDayIndex!)}
+              {ongoingSpottingOnly ? dict.cycle.ongoingSpottingSubtitle : dict.cycle.ongoingSubtitle(ongoingDayIndex!)}
             </p>
           </div>
           <div className="flex gap-2">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lastFlowStreakStart } from "./flow-streak";
+import { lastFlowStreak, lastFlowStreakStart } from "./flow-streak";
 
 describe("lastFlowStreakStart", () => {
   it("qayd bo'lmasa null", () => {
@@ -38,5 +38,36 @@ describe("lastFlowStreakStart", () => {
       { date: "2026-09-30", flow: "medium" },
     ];
     expect(lastFlowStreakStart(logs)).toBe("2026-09-29");
+  });
+});
+
+// PERIOD-TRACK-04 — production'da topilgan xato: bitta dog'lanish kuni
+// "Hayzingizning 2-kuni" degan xabarga olib keldi.
+describe("spottingOnly — dog'lanish hayz deb e'lon qilinmasligi kerak", () => {
+  it("faqat dog'lanish belgilangan seriya spottingOnly bo'ladi", () => {
+    const streak = lastFlowStreak([{ date: "2026-10-02", flow: "spotting" }]);
+    expect(streak).toEqual({ start: "2026-10-02", spottingOnly: true });
+  });
+
+  it("seriyada bitta kun haqiqiy hayz bo'lsa — spottingOnly EMAS", () => {
+    const streak = lastFlowStreak([
+      { date: "2026-10-01", flow: "spotting" },
+      { date: "2026-10-02", flow: "medium" },
+    ]);
+    expect(streak).toEqual({ start: "2026-10-01", spottingOnly: false });
+  });
+
+  it("eski dog'lanish yangi seriyaga qo'shilmaydi (kunlar uzilgan)", () => {
+    const streak = lastFlowStreak([
+      { date: "2026-09-29", flow: "spotting" },
+      { date: "2026-10-02", flow: "spotting" },
+    ]);
+    expect(streak?.start).toBe("2026-10-02");
+  });
+
+  it("lastFlowStreakStart eski chaqiruvchilar uchun o'zgarmaydi", () => {
+    const logs = [{ date: "2026-10-02", flow: "spotting" }];
+    expect(lastFlowStreakStart(logs)).toBe("2026-10-02");
+    expect(lastFlowStreakStart([])).toBeNull();
   });
 });

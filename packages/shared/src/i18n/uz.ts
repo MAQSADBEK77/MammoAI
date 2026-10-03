@@ -401,6 +401,8 @@ const uz = {
     // uchun — "Batafsil kiritish" bo'limining flowCardLabel/symptomsCardLabel'idan
     // farqli, qisqaroq tugma matnlari.
     ongoingTitle: "Hayzingiz davom etyaptimi?",
+    ongoingSpottingTitle: "Dog'lanish davom etyaptimi?",
+    ongoingSpottingSubtitle: "Hayz boshlangan bo'lsa, belgilab qo'ying — kalendarda bashorat emas, haqiqiy kun bo'lib qoladi.",
     ongoingSubtitle: (day: number) => `${day}-kun. Belgilansa, kalendarda bashorat emas, haqiqiy kun bo'lib qoladi.`,
     ongoingYes: "Ha, davom etyapti",
     ongoingEnded: "Tugadi",
@@ -1692,6 +1694,9 @@ const uz = {
     periodTomorrow: "Ertaga hayzingiz boshlanishi kutilmoqda — tayyorgarlik ko'ring 🩷",
     periodSoon: (days: number) => `${days} kundan keyin hayzingiz boshlanadi 🩷`,
     periodOngoing: (day: number) => `Hayzingizning ${day}-kuni. Bugun ham davom etyaptimi? Bir bosishda belgilab qo'ying 🩷`,
+    // PERIOD-TRACK-04: dog'lanish hayz boshlanishi SANALMAYDI, shuning
+    // uchun bu yerda kun soni ham, "hayzingiz" so'zi ham ishlatilmaydi.
+    spottingOngoing: "Dog'lanishni belgilagansiz. Bugun hayz boshlandimi? Bir bosishda belgilab qo'ying 🩷",
     periodEndedAsk: "Hayzingiz tugadimi? Oxirgi kunini belgilab qo'ysangiz, keyingi bashorat aniqroq bo'ladi 🩷",
     periodConfirm: "Hayzingiz shu kunlarda kutilyapti. Boshlangan bo'lsa, belgilab qo'ying — shunda bashorat aniqroq bo'ladi 🩷",
     periodLate: (days: number) => `Hayzingiz ${days} kun kechikmoqda — bu me'yorda bo'lishi ham mumkin, lekin kuzatib boring 🩷`,
