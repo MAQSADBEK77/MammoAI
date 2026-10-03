@@ -1937,7 +1937,20 @@ const en: Dictionary = {
     disclaimer: "This report is built from the user's own records. It is not a medical document and does not replace a diagnosis.",
     printButton: "Print",
   },
+  registerGate: {
+    title: "This feature needs an account",
+    action: "Create an account or sign in",
+    note: "Everything else — cycle tracking, the calendar, articles, checkups and clinics — stays open without an account.",
+    reasons: {
+      "ai-chat": "Assistant replies are produced through a paid service, so it is tied to an account.",
+      "community-post": "Someone has to be answerable for every post in the community, so writing needs an account. Reading is open.",
+      reminders: "Reminders are sent over Telegram — without an account there is nowhere to send them.",
+      partner: "The partner link is tied to an account. Without one it would be lost when you change device.",
+      "doctor-report": "The report is built from your long-term history, and keeping that history needs an account.",
+    },
+  },
   apiErrors: {
+    registration_required: "This feature needs an account",
     invalid_tag: "Invalid topic",
     post_too_short: "Write at least a few words",
     premium_required: "This feature requires a Premium subscription",

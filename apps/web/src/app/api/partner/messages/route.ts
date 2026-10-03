@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { jsonError, requireUser } from "@/server/api-utils";
+import { jsonError, requireUser, requireRegisteredUser } from "@/server/api-utils";
 import { listPartnerChatMessages, sendPartnerChatMessage } from "@/server/repo";
 
 /** Hamkor bilan suhbat tarixi — Telegram uslubidagi chat (avvalgi bir martalik
@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireUser(request);
+    // AUTH-05: o'qish ochiq, yozish hisob talab qiladi.
+    const user = await requireRegisteredUser(request, "partner");
     const body = (await request.json()) as { body?: string };
     const text = body.body?.trim();
     if (!text) return NextResponse.json({ error: "Xabar matni bo'sh" }, { status: 400 });

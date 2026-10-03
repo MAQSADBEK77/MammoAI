@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "./session";
 import { getUserById } from "./repo";
-import type { User } from "@mammoai/shared";
+import type { GatedFeature, User } from "@mammoai/shared";
+import { canUseFeature } from "@mammoai/shared";
 
 export class ApiError extends Error {
   // FIX2-20: `key` — barqaror, tarjima qilinadigan xato kodi (masalan
@@ -40,6 +41,30 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<(User 
 
   const user = await getUserById(payload.sub);
   if (!user || user.tokenVersion !== payload.tokenVersion) return null;
+  return user;
+}
+
+/**
+ * AUTH-05 — hisob talab qiladigan funksiyalar uchun qo'riqchi.
+ *
+ * NEGA SERVERDA: UI'dagi qulf faqat bezak — so'rovni qo'lda yuborish
+ * yoki ekranni chetlab o'tish bilan ochiladi. AI yordamchisi esa HAQIQIY
+ * pul turadi, jamiyatga yozuv esa javobgarlik talab qiladi. Shuning
+ * uchun qaror shu yerda, bitta joyda qabul qilinadi.
+ *
+ * "Ro'yxatdan o'tgan" = telefon yoki Telegram biriktirilgan, ya'ni
+ * hisobni TIKLASH mumkin (`isRegisteredUser`, logic/registration.ts).
+ */
+export async function requireRegisteredUser(
+  request: NextRequest,
+  feature: GatedFeature
+): Promise<User & { tokenVersion: number }> {
+  const user = await requireUser(request);
+  if (!canUseFeature(feature, user)) {
+    // 403 + barqaror kalit: mijoz shu kalitni ko'rib "ro'yxatdan o'tish"
+    // oynasini ochadi, xato matnini ko'rsatib qo'ya qolmaydi.
+    throw new ApiError(403, "Bu funksiya uchun hisob kerak", "registration_required");
+  }
   return user;
 }
 
