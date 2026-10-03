@@ -140,6 +140,7 @@ describe("deriveAdaptiveCycleSettings", () => {
       personalLutealPhase: null, // CYCLE-ALGO-05
       stdDevDays: 4, // CYCLE-ALGO-07: DEFAULT_STD_DEV_DAYS
       cycleLengthOutliers: [], // CYCLE-ALGO-08
+      anchorFromLog: true, // CYCLE-ALGO-21: langar QAYDdan (2026-01-01 medium)
     });
   });
 
@@ -869,6 +870,7 @@ describe("explainPrediction", () => {
     averageCycleLength: 28,
     averagePeriodLength: 5,
     cyclesAnalyzed: 0,
+    anchorFromLog: false,
     confidence: "insufficient",
     personalLutealPhase: null,
     stdDevDays: 4,
@@ -963,5 +965,33 @@ describe("forecastCycles (CYCLE-ALGO-16)", () => {
 
   it("oxirgi hayz sanasi yo'q bo'lsa — bo'sh ro'yxat (soxta bashorat chiqarmaydi)", () => {
     expect(forecastCycles({ ...settings, lastPeriodStart: null }, 5)).toEqual([]);
+  });
+});
+
+// CYCLE-ALGO-21 — tasdiqlanmagan langar uchun "eskirgan" chegarasi ancha erta.
+describe("tasdiqlanmagan (onboarding) sanadan o'sib boruvchi kechikish", () => {
+  const settings = { lastPeriodStart: "2026-01-01", averageCycleLength: 28, averagePeriodLength: 5 };
+
+  it("hech qachon hayz qayd etmagan ayolda 20 kunlik kechikish ESKIRGAN deb belgilanadi", () => {
+    // 2026-01-01 + 28 = 2026-01-29 kutilgan; 2026-02-18 — 20 kun kechikish.
+    const p = predictCycle({ ...settings, anchorFromLog: false }, "2026-02-18");
+    expect(p?.daysUntilNextPeriod).toBe(-20);
+    expect(p?.isStale).toBe(true);
+  });
+
+  it("14 kungacha hali eskirgan emas — qisqa kechikish haqiqiy bo'lishi mumkin", () => {
+    const p = predictCycle({ ...settings, anchorFromLog: false }, "2026-02-11");
+    expect(p?.daysUntilNextPeriod).toBe(-13);
+    expect(p?.isStale).toBe(false);
+  });
+
+  it("QAYD ETGAN ayolda o'sha 20 kunlik kechikish HAQIQIY signal — ko'rsatilaveradi", () => {
+    const p = predictCycle({ ...settings, anchorFromLog: true }, "2026-02-18");
+    expect(p?.isStale).toBe(false);
+  });
+
+  it("bayroq berilmasa eski xatti-harakat saqlanadi (90 kun)", () => {
+    expect(predictCycle(settings, "2026-02-18")?.isStale).toBe(false);
+    expect(predictCycle(settings, "2026-06-01")?.isStale).toBe(true);
   });
 });

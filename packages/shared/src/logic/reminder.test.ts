@@ -212,3 +212,29 @@ describe("PERIOD-TRACK-01 — davom etayotgan hayz", () => {
     expect(r.kind).toBe("period-ongoing");
   });
 });
+
+// CYCLE-ALGO-21 — "eskirgan" chegarasi tasdiqlanmagan langar uchun 90 dan 14
+// kunga tushirildi. Bu BOSH EKRANdagi o'sib boruvchi "N kun kechikmoqda"
+// sonini to'xtatish uchun qilindi; eslatmalarga ta'sir qilmasligi kerak.
+describe("erta 'eskirgan' belgisi eslatmani JIMLATMAYDI", () => {
+  const late20 = (isStale: boolean) =>
+    resolveReminder(
+      base({
+        loggedToday: false,
+        prediction: {
+          daysUntilNextPeriod: -20,
+          fertileWindowStart: "2026-09-01",
+          fertileWindowEnd: "2026-09-05",
+          isStale,
+          cyclesAnalyzed: 0,
+        },
+      })
+    ).kind;
+
+  it("20 kun kechikishda natija isStale bayrog'idan QAT'I NAZAR bir xil", () => {
+    // Sabab: PERIOD_LATE_MAX_DAYS_TO_NOTIFY = 7, ya'ni 20 kun baribir
+    // chegaradan tashqarida va sikl xabari yuborilmaydi.
+    expect(late20(false)).toBe(late20(true));
+    expect(late20(true)).toBe("log-today");
+  });
+});
