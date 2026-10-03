@@ -38,31 +38,37 @@ const MESSAGES: Record<
   }
 > = {
   uz: {
-    askContact: "Xavfsizlik uchun, ilovaga kiritgan telefon raqamingizni tasdiqlang — pastdagi tugmani bosing.",
+    askContact:
+      "Xavfsizlik uchun, ilovaga kiritgan telefon raqamingizni tasdiqlang — pastdagi \"📱\" tugmasini bosing.\n\nRaqamingiz faqat hisobingizni tanish va tiklash uchun ishlatiladi.",
     shareButton: "📱 Telefon raqamimni ulashish",
-    mismatch: "Bu Telegram hisobi ilovaga kiritilgan raqamga mos kelmadi. Iltimos, o'sha raqamga tegishli Telegram hisobingizdan urinib ko'ring.",
+    mismatch:
+      "Bu Telegram hisobi ilovaga kiritilgan raqamga mos kelmadi.\n\nEng oson yo'li — pastdagi tugma orqali ilovani shu yerdan ochish: unda raqam yozish umuman shart emas.",
     codeSent: (code) => `Sizning MammoAI tasdiqlash kodingiz: ${code}\n\nBu kodni hech kimga bermang.`,
-    invalidToken: "Havola eskirgan yoki noto'g'ri. Ilovada qaytadan urinib ko'ring.",
+    invalidToken: "Havola eskirgan yoki noto'g'ri. Ilovani shu yerdan ochib, qaytadan urinib ko'ring.",
     welcome:
       "👋 Xush kelibsiz, MammoAI botiga!\n\nBu yerdan ilovaga to'g'ridan-to'g'ri, telefon raqam kiritmasdan kirishingiz mumkin — ism, rasm va raqamingiz avtomatik olinadi.\n\nBoshlash uchun pastdagi tugmani bosing 👇",
     openAppButton: "📲 Ilovani ochish",
   },
   ru: {
-    askContact: "Для безопасности подтвердите номер телефона, указанный в приложении — нажмите кнопку ниже.",
+    askContact:
+      "Для безопасности подтвердите номер телефона, указанный в приложении — нажмите кнопку «📱» ниже.\n\nНомер нужен только для того, чтобы узнать и восстановить ваш аккаунт.",
     shareButton: "📱 Поделиться номером телефона",
-    mismatch: "Этот Telegram-аккаунт не соответствует номеру, указанному в приложении. Попробуйте со своего аккаунта, привязанного к этому номеру.",
+    mismatch:
+      "Этот Telegram-аккаунт не соответствует номеру, указанному в приложении.\n\nПроще всего открыть приложение прямо отсюда — кнопка ниже: вводить номер вообще не потребуется.",
     codeSent: (code) => `Ваш код подтверждения MammoAI: ${code}\n\nНикому не сообщайте этот код.`,
-    invalidToken: "Ссылка устарела или неверна. Попробуйте ещё раз в приложении.",
+    invalidToken: "Ссылка устарела или неверна. Откройте приложение отсюда и попробуйте снова.",
     welcome:
       "👋 Добро пожаловать в бот MammoAI!\n\nЗдесь можно войти в приложение напрямую, без ввода номера телефона — имя, фото и номер будут получены автоматически.\n\nНажмите кнопку ниже, чтобы начать 👇",
     openAppButton: "📲 Открыть приложение",
   },
   en: {
-    askContact: "For security, confirm the phone number you entered in the app — tap the button below.",
+    askContact:
+      "For security, confirm the phone number you entered in the app — tap the \"📱\" button below.\n\nYour number is only used to recognise and restore your account.",
     shareButton: "📱 Share my phone number",
-    mismatch: "This Telegram account doesn't match the number entered in the app. Please try from the Telegram account linked to that number.",
+    mismatch:
+      "This Telegram account doesn't match the number entered in the app.\n\nThe easiest way is to open the app right here with the button below — no number typing needed at all.",
     codeSent: (code) => `Your MammoAI verification code: ${code}\n\nDon't share this code with anyone.`,
-    invalidToken: "The link is expired or invalid. Please try again in the app.",
+    invalidToken: "The link is expired or invalid. Open the app from here and try again.",
     welcome:
       "👋 Welcome to the MammoAI bot!\n\nYou can open the app directly from here, no phone number typing needed — your name, photo, and number are picked up automatically.\n\nTap the button below to get started 👇",
     openAppButton: "📲 Open the app",
@@ -140,7 +146,11 @@ export async function POST(request: NextRequest) {
         const m = messagesFor(result.language);
         await sendTelegramMessage(String(chatId), m.askContact, requestContactKeyboard(m.shareButton));
       } else {
-        await sendTelegramMessage(String(chatId), messagesFor("uz").invalidToken);
+        // AUTH-07: ilgari bu boshi berk ko'cha edi — xabar bor, chiqish yo'li
+        // yo'q. Mini App orqali kirishda esa havola ham, raqam ham kerak emas.
+        const publicBaseUrl = new URL(request.url).origin;
+        const m = messagesFor("uz");
+        await sendTelegramMessage(String(chatId), m.invalidToken, miniAppInlineKeyboard(m.openAppButton, `${publicBaseUrl}/tg`));
       }
     } else if (message?.contact?.phone_number) {
       // Avval Mini App orqali kutilayotgan kirish bormi tekshiriladi (1:1 shaxsiy
@@ -171,7 +181,19 @@ export async function POST(request: NextRequest) {
           await clearPhoneVerificationCode(result.token);
         }
       } else if (result && !result.matched) {
-        await sendTelegramMessage(String(chatId), messagesFor("uz").mismatch, removeKeyboard());
+        // AUTH-07: ikkita tuzatish.
+        //  1) TIL: ilgari har doim o'zbekcha yuborilardi, garchi ru/en
+        //     tarjimalari mavjud bo'lsa ham — ayol eng chalkash paytda
+        //     tushunmaydigan tilda javob olardi.
+        //  2) CHIQISH YO'LI: ilgari klaviatura olib tashlanardi va boshqa
+        //     hech narsa taklif qilinmasdi — ya'ni boshi berk ko'cha. Endi
+        //     Mini App tugmasi beriladi: u yerda raqam yozish umuman shart
+        //     emas, ya'ni mos kelmaslik muammosi butunlay chetlab o'tiladi.
+        //     Kontakt klaviaturasi ham ataylab OLIB TASHLANMAYDI — boshqa
+        //     hisobdan qayta urinmoqchi bo'lsa, tugma joyida qoladi.
+        const publicBaseUrl = new URL(request.url).origin;
+        const m = messagesFor(result.language);
+        await sendTelegramMessage(String(chatId), m.mismatch, miniAppInlineKeyboard(m.openAppButton, `${publicBaseUrl}/tg`));
       }
       // `result === null` — bu chat uchun kutilayotgan tasdiqlash topilmadi (masalan
       // /start bosilmasdan to'g'ridan-to'g'ri kontakt yuborilgan) — jim qolamiz.

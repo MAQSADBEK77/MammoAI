@@ -909,7 +909,14 @@ export async function registerTelegramStart(token: string, chatId: string): Prom
 export async function confirmPhoneViaContact(
   chatId: string,
   sharedPhone: string
-): Promise<{ matched: true; token: string; phone: string; language: Language; code: string } | { matched: false } | null> {
+): Promise<
+  | { matched: true; token: string; phone: string; language: Language; code: string }
+  // AUTH-07: mos kelmaganda ham TIL qaytariladi — aks holda webhook uni
+  // bilmay, xabarni har doim o'zbekcha yuborardi (tarjimalari bor bo'lsa ham),
+  // ya'ni ayol eng chalkash paytda tushunmaydigan tilda javob olardi.
+  | { matched: false; language: Language }
+  | null
+> {
   await ensureSchema();
   const rows = (await sql`
     SELECT token, phone, language FROM phone_verifications
@@ -920,7 +927,7 @@ export async function confirmPhoneViaContact(
   if (!row) return null;
 
   if (normalizePhoneDigits(row.phone) !== normalizePhoneDigits(sharedPhone)) {
-    return { matched: false };
+    return { matched: false, language: row.language };
   }
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
