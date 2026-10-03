@@ -16,6 +16,7 @@ import { useConfirm } from "@/lib/confirm";
 import { api } from "@/lib/api";
 import { Button, Card, LoadingSpinner, ErrorState, ScreenHeader, Badge, Toast } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
+import { RegisterGate } from "@/components/RegisterGate";
 import { PartnerChatDialog } from "./PartnerChatDialog";
 
 /**
@@ -192,6 +193,10 @@ export function HamkorScreen() {
             </div>
           </Card>
 
+          {/* AUTH-05: ulanish hisobga bog'lanadi, shuning uchun tugmalar
+              o'rniga sabab ko'rsatiladi. Yuqoridagi tanishtiruv kartalari
+              esa joyida qoladi — ayol nima yo'qotayotganini ko'rsin. */}
+          <RegisterGate feature="partner">
           <Button className="w-full" onClick={openConnectModal}>
             {/* FIX-UX-05: MUI Button ildizi flex (`display:inline-flex`) —
                 CSS Flexbox spec'iga ko'ra faqat bo'shliqdan iborat matn
@@ -203,6 +208,7 @@ export function HamkorScreen() {
           <Button variant="ghost" className="w-full border border-border" onClick={openConnectModal}>
             {dict.partner.enterCodeButton}
           </Button>
+          </RegisterGate>
         </>
       ) : (
         <>

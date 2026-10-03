@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ApiError, jsonError, requireUser } from "@/server/api-utils";
+import { ApiError, jsonError, requireRegisteredUser } from "@/server/api-utils";
 import { generateAssistantReply } from "@/server/ai-chat";
 import { getChatAccess } from "@/server/chat-access";
 import { incrementDailyChatUsage, decrementDailyChatUsage, listChatMessages, saveChatMessage } from "@/server/repo";
@@ -13,7 +13,8 @@ const HISTORY_LIMIT = 20; // Claude'ga yuboriladigan oxirgi xabarlar soni
  * javob saqlanib qaytariladi. */
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireUser(request);
+    // AUTH-05: har bir javob pul turadi — anonim hisobdan so'ralmaydi.
+    const user = await requireRegisteredUser(request, "ai-chat");
     // MONETIZE-01: Premium YOKI qolgan bepul xabar. Bepul xabarlar tugagach
     // 402 Payment Required — mijoz shu statusni ko'rib alohida paywall
     // ko'rsatadi (oddiy xato emas).

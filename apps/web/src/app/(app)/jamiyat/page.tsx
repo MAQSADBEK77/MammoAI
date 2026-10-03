@@ -20,6 +20,7 @@ import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
 import { useConfirm } from "@/lib/confirm";
 import { CommunityPostSheet } from "@/components/screens/CommunityPostSheet";
+import { RegisterGate } from "@/components/RegisterGate";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, IconButton, LoadingSpinner, ErrorState, ScreenHeader, Toast } from "@/components/ui";
@@ -441,7 +442,10 @@ export default function CommunityPage() {
           ekranning to'rtdan birini egallab turishi ham shart emas. */}
       <p className="-mt-2 text-xs leading-relaxed text-text-muted">{dict.community.moderationNotice}</p>
 
+      {/* AUTH-05: tugma anonim ayolga ham ko'rinadi — yozish imkoniyati
+          borligini bilishi kerak. Bosganda forma o'rniga SABAB chiqadi. */}
       {composerOpen && (
+        <RegisterGate feature="community-post">
         <Card className="space-y-3">
           <p className="font-semibold text-text-primary">{dict.community.writePostTitle}</p>
           <textarea
@@ -478,6 +482,7 @@ export default function CommunityPage() {
             </Button>
           </div>
         </Card>
+        </RegisterGate>
       )}
 
       {/* CLIPBOARD-01: "Ulashish" natijasi — ilgari hech qanday tasdiq yo'q edi. */}

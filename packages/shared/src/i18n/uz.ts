@@ -2140,7 +2140,20 @@ const uz = {
     disclaimer: "Bu hisobot foydalanuvchining o'z yozuvlaridan tuzilgan. U tibbiy hujjat emas va tashxis o'rnini bosmaydi.",
     printButton: "Chop etish",
   },
+  registerGate: {
+    title: "Bu funksiya uchun hisob kerak",
+    action: "Hisob ochish yoki kirish",
+    note: "Qolgan hamma narsa — sikl kuzatuvi, kalendar, maqolalar, tekshiruvlar va klinikalar — hisobsiz ham ochiq.",
+    reasons: {
+      "ai-chat": "Yordamchi javoblari pullik xizmat orqali tayyorlanadi, shuning uchun u hisobga bog'lanadi.",
+      "community-post": "Jamiyatda yozilgan har bir matn uchun kimdir javobgar bo'lishi kerak — shuning uchun yozish hisob talab qiladi. O'qish ochiq.",
+      reminders: "Eslatmalar Telegram orqali yuboriladi — hisob bo'lmasa, ularni yuboradigan manzil ham bo'lmaydi.",
+      partner: "Hamkor aloqasi hisobga bog'lanadi. Hisobsiz u qurilma almashtirilsa yo'qolib ketardi.",
+      "doctor-report": "Hisobot sizning uzoq muddatli tarixingizdan tuziladi — uni saqlab turish uchun hisob kerak.",
+    },
+  },
   apiErrors: {
+    registration_required: "Bu funksiya uchun hisob kerak",
     invalid_tag: "Mavzu (tag) noto'g'ri",
     post_too_short: "Kamida bir necha so'z yozing",
     premium_required: "Bu funksiya Premium obuna talab qiladi",

@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined, WorkspacePremiumRounded } from "@mui/icons-material";
 import type { ChatMessage, SymptomPattern } from "@mammoai/shared";
-import { ApiError, detectsMedicalConcern, translateApiError } from "@mammoai/shared";
+import { ApiError, canUseFeature, detectsMedicalConcern, translateApiError } from "@mammoai/shared";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { ScreenHeader, LoadingSpinner, ErrorState, Card, Button } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
+import { RegisterGate } from "@/components/RegisterGate";
 import { DURATION, EASE_BRAND } from "@/lib/motion";
 
 const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
@@ -46,6 +48,7 @@ function ChatBubbleEnter({ className, children }: { className?: string; children
  */
 export function YordamchiScreen() {
   const { dict } = useI18n();
+  const { user } = useSession();
   const router = useRouter();
 
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
@@ -191,6 +194,19 @@ export function YordamchiScreen() {
     } catch {
       // Fikr yuborishda xato bo'lsa ham suhbatga xalaqit bermaydi — jimgina o'tkazib yuboriladi.
     }
+  }
+
+  // AUTH-05: hisob tekshiruvi paywalldan OLDIN. Hisobsiz ayolga "Premium
+  // obuna kerak" deyish tushunarsiz bo'lardi — nimaga to'layman, qayerga
+  // biriktiriladi? Avval hisob, keyin to'lov haqida gap boradi.
+  // (Serverdagi haqiqiy qulf: requireRegisteredUser("ai-chat").)
+  if (!canUseFeature("ai-chat", user)) {
+    return (
+      <div className="flex flex-col gap-4">
+        <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
+        <RegisterGate feature="ai-chat">{null}</RegisterGate>
+      </div>
+    );
   }
 
   // MONETIZE-01: paywall endi FAQAT bepul xabarlar tugagach chiqadi —

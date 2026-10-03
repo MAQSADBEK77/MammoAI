@@ -17,6 +17,7 @@ import {
 import { Menu as MenuIcon, PersonOutlined, LockOutlined, FeedbackOutlined, FavoriteBorderOutlined, Close } from "@mui/icons-material";
 import clsx from "clsx";
 import type { Language } from "@mammoai/shared";
+import { canUseFeature } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
@@ -202,11 +203,21 @@ export function AppDrawerProvider({ children }: { children: ReactNode }) {
             <div className="flex items-center justify-between gap-3">
               {/* FIX2-10: ilgari oddiy <span> bo'lib, boshqaruv elementiga
                   htmlFor/aria-labelledby orqali ulanmagan edi. */}
-              <span id="drawer-notifications-label" className="text-sm font-medium text-text-primary">
-                {dict.profile.notificationsLabel}
-              </span>
+              <div className="min-w-0">
+                <span id="drawer-notifications-label" className="text-sm font-medium text-text-primary">
+                  {dict.profile.notificationsLabel}
+                </span>
+                {/* AUTH-05: eslatma Telegram orqali yuboriladi. Hisobsiz
+                    ayolda yuboriladigan manzil YO'Q — ya'ni tugma yoqilgan
+                    bo'lsa ham hech narsa kelmasdi. Ishlamaydigan tugmani
+                    ko'rsatgandan ko'ra sababini aytgan halolroq. */}
+                {!canUseFeature("reminders", user) && (
+                  <p className="mt-0.5 text-xs text-text-tertiary">{dict.registerGate.reasons.reminders}</p>
+                )}
+              </div>
               <Switch
-                checked={user.notificationsEnabled}
+                checked={user.notificationsEnabled && canUseFeature("reminders", user)}
+                disabled={!canUseFeature("reminders", user)}
                 onChange={() => save({ notificationsEnabled: !user.notificationsEnabled })}
                 slotProps={{ input: { "aria-labelledby": "drawer-notifications-label" } }}
                 sx={{

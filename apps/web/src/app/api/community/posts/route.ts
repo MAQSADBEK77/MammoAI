@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { jsonError, requireUser, ApiError } from "@/server/api-utils";
+import { jsonError, requireUser, requireRegisteredUser, ApiError } from "@/server/api-utils";
 import { createCommunityPost, listCommunityPosts } from "@/server/repo";
 import type { CommunityFeedScope, CommunityTag } from "@mammoai/shared";
 
@@ -27,7 +27,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireUser(request);
+    // AUTH-05: O'QISH ochiq qoladi (yuqoridagi GET), faqat YOZISH hisob
+    // talab qiladi — jamiyatdagi matn uchun kimdir javobgar bo'lishi va
+    // qoidabuzarlikda bloklash ishlashi kerak.
+    const user = await requireRegisteredUser(request, "community-post");
     const body = (await request.json()) as { tag?: CommunityTag; body?: string; isAnonymous?: boolean };
     if (!body.tag || !(VALID_TAGS as string[]).includes(body.tag)) {
       throw new ApiError(400, "Mavzu (tag) noto'g'ri", "invalid_tag");
