@@ -9,6 +9,7 @@ import { useSession } from "@/lib/session";
 import { Card, LoadingSpinner } from "@/components/ui";
 import { CycleScreen } from "@/components/screens/CycleScreen";
 import { PregnancyScreen } from "@/components/screens/PregnancyScreen";
+import { MenopauseScreen } from "@/components/screens/MenopauseScreen";
 import { NotificationsOptInCard } from "@/components/screens/NotificationsOptInCard";
 
 /**
@@ -84,7 +85,15 @@ export default function AsosiyPage() {
           bildirishnomasi o'chiq bo'lganlarga va bir marta ko'rinadi. */}
       <NotificationsOptInCard />
 
-      {isPregnancyMode ? <PregnancyScreen /> : <CycleScreen variant={useTodayVariant ? "today" : "classic"} />}
+      {/* MENO-02: klimaks endi alohida ekran. Ilgari u CycleScreen ichida
+          bitta karta edi va sikl kuzatuvi o'rniga hech narsa bermasdi. */}
+      {isPregnancyMode ? (
+        <PregnancyScreen />
+      ) : onboardingProfile.primaryGoal === "perimenopause" ? (
+        <MenopauseScreen />
+      ) : (
+        <CycleScreen variant={useTodayVariant ? "today" : "classic"} />
+      )}
       <div className="border-t border-border pt-6">
         {/* BRIDGE-01: karta endi bo'limni SHU YERDA ochmaydi, balki
             `/klinikalar` sahifasiga olib boradi.

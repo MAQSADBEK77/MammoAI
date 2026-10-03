@@ -230,6 +230,19 @@ export function createApiClient(config: ApiClientConfig) {
   const request = createRequest(config);
 
   return {
+    menopause: {
+      /** MENO-02: MRS natijalari. Ball serverda qayta hisoblanadi. */
+      get: () =>
+        request<{
+          assessments: { id: string; createdAt: string; total: number; severity: string }[];
+          monthsSinceLastPeriod: number | null;
+        }>("/api/menopause"),
+      save: (scores: Record<string, number>) =>
+        request<{ assessments: { id: string; createdAt: string; total: number; severity: string }[] }>("/api/menopause", {
+          method: "POST",
+          body: JSON.stringify({ scores }),
+        }),
+    },
     auth: {
       /** AUTH-04: ro'yxatdan o'tmasdan kirish — ilovaning eshigidagi
        *  to'siqni olib tashlaydi. Hisob serverda ochiladi, lekin unda
