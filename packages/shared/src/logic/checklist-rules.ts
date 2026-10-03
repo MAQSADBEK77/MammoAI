@@ -221,6 +221,30 @@ export function generateChecklist(input: ChecklistRuleInput): GeneratedChecklist
     items.push({ type: "thyroid_function_test", dueInDays: 365, recurrenceDays: 365 });
   }
 
+  // MENO-03: klimaksdan keyingi ikkita eng muhim skrining.
+  //
+  // Ular ATAYLAB `isPerimenopause` rejimiga bog'lanmagan, balki YOSHGA —
+  // xavf rejim tanlanganda emas, estrogen pasayganda boshlanadi, va bu
+  // ayol o'zini qaysi rejimda deb hisoblashiga bog'liq emas.
+  //
+  // Xolesterin: menopauzadan keyin yurak-qon tomir xavfi keskin oshadi
+  // va bu guruhda saratondan ko'ra KO'PROQ o'lim sababi. Tekshiruvi esa
+  // oddiy qon tahlili. 5 yilda bir marta — xalqaro standart oraliq.
+  if (input.age >= 45) {
+    items.push({ type: "lipid_panel", dueInDays: 365, recurrenceDays: 1825 });
+  }
+  // Suyak zichligi (DXA): 65 yoshdan boshlab BARCHA ayollar uchun.
+  //
+  // NEGA 65, 50 EMAS: 65 dan yosh ayollarga xalqaro tavsiya faqat
+  // QO'SHIMCHA xavf omillari bo'lsa (FRAX hisobi — ota-onada son suyagi
+  // sinishi, past vazn, uzoq muddatli steroid). Bu ma'lumotlar bizda
+  // YO'Q, taxmin qilib yuborish esa yoki keraksiz tekshiruvga, yoki
+  // noto'g'ri xotirjamlikka olib kelardi. Shuning uchun faqat yoshga
+  // tayangan, hamma uchun to'g'ri bo'lgan qism avtomatlashtiriladi.
+  if (input.age >= 65) {
+    items.push({ type: "bone_density_screening", dueInDays: 365, recurrenceDays: 730 });
+  }
+
   // --- Umumiy profilaktika (general_prevention) — asosiy yosh-bog'liq jadval ---
   // WEB3-05: FIX3-03 shu istisnoni FAQAT 50+ filialiga (pastda) qo'shgan edi —
   // 45-49 yoshli, isPerimenopause=true foydalanuvchi yuqoridagi
@@ -387,6 +411,9 @@ export const CHECKLIST_ITEM_IS_FREE: Record<ChecklistItemType, boolean> = {
   thyroid_function_test: false,
   rubella_immunity_check: false,
   colorectal_cancer_screening: false,
+  // MENO-03: ikkalasi ham davlat dasturida alohida ko'rsatilmagan.
+  bone_density_screening: false,
+  lipid_panel: false,
   // Folat kislotasi dorixonada arzon va retseptsiz — "bepul" emas, lekin
   // klinikaga borish ham shart emas.
   folic_acid_start: false,
@@ -431,6 +458,8 @@ export const CHECKUP_CATEGORY: Record<ChecklistItemType, ChecklistCategory> = {
   thyroid_function_test: "lab",
   rubella_immunity_check: "lab",
   colorectal_cancer_screening: "screening",
+  bone_density_screening: "imaging",
+  lipid_panel: "lab",
   folic_acid_start: "self_exam",
   fertility_evaluation: "consultation",
   partner_semen_analysis: "lab",
@@ -510,6 +539,8 @@ export const CHECKUP_SOURCE: Record<ChecklistItemType, CheckupSource[]> = {
   thyroid_function_test: ["international_practice"],
   rubella_immunity_check: ["international_practice"],
   colorectal_cancer_screening: ["international_practice"],
+  bone_density_screening: ["international_practice"],
+  lipid_panel: ["international_practice"],
   folic_acid_start: ["international_practice"],
   fertility_evaluation: ["international_practice"],
   partner_semen_analysis: ["international_practice"],

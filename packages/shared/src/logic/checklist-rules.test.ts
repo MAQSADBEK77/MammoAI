@@ -205,6 +205,27 @@ describe("CHECKUP-02: rasmiy manbalar bilan qo'shilgan bandlar", () => {
     expect(types({ age: 30 })).not.toContain("thyroid_function_test");
   });
 
+  // MENO-03: klimaks yoshidagi ikkita skrining.
+  it("xolesterin 45 yoshdan, 5 yilda bir marta", () => {
+    expect(types({ age: 44 })).not.toContain("lipid_panel");
+    expect(types({ age: 45 })).toContain("lipid_panel");
+    const item = generateChecklist({ ...BASE, age: 50 }).find((i) => i.type === "lipid_panel");
+    expect(item?.recurrenceDays).toBe(1825);
+  });
+
+  it("suyak zichligi 65 yoshdan — undan yoshda xavf omillari kerak, ular bizda yo'q", () => {
+    expect(types({ age: 55 })).not.toContain("bone_density_screening");
+    expect(types({ age: 64 })).not.toContain("bone_density_screening");
+    expect(types({ age: 65 })).toContain("bone_density_screening");
+  });
+
+  it("ikkala skrining ham REJIMGA emas, YOSHGA bog'liq", () => {
+    // Xavf estrogen pasayganda boshlanadi — ayol o'zini qaysi rejimda
+    // deb hisoblashiga bog'liq emas.
+    expect(types({ age: 50, isPerimenopause: false })).toContain("lipid_panel");
+    expect(types({ age: 66, isPerimenopause: false })).toContain("bone_density_screening");
+  });
+
   it("yo'g'on ichak skrininggi 45-75 yosh oralig'ida", () => {
     expect(types({ age: 44 })).not.toContain("colorectal_cancer_screening");
     expect(types({ age: 45 })).toContain("colorectal_cancer_screening");

@@ -1182,6 +1182,14 @@ const en: Dictionary = {
         title: "Colorectal cancer screening",
         why: "Not gynaecological, but a standard screening from age 45. Caught early it is far easier to treat than at a late stage.",
       },
+      bone_density_screening: {
+        title: "Bone density scan (DXA)",
+        why: "After menopause bone thins quickly and SILENTLY — often the first sign is the fracture itself. Many women who break a hip never walk unaided again. The scan is painless and takes 10-15 minutes.",
+      },
+      lipid_panel: {
+        title: "Cholesterol (lipid panel)",
+        why: "Cardiovascular risk rises sharply after menopause — at this age it kills more women than cancer does. A simple blood test finds it, and it is very treatable when caught in time.",
+      },
       bv_targeted_screening: {
         title: "Targeted bacterial vaginosis screening",
         why: "Untreated BV is linked to preterm birth and pregnancy loss; it's often asymptomatic, so relying on symptoms alone misses many cases.",

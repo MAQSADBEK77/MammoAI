@@ -391,7 +391,13 @@ export type ChecklistItemType =
   | "menopause_checkup"
   | "torch_panel"
   | "group_b_strep_screening"
-  | "bv_targeted_screening";
+  | "bv_targeted_screening"
+  // MENO-03: klimaks yoshidagi ikkita skrining. Bu davrda ayolni eng
+  // ko'p o'ldiradigan narsa saraton emas — yurak-qon tomir kasalligi, va
+  // eng ko'p nogiron qiladigani son suyagi sinishi. Ikkalasi ham ilovada
+  // umuman yo'q edi.
+  | "bone_density_screening"
+  | "lipid_panel";
 
 /** Tekshiruv ekranida bo'limlarga guruhlash uchun — statik, har bir
  * ChecklistItemType uchun CHECKUP_CATEGORY (checklist-rules.ts)da beriladi. */
