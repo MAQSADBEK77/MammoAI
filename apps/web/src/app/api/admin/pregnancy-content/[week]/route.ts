@@ -10,13 +10,34 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ w
     const weekNum = Number(week);
     if (!Number.isInteger(weekNum) || weekNum < 1 || weekNum > 42) throw new ApiError(400, "Hafta 1-42 oralig'ida bo'lishi kerak");
 
-    const body = (await request.json()) as { sizeLabel?: string; babyDevelopment?: string; motherChanges?: string };
+    type Text = { sizeLabel?: string; babyDevelopment?: string; motherChanges?: string };
+    const body = (await request.json()) as Text & { ru?: Text | null; en?: Text | null };
     const sizeLabel = body.sizeLabel?.trim();
     const babyDevelopment = body.babyDevelopment?.trim();
     const motherChanges = body.motherChanges?.trim();
-    if (!sizeLabel || !babyDevelopment || !motherChanges) throw new ApiError(400, "Barcha maydonlar to'ldirilishi kerak");
+    // O'zbekcha — MAJBURIY, chunki u boshqa tillar uchun zaxira matn.
+    if (!sizeLabel || !babyDevelopment || !motherChanges) throw new ApiError(400, "O'zbekcha maydonlar to'ldirilishi kerak");
 
-    const content = await upsertPregnancyWeekContent(weekNum, { sizeLabel, babyDevelopment, motherChanges });
+    // PREG-I18N: tarjima BUTUNLAY to'ldirilgan bo'lsagina saqlanadi —
+    // yarim to'ldirilgani ayolga ikki tilli aralash matn ko'rsatardi.
+    // `undefined` esa "tegma" degani (mavjud tarjima o'chib ketmaydi).
+    const translation = (t: Text | null | undefined) => {
+      if (t === undefined) return undefined;
+      if (t === null) return null;
+      const size = t.sizeLabel?.trim();
+      const baby = t.babyDevelopment?.trim();
+      const mother = t.motherChanges?.trim();
+      if (!size || !baby || !mother) throw new ApiError(400, "Tarjimaning barcha maydonlari to'ldirilishi kerak");
+      return { sizeLabel: size, babyDevelopment: baby, motherChanges: mother };
+    };
+
+    const content = await upsertPregnancyWeekContent(weekNum, {
+      sizeLabel,
+      babyDevelopment,
+      motherChanges,
+      ru: translation(body.ru),
+      en: translation(body.en),
+    });
     logAdminAction(identity.adminLabel, "pregnancy_content_updated", `hafta=${weekNum}`).catch(() => {});
     return NextResponse.json({ content });
   } catch (error) {

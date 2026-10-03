@@ -5,19 +5,36 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "@/lib/admin-api";
-import type { PregnancyWeekContent } from "@mammoai/shared";
+import type { AdminPregnancyWeek, PregnancyWeekText } from "@mammoai/shared";
 import { Card, Button, ErrorState } from "@/components/ui";
 
 const ALL_WEEKS = Array.from({ length: 42 }, (_, i) => i + 1);
 
+// PREG-I18N: uchta tahrirlanadigan til. uz-cyrl ro'yxatda YO'Q — kirill
+// matni lotinchadan avtomatik o'giriladi (transliterate.ts), ya'ni uni
+// qo'lda saqlash ikkinchi nusxa bo'lardi.
+const LANGS = [
+  { id: "uz", label: "O'zbekcha" },
+  { id: "ru", label: "Ruscha" },
+  { id: "en", label: "Inglizcha" },
+] as const;
+type LangId = (typeof LANGS)[number]["id"];
+
+const EMPTY: PregnancyWeekText = { sizeLabel: "", babyDevelopment: "", motherChanges: "" };
+
+function draftFrom(week: AdminPregnancyWeek | undefined): Record<LangId, PregnancyWeekText> {
+  return {
+    uz: week?.uz ?? EMPTY,
+    ru: week?.ru ?? EMPTY,
+    en: week?.en ?? EMPTY,
+  };
+}
+
 export default function AdminPregnancyContentPage() {
-  const [weeks, setWeeks] = useState<Map<number, PregnancyWeekContent> | null>(null);
+  const [weeks, setWeeks] = useState<Map<number, AdminPregnancyWeek> | null>(null);
   const [openWeek, setOpenWeek] = useState<number | null>(null);
-  const [draft, setDraft] = useState<{ sizeLabel: string; babyDevelopment: string; motherChanges: string }>({
-    sizeLabel: "",
-    babyDevelopment: "",
-    motherChanges: "",
-  });
+  const [lang, setLang] = useState<LangId>("uz");
+  const [draft, setDraft] = useState<Record<LangId, PregnancyWeekText>>(draftFrom(undefined));
   // FIX3-14: backdrop bosilganda qoralamani tasodifan yo'qotmaslik uchun
   // ochilgandagi holat bilan solishtiramiz.
   const [initialDraft, setInitialDraft] = useState(draft);
@@ -43,34 +60,41 @@ export default function AdminPregnancyContentPage() {
   }, [load]);
 
   function openWeekEditor(week: number) {
-    const existing = weeks?.get(week);
-    const next = { sizeLabel: existing?.sizeLabel ?? "", babyDevelopment: existing?.babyDevelopment ?? "", motherChanges: existing?.motherChanges ?? "" };
+    const next = draftFrom(weeks?.get(week));
     setDraft(next);
     setInitialDraft(next);
+    setLang("uz");
     setOpenWeek(week);
     setError(null);
   }
 
   function closeEditor() {
-    const isDirty = draft.sizeLabel !== initialDraft.sizeLabel || draft.babyDevelopment !== initialDraft.babyDevelopment || draft.motherChanges !== initialDraft.motherChanges;
+    const isDirty = JSON.stringify(draft) !== JSON.stringify(initialDraft);
     if (isDirty && !window.confirm("Saqlanmagan o'zgarishlar bor. Ularni bekor qilib chiqishni xohlaysizmi?")) return;
     setOpenWeek(null);
   }
 
   async function save() {
     if (openWeek === null) return;
-    if (!draft.sizeLabel.trim() || !draft.babyDevelopment.trim() || !draft.motherChanges.trim()) {
-      setError("Barcha maydonlar to'ldirilishi kerak");
+    if (!draft.uz.sizeLabel.trim() || !draft.uz.babyDevelopment.trim() || !draft.uz.motherChanges.trim()) {
+      setError("O'zbekcha maydonlar to'ldirilishi kerak — ular boshqa tillar uchun zaxira matn");
       return;
     }
+    // Tarjima faqat TO'LIQ bo'lsa yuboriladi; butunlay bo'sh bo'lsa `null`
+    // (ya'ni tarjima yo'q), yarim to'ldirilgan bo'lsa server rad etadi.
+    const whole = (t: PregnancyWeekText) => {
+      const filled = [t.sizeLabel.trim(), t.babyDevelopment.trim(), t.motherChanges.trim()];
+      if (filled.every((x) => !x)) return null;
+      return { sizeLabel: filled[0], babyDevelopment: filled[1], motherChanges: filled[2] };
+    };
     setSaving(true);
     try {
-      const res = await adminApi.pregnancyContent.update(openWeek, draft);
-      setWeeks((prev) => {
-        const next = new Map(prev);
-        next.set(openWeek, res.content);
-        return next;
+      await adminApi.pregnancyContent.update(openWeek, {
+        ...draft.uz,
+        ru: whole(draft.ru),
+        en: whole(draft.en),
       });
+      load();
       setOpenWeek(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Saqlashda xatolik");
@@ -104,7 +128,13 @@ export default function AdminPregnancyContentPage() {
                     <p className="font-semibold text-text-primary">{week}-hafta</p>
                     {!content && <span className="text-xs font-medium text-warning">Bo&apos;sh</span>}
                   </div>
-                  <p className="truncate text-xs text-text-muted">{content?.sizeLabel ?? "Hali kiritilmagan"}</p>
+                  <p className="truncate text-xs text-text-muted">{content?.uz.sizeLabel ?? "Hali kiritilmagan"}</p>
+                  {content && (
+                    // Qaysi tarjima yetishmayotgani bir qarashda ko'rinsin.
+                    <p className="text-[11px] text-text-muted">
+                      {content.ru ? "RU ✓" : "RU —"} · {content.en ? "EN ✓" : "EN —"}
+                    </p>
+                  )}
                 </Card>
               </button>
             );
@@ -116,20 +146,39 @@ export default function AdminPregnancyContentPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeEditor}>
           <Card className="flex w-full max-w-lg flex-col gap-3" onClick={(e) => e.stopPropagation()}>
             <p className="text-lg font-bold text-text-primary">{openWeek}-hafta</p>
+            <div className="flex gap-1 rounded-xl bg-surface-muted p-1">
+              {LANGS.map((l) => (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => setLang(l.id)}
+                  className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    lang === l.id ? "bg-surface text-text-primary shadow-sm" : "text-text-secondary"
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+            {lang !== "uz" && (
+              <p className="text-xs text-text-muted">
+                Bo&apos;sh qoldirilsa, ayol o&apos;zbekcha matnni ko&apos;radi. To&apos;ldirilsa — uchala maydon ham to&apos;ldirilishi kerak.
+              </p>
+            )}
             {error && <p className="text-sm font-medium text-danger">{error}</p>}
             <div>
               <p className="mb-1 text-xs font-semibold text-text-secondary">O&apos;lcham-qiyoslash (masalan &quot;limon&quot;)</p>
               <input
-                value={draft.sizeLabel}
-                onChange={(e) => setDraft((d) => ({ ...d, sizeLabel: e.target.value }))}
+                value={draft[lang].sizeLabel}
+                onChange={(e) => setDraft((d) => ({ ...d, [lang]: { ...d[lang], sizeLabel: e.target.value } }))}
                 className="tap-target w-full rounded-xl border border-border bg-surface px-3 text-sm text-text-primary outline-none focus:border-primary"
               />
             </div>
             <div>
               <p className="mb-1 text-xs font-semibold text-text-secondary">Chaqaloq rivojlanishi</p>
               <textarea
-                value={draft.babyDevelopment}
-                onChange={(e) => setDraft((d) => ({ ...d, babyDevelopment: e.target.value }))}
+                value={draft[lang].babyDevelopment}
+                onChange={(e) => setDraft((d) => ({ ...d, [lang]: { ...d[lang], babyDevelopment: e.target.value } }))}
                 rows={3}
                 className="w-full resize-y rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:border-primary"
               />
@@ -137,8 +186,8 @@ export default function AdminPregnancyContentPage() {
             <div>
               <p className="mb-1 text-xs font-semibold text-text-secondary">Onaning o&apos;zgarishlari</p>
               <textarea
-                value={draft.motherChanges}
-                onChange={(e) => setDraft((d) => ({ ...d, motherChanges: e.target.value }))}
+                value={draft[lang].motherChanges}
+                onChange={(e) => setDraft((d) => ({ ...d, [lang]: { ...d[lang], motherChanges: e.target.value } }))}
                 rows={3}
                 className="w-full resize-y rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:border-primary"
               />

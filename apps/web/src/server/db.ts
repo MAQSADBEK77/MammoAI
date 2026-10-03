@@ -965,15 +965,35 @@ async function initSchema() {
         kicked_at TEXT NOT NULL
       )
     `,
-    () => sql`
-      CREATE TABLE IF NOT EXISTS pregnancy_week_content (
-        week INTEGER PRIMARY KEY,
-        size_label TEXT NOT NULL,
-        baby_development TEXT NOT NULL,
-        mother_changes TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      )
-    `,
+    // PREG-I18N: jadval bitta tilda edi — rus yoki ingliz tilini tanlagan
+    // ayol homiladorlik rejimida o'zbekcha matn ko'rardi. Til ustunlari
+    // QO'SHIMCHA va NULL bo'lishi mumkin: to'ldirilmagani o'zbekchaga
+    // tushadi, ya'ni hech qachon bo'sh ekran chiqmaydi.
+    //
+    // Nega alohida ustun, "language" bilan kompozit kalit emas: mavjud
+    // 42 qator va ularga tegadigan barcha kod (admin, seed, API) o'zgarishsiz
+    // qoladi, ya'ni migratsiya paytida kontent bir soniya ham yo'qolmaydi.
+    async () => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS pregnancy_week_content (
+          week INTEGER PRIMARY KEY,
+          size_label TEXT NOT NULL,
+          baby_development TEXT NOT NULL,
+          mother_changes TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      `;
+      for (const col of [
+        "size_label_ru",
+        "baby_development_ru",
+        "mother_changes_ru",
+        "size_label_en",
+        "baby_development_en",
+        "mother_changes_en",
+      ]) {
+        await sql`ALTER TABLE pregnancy_week_content ADD COLUMN IF NOT EXISTS ${sql(col)} TEXT`;
+      }
+    },
     // Audit-jurnal — kim, qachon, nima qilgani. `admin_label`ning o'zi
     // saqlanadi (FK emas) — shunda admin hisobi keyinchalik o'chirilsa ham
     // tarixiy yozuv "kim qilgani"ni yo'qotmaydi.
