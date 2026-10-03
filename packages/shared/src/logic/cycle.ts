@@ -412,6 +412,10 @@ export interface AdaptiveCycleSettings {
    * outlier topilmagan. `explainPrediction()` shaffof tushuntirish uchun
    * ishlatadi. */
   cycleLengthOutliers: number[];
+  /** CYCLE-ALGO-21: bashorat LANGARI haqiqiy qayd etilgan hayzdanmi, yoki
+   * onboarding'da bir marta berilgan javobdanmi. `predictCycle` shunga
+   * qarab "ma'lumot eskirgan" chegarasini tanlaydi — izohga qarang. */
+  anchorFromLog: boolean;
 }
 
 // CYCLE-ALGO-14: uchta asosiy sozlash-parametri (RECENCY_DECAY/SHRINKAGE_K/
@@ -497,6 +501,9 @@ export function deriveAdaptiveCycleSettings(
       personalLutealPhase: null,
       stdDevDays: DEFAULT_STD_DEV_DAYS,
       cycleLengthOutliers: [],
+      // Bu shoxda langar YA loglardan (bitta aniqlangan boshlanish), YA
+      // onboarding javobidan keladi — farqi aynan shu yerda belgilanadi.
+      anchorFromLog: starts.length > 0,
     };
   }
 
@@ -568,6 +575,8 @@ export function deriveAdaptiveCycleSettings(
     stdDevDays,
     personalLutealPhase: computePersonalLutealPhaseDays(logs, starts),
     cycleLengthOutliers,
+    // Bu shoxga faqat kamida ikkita QAYD ETILGAN boshlanish bo'lganda kelinadi.
+    anchorFromLog: true,
   };
 }
 
@@ -604,6 +613,21 @@ export function explainPrediction(settings: AdaptiveCycleSettings): PredictionEx
 // lekin FOYDALANUVCHIGA bu holda ko'rsatilishi kerak bo'lgan narsa boshqa:
 // "ma'lumot eskirgan, yangilang" — cheksiz o'sib boruvchi kechikish soni emas.
 export const STALE_PREDICTION_DAYS = 90; // ~3 ta o'rtacha sikl
+
+// CYCLE-ALGO-21: lekin ayol HECH QACHON hayz qayd etmagan bo'lsa, 90 kun juda
+// kech. Bunday holatda bashorat bir marta — onboarding'da — berilgan javobga
+// tayanadi va keyin hech qachon tasdiqlanmagan.
+//
+// Bazada o'lchandi (2026-10-03): 13 ayolga ilova "hayzingiz 15-30 kun
+// kechikmoqda" deb turardi va ularning BIRORTASI ham umrida hayz qayd
+// etmagan edi. Ya'ni bu son tibbiy signal emas — shunchaki eskirgan
+// javobdan o'sib borayotgan raqam. Hayz kechikishi esa ayol uchun
+// qo'rqinchli xabar: homiladorlik, kasallik degan o'ylarga olib boradi.
+//
+// Qayd etgan ayolda bu BOSHQACHA: uning ma'lumoti tirik, 20 kunlik
+// kechikish haqiqiy signal — shuning uchun unga eski 90 kunlik chegara
+// qoladi va kechikish ko'rsatilaveradi.
+export const STALE_PREDICTION_DAYS_UNCONFIRMED = 14;
 
 export interface CyclePrediction {
   nextPeriodStart: string;
@@ -669,6 +693,9 @@ export function predictCycle(
      * DEFAULT_STD_DEV_DAYS ishlatiladi (ma'lumot yo'qligini aks ettiruvchi
      * "keng" standart qiymat). */
     stdDevDays?: number;
+    /** CYCLE-ALGO-21: langar qayd etilgan hayzdanmi. Berilmasa `true` deb
+     * qabul qilinadi — eski chaqiruvchilar xatti-harakati o'zgarmaydi. */
+    anchorFromLog?: boolean;
   },
   today: string = tashkentDateStr()
 ): CyclePrediction | null {
@@ -730,7 +757,9 @@ export function predictCycle(
     lastPeriodStart: settings.lastPeriodStart,
     lutealPhaseDays,
     cyclesAnalyzed: 0, // chaqiruvchi (buildCycleResponse) adaptiv qiymat bilan qayta belgilaydi
-    isStale: daysUntilNextPeriod < -STALE_PREDICTION_DAYS,
+    isStale:
+      daysUntilNextPeriod <
+      -(settings.anchorFromLog === false ? STALE_PREDICTION_DAYS_UNCONFIRMED : STALE_PREDICTION_DAYS),
     confidence: "insufficient", // chaqiruvchi adaptiv qiymat bilan qayta belgilaydi
     explanationReason: { type: "no_data" }, // chaqiruvchi adaptiv qiymat bilan qayta belgilaydi
   };
