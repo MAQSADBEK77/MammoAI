@@ -26,6 +26,7 @@ export * from "./logic/size-art";
 export * from "./logic/public-calculators";
 export * from "./logic/checklist-rules";
 export * from "./logic/health-concerns";
+export * from "./logic/doctor-rating";
 export * from "./logic/doctor-report";
 export * from "./logic/memoize-async";
 export * from "./logic/menopause";

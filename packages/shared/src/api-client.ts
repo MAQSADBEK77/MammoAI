@@ -49,6 +49,23 @@ import type {
   WellnessLog,
   ArticleComment,} from "./types";
 import type { DoctorReport } from "./logic/doctor-report";
+
+/** DOC-01: ro'yxatdagi shifokor. Baholar XOM holda keladi — o'rtacha
+ *  `summarizeDoctorRating` da hisoblanadi, ya'ni qoida bitta joyda. */
+export interface DoctorListItem {
+  id: string;
+  fullName: string;
+  specialty: string;
+  qualification: string | null;
+  experienceYears: number | null;
+  languages: string[];
+  photoUrl: string | null;
+  about: string | null;
+  clinic: { id: string; name: string; address: string | null; phone: string | null } | null;
+  ratings: number[];
+  visitConfirmed: boolean;
+  alreadyRated: boolean;
+}
 import type { CyclePrediction, ForecastedCycle } from "./logic/cycle";
 import type { BadgeId } from "./logic/gamification";
 import type { PregnancyStatus } from "./logic/pregnancy";
@@ -230,6 +247,20 @@ export function createApiClient(config: ApiClientConfig) {
   const request = createRequest(config);
 
   return {
+    doctors: {
+      /** DOC-01: shifokorlar. Baho faqat tasdiqlangan tashrifdan keyin. */
+      list: (specialty?: string) =>
+        request<{ doctors: DoctorListItem[] }>(`/api/doctors${specialty ? `?specialty=${encodeURIComponent(specialty)}` : ""}`),
+      visit: (doctorId: string) =>
+        request<{ doctors: DoctorListItem[] }>("/api/doctors", { method: "POST", body: JSON.stringify({ doctorId, action: "visit" }) }),
+      confirmVisit: (doctorId: string) =>
+        request<{ doctors: DoctorListItem[] }>("/api/doctors", { method: "POST", body: JSON.stringify({ doctorId, action: "confirm" }) }),
+      rate: (doctorId: string, rating: number, comment?: string) =>
+        request<{ doctors: DoctorListItem[] }>("/api/doctors", {
+          method: "POST",
+          body: JSON.stringify({ doctorId, action: "rate", rating, comment }),
+        }),
+    },
     menopause: {
       /** MENO-02: MRS natijalari. Ball serverda qayta hisoblanadi. */
       get: () =>

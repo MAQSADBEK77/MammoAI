@@ -256,6 +256,117 @@ export async function checkAnonymousSignupRateLimit(ipKey: string): Promise<void
   await sql`UPDATE anonymous_signup_attempts SET attempt_count = ${newCount} WHERE ip_key = ${ipKey}`;
 }
 
+export interface DoctorRow {
+  id: string;
+  clinic_id: string | null;
+  full_name: string;
+  specialty: string;
+  qualification: string | null;
+  experience_years: number | null;
+  languages: string | null;
+  photo_url: string | null;
+  about: string | null;
+}
+
+export interface DoctorListItem {
+  id: string;
+  fullName: string;
+  specialty: string;
+  qualification: string | null;
+  experienceYears: number | null;
+  languages: string[];
+  photoUrl: string | null;
+  about: string | null;
+  clinic: { id: string; name: string; address: string | null; phone: string | null } | null;
+  ratings: number[];
+  /** Shu foydalanuvchining tashrifi tasdiqlanganmi — baho qoldira oladimi. */
+  visitConfirmed: boolean;
+  alreadyRated: boolean;
+}
+
+/**
+ * DOC-01: shifokorlar ro'yxati.
+ *
+ * Baholar XOM ko'rinishda qaytariladi va o'rtacha mijozda emas, sof
+ * funksiyada (`summarizeDoctorRating`) hisoblanadi — shunda qoida
+ * bitta joyda turadi va test bilan qoplanadi.
+ */
+export async function listDoctors(viewerId: string | null, specialty?: string): Promise<DoctorListItem[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT d.*, c.name AS clinic_name, c.address AS clinic_address, c.phone AS clinic_phone
+    FROM doctors d
+    LEFT JOIN clinics c ON c.id = d.clinic_id
+    WHERE d.is_active
+      ${specialty ? sql`AND d.specialty = ${specialty}` : sql``}
+    ORDER BY d.full_name ASC
+  `) as unknown as (DoctorRow & { clinic_name: string | null; clinic_address: string | null; clinic_phone: string | null })[];
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.id);
+  const ratingRows = (await sql`
+    SELECT doctor_id, rating, user_id FROM doctor_ratings WHERE doctor_id = ANY(${ids})
+  `) as unknown as { doctor_id: string; rating: number; user_id: string }[];
+  const visitRows = viewerId
+    ? ((await sql`
+        SELECT doctor_id, confirmed_at FROM doctor_visits WHERE user_id = ${viewerId} AND doctor_id = ANY(${ids})
+      `) as unknown as { doctor_id: string; confirmed_at: string | null }[])
+    : [];
+
+  return rows.map((r) => ({
+    id: r.id,
+    fullName: r.full_name,
+    specialty: r.specialty,
+    qualification: r.qualification,
+    experienceYears: r.experience_years,
+    languages: r.languages ? r.languages.split(",").map((x) => x.trim()).filter(Boolean) : [],
+    photoUrl: r.photo_url,
+    about: r.about,
+    clinic: r.clinic_name ? { id: r.clinic_id!, name: r.clinic_name, address: r.clinic_address, phone: r.clinic_phone } : null,
+    ratings: ratingRows.filter((x) => x.doctor_id === r.id).map((x) => x.rating),
+    visitConfirmed: visitRows.some((v) => v.doctor_id === r.id && !!v.confirmed_at),
+    alreadyRated: ratingRows.some((x) => x.doctor_id === r.id && x.user_id === viewerId),
+  }));
+}
+
+/** Ayol "shu shifokorga boraman" deganda — tashrif yoziladi. */
+export async function recordDoctorVisitIntent(userId: string, doctorId: string): Promise<void> {
+  await ensureSchema();
+  const existing = (await sql`
+    SELECT id FROM doctor_visits WHERE user_id = ${userId} AND doctor_id = ${doctorId} AND confirmed_at IS NULL
+  `) as unknown as { id: string }[];
+  if (existing.length > 0) return;
+  await sql`
+    INSERT INTO doctor_visits (id, user_id, doctor_id, created_at) VALUES (${randomUUID()}, ${userId}, ${doctorId}, ${now()})
+  `;
+}
+
+/** Tashrif bo'lganini ayolning o'zi tasdiqlaydi. */
+export async function confirmDoctorVisit(userId: string, doctorId: string): Promise<void> {
+  await ensureSchema();
+  await sql`
+    UPDATE doctor_visits SET confirmed_at = ${now()}
+    WHERE user_id = ${userId} AND doctor_id = ${doctorId} AND confirmed_at IS NULL
+  `;
+}
+
+export async function hasConfirmedDoctorVisit(userId: string, doctorId: string): Promise<boolean> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT 1 FROM doctor_visits WHERE user_id = ${userId} AND doctor_id = ${doctorId} AND confirmed_at IS NOT NULL LIMIT 1
+  `) as unknown as unknown[];
+  return rows.length > 0;
+}
+
+export async function rateDoctor(userId: string, doctorId: string, rating: number, comment: string | null): Promise<void> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO doctor_ratings (id, user_id, doctor_id, rating, comment, created_at)
+    VALUES (${randomUUID()}, ${userId}, ${doctorId}, ${rating}, ${comment}, ${now()})
+    ON CONFLICT (user_id, doctor_id) DO NOTHING
+  `;
+}
+
 /** MENO-02: MRS natijalari — eng yangisi birinchi. */
 export async function listMenopauseAssessments(
   userId: string,

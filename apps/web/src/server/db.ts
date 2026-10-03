@@ -885,6 +885,47 @@ async function initSchema() {
     // MENO-02: MRS (Menopause Rating Scale) natijalari. Har safar yangi
     // qator — dinamika muhim: simptomlar davolashdan keyin kamayganini
     // ayol ham, shifokor ham ko'rishi kerak.
+    // DOC-01: shifokorlar katalogi. Klinika bilan bog'langan — ayol
+    // oxir-oqibat KLINIKAGA boradi, shifokor esa u yerda ishlaydi.
+    () => sql`
+      CREATE TABLE IF NOT EXISTS doctors (
+        id TEXT PRIMARY KEY,
+        clinic_id TEXT REFERENCES clinics(id) ON DELETE SET NULL,
+        full_name TEXT NOT NULL,
+        specialty TEXT NOT NULL,
+        qualification TEXT,
+        experience_years INTEGER,
+        languages TEXT,
+        photo_url TEXT,
+        about TEXT,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TEXT NOT NULL
+      )
+    `,
+    // Tashrif — reytingning SHARTI. Baho faqat tasdiqlangan tashrifdan
+    // keyin qabul qilinadi, aks holda reytingni sotib olish mumkin bo'lardi.
+    () => sql`
+      CREATE TABLE IF NOT EXISTS doctor_visits (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        doctor_id TEXT NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        confirmed_at TEXT
+      )
+    `,
+    () => sql`
+      CREATE TABLE IF NOT EXISTS doctor_ratings (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        doctor_id TEXT NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+        rating INTEGER NOT NULL,
+        comment TEXT,
+        created_at TEXT NOT NULL,
+        UNIQUE (user_id, doctor_id)
+      )
+    `,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_doctors_specialty ON doctors(specialty) WHERE is_active`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_doctor_visits_user ON doctor_visits(user_id, doctor_id)`,
     () => sql`
       CREATE TABLE IF NOT EXISTS menopause_assessments (
         id TEXT PRIMARY KEY,
