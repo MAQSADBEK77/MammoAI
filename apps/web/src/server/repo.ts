@@ -256,6 +256,47 @@ export async function checkAnonymousSignupRateLimit(ipKey: string): Promise<void
   await sql`UPDATE anonymous_signup_attempts SET attempt_count = ${newCount} WHERE ip_key = ${ipKey}`;
 }
 
+/** MENO-02: MRS natijalari — eng yangisi birinchi. */
+export async function listMenopauseAssessments(
+  userId: string,
+  limit = 12
+): Promise<{ id: string; createdAt: string; scores: Record<string, number>; total: number; severity: string }[]> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT id, created_at, scores, total, severity FROM menopause_assessments
+    WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit}
+  `) as unknown as { id: string; created_at: string; scores: string; total: number; severity: string }[];
+  return rows.map((r) => ({
+    id: r.id,
+    createdAt: r.created_at,
+    // Buzuq JSON butun ekranni yiqitmasligi kerak — bu faqat bitta
+    // o'tgan natija, ekranning o'zi emas.
+    scores: safeParseScores(r.scores),
+    total: r.total,
+    severity: r.severity,
+  }));
+}
+
+function safeParseScores(raw: string): Record<string, number> {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function addMenopauseAssessment(
+  userId: string,
+  entry: { scores: Record<string, number>; total: number; severity: string }
+): Promise<void> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO menopause_assessments (id, user_id, created_at, scores, total, severity)
+    VALUES (${randomUUID()}, ${userId}, ${now()}, ${JSON.stringify(entry.scores)}, ${entry.total}, ${entry.severity})
+  `;
+}
+
 export async function createTelegramUser(
   telegramUserId: string,
   language: Language,

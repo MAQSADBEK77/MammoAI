@@ -882,6 +882,20 @@ async function initSchema() {
         blocked_until TEXT
       )
     `,
+    // MENO-02: MRS (Menopause Rating Scale) natijalari. Har safar yangi
+    // qator — dinamika muhim: simptomlar davolashdan keyin kamayganini
+    // ayol ham, shifokor ham ko'rishi kerak.
+    () => sql`
+      CREATE TABLE IF NOT EXISTS menopause_assessments (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        scores TEXT NOT NULL,
+        total INTEGER NOT NULL,
+        severity TEXT NOT NULL
+      )
+    `,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_menopause_assessments_user ON menopause_assessments(user_id, created_at DESC)`,
     () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_bag_items (
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
