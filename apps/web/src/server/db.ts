@@ -882,61 +882,74 @@ async function initSchema() {
         blocked_until TEXT
       )
     `,
-    // MENO-02: MRS (Menopause Rating Scale) natijalari. Har safar yangi
-    // qator — dinamika muhim: simptomlar davolashdan keyin kamayganini
-    // ayol ham, shifokor ham ko'rishi kerak.
     // DOC-01: shifokorlar katalogi. Klinika bilan bog'langan — ayol
     // oxir-oqibat KLINIKAGA boradi, shifokor esa u yerda ishlaydi.
-    () => sql`
-      CREATE TABLE IF NOT EXISTS doctors (
-        id TEXT PRIMARY KEY,
-        clinic_id TEXT REFERENCES clinics(id) ON DELETE SET NULL,
-        full_name TEXT NOT NULL,
-        specialty TEXT NOT NULL,
-        qualification TEXT,
-        experience_years INTEGER,
-        languages TEXT,
-        photo_url TEXT,
-        about TEXT,
-        is_active BOOLEAN NOT NULL DEFAULT TRUE,
-        created_at TEXT NOT NULL
-      )
-    `,
-    // Tashrif — reytingning SHARTI. Baho faqat tasdiqlangan tashrifdan
-    // keyin qabul qilinadi, aks holda reytingni sotib olish mumkin bo'lardi.
-    () => sql`
-      CREATE TABLE IF NOT EXISTS doctor_visits (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        doctor_id TEXT NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
-        created_at TEXT NOT NULL,
-        confirmed_at TEXT
-      )
-    `,
-    () => sql`
-      CREATE TABLE IF NOT EXISTS doctor_ratings (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        doctor_id TEXT NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
-        rating INTEGER NOT NULL,
-        comment TEXT,
-        created_at TEXT NOT NULL,
-        UNIQUE (user_id, doctor_id)
-      )
-    `,
-    () => sql`CREATE INDEX IF NOT EXISTS idx_doctors_specialty ON doctors(specialty) WHERE is_active`,
-    () => sql`CREATE INDEX IF NOT EXISTS idx_doctor_visits_user ON doctor_visits(user_id, doctor_id)`,
-    () => sql`
-      CREATE TABLE IF NOT EXISTS menopause_assessments (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        created_at TEXT NOT NULL,
-        scores TEXT NOT NULL,
-        total INTEGER NOT NULL,
-        severity TEXT NOT NULL
-      )
-    `,
-    () => sql`CREATE INDEX IF NOT EXISTS idx_menopause_assessments_user ON menopause_assessments(user_id, created_at DESC)`,
+    //
+    // CI-SCHEMA-02: bu blok ATAYLAB BITTA vazifa ichida, ketma-ket.
+    // `runBatched` oltitasini PARALLEL yuboradi va tartibni kafolatlamaydi,
+    // shuning uchun alohida elementlar bo'lganda bo'sh bazada (CI'ning
+    // vaqtinchalik Postgres'i) `doctor_visits` o'zi FK bilan bog'langan
+    // `doctors`dan OLDIN, indeks esa o'z jadvalidan oldin ishga tushib
+    // "relation does not exist" bilan yiqilardi. Bu 1.6-bosqichdagi
+    // CI-SCHEMA-01 bilan bir xil poyga.
+    async () => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS doctors (
+          id TEXT PRIMARY KEY,
+          clinic_id TEXT REFERENCES clinics(id) ON DELETE SET NULL,
+          full_name TEXT NOT NULL,
+          specialty TEXT NOT NULL,
+          qualification TEXT,
+          experience_years INTEGER,
+          languages TEXT,
+          photo_url TEXT,
+          about TEXT,
+          is_active BOOLEAN NOT NULL DEFAULT TRUE,
+          created_at TEXT NOT NULL
+        )
+      `;
+      // Tashrif — reytingning SHARTI. Baho faqat tasdiqlangan tashrifdan
+      // keyin qabul qilinadi, aks holda reytingni sotib olish mumkin bo'lardi.
+      await sql`
+        CREATE TABLE IF NOT EXISTS doctor_visits (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          doctor_id TEXT NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+          created_at TEXT NOT NULL,
+          confirmed_at TEXT
+        )
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS doctor_ratings (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          doctor_id TEXT NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
+          rating INTEGER NOT NULL,
+          comment TEXT,
+          created_at TEXT NOT NULL,
+          UNIQUE (user_id, doctor_id)
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS idx_doctors_specialty ON doctors(specialty) WHERE is_active`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_doctor_visits_user ON doctor_visits(user_id, doctor_id)`;
+    },
+    // MENO-02: MRS (Menopause Rating Scale) natijalari. Har safar yangi
+    // qator — dinamika muhim: simptomlar davolashdan keyin kamayganini
+    // ayol ham, shifokor ham ko'rishi kerak. Jadval + indeks yuqoridagi
+    // sabab bilan bitta ketma-ket vazifada.
+    async () => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS menopause_assessments (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          created_at TEXT NOT NULL,
+          scores TEXT NOT NULL,
+          total INTEGER NOT NULL,
+          severity TEXT NOT NULL
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS idx_menopause_assessments_user ON menopause_assessments(user_id, created_at DESC)`;
+    },
     () => sql`
       CREATE TABLE IF NOT EXISTS pregnancy_bag_items (
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
