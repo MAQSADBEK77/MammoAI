@@ -5,7 +5,9 @@ import {
   resolveMenopauseStage,
   scoreMrs,
   shouldSeeDoctorForMenopause,
+  shouldShowMenopauseSuggestion,
   shouldSuggestMenopauseMode,
+  monthsSinceDate,
 } from "./menopause";
 
 describe("resolveMenopauseStage", () => {
@@ -85,5 +87,76 @@ describe("isPostmenopausalBleeding", () => {
   it("perimenopauzada qon ketish kutilgan narsa", () => {
     expect(isPostmenopausalBleeding("perimenopause", true)).toBe(false);
     expect(isPostmenopausalBleeding("menopause", false)).toBe(false);
+  });
+});
+
+describe("MENO-02 — rejimni taklif qilish konteksti", () => {
+  const peri = { age: 48, monthsSinceLastPeriod: 2, cyclesIrregular: true };
+
+  it("45+ va tartibsiz sikl — hayz rejimidagi ayolga taklif ko'rsatiladi", () => {
+    expect(shouldShowMenopauseSuggestion({ ...peri, currentGoal: "cycle", dismissed: false })).toBe(true);
+  });
+
+  it("homilador yoki tayyorgarlik rejimida HECH QACHON taklif qilinmaydi", () => {
+    expect(shouldShowMenopauseSuggestion({ ...peri, currentGoal: "pregnancy", dismissed: false })).toBe(false);
+    expect(shouldShowMenopauseSuggestion({ ...peri, currentGoal: "planning_pregnancy", dismissed: false })).toBe(false);
+  });
+
+  it("hamkor rejimida ko'rsatilmaydi — ayolning o'zi emas, boshqa odam ko'radi", () => {
+    expect(shouldShowMenopauseSuggestion({ ...peri, currentGoal: "partner_tracking", dismissed: false })).toBe(false);
+  });
+
+  it("allaqachon shu rejimda bo'lsa takrorlanmaydi", () => {
+    expect(shouldShowMenopauseSuggestion({ ...peri, currentGoal: "perimenopause", dismissed: false })).toBe(false);
+  });
+
+  it("'hozir emas' deyilgan bo'lsa qayta so'ralmaydi", () => {
+    expect(shouldShowMenopauseSuggestion({ ...peri, currentGoal: "cycle", dismissed: true })).toBe(false);
+  });
+
+  it("30 yoshli ayolga tartibsiz sikl bo'lsa ham taklif qilinmaydi", () => {
+    expect(
+      shouldShowMenopauseSuggestion({ age: 30, monthsSinceLastPeriod: 2, cyclesIrregular: true, currentGoal: "cycle", dismissed: false })
+    ).toBe(false);
+  });
+
+  // Brauzer sinovida topilgan haqiqiy xato: test akkauntning oxirgi qayd
+  // etilgan hayzi bir yildan eski edi va 22 yoshli foydalanuvchiga klimaks
+  // rejimi taklif qilindi. Yosh ayolda bu amenoreya — boshqa holat.
+  it("22 yoshda 14 oy hayzsizlik — bu klimaks EMAS, taklif chiqmaydi", () => {
+    expect(
+      shouldShowMenopauseSuggestion({ age: 22, monthsSinceLastPeriod: 14, cyclesIrregular: true, currentGoal: "cycle", dismissed: false })
+    ).toBe(false);
+  });
+
+  it("yosh noma'lum bo'lsa taklif qilinmaydi — taxmin qilinmaydi", () => {
+    expect(
+      shouldShowMenopauseSuggestion({ age: null, monthsSinceLastPeriod: 14, cyclesIrregular: true, currentGoal: "cycle", dismissed: false })
+    ).toBe(false);
+  });
+
+  it("41 yoshda 14 oy hayzsizlik — taklif o'rinli", () => {
+    expect(
+      shouldShowMenopauseSuggestion({ age: 41, monthsSinceLastPeriod: 14, cyclesIrregular: false, currentGoal: "cycle", dismissed: false })
+    ).toBe(true);
+  });
+});
+
+describe("monthsSinceDate — kalendar oylari", () => {
+  it("aniq 12 oy o'tgan — menopauza chegarasi", () => {
+    expect(monthsSinceDate("2025-01-15", "2026-01-15")).toBe(12);
+  });
+
+  it("bir kun yetmasa hali 11 oy — chegaradan tasodifan o'tib ketmaydi", () => {
+    expect(monthsSinceDate("2025-01-15", "2026-01-14")).toBe(11);
+  });
+
+  it("sana yo'q bo'lsa null — '0 oy' deb taxmin qilish taklifni noto'g'ri bekor qilardi", () => {
+    expect(monthsSinceDate(null, "2026-01-15")).toBeNull();
+    expect(monthsSinceDate("", "2026-01-15")).toBeNull();
+  });
+
+  it("kelajakdagi sana manfiy emas, 0 qaytaradi", () => {
+    expect(monthsSinceDate("2026-05-01", "2026-01-15")).toBe(0);
   });
 });

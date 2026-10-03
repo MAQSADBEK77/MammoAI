@@ -33,6 +33,7 @@ import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { MyCyclesCard } from "@/components/screens/MyCyclesCard";
 import { CycleHistoryCard } from "@/components/screens/CycleHistoryCard";
 import { SymptomPatternsCard } from "@/components/screens/SymptomPatternsCard";
+import { MenopauseSuggestCard } from "@/components/screens/MenopauseSuggestCard";
 import { SelfCheckCard, ArticlesRow } from "@/components/screens/SelfCheckCard";
 import { Emoji } from "@/components/Emoji";
 import { TodayHeader, type TodayDay, type TodayDayMarker } from "@/components/screens/TodayHeader";
@@ -1157,6 +1158,10 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
         </Card>
       ) : (
         <>
+          {/* MENO-02: "tartibsiz sikl" ogohlantirishidan OLDIN — 48 yoshli
+              ayol uchun to'g'ri javob "bashorat noaniq" emas, balki bu
+              davr uchun mo'ljallangan boshqa rejim. */}
+          <MenopauseSuggestCard lastPeriodStart={data.settings.lastPeriodStart} cyclesIrregular={data.isIrregular} />
           {data.isIrregular && (
             <Card className="bg-warning/10">
               <p className="font-semibold text-text-primary">{dict.cycle.irregularBannerTitle}</p>
