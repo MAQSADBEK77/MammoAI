@@ -42,6 +42,8 @@ import {
   listAdminAuditLog,
   connectPartnerByCode,
   createPhoneVerification,
+  registerTelegramStart,
+  confirmPhoneViaContact,
   verifyPhoneCode,
   updateUser,
   getUserById,
@@ -307,6 +309,29 @@ async function main() {
   const afterLimit = await verifyPhoneCode(otpToken, "123456"); // endi TO'G'RI kod ham
   assert(afterLimit === null, "FIX-04: 5 ta noto'g'ri urinishdan keyin TO'G'RI kod ham qabul qilinmaydi (token bekor qilingan)");
   await sql`DELETE FROM phone_verifications WHERE token = ${otpToken}`;
+
+  // --- AUTH-07: Telegram kontakti mos kelmasa, TIL ham qaytariladi ---
+  //
+  // Nega integratsiya testida: til `phone_verifications` qatoridan O'QILADI,
+  // ya'ni xato faqat baza bilan birga ko'rinadi. Ilgari webhook uni bilmay,
+  // xabarni har doim o'zbekcha yuborardi — rus tilidagi ayol eng chalkash
+  // paytda tushunmaydigan javob olardi.
+  const mmToken = (await createPhoneVerification("+998900000098", "ru")).token;
+  const mmChat = "999000111";
+  await registerTelegramStart(mmToken, mmChat);
+  const mismatch = await confirmPhoneViaContact(mmChat, "+998900000097"); // BOSHQA raqam
+  assert(mismatch !== null && mismatch.matched === false, "AUTH-07: boshqa raqam ulashilsa mos kelmaydi");
+  assert(
+    mismatch !== null && mismatch.matched === false && mismatch.language === "ru",
+    "AUTH-07: mos kelmagan javob foydalanuvchi TANLAGAN tilni qaytaradi"
+  );
+  // Mos kelsa — kod yaratiladi va til ham to'g'ri.
+  const okMatch = await confirmPhoneViaContact(mmChat, "998900000098"); // "+" siz ham bir xil
+  assert(
+    okMatch !== null && okMatch.matched === true && okMatch.language === "ru" && okMatch.code.length === 6,
+    "AUTH-07: raqam formatidan qat'i nazar mos keladi va 6 xonali kod yaratiladi"
+  );
+  await sql`DELETE FROM phone_verifications WHERE token = ${mmToken}`;
 
   // --- FIX-10: updateUser endi faqat patch qilingan ustunlarni yozadi (lost-update yo'q) ---
   const raceUser = randomUUID();
