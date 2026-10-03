@@ -1294,6 +1294,14 @@ const uz = {
         title: "Yo'g'on ichak saratoni skrininggi",
         why: "Ginekologik tekshiruv emas, lekin 45 yoshdan keyingi standart skrining. Erta bosqichda aniqlansa davolash ancha oson, kech bosqichda esa ancha og'ir.",
       },
+      bone_density_screening: {
+        title: "Suyak zichligi tekshiruvi (densitometriya)",
+        why: "Menopauzadan keyin suyak tez yupqalashadi va bu BELGISIZ kechadi — birinchi alomat ko'pincha sinishning o'zi bo'ladi. Son suyagi singan ayollarning katta qismi mustaqil yurish qobiliyatini yo'qotadi. Tekshiruv og'riqsiz, 10-15 daqiqa oladi.",
+      },
+      lipid_panel: {
+        title: "Xolesterin (lipid paneli)",
+        why: "Menopauzadan keyin yurak-qon tomir kasalligi xavfi keskin oshadi — bu yoshdagi ayollarda saratondan KO'RA ko'proq o'lim sababi. Oddiy qon tahlili bilan aniqlanadi va vaqtida topilsa boshqariladi.",
+      },
       bv_targeted_screening: {
         title: "Bakterial vaginoz uchun maqsadli tekshiruv",
         why: "Davolanmagan bakterial vaginoz muddatidan oldin tug'ilish va homiladorlik yo'qotilishi bilan bog'liq; ko'pincha belgisiz kechadi, shuning uchun faqat belgilarga tayanish ko'p holatlarni o'tkazib yuboradi.",
