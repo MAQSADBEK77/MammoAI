@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
-import { lastFlowStreak, daysBetween, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { isPeriodFlow, lastFlowStreak, lastPeriodDayStreakStart, daysBetween, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/analytics";
 import { useConfirm } from "@/lib/confirm";
@@ -58,22 +58,6 @@ import { PetPicker } from "@/components/pets/PetPicker";
  *
  * Ilova ayolning hozir hayz ko'rayotganini BILA OLMAYDI — buni faqat ayolning
  * o'zi aytadi. Shuning uchun endi da'vo faqat haqiqiy qaydga tayanadi. */
-function lastLoggedPeriodStart(logs: CycleLog[]): string | null {
-  const dates = logs
-    .filter((l) => l.flow)
-    .map((l) => l.date)
-    .sort();
-  if (dates.length === 0) return null;
-  let start = dates[dates.length - 1];
-  for (let i = dates.length - 2; i >= 0; i--) {
-    const next = new Date(dates[i] + "T00:00:00");
-    next.setDate(next.getDate() + 1);
-    // Uzilish topildi — oldingi kunlar BOSHQA hayzga tegishli.
-    if (localDateStr(next) !== start) break;
-    start = dates[i];
-  }
-  return start;
-}
 
 /** TODAY-07: bosh ekrandagi kunlar karuseli qancha oraliqni qamraydi.
  * Bugundan oldin/keyin ~6 hafta — qayd qilish va yaqin bashoratlar uchun
@@ -326,7 +310,13 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   }
 
   const markers: Record<string, DayMarker> = {};
-  for (const log of data.logs) if (log.flow) markers[log.date] = "period";
+  // PERIOD-TRACK-05: dog'lanish ham ko'rsatiladi (ayol uni belgilagan),
+  // lekin hayz kuni bilan BIR XIL emas — aks holda kalendar ham "hayz
+  // ketyapti" deb da'vo qilgan bo'lardi.
+  for (const log of data.logs) {
+    if (isPeriodFlow(log.flow)) markers[log.date] = "period";
+    else if (log.flow) markers[log.date] = "spotting";
+  }
   if (data.prediction) {
     let p = new Date(data.prediction.nextPeriodStart + "T00:00:00Z");
     const pEnd = new Date(data.prediction.nextPeriodEnd + "T00:00:00Z");
@@ -383,7 +373,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
 
   // `periodDay` esa bashorat EMAS, hozirgi holat haqidagi da'vo — u faqat
   // haqiqiy qayddan chiqadi (qarang: lastLoggedPeriodStart izohi).
-  const loggedPeriodStart = !data.prediction?.isStale ? lastLoggedPeriodStart(data.logs) : null;
+  const loggedPeriodStart = !data.prediction?.isStale ? lastPeriodDayStreakStart(data.logs) : null;
   if (loggedPeriodStart) {
     const diff = Math.round((new Date(today).getTime() - new Date(loggedPeriodStart).getTime()) / 86400000);
     // CYCLE-ALGO-19: O'RGANILGAN davomiylik (prediction), xom `cycle_settings`
@@ -476,7 +466,13 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
       if (emojis.length < 2 && log?.symptoms.length) emojis.push(SYMPTOM_EMOJI[log.symptoms[0]]);
 
       // Haqiqiy qayd bashoratdan USTUN, bashorat esa unumdor oynadan.
-      let marker: TodayDayMarker = log?.flow ? "period" : predicted.has(date) ? "predicted" : null;
+      let marker: TodayDayMarker = isPeriodFlow(log?.flow)
+        ? "period"
+        : log?.flow
+        ? "spotting"
+        : predicted.has(date)
+        ? "predicted"
+        : null;
       // Tartib kalendar bilan AYNAN bir xil: ovulyatsiya unumdor oynadan ustun.
       if (!marker && ovulation.has(date)) marker = "ovulation";
       if (!marker && fertile.has(date)) marker = "fertile";

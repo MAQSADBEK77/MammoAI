@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lastFlowStreak, lastFlowStreakStart } from "./flow-streak";
+import { isPeriodFlow, lastFlowStreak, lastFlowStreakStart, lastPeriodDayStreakStart } from "./flow-streak";
 
 describe("lastFlowStreakStart", () => {
   it("qayd bo'lmasa null", () => {
@@ -69,5 +69,56 @@ describe("spottingOnly — dog'lanish hayz deb e'lon qilinmasligi kerak", () => 
     const logs = [{ date: "2026-10-02", flow: "spotting" }];
     expect(lastFlowStreakStart(logs)).toBe("2026-10-02");
     expect(lastFlowStreakStart([])).toBeNull();
+  });
+});
+
+// PERIOD-TRACK-05 — "hayz kunimi?" degan savolga yagona javob.
+describe("isPeriodFlow", () => {
+  it("dog'lanish hayz kuni SANALMAYDI", () => {
+    expect(isPeriodFlow("spotting")).toBe(false);
+  });
+
+  it("haqiqiy oqim — hayz kuni", () => {
+    for (const f of ["light", "medium", "heavy"]) expect(isPeriodFlow(f)).toBe(true);
+  });
+
+  it("qayd yo'q — hayz kuni emas", () => {
+    expect(isPeriodFlow(null)).toBe(false);
+    expect(isPeriodFlow(undefined)).toBe(false);
+  });
+});
+
+// PERIOD-TRACK-05 — "Hayz: N-kun" DA'VOsi faqat haqiqiy oqimdan chiqadi.
+describe("lastPeriodDayStreakStart", () => {
+  it("faqat dog'lanish bo'lsa — null, ya'ni hech qanday 'N-kun' da'vosi yo'q", () => {
+    expect(lastPeriodDayStreakStart([{ date: "2026-10-02", flow: "spotting" }])).toBeNull();
+  });
+
+  it("haqiqiy oqim bo'lsa — seriya boshlanishi qaytadi", () => {
+    const logs = [
+      { date: "2026-09-30", flow: "medium" },
+      { date: "2026-10-01", flow: "light" },
+    ];
+    expect(lastPeriodDayStreakStart(logs)).toBe("2026-09-30");
+  });
+
+  it("oldidagi dog'lanish hayz boshlanishini ORQAGA SURMAYDI", () => {
+    // 29-sentabr dog'lanish, 30-sentabr haqiqiy hayz -> boshlanish 30-si.
+    const logs = [
+      { date: "2026-09-29", flow: "spotting" },
+      { date: "2026-09-30", flow: "medium" },
+    ];
+    expect(lastPeriodDayStreakStart(logs)).toBe("2026-09-30");
+    // Savol berish uchun esa seriya 29-sentabrdan boshlanadi.
+    expect(lastFlowStreak(logs)?.start).toBe("2026-09-29");
+  });
+
+  it("eski hayz va yangi dog'lanish aralashmaydi", () => {
+    const logs = [
+      { date: "2026-09-01", flow: "medium" },
+      { date: "2026-10-02", flow: "spotting" },
+    ];
+    expect(lastPeriodDayStreakStart(logs)).toBe("2026-09-01");
+    expect(lastFlowStreak(logs)?.spottingOnly).toBe(true);
   });
 });
