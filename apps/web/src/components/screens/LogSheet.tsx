@@ -160,7 +160,9 @@ export function LogSheet({
             ))}
           </Section>
 
-          <div className="rounded-3xl bg-surface p-4 shadow-sm">{advanced}</div>
+          {/* MENO-05: `advanced` bo'lmasa (klimaks rejimi) bo'm-bo'sh oq
+              karta chiqib qolardi. */}
+          {advanced ? <div className="rounded-3xl bg-surface p-4 shadow-sm">{advanced}</div> : null}
 
           {onDelete && (
             <button

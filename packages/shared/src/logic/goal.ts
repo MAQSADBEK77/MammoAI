@@ -137,3 +137,47 @@ export function goalToDefaultCommunityTag(goal: Goal): CommunityTag {
   // planning_pregnancy, partner_tracking, perimenopause — mos aniq teg yo'q.
   return "general";
 }
+
+/**
+ * MENO-05 — klimaks rejimining o'z belgilari.
+ *
+ * Issiq to'lqinlar va tungi terlash — bu davrning eng tez-tez
+ * uchraydigan va eng bezovta qiladigan belgilari. Ular `Symptom`
+ * turida ham, tarjimalarda ham, emoji jadvalida ham bor edi, lekin
+ * KUNLIK QAYD oynasining ro'yxatiga kirmagan: onboarding ularni
+ * so'rardi, keyin esa ayol ularni hech qachon belgilay olmasdi.
+ *
+ * Ikki joyda ikki xil ro'yxat bo'lgani uchun shunday bo'ldi — endi
+ * qoida shu yerda, bitta joyda.
+ */
+export const MENOPAUSE_EXTRA_SYMPTOMS = ["hot_flashes", "night_sweats"] as const;
+
+/**
+ * Kunlik qayd oynasida taklif qilinadigan belgilar.
+ *
+ * Ilgari bu ro'yxat CycleScreen ichida turardi — ya'ni undan tashqarida
+ * (masalan klimaks ekranida) qayd oynasini ko'rsatib bo'lmasdi.
+ */
+export const DAILY_SYMPTOMS = [
+  "cramps",
+  "headache",
+  "bloating",
+  "acne",
+  "back_pain",
+  "nausea",
+  "breast_tenderness",
+  "insomnia",
+  "fatigue",
+  "irritability",
+  "difficulty_concentrating",
+  // CYCLE-ALGO-05/12: ovulyatsiya signallari — bashorat shulardan
+  // shaxsiy lyuteal-faza uzunligini o'rganadi.
+  "ovulation_pain",
+  "cervical_mucus_change",
+] as const;
+
+export function symptomOptionsForGoal<T extends string>(base: readonly T[], goal: Goal | null | undefined): T[] {
+  if (goal !== "perimenopause") return [...base];
+  const extra = MENOPAUSE_EXTRA_SYMPTOMS.filter((s) => !base.includes(s as unknown as T)) as unknown as T[];
+  return [...base, ...extra];
+}

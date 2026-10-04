@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import type { CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import {
+  DAILY_SYMPTOMS,
+  localDateStr,
+  symptomOptionsForGoal,
   MRS_DOMAIN_MAX,
   MRS_ITEMS,
   MRS_TOTAL_MAX,
@@ -20,6 +24,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { Card, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { LogSheet } from "@/components/screens/LogSheet";
 
 /**
  * MENO-02 — klimaks rejimining ekrani.
@@ -44,6 +49,9 @@ const STAGE_LABEL: Record<MenopauseStage, { title: keyof Labels; hint: keyof Lab
 };
 
 type Labels = ReturnType<typeof useI18n>["dict"]["menopause"];
+
+const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
+const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
 
 /** Natija qaysi og'irlik oralig'ida turganini KO'RSATADIGAN chiziq.
  *  Raqamning o'zi ("22") ayolga hech narsa demaydi — chegaralar aytadi. */
@@ -96,6 +104,42 @@ export function MenopauseScreen() {
   const [answers, setAnswers] = useState<MrsScore>({});
   const [saving, setSaving] = useState(false);
 
+  /* MENO-05: bu rejimda kunlik qayd oynasi UMUMAN yo'q edi — uni
+     CycleScreen ushlab turadi, u esa klimaks rejimida chizilmaydi.
+     Natijada "Bugungi belgilar" tugmasi /tsikl'ga olib borardi, u esa
+     /asosiy'ga qaytaradi, ya'ni tugma o'z-o'ziga aylanardi. Endi oyna
+     shu ekranning o'zida. */
+  const [logging, setLogging] = useState(false);
+  const [logDate, setLogDate] = useState<string>(() => localDateStr());
+  const [logs, setLogs] = useState<CycleLog[]>([]);
+  const [flow, setFlow] = useState<FlowLevel | null>(null);
+  const [mood, setMood] = useState<Mood | null>(null);
+  const [symptoms, setSymptoms] = useState<Symptom[]>([]);
+  const [logSaving, setLogSaving] = useState(false);
+
+  const openLogging = useCallback(
+    (date: string, list: CycleLog[]) => {
+      const existing = list.find((l) => l.date === date);
+      setLogDate(date);
+      setFlow(existing?.flow ?? null);
+      setMood(existing?.mood ?? null);
+      setSymptoms(existing?.symptoms ?? []);
+      setLogging(true);
+    },
+    []
+  );
+
+  async function saveLog() {
+    setLogSaving(true);
+    try {
+      const res = await api.cycle.logDay({ date: logDate, flow, mood, symptoms });
+      setLogs(res.logs);
+      setLogging(false);
+    } finally {
+      setLogSaving(false);
+    }
+  }
+
   const load = useCallback(() => {
     api.menopause
       .get()
@@ -104,6 +148,12 @@ export function MenopauseScreen() {
         setMonthsSince(res.monthsSinceLastPeriod);
       })
       .catch(() => setAssessments([]));
+    // Qayd oynasini oldindan to'ldirish uchun — xatosi jim o'tadi, chunki
+    // bu faqat qulaylik, ekranning o'zi unga bog'liq emas.
+    api.cycle
+      .get()
+      .then((res) => setLogs(res.logs))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -250,7 +300,7 @@ export function MenopauseScreen() {
           <p className="text-sm leading-relaxed text-text-secondary">{t.todayBody}</p>
           <button
             type="button"
-            onClick={() => router.push("/tsikl")}
+            onClick={() => openLogging(localDateStr(), logs)}
             className="tap-target mt-1 w-full rounded-full bg-primary text-sm font-bold text-white"
           >
             {t.todayCta}
@@ -310,6 +360,31 @@ export function MenopauseScreen() {
       ) : assessments === null ? (
         <LoadingSpinner label={dict.common.loading} inline />
       ) : null}
+
+      {logging && (
+        <LogSheet
+          date={logDate}
+          today={localDateStr()}
+          onChangeDate={(d) => openLogging(d, logs)}
+          flowLevels={FLOW_LEVELS}
+          flow={flow}
+          onToggleFlow={(f) => setFlow(flow === f ? null : f)}
+          symptomList={symptomOptionsForGoal(DAILY_SYMPTOMS, onboardingProfile?.primaryGoal)}
+          symptoms={symptoms}
+          onToggleSymptom={(sym) =>
+            setSymptoms((prev) => (prev.includes(sym) ? prev.filter((x) => x !== sym) : [...prev, sym]))
+          }
+          moods={MOODS}
+          mood={mood}
+          onToggleMood={(m) => setMood(mood === m ? null : m)}
+          advanced={null}
+          onClose={() => setLogging(false)}
+          onSave={saveLog}
+          onDelete={null}
+          saving={logSaving}
+          deleting={false}
+        />
+      )}
 
       {/* Skrining — bu yoshda eng muhim qism. */}
       <Card className="space-y-2">
