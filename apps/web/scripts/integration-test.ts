@@ -10,6 +10,9 @@
 // Ishga tushirish: DATABASE_URL=... node --import tsx scripts/integration-test.ts
 
 import { randomUUID } from "node:crypto";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { emojiToTwemojiCode } from "@mammoai/shared";
 import { sql, ensureSchema } from "../src/server/db";
 import { ApiError } from "../src/server/api-utils";
 import { getCycleSettings, upsertCycleLog, deleteCycleLog, listCycleLogs, updateCycleSettings } from "../src/server/repo";
@@ -89,7 +92,40 @@ function assert(condition: unknown, message: string): void {
   }
 }
 
+/**
+ * XAVFSIZLIK TO'SIG'I (2026-10-04).
+ *
+ * Bu skript ATAYLAB ma'lumot yaratadi va O'CHIRADI — jumladan oxirida
+ * `DELETE FROM pregnancy_week_content WHERE week = 17`. U CI'ning
+ * vaqtinchalik Postgres'i uchun mo'ljallangan, lekin uni PRODUCTION
+ * ulanishi bilan ishga tushirishdan hech narsa to'smasdi.
+ *
+ * Aynan shu sodir bo'ldi: skript `.env.local` (production) bilan
+ * ishga tushirildi va 17-haftaning haqiqiy kontenti o'chib ketdi
+ * (seed'dan tiklandi). Endi mahalliy bo'lmagan bazada darhol
+ * to'xtaydi — qasddan ishga tushirish uchun ALLOW_DESTRUCTIVE_DB=1.
+ */
+function assertDisposableDatabase() {
+  const url = process.env.DATABASE_URL ?? "";
+  if (process.env.ALLOW_DESTRUCTIVE_DB === "1") return;
+  let host = "";
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    host = "";
+  }
+  const local = host === "localhost" || host === "127.0.0.1" || host === "::1" || host.endsWith(".local");
+  if (local) return;
+  console.error(
+    `\nTO'XTATILDI: integratsiya testi MA'LUMOTNI O'CHIRADI, shuning uchun u faqat\n` +
+      `mahalliy/vaqtinchalik bazada ishlaydi. Hozirgi host: "${host || "(noma'lum)"}".\n` +
+      `Agar bu haqiqatan tashlab yuboriladigan baza bo'lsa: ALLOW_DESTRUCTIVE_DB=1\n`
+  );
+  process.exit(1);
+}
+
 async function main() {
+  assertDisposableDatabase();
   await ensureSchema();
   const userId = randomUUID();
   await sql`INSERT INTO users (id, phone, created_at) VALUES (${userId}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
@@ -351,6 +387,39 @@ async function main() {
   const afterLimit = await verifyPhoneCode(otpToken, "123456"); // endi TO'G'RI kod ham
   assert(afterLimit === null, "FIX-04: 5 ta noto'g'ri urinishdan keyin TO'G'RI kod ham qabul qilinmaydi (token bekor qilingan)");
   await sql`DELETE FROM phone_verifications WHERE token = ${otpToken}`;
+
+  // --- EMOJI-ASSET-01: ishlatilgan har bir emoji uchun SVG fayli bormi ---
+  //
+  // Nega CI'da: Emoji komponenti fayl topilmasa tizim shriftiga tushadi,
+  // ya'ni ekran BUZILMAYDI — shuning uchun xato jimgina o'tib ketadi va
+  // faqat tarmoq panelidagi 404 orqali bilinadi. Shu sababli u loyihada
+  // bir necha marta takrorlangan ("sindirilgan meva", "sindirilgan salat",
+  // va 2026-10-04 da profildagi 🌷). Endi yangi emoji fayl qo'shmasdan
+  // kiritilsa, CI shu yerda yiqiladi.
+  {
+    const EMOJI_RE = /\p{Extended_Pictographic}(\uFE0F)?(\u200D\p{Extended_Pictographic}(\uFE0F)?)*/gu;
+    const used = new Set<string>();
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name !== "node_modules") walk(full);
+          continue;
+        }
+        if (!/\.(ts|tsx)$/.test(entry.name) || /\.test\./.test(entry.name)) continue;
+        for (const m of readFileSync(full, "utf8").match(EMOJI_RE) ?? []) used.add(m);
+      }
+    };
+    walk(join(process.cwd(), "src"));
+    walk(join(process.cwd(), "..", "..", "packages", "shared", "src"));
+    const missing = [...used].filter(
+      (e) => !existsSync(join(process.cwd(), "public", "emoji", `${emojiToTwemojiCode(e)}.svg`))
+    );
+    assert(
+      missing.length === 0,
+      `EMOJI-ASSET-01: SVG fayli yo'q emoji: ${missing.map((e) => `${e} (${emojiToTwemojiCode(e)}.svg)`).join(", ")}`
+    );
+  }
 
   // --- AUTH-07: Telegram kontakti mos kelmasa, TIL ham qaytariladi ---
   //
