@@ -9,6 +9,7 @@ import {
   needsCycleInfo,
   needsPersonalHealthQuestions,
   getModeAccentColors,
+  symptomOptionsForGoal,
 } from "./goal";
 
 describe("goalToLandingTab", () => {
@@ -154,5 +155,24 @@ describe("goalToDefaultCommunityTag", () => {
   it("mos aniq tegi yo'qlar (partner_tracking, perimenopause) — 'general'ga", () => {
     expect(goalToDefaultCommunityTag("partner_tracking")).toBe("general");
     expect(goalToDefaultCommunityTag("perimenopause")).toBe("general");
+  });
+});
+
+// MENO-05: kunlik qayd va onboarding bitta ro'yxatdan oziqlanishi kerak.
+describe("symptomOptionsForGoal", () => {
+  const base = ["cramps", "headache"] as const;
+
+  it("klimaks rejimida issiq to'lqinlar va tungi terlash qo'shiladi", () => {
+    expect(symptomOptionsForGoal(base, "perimenopause")).toEqual(["cramps", "headache", "hot_flashes", "night_sweats"]);
+  });
+
+  it("boshqa rejimlarda ro'yxat o'zgarmaydi", () => {
+    expect(symptomOptionsForGoal(base, "cycle")).toEqual(["cramps", "headache"]);
+    expect(symptomOptionsForGoal(base, null)).toEqual(["cramps", "headache"]);
+  });
+
+  it("allaqachon ro'yxatda bo'lsa ikki marta qo'shilmaydi", () => {
+    const withHot = ["cramps", "hot_flashes"] as const;
+    expect(symptomOptionsForGoal(withHot, "perimenopause")).toEqual(["cramps", "hot_flashes", "night_sweats"]);
   });
 });

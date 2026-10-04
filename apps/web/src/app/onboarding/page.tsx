@@ -35,6 +35,7 @@ import {
   ApiError,
   resolveRestoreStep,
   resolveNotificationsChoice,
+  symptomOptionsForGoal,
 } from "@mammoai/shared";
 import type { Dictionary, Language } from "@mammoai/shared";
 import { TodayBackdrop } from "@/components/screens/TodayBackdrop";
@@ -1195,7 +1196,10 @@ function OnboardingPageInner() {
   const goalOptions = isMinor ? MINOR_GOALS : ADULT_GOALS;
   // Perimenopauzaning eng xarakterli belgilari umumiy ro'yxatda yo'q — faqat
   // shu rejim tanlanganda qo'shiladi (boshqalar uchun ro'yxatni cheklamaslik).
-  const symptomOptions = survey.primaryGoal === "perimenopause" ? [...SYMPTOM_OPTIONS, "hot_flashes" as const, "night_sweats" as const] : SYMPTOM_OPTIONS;
+  // MENO-05: qoida endi bitta joyda (logic/goal.ts) — ilgari bu yerda va
+  // kunlik qayd oynasida ikkita alohida ro'yxat bor edi va ular ajralib
+  // ketgan edi: onboarding so'rardi, kunlik qayd esa taklif qilmasdi.
+  const symptomOptions = symptomOptionsForGoal(SYMPTOM_OPTIONS, survey.primaryGoal);
 
   /** ONB-SHEET-02: pastdan chiquvchi oyna FAQAT sikl bo'limida.
    *

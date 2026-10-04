@@ -19,7 +19,7 @@ import {
   LibraryAddCheckOutlined,
 } from "@mui/icons-material";
 import type { Article, CycleResponse, CycleLog, FlowLevel, Mood, RiskQuizResult, Symptom } from "@mammoai/shared";
-import { isPeriodFlow, lastFlowStreak, lastPeriodDayStreakStart, daysBetween, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
+import { DAILY_SYMPTOMS, isPeriodFlow, lastFlowStreak, lastPeriodDayStreakStart, symptomOptionsForGoal, daysBetween, fertileWindowCoverage, formatDateDisplay, getCyclePhase, resolveCycleHero, localDateStr, resolvePet, summarizeCycles, buildCycleHistory, buildSymptomPatterns, MOOD_EMOJI, MOOD_RESPONSE_EMOJI, FLOW_EMOJI, SYMPTOM_EMOJI } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/analytics";
 import { useConfirm } from "@/lib/confirm";
@@ -68,26 +68,6 @@ const STRIP_DAYS_FORWARD = 45;
 
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
-const SYMPTOMS: Symptom[] = [
-  "cramps",
-  "headache",
-  "bloating",
-  "acne",
-  "back_pain",
-  "nausea",
-  "breast_tenderness",
-  "insomnia",
-  "fatigue",
-  "irritability",
-  "difficulty_concentrating",
-  // CYCLE-ALGO-05: ikki-fazali lyuteal modelning ovulyatsiya SIGNALI —
-  // foydalanuvchi shu simptomni qayd etsa, bashorat o'zining shaxsiy
-  // lyuteal-faza uzunligini "o'rganadi" (cycle.ts#detectOvulationSignals).
-  "ovulation_pain",
-  // CYCLE-ALGO-12: xuddi shu maqsad — ancha keng tarqalgan/ishonchli
-  // ikkinchi ovulyatsiya signali.
-  "cervical_mucus_change",
-];
 
 /**
  * Ekranning tashqi ko'rinishi. Ma'lumot, hisob-kitob va barcha oqimlar
@@ -1382,7 +1362,10 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           flowLevels={FLOW_LEVELS}
           flow={flow}
           onToggleFlow={(f) => setFlow(flow === f ? null : f)}
-          symptomList={SYMPTOMS}
+          // MENO-05: klimaks rejimida issiq to'lqinlar va tungi terlash ham
+          // taklif qilinadi — ilgari ular faqat onboarding'da so'ralardi,
+          // keyin esa ayol ularni hech qachon belgilay olmasdi.
+          symptomList={symptomOptionsForGoal(DAILY_SYMPTOMS, onboardingProfile?.primaryGoal)}
           symptoms={symptoms}
           onToggleSymptom={(sym) =>
             setSymptoms((cur) => (cur.includes(sym) ? cur.filter((x) => x !== sym) : [...cur, sym]))
@@ -1451,7 +1434,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           <div>
             <p className="mb-2 text-sm font-semibold text-text-secondary">{dict.cycle.symptomsLabel}</p>
             <div className="grid grid-cols-4 gap-2">
-              {SYMPTOMS.map((s) => (
+              {symptomOptionsForGoal(DAILY_SYMPTOMS, onboardingProfile?.primaryGoal).map((s) => (
                 <IconChip
                   key={s}
                   icon={<Emoji e={SYMPTOM_EMOJI[s]} />}
