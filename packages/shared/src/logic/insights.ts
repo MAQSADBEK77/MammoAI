@@ -15,6 +15,7 @@
 // SONI orqali proksi sifatida hisoblanadi, haqiqiy shkala emas.
 
 import { addDays, computeCycleLengths, computePeriodLength, daysBetween, detectPeriodStarts } from "./cycle";
+import { isPeriodFlow } from "./flow-streak";
 import { tashkentDateStr } from "../date";
 import type {
   CycleLengthPoint,
@@ -146,7 +147,10 @@ export function computeSymptomPhaseBreakdown(
     if (log.date < cutoff || log.symptoms.length === 0) continue;
     for (const symptom of log.symptoms) {
       const entry = counts.get(symptom) ?? { periodDaysCount: 0, otherDaysCount: 0 };
-      if (log.flow) entry.periodDaysCount++;
+      // PERIOD-TRACK-05: ekranda bu "hayz kunlari / boshqa kunlar" deb
+      // yoziladi, ya'ni bu ham DA'VO. Dog'lanish hayz kuni sanalmaydi,
+      // shuning uchun u "boshqa kunlar"ga qo'shiladi.
+      if (isPeriodFlow(log.flow)) entry.periodDaysCount++;
       else entry.otherDaysCount++;
       counts.set(symptom, entry);
     }
@@ -168,7 +172,7 @@ export function computeMoodPhaseBreakdown(
   for (const log of logs) {
     if (log.date < cutoff || !log.mood) continue;
     const entry = counts.get(log.mood) ?? { periodDaysCount: 0, otherDaysCount: 0 };
-    if (log.flow) entry.periodDaysCount++;
+    if (isPeriodFlow(log.flow)) entry.periodDaysCount++;
     else entry.otherDaysCount++;
     counts.set(log.mood, entry);
   }

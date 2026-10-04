@@ -259,3 +259,30 @@ describe("computeInsightsSummary — hasEnoughData chegaralari", () => {
     expect(computeInsightsSummary(logs, "2025-06-01").hasEnoughData).toBe(true);
   });
 });
+
+// PERIOD-TRACK-05: statistikada ham "hayz kunlari" DA'VOsi faqat haqiqiy
+// oqimdan chiqadi — dog'lanish "boshqa kunlar"ga qo'shiladi.
+describe("dog'lanish statistikada hayz kuni sanalmaydi", () => {
+  const log = (date: string, flow: string | null, symptoms: string[]) =>
+    ({ id: date, userId: "u", date, flow, mood: "tired", symptoms, createdAt: date, updatedAt: date }) as never;
+
+  it("simptom taqsimoti: dog'lanish 'boshqa kunlar'da", () => {
+    const [row] = computeSymptomPhaseBreakdown(
+      [log("2026-10-02", "spotting", ["cramps"]), log("2026-10-03", "medium", ["cramps"])],
+      12,
+      "2026-10-04"
+    );
+    expect(row.periodDaysCount).toBe(1);
+    expect(row.otherDaysCount).toBe(1);
+  });
+
+  it("kayfiyat taqsimoti ham xuddi shunday", () => {
+    const [row] = computeMoodPhaseBreakdown(
+      [log("2026-10-02", "spotting", []), log("2026-10-03", "heavy", [])],
+      12,
+      "2026-10-04"
+    );
+    expect(row.periodDaysCount).toBe(1);
+    expect(row.otherDaysCount).toBe(1);
+  });
+});
