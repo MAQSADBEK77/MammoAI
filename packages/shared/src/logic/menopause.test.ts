@@ -8,6 +8,8 @@ import {
   shouldShowMenopauseSuggestion,
   shouldSuggestMenopauseMode,
   monthsSinceDate,
+  MRS_TOTAL_MAX,
+  MRS_DOMAIN_MAX,
 } from "./menopause";
 
 describe("resolveMenopauseStage", () => {
@@ -158,5 +160,20 @@ describe("monthsSinceDate — kalendar oylari", () => {
 
   it("kelajakdagi sana manfiy emas, 0 qaytaradi", () => {
     expect(monthsSinceDate("2026-05-01", "2026-01-15")).toBe(0);
+  });
+});
+
+describe("MRS maksimal ballari savollardan hisoblanadi", () => {
+  it("jami 11 savol x 4 = 44", () => {
+    expect(MRS_TOTAL_MAX).toBe(44);
+  });
+
+  it("domenlar bo'yicha: somatik 16, psixologik 16, urogenital 12", () => {
+    expect(MRS_DOMAIN_MAX).toEqual({ somatic: 16, psychological: 16, urogenital: 12 });
+  });
+
+  it("domenlar yig'indisi umumiy maksimalga teng", () => {
+    const sum = Object.values(MRS_DOMAIN_MAX).reduce((a, b) => a + b, 0);
+    expect(sum).toBe(MRS_TOTAL_MAX);
   });
 });

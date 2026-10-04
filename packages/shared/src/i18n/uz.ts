@@ -1672,6 +1672,13 @@ const uz = {
     screeningBody: "Mammografiya, suyak zichligi, qon bosimi va xolesterin — aynan shu davrda eng muhim.",
     screeningCta: "Tekshiruvlarim",
     doctorsCta: "Mutaxassis topish",
+    scoreOf: (total: number, max: number) => `${total} / ${max}`,
+    domains: { somatic: "Jismoniy", psychological: "Kayfiyat va asab", urogenital: "Siydik-jinsiy" },
+    dynamicsTitle: "O'zgarish",
+    dynamicsHint: "Davolash yordam berayotganini faqat shu chiziq ko'rsatadi.",
+    todayTitle: "Bugungi belgilar",
+    todayBody: "Issiq to'lqinlar, uyqu, kayfiyat — har kuni belgilansa, shifokorga ko'rsatadigan tasvir aniq bo'ladi.",
+    todayCta: "Bugunni belgilash",
     levels: ["Yo'q", "Yengil", "O'rtacha", "Og'ir", "Juda og'ir"],
     items: {
       hot_flashes: "Issiq to'lqinlar, terlash",
