@@ -16,6 +16,8 @@ import {
   GridViewOutlined,
   ChatBubble,
   ChatBubbleOutlineOutlined,
+  MonitorHeart,
+  MonitorHeartOutlined,
 } from "@mui/icons-material";
 import clsx from "clsx";
 import { useI18n } from "@/lib/i18n";
@@ -37,8 +39,17 @@ export function BottomNav() {
   // muhokamalar) ular uchun aloqador emas, shuning uchun ko'rsatilmaydi.
   const peeking = useAssistantPeek();
   const isPartnerTracking = onboardingProfile?.primaryGoal === "partner_tracking";
+  // MENO-04: klimaks rejimida bosh ekran KALENDAR emas — u yerda sikl
+  // bashorati ham, kalendar halqasi ham yo'q (bu davrda ular ma'nosiz).
+  // Kalendar ikonkasi esa "bu yerda kalendar bor" deb va'da berardi.
+  const isMenopauseMode = onboardingProfile?.primaryGoal === "perimenopause";
   const items = [
-    { href: "/asosiy", label: dict.nav.home, Icon: CalendarMonth, IconOutline: CalendarMonthOutlined },
+    {
+      href: "/asosiy",
+      label: dict.nav.home,
+      Icon: isMenopauseMode ? MonitorHeart : CalendarMonth,
+      IconOutline: isMenopauseMode ? MonitorHeartOutlined : CalendarMonthOutlined,
+    },
     ...(isPartnerTracking ? [] : [{ href: "/jamiyat", label: dict.nav.community, Icon: Groups, IconOutline: GroupsOutlined }]),
     { href: "/tekshiruvlar", label: dict.nav.checklist, Icon: FactCheck, IconOutline: FactCheckOutlined },
     // NAV-01 — bu o'rin ilgari "Juft" (hamkor) edi, egasining so'roviga

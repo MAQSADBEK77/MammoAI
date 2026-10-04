@@ -105,6 +105,25 @@ export interface MrsResult {
  * Chegaralar MRS qo'llanmasidan: 0-4 belgisiz, 5-8 yengil,
  * 9-16 o'rtacha, 17+ og'ir.
  */
+/** Bitta savolning eng yuqori bali (0-4 shkalasi). */
+export const MRS_MAX_PER_ITEM = 4;
+
+/**
+ * Umumiy va domen bo'yicha maksimal ballar — MRS_ITEMS dan HISOBLANADI.
+ *
+ * Qo'lda yozilmaydi: savol qo'shilsa yoki domeni o'zgarsa, ekrandagi
+ * "22 / 44" va domen chiziqlari jimgina noto'g'ri bo'lib qolardi.
+ */
+export const MRS_TOTAL_MAX = MRS_ITEMS.length * MRS_MAX_PER_ITEM;
+
+export const MRS_DOMAIN_MAX: Record<MrsDomain, number> = MRS_ITEMS.reduce(
+  (acc, item) => {
+    acc[item.domain] = (acc[item.domain] ?? 0) + MRS_MAX_PER_ITEM;
+    return acc;
+  },
+  {} as Record<MrsDomain, number>
+);
+
 export function scoreMrs(score: MrsScore): MrsResult {
   const byDomain: Record<MrsDomain, number> = { somatic: 0, psychological: 0, urogenital: 0 };
   let total = 0;

@@ -59,6 +59,14 @@ import type { DoctorReport } from "./logic/doctor-report";
  * `ru`/`en` `null` bo'lsa tarjima hali yo'q va ilova o'zbekchasini
  * ko'rsatadi (bo'sh ekran chiqmaydi).
  */
+export interface MenopauseAssessment {
+  id: string;
+  createdAt: string;
+  scores: Record<string, number>;
+  total: number;
+  severity: string;
+}
+
 export interface AdminPregnancyWeek {
   week: number;
   updatedAt: string;
@@ -303,11 +311,14 @@ export function createApiClient(config: ApiClientConfig) {
       /** MENO-02: MRS natijalari. Ball serverda qayta hisoblanadi. */
       get: () =>
         request<{
-          assessments: { id: string; createdAt: string; total: number; severity: string }[];
+          // `scores` ham qaytadi — domen bo'yicha taqsimot shundan
+          // hisoblanadi (scoreMrs), ya'ni serverda ikkinchi marta
+          // saqlashning hojati yo'q.
+          assessments: MenopauseAssessment[];
           monthsSinceLastPeriod: number | null;
         }>("/api/menopause"),
       save: (scores: Record<string, number>) =>
-        request<{ assessments: { id: string; createdAt: string; total: number; severity: string }[] }>("/api/menopause", {
+        request<{ assessments: MenopauseAssessment[] }>("/api/menopause", {
           method: "POST",
           body: JSON.stringify({ scores }),
         }),

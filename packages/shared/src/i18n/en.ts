@@ -1526,6 +1526,13 @@ const en: Dictionary = {
     screeningBody: "Mammography, bone density, blood pressure and cholesterol matter most right now.",
     screeningCta: "My check-ups",
     doctorsCta: "Find a specialist",
+    scoreOf: (total: number, max: number) => `${total} / ${max}`,
+    domains: { somatic: "Physical", psychological: "Mood and nerves", urogenital: "Urogenital" },
+    dynamicsTitle: "Change over time",
+    dynamicsHint: "Only this line shows whether treatment is helping.",
+    todayTitle: "Today's symptoms",
+    todayBody: "Hot flashes, sleep, mood — logging them daily gives your doctor an accurate picture.",
+    todayCta: "Log today",
     levels: ["None", "Mild", "Moderate", "Severe", "Very severe"],
     items: {
       hot_flashes: "Hot flushes, sweating",
