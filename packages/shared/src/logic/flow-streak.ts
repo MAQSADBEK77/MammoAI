@@ -1,6 +1,30 @@
 import { daysBetween } from "./cycle";
 
 /**
+ * PERIOD-TRACK-05 — "bu kun HAYZ kunimi?" degan savolga YAGONA javob.
+ *
+ * Nega bitta joyda: bu qoida ilovada to'rt joyda alohida-alohida yozilgan
+ * edi va ular bir-biriga ZID edi:
+ *   - bashorat (detectPeriodStarts) dog'lanishni hisobga OLMASDI;
+ *   - bosh ekrandagi katta yozuv, kalendar va eslatma esa OLARDI.
+ * Natijada ilova bir vaqtning o'zida "hayzingiz 4 kun kechikmoqda" va
+ * "hayzingizning 3-kuni" deb aytardi. Egasi aynan shuni ko'rib
+ * "nega ikki xil gapiryapti?" deb so'radi (2026-10-04).
+ *
+ * To'g'ri javob tibbiy ta'rifga mos: dog'lanish hayz kuni SANALMAYDI.
+ * U qayd etilgan qon ketish — ko'rsatiladi, lekin "hayzning N-kuni"
+ * degan da'voga asos bo'lmaydi.
+ */
+export function isPeriodFlow(flow: string | null | undefined): boolean {
+  return flow === "light" || flow === "medium" || flow === "heavy";
+}
+
+/** Qayd etilgan har qanday qon ketish (dog'lanish ham) — "nimadir bor". */
+export function isAnyFlow(flow: string | null | undefined): boolean {
+  return !!flow;
+}
+
+/**
  * PERIOD-TRACK-03 — oxirgi qon ketish "seriyasi"ning boshlanishi.
  *
  * Nega `detectPeriodStarts`dan alohida: u DOG'LANISHNI ataylab e'tiborsiz
@@ -60,4 +84,27 @@ export function lastFlowStreak(logs: { date: string; flow: string | null }[]): F
 /** Eski chaqiruvchilar uchun — faqat boshlanish sanasi. */
 export function lastFlowStreakStart(logs: { date: string; flow: string | null }[]): string | null {
   return lastFlowStreak(logs)?.start ?? null;
+}
+
+/**
+ * PERIOD-TRACK-05 — hozirgi HAYZ seriyasining boshlanishi.
+ *
+ * `lastFlowStreak`dan farqi: bu yerda dog'lanish umuman qatnashmaydi.
+ * Bosh ekrandagi "Hayz: N-kun" sarlavhasi va shunga o'xshash DA'VOlar
+ * faqat shundan oziqlanishi kerak.
+ *
+ * Ilgari bu mantiq CycleScreen ichida alohida yozilgan va `l.flow`ga
+ * tayangan edi — natijada bitta dog'lanish kuni "Hayz: 3-kun" degan
+ * sarlavhani chiqarardi, bashorat esa o'sha paytda "4 kun kechikmoqda"
+ * derdi. Endi qoida shu yerda, bitta joyda.
+ */
+export function lastPeriodDayStreakStart(logs: { date: string; flow: string | null }[]): string | null {
+  const dates = [...new Set(logs.filter((l) => isPeriodFlow(l.flow)).map((l) => l.date))].sort();
+  if (dates.length === 0) return null;
+  let start = dates[dates.length - 1];
+  for (let i = dates.length - 2; i >= 0; i--) {
+    if (daysBetween(dates[i], start) === 1) start = dates[i];
+    else break;
+  }
+  return start;
 }

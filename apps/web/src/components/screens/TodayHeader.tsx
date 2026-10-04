@@ -27,7 +27,8 @@ import type { Pet } from "@mammoai/shared";
  */
 
 /** Hafta chizig'idagi bir kunning holati — rang/shakl shu bo'yicha tanlanadi. */
-export type TodayDayMarker = "period" | "predicted" | "ovulation" | "fertile" | null;
+// PERIOD-TRACK-05: dog'lanish alohida — hayz kuni bilan bir xil emas.
+export type TodayDayMarker = "period" | "spotting" | "predicted" | "ovulation" | "fertile" | null;
 
 export interface TodayDay {
   date: string;
@@ -291,6 +292,7 @@ export function TodayHeader({
                   // kengligiga bog'lanmaydi — hamma qurilmada bir xil.
                   isToday ? "h-11 w-11 text-base ring-4 ring-surface" : "h-9 w-9 text-sm",
                   marker === "period" && "bg-primary text-white",
+                  marker === "spotting" && "border-2 border-primary bg-primary/15 text-primary-dark",
                   marker === "predicted" && "border-2 border-dashed border-primary text-primary",
                   // CAL-03: ovulyatsiya kalendardagi bilan BIR XIL ko'rinadi.
                   marker === "ovulation" && "ring-2 ring-accent text-accent",

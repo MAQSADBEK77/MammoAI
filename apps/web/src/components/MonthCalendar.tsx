@@ -5,7 +5,10 @@ import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { localDateStr, type CyclePhase } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 
-export type DayMarker = "period" | "predicted";
+// PERIOD-TRACK-05: "spotting" ALOHIDA — dog'lanish qayd etilgan, lekin
+// u hayz kuni emas. Ilgari ikkalasi ham "period" edi va kalendar
+// dog'lanish kunini to'liq bo'yab, "hayz ketyapti" deb ko'rsatardi.
+export type DayMarker = "period" | "spotting" | "predicted";
 
 // Har bir tsikl fazasi uchun fon rangi — PhaseCard bilan bir xil palitra
 // (menstrual=primary, follicular=secondary, ovulation=accent, luteal=warning —
@@ -124,6 +127,8 @@ export function MonthCalendar({
               className={clsx(
                 "tap-target relative flex aspect-square items-center justify-center rounded-full text-sm font-medium transition",
                 marker === "period" && "bg-primary text-white",
+                // Dog'lanish: belgilangani ko'rinadi, lekin to'liq bo'yalmaydi.
+                marker === "spotting" && "border-2 border-primary bg-primary/15 text-primary-dark",
                 marker === "predicted" && "bg-primary-light text-primary-dark",
                 !marker && !phaseBg && phase === "menstrual" && "bg-primary-light text-primary-dark",
                 !marker && phaseBg && phaseBg,
