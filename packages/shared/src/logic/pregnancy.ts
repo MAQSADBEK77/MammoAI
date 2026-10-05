@@ -15,6 +15,38 @@ export function lmpFromDueDate(dueDate: string): string {
   return addDays(dueDate, -PREGNANCY_DAYS);
 }
 
+/**
+ * PREG-VALID-01 — oxirgi hayz / taxminiy tug'ruq sanasining ishonchliligi.
+ *
+ * Server bu sanalarni UMUMAN tekshirmasdi. Natijada productionda
+ * kelajakdagi sana saqlanib qolgan: bir foydalanuvchida oxirgi hayz
+ * 28-oktabr deb yozilgan, holbuki o'sha kuni 5-oktabr edi. Ilova undan
+ * "1-hafta" va 10 oydan keyingi tug'ruq sanasini hisoblab chiqargan.
+ *
+ * Chegaralar:
+ *   - kelajak — umuman qabul qilinmaydi (hayz hali bo'lmagan);
+ *   - 310 kundan eski — bu endi joriy homiladorlik emas (44 hafta,
+ *     eng uzun muddatdan ham uzoq).
+ */
+export const MAX_PREGNANCY_AGE_DAYS = 310;
+
+export type PregnancyDateProblem = "future" | "too_old" | "invalid";
+
+export function checkLastMenstrualPeriod(date: string, today: string): PregnancyDateProblem | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`))) return "invalid";
+  const age = daysBetween(date, today);
+  if (age < 0) return "future";
+  if (age > MAX_PREGNANCY_AGE_DAYS) return "too_old";
+  return null;
+}
+
+/** Taxminiy sana — oxirgi hayzdan hosila, shuning uchun tekshiruv ham
+ *  o'shanga keltiriladi: bitta qoida, ikkita kirish nuqtasi. */
+export function checkDueDate(dueDate: string, today: string): PregnancyDateProblem | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate) || Number.isNaN(Date.parse(`${dueDate}T00:00:00Z`))) return "invalid";
+  return checkLastMenstrualPeriod(lmpFromDueDate(dueDate), today);
+}
+
 export interface PregnancyStatus {
   dueDate: string;
   lastMenstrualPeriod: string;

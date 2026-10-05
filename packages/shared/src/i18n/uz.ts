@@ -2165,6 +2165,9 @@ const uz = {
     },
   },
   apiErrors: {
+    pregnancy_date_future: "Bu sana kelajakda — oxirgi hayz sanasi bugundan keyin bo'lishi mumkin emas.",
+    pregnancy_date_too_old: "Bu sana juda eski — homiladorlik muddati 44 haftadan oshmaydi. Sanani tekshiring.",
+    pregnancy_date_invalid: "Sana noto'g'ri kiritildi.",
     registration_required: "Bu funksiya uchun hisob kerak",
     invalid_tag: "Mavzu (tag) noto'g'ri",
     post_too_short: "Kamida bir necha so'z yozing",

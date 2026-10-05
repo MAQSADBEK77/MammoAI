@@ -14,6 +14,8 @@ import {
   getVitalTone,
   localDateStr,
   formatDateDisplay,
+  ApiError,
+  translateApiError,
 } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -50,6 +52,7 @@ export function PregnancyScreen() {
   // (getMilestoneForWeek) tushiladi.
   const [weekContent, setWeekContent] = useState<PregnancyWeekContent | null>(null);
   const [lmpInput, setLmpInput] = useState("");
+  const [lmpError, setLmpError] = useState<string | null>(null);
   const [addingVisit, setAddingVisit] = useState(false);
   const [visitLabel, setVisitLabel] = useState("");
   const [visitDate, setVisitDate] = useState("");
@@ -200,7 +203,11 @@ export function PregnancyScreen() {
           <img src={resolve("screen.pregnancy")} alt="" className="h-40 w-auto" />
         </div>
         <Card className="space-y-3">
-          <p className="text-sm text-text-secondary">{dict.onboarding.lastCheckupQuestion}</p>
+          {/* PREG-VALID-01: bu yerda "oxirgi ginekologik TEKSHIRUVINGIZ
+              qachon edi?" deb so'ralardi, javob esa oxirgi HAYZ sanasi
+              sifatida saqlanardi — butun homiladorlik muddati shundan
+              hisoblanadi. */}
+          <p className="text-sm text-text-secondary">{dict.onboarding.lastPeriodQuestion}</p>
           <DateWheelPicker
             value={lmpInput}
             onChange={setLmpInput}
@@ -213,8 +220,14 @@ export function PregnancyScreen() {
             disabled={!lmpInput || saving}
             onClick={async () => {
               setSaving(true);
+              setLmpError(null);
               try {
                 setData(await api.pregnancy.updateProfile({ lastMenstrualPeriod: lmpInput }));
+              } catch (err) {
+                // Server sanani rad etishi mumkin (kelajak / juda eski) —
+                // ilgari xato jim yutilardi va tugma hech narsa qilmagandek
+                // ko'rinardi.
+                setLmpError(err instanceof ApiError ? translateApiError(err, dict) : dict.common.errorGeneric);
               } finally {
                 setSaving(false);
               }
@@ -222,6 +235,7 @@ export function PregnancyScreen() {
           >
             {dict.common.save}
           </Button>
+          {lmpError && <p className="text-sm font-medium text-danger">{lmpError}</p>}
         </Card>
       </div>
     );
