@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { dueDateFromLmp, lmpFromDueDate, tashkentDateStr } from "@mammoai/shared";
-import type { PregnancyProfile } from "@mammoai/shared";
+import { checkDueDate, checkLastMenstrualPeriod, dueDateFromLmp, lmpFromDueDate, tashkentDateStr } from "@mammoai/shared";
+import type { PregnancyDateProblem, PregnancyProfile } from "@mammoai/shared";
 import { ApiError, jsonError, requireUser } from "@/server/api-utils";
 import { updatePregnancyProfile } from "@/server/repo";
 import { buildPregnancyResponse } from "@/server/views";
@@ -22,10 +22,20 @@ export async function PATCH(request: NextRequest) {
     const body = (await request.json()) as Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate" | "outcome" | "endedOn">>;
 
     const patch: Partial<Pick<PregnancyProfile, "lastMenstrualPeriod" | "dueDate" | "outcome" | "endedOn">> = {};
+    // PREG-VALID-01: sana UMUMAN tekshirilmasdi. Productionda shu sababli
+    // kelajakdagi oxirgi hayz sanasi saqlanib qolgan va ilova undan
+    // "1-hafta" hamda 10 oydan keyingi tug'ruq sanasini hisoblab chiqargan.
+    const today = tashkentDateStr();
+    const problemKey = (p: PregnancyDateProblem) =>
+      p === "future" ? "pregnancy_date_future" : p === "too_old" ? "pregnancy_date_too_old" : "pregnancy_date_invalid";
     if (body.lastMenstrualPeriod) {
+      const problem = checkLastMenstrualPeriod(body.lastMenstrualPeriod, today);
+      if (problem) throw new ApiError(400, "Oxirgi hayz sanasi noto'g'ri", problemKey(problem));
       patch.lastMenstrualPeriod = body.lastMenstrualPeriod;
       patch.dueDate = dueDateFromLmp(body.lastMenstrualPeriod);
     } else if (body.dueDate) {
+      const problem = checkDueDate(body.dueDate, today);
+      if (problem) throw new ApiError(400, "Taxminiy sana noto'g'ri", problemKey(problem));
       patch.dueDate = body.dueDate;
       patch.lastMenstrualPeriod = lmpFromDueDate(body.dueDate);
     }

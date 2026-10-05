@@ -1959,6 +1959,9 @@ const ru: Dictionary = {
     },
   },
   apiErrors: {
+    pregnancy_date_future: "Эта дата в будущем — дата последней менструации не может быть позже сегодняшнего дня.",
+    pregnancy_date_too_old: "Эта дата слишком давняя — срок беременности не превышает 44 недель. Проверьте дату.",
+    pregnancy_date_invalid: "Дата введена неверно.",
     registration_required: "Для этой функции нужен аккаунт",
     invalid_tag: "Неверная тема",
     post_too_short: "Напишите хотя бы несколько слов",

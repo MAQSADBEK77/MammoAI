@@ -7,6 +7,8 @@ import {
   getMilestoneForWeek,
   getEmbryoImageWeek,
   getVitalTone,
+  checkLastMenstrualPeriod,
+  checkDueDate,
 } from "./pregnancy";
 
 describe("dueDateFromLmp / lmpFromDueDate", () => {
@@ -196,5 +198,43 @@ describe("resolvePregnancyState — PREG-END-01: ayolning o'z gapi", () => {
     const s = resolvePregnancyState({ declaredPregnant: true, profile }, "2026-06-20");
     expect(s.isPregnant).toBe(true);
     expect(s.status?.currentWeek).toBeGreaterThan(0);
+  });
+});
+
+// PREG-VALID-01 — productionda kelajakdagi oxirgi hayz sanasi saqlanib qolgan.
+describe("checkLastMenstrualPeriod", () => {
+  const today = "2026-10-05";
+
+  it("kelajakdagi sana rad etiladi", () => {
+    expect(checkLastMenstrualPeriod("2026-10-28", today)).toBe("future");
+    expect(checkLastMenstrualPeriod("2026-10-06", today)).toBe("future");
+  });
+
+  it("bugungi va yaqin o'tmishdagi sana qabul qilinadi", () => {
+    expect(checkLastMenstrualPeriod(today, today)).toBeNull();
+    expect(checkLastMenstrualPeriod("2026-06-22", today)).toBeNull();
+  });
+
+  it("310 kundan eski sana rad etiladi — bu joriy homiladorlik emas", () => {
+    expect(checkLastMenstrualPeriod("2025-11-28", today)).toBe("too_old"); // 311 kun
+    expect(checkLastMenstrualPeriod("2025-11-29", today)).toBeNull(); // aynan 310 kun — chegarada
+  });
+
+  it("buzuq format rad etiladi", () => {
+    expect(checkLastMenstrualPeriod("2026-13-40", today)).toBe("invalid");
+    expect(checkLastMenstrualPeriod("salom", today)).toBe("invalid");
+  });
+});
+
+describe("checkDueDate", () => {
+  const today = "2026-10-05";
+
+  it("juda uzoq kelajakdagi taxminiy sana rad etiladi", () => {
+    // 280 kundan ko'p qolgan bo'lsa, oxirgi hayz kelajakda bo'lib chiqadi.
+    expect(checkDueDate("2027-08-04", today)).toBe("future");
+  });
+
+  it("odatiy taxminiy sana qabul qilinadi", () => {
+    expect(checkDueDate("2027-03-29", today)).toBeNull();
   });
 });

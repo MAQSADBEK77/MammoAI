@@ -1960,6 +1960,9 @@ const en: Dictionary = {
     },
   },
   apiErrors: {
+    pregnancy_date_future: "That date is in the future — your last period cannot be later than today.",
+    pregnancy_date_too_old: "That date is too far back — a pregnancy does not run past 44 weeks. Please check the date.",
+    pregnancy_date_invalid: "That date is not valid.",
     registration_required: "This feature needs an account",
     invalid_tag: "Invalid topic",
     post_too_short: "Write at least a few words",
