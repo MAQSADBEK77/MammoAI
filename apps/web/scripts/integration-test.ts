@@ -13,6 +13,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { emojiToTwemojiCode } from "@mammoai/shared";
+import { syncChecklistForUser } from "../src/server/checklist-sync";
 import { sql, ensureSchema } from "../src/server/db";
 import { ApiError } from "../src/server/api-utils";
 import { getCycleSettings, upsertCycleLog, deleteCycleLog, listCycleLogs, updateCycleSettings } from "../src/server/repo";
@@ -802,6 +803,26 @@ async function main() {
 
     const saved = await getOnboardingProfile(onbUserId);
     assert(saved !== null, "ONB-SAVE-01: to'liq bo'lmagan profil ham saqlanadi (undefined maydonlar null bo'ladi)");
+
+    // --- CHECKUP-SYNC-01: tungi eslatma endi ro'yxatni HAR KECHA yangilaydi ---
+    //
+    // Nega test kerak: bu chaqiruv endi har kecha HAR BIR foydalanuvchi uchun
+    // ishlaydi. Agar u takroriy qator yaratsa, bir necha kundan keyin
+    // ro'yxat o'nlab nusxaga to'lib ketardi va "muddati o'tgan" hisobi ham
+    // shuncha marta ko'payardi.
+    await syncChecklistForUser(onbUserId);
+    const afterFirst = await listChecklistItems(onbUserId);
+    assert(afterFirst.length > 0, "CHECKUP-SYNC-01: sinxronizatsiya ro'yxatni yaratadi");
+
+    await syncChecklistForUser(onbUserId);
+    await syncChecklistForUser(onbUserId);
+    const afterRepeat = await listChecklistItems(onbUserId);
+    assert(
+      afterRepeat.length === afterFirst.length,
+      `CHECKUP-SYNC-01: takroriy sinxronizatsiya YANGI qator yaratmaydi (${afterFirst.length} -> ${afterRepeat.length})`
+    );
+    const types = afterRepeat.map((i) => i.type);
+    assert(new Set(types).size === types.length, "CHECKUP-SYNC-01: bir xil turdagi band ikki marta turmaydi");
     assert(
       saved?.hpvVaccinated === null && saved?.smokes === null && saved?.hasGivenBirth === null,
       "ONB-SAVE-01: so'ralmagan PROFILE-01 maydonlari null bo'lib yoziladi, 'yo'q' emas"

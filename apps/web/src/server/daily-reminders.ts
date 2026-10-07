@@ -7,6 +7,7 @@
 // kelishilgan). Ustuvorlik: hayz/unumdor kun yaqinlashgani > bugun hali
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
+import { syncChecklistForUser } from "./checklist-sync";
 import { daysBetween, lastFlowStreak, deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
 import {
@@ -66,6 +67,26 @@ async function buildReminderPlan(userId: string, language: Language): Promise<Re
 
   const [onboarding, pregnancyProfile] = await Promise.all([getOnboardingProfile(userId), getPregnancyProfile(userId)]);
   const pregnancy = resolvePregnancyState({ declaredPregnant: onboarding?.isPregnant ?? false, profile: pregnancyProfile });
+
+  /**
+   * CHECKUP-SYNC-01: tekshiruvlar ro'yxatini SANASHDAN OLDIN yangilaymiz.
+   *
+   * Ro'yxat shu paytgacha faqat ayol "Tekshiruvlar" ekranini OCHGANDA
+   * qayta hisoblanardi (/api/checklist GET). Kunlik eslatma esa jadvaldagi
+   * eski holatni sanardi — ya'ni ekranni ochmagan ayolga, unga tegishli
+   * skrining muddati kelgan bo'lsa ham, hech qachon eslatma bormasdi.
+   *
+   * O'lchandi (2026-10-07, production): 212 ayoldan 49 tasida ro'yxat
+   * eskirgan edi. Yetishmayotganlari orasida eng oddiy bandlar bor —
+   * yillik ko'rik (36 ayol), HPV vaksinasi (35), flora surtmasi (33) —
+   * ya'ni gap bitta yangi qoidada emas, butun kanalda edi.
+   *
+   * Xatosi jim o'tkaziladi: eslatma yuborish ro'yxat yangilanishidan
+   * muhimroq, va keyingi ochilishda u baribir qayta hisoblanadi.
+   */
+  if (onboarding) {
+    await syncChecklistForUser(userId, onboarding).catch(() => {});
+  }
 
   // Sozlashni tugatmaganlar uchun sikl ma'lumotini umuman so'ramaymiz —
   // ularda u yo'q, va bu har kecha 39 ta ortiqcha so'rov degani edi.
