@@ -40,6 +40,7 @@ import {
 import type { Dictionary, Language } from "@mammoai/shared";
 import { TodayBackdrop } from "@/components/screens/TodayBackdrop";
 import { useI18n } from "@/lib/i18n";
+import { takeAfterOnboardingPath } from "@/lib/after-onboarding";
 import { useTelegram } from "@/lib/telegram";
 import { LogoBadge } from "@/components/LogoMark";
 import { useTelegramStartLink } from "@/lib/telegram-link";
@@ -390,6 +391,11 @@ const STEP_SECTION: Partial<Record<Step, 0 | 1 | 2>> = {
 };
 
 function landingPath(goal: Goal): string {
+  // PARTNER-LINK-01: taklif havolasi orqali kelgan bo'lsa, onboardingdan
+  // keyin o'sha manzilga qaytamiz (kod bilan birga), rejimning odatiy
+  // ekraniga emas.
+  const pending = takeAfterOnboardingPath();
+  if (pending) return pending;
   const tab = goalToLandingTab(goal);
   if (tab === "checkups") return "/tekshiruvlar";
   if (tab === "partner") return "/hamkor";

@@ -61,6 +61,9 @@ export interface TelegramWebApp {
     impactOccurred: (style: "light" | "medium" | "heavy" | "rigid" | "soft") => void;
     notificationOccurred: (type: "error" | "success" | "warning") => void;
   };
+  /** Bot API 6.1+ — Telegram ichidagi havolani ILOVA ICHIDA ochadi
+   *  (t.me/share/url ham shu orqali ketadi). */
+  openTelegramLink?: (url: string) => void;
   onEvent: (event: string, cb: () => void) => void;
   offEvent: (event: string, cb: () => void) => void;
 }
