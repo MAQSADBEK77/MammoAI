@@ -696,6 +696,45 @@ const uz = {
   // gormon tufayli bo'lishi mumkin, shuning uchun shunaqa narsalar qilish
   // kerak" — asabiylashish/stress/tushkunlik xarakter emas, gormonal
   // ekanligini tushuntirish + konkret o'z-o'ziga g'amxo'rlik tavsiyasi).
+  /**
+   * PARTNER-PHASE-01 — hamkor uchun faza izohi.
+   *
+   * IFODA QOIDASI (ataylab qattiq): matn hech qachon "u asabiy, chunki
+   * sikli shunday" demaydi. Sikl ayolning gaplarini IZOHLASH uchun
+   * vosita emas — aynan shu stereotip ayollarga zarar keltiradi.
+   * Shuning uchun:
+   *   - fiziologiya ANIQ aytiladi (nima bo'layotgani),
+   *   - his-tuyg'u faqat EHTIMOL sifatida ("ba'zi ayollarda"),
+   *   - har bir fazada ANIQ harakat beriladi ("nima qilish mumkin"),
+   *   - va pastda ogohlantirish turadi.
+   */
+  partnerPhase: {
+    sectionTitle: "Hozir nima bo'lyapti",
+    helpLabel: "Nima yordam beradi",
+    caution:
+      "Bu umumiy ma'lumot, tashxis emas. Uni hamkoringizning his-tuyg'ularini izohlash uchun ishlatmang — eng to'g'ri yo'l shunchaki so'rash.",
+    moodNote: "Quyida uning O'ZI belgilagan kayfiyati turibdi — taxmindan ko'ra shunga ishoning.",
+    menstrual: {
+      name: "Hayz fazasi",
+      body: "Estrogen va progesteron eng past nuqtada. Qorin va bel og'rig'i, charchoq, bosh og'rig'i bu kunlarda ko'p uchraydi.",
+      help: "Uy yumushlarining bir qismini zimmangizga oling, issiq ichimlik taklif qiling, erta dam olishiga imkon bering. Og'riq kuchli bo'lsa — bu normal emas, shifokorga borish kerak.",
+    },
+    follicular: {
+      name: "Follikul fazasi",
+      body: "Estrogen asta ko'tariladi. Odatda energiya va kayfiyat kun sayin yaxshilanadi.",
+      help: "Birga rejalashtirish, sayr yoki faol narsalar uchun qulay payt.",
+    },
+    ovulation: {
+      name: "Ovulyatsiya",
+      body: "Estrogen cho'qqida. Ba'zi ayollarda qorinning bir tomonida yengil sanchiq bo'ladi.",
+      help: "Agar farzand rejalashtirayotgan bo'lsangiz — eng unumdor kunlar shu. Yengil sanchiq odatda o'tib ketadi, lekin kuchli og'riq tekshirishni talab qiladi.",
+    },
+    luteal: {
+      name: "Lyuteal faza",
+      body: "Progesteron ko'tarilib, hayzdan oldin ikkala gormon ham keskin tushadi. Ko'krak sezuvchanligi, shishish, uyqu buzilishi va kayfiyat tebranishi shu davrda ko'p uchraydi.",
+      help: "Rejalarni yengilroq qiling, uxlashiga xalaqit bermang. Nima kerakligini taxmin qilmang — so'rang.",
+    },
+  },
   cyclePhase: {
     menstrual: {
       name: "Hayz fazasi",

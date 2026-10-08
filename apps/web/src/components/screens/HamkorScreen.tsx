@@ -315,6 +315,40 @@ export function HamkorScreen() {
             </div>
           </Card>
 
+          {/* PARTNER-PHASE-01: ilgari hamkor faqat quruq raqam ko'rardi
+              ("Sikl: 3-kun"), u ham modal ichida. Raqam hech narsa
+              tushuntirmaydi — bu yerda FIZIOLOGIYA va ANIQ harakat bor.
+
+              IFODA: matn hech qachon "u asabiy, chunki sikli shunday"
+              demaydi. Sikl ayolning gaplarini izohlash uchun vosita emas. */}
+          {status.partnerData?.cyclePhase && (
+            <Card className="space-y-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-sm font-bold text-text-primary">{dict.partnerPhase.sectionTitle}</p>
+                <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-[11px] font-bold text-text-secondary">
+                  {dict.partnerPhase[status.partnerData.cyclePhase].name}
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed text-text-secondary">
+                {dict.partnerPhase[status.partnerData.cyclePhase].body}
+              </p>
+              <div className="rounded-2xl bg-surface-muted p-3">
+                <p className="text-[11px] font-bold text-text-secondary">{dict.partnerPhase.helpLabel}</p>
+                <p className="mt-0.5 text-sm leading-relaxed text-text-primary">
+                  {dict.partnerPhase[status.partnerData.cyclePhase].help}
+                </p>
+              </div>
+              {/* Uning O'ZI belgilagan kayfiyati taxmindan USTUN turadi. */}
+              {status.partnerData.todayMood && (
+                <p className="text-sm text-text-primary">
+                  {MOOD_EMOJI[status.partnerData.todayMood]} {dict.cycle.moods[status.partnerData.todayMood]}
+                  <span className="ml-1 text-xs text-text-muted">— {dict.partnerPhase.moodNote}</span>
+                </p>
+              )}
+              <p className="text-[11px] leading-relaxed text-text-muted">{dict.partnerPhase.caution}</p>
+            </Card>
+          )}
+
           <div className="space-y-2">
             <p className="text-sm font-bold text-text-primary">{dict.partner.canSeeTitle}</p>
             <Card className="space-y-1">
