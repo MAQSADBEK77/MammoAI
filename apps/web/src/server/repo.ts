@@ -3,6 +3,11 @@ import { sql, ensureSchema } from "./db";
 import { ApiError } from "./api-utils";
 import type { AlbumPhotoKind, CheckinResponse, Contraction } from "@mammoai/shared";
 import { PET_IDS, resolvePregnancyText, type PetChoice } from "@mammoai/shared";
+import {
+  isPremiumInterestChoice,
+  type PremiumInterestChoice,
+  type PremiumInterestSource,
+} from "@mammoai/shared";
 import type {
   AdminDoctor,
   AdminPregnancyWeek,
@@ -1815,6 +1820,67 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
   await ensureSchema();
   const rows = (await sql`SELECT * FROM subscriptions WHERE user_id = ${userId}`) as unknown as SubscriptionRow[];
   return rows[0] ? subscriptionFromRow(rows[0]) : null;
+}
+
+// ---------------------------------------------------------------------------
+// PRICE-SIGNAL-01 — paywallda narxni ko'rgan ayolning javobi.
+// ---------------------------------------------------------------------------
+
+/** Bir ayol fikrini o'zgartirishi mumkin — har bosilish yoziladi, sanashda
+ * esa oxirgisi olinadi (qarang: `getPremiumInterestSummary`). */
+export async function recordPremiumInterest(input: {
+  userId: string;
+  choice: PremiumInterestChoice;
+  source: PremiumInterestSource;
+  priceUzs: number;
+  note?: string | null;
+}): Promise<void> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO premium_interest (id, user_id, choice, source, price_uzs, note, created_at)
+    VALUES (${randomUUID()}, ${input.userId}, ${input.choice}, ${input.source},
+            ${Math.round(input.priceUzs)}, ${input.note ?? null}, ${now()})
+  `;
+}
+
+export interface PremiumInterestSummary {
+  /** Har bir tanlov bo'yicha NECHA AYOL — yozuvlar soni emas. */
+  byChoice: Record<PremiumInterestChoice, number>;
+  /** Umuman javob bergan ayollar soni. */
+  respondents: number;
+}
+
+/** Admin paneli va o'lchov uchun: har ayolning ENG OXIRGI javobi hisoblanadi,
+ * chunki fikrini o'zgartirgan ayol ikki marta sanalmasligi kerak. */
+export async function getPremiumInterestSummary(): Promise<PremiumInterestSummary> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT choice, COUNT(*)::int AS c FROM (
+      SELECT DISTINCT ON (user_id) user_id, choice
+      FROM premium_interest
+      ORDER BY user_id, created_at DESC
+    ) latest
+    GROUP BY choice
+  `) as unknown as { choice: string; c: number }[];
+
+  const byChoice = { monthly: 0, yearly: 0, too_expensive: 0 } as Record<PremiumInterestChoice, number>;
+  let respondents = 0;
+  for (const row of rows) {
+    if (isPremiumInterestChoice(row.choice)) byChoice[row.choice] = row.c;
+    respondents += row.c;
+  }
+  return { byChoice, respondents };
+}
+
+/** Shu ayol allaqachon javob berganmi — paywall takroran so'ramasligi uchun. */
+export async function getLatestPremiumInterest(userId: string): Promise<PremiumInterestChoice | null> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT choice FROM premium_interest WHERE user_id = ${userId}
+    ORDER BY created_at DESC LIMIT 1
+  `) as unknown as { choice: string }[];
+  const choice = rows[0]?.choice;
+  return isPremiumInterestChoice(choice) ? choice : null;
 }
 
 /** `getSubscription` + shu yerda vaqtni tekshirishni takrorlamaslik uchun —

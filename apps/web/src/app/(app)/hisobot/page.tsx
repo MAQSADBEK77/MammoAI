@@ -8,6 +8,7 @@ import { ApiError, formatDateDisplay } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Button, Card, ErrorState, LoadingSpinner, ScreenHeader } from "@/components/ui";
+import { PremiumPricing } from "@/components/PremiumPricing";
 import { Emoji } from "@/components/Emoji";
 
 /**
@@ -58,9 +59,7 @@ export default function DoctorReportPage() {
           </div>
           <h2 className="text-lg font-bold text-text-primary">{dict.doctorReport.premiumTitle}</h2>
           <p className="max-w-sm text-sm text-text-secondary">{dict.doctorReport.premiumBody}</p>
-          <Button className="mt-2" onClick={() => router.push("/fikr?tema=premium")}>
-            {dict.chat.premiumCta}
-          </Button>
+          <PremiumPricing source="doctor_report" />
         </Card>
       </div>
     );

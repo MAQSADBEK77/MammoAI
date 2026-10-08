@@ -8,6 +8,7 @@ import { ApiError } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { ScreenHeader, LoadingSpinner, ErrorState, Card, Button } from "@/components/ui";
+import { PremiumPricing } from "@/components/PremiumPricing";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
 import { Emoji } from "@/components/Emoji";
 
@@ -63,7 +64,7 @@ export function StatisticsScreen() {
           </div>
           <h2 className="text-lg font-bold text-text-primary">{dict.chat.premiumTitle}</h2>
           <p className="max-w-sm text-sm text-text-secondary">{dict.chat.premiumBody}</p>
-          <ul className="flex flex-col gap-1.5 self-start text-sm text-text-secondary">
+          <ul className="flex flex-col gap-1.5 self-start text-left text-sm text-text-secondary">
             {[dict.chat.premiumBenefit1, dict.chat.premiumBenefit2, dict.chat.premiumBenefit3].map((b) => (
               <li key={b} className="flex items-center gap-2">
                 <Emoji e="✨" size={14} />
@@ -71,9 +72,10 @@ export function StatisticsScreen() {
               </li>
             ))}
           </ul>
-          <Button className="mt-2" onClick={() => router.push("/fikr?tema=premium")}>
-            {dict.chat.premiumCta}
-          </Button>
+          {/* PRICE-SIGNAL-01: narx shu yerda KO'RSATILADI. Ilgari ayol
+              "Premium kerak" degan yozuvni ko'rib, qancha turishini
+              bilmay chiqib ketardi. */}
+          <PremiumPricing source="statistics" />
         </Card>
       ) : data ? (
         <InsightsPanel summary={data.summary} patterns={data.patterns} aiInsight={data.aiInsight} />

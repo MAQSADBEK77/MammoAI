@@ -80,7 +80,7 @@ import {
 import { getChatAccess, FREE_MESSAGE_ALLOWANCE } from "../src/server/chat-access";
 import { hashAdminPassword, verifyAdminPasswordHash } from "../src/server/admin-auth";
 import { buildCycleResponse } from "../src/server/views";
-import { tashkentDateStr } from "@mammoai/shared";
+import { addDays, tashkentDateStr } from "@mammoai/shared";
 
 let failures = 0;
 let checks = 0;
@@ -410,11 +410,12 @@ async function main() {
       await connectPartnerByCode(him, code);
       await updatePartnerSharing(her, { pregnancy: false, checkups: false, mood: false, period: true });
 
-      const dayStr = (back: number) => {
-        const d = new Date();
-        d.setDate(d.getDate() - back);
-        return d.toISOString().slice(0, 10);
-      };
+      // Sana TOSHKENT kalendar kuni bo'yicha hisoblanadi — `getPartnerStatus`
+      // ham aynan shunday qiladi. Ilgari bu yerda `toISOString()` ishlatilardi,
+      // ya'ni UTC: 19:00 UTC'dan keyin Toshkentda allaqachon ERTANGI kun
+      // bo'lgani uchun fikstura bir kunga surilib, test har kuni kechqurun
+      // yiqilardi (CI 19:58 UTC'da: kutilgan 3, keldi 4).
+      const dayStr = (back: number) => addDays(tashkentDateStr(), -back);
 
       // (a) ESKIRGAN: faqat onboarding sanasi, 200 kun oldin.
       await updateCycleSettings(her, { lastPeriodStart: dayStr(200), averageCycleLength: 28, averagePeriodLength: 5 });

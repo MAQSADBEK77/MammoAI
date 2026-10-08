@@ -11,6 +11,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { api } from "@/lib/api";
 import { ScreenHeader, LoadingSpinner, ErrorState, Card, Button } from "@/components/ui";
+import { PremiumPricing } from "@/components/PremiumPricing";
 import { Emoji } from "@/components/Emoji";
 import { RegisterGate } from "@/components/RegisterGate";
 import { DURATION, EASE_BRAND } from "@/lib/motion";
@@ -222,7 +223,7 @@ export function YordamchiScreen() {
           </div>
           <h2 className="text-lg font-bold text-text-primary">{dict.chat.premiumExhaustedTitle}</h2>
           <p className="max-w-sm text-sm text-text-secondary">{dict.chat.premiumExhaustedBody}</p>
-          <ul className="flex flex-col gap-1.5 self-start text-sm text-text-secondary">
+          <ul className="flex flex-col gap-1.5 self-start text-left text-sm text-text-secondary">
             {[dict.chat.premiumBenefit1, dict.chat.premiumBenefit2, dict.chat.premiumBenefit3].map((b) => (
               <li key={b} className="flex items-center gap-2">
                 <Emoji e="✨" size={14} />
@@ -230,9 +231,7 @@ export function YordamchiScreen() {
               </li>
             ))}
           </ul>
-          <Button className="mt-2" onClick={() => router.push("/fikr?tema=premium")}>
-            {dict.chat.premiumCta}
-          </Button>
+          <PremiumPricing source="chat_wall" />
         </Card>
       </div>
     );

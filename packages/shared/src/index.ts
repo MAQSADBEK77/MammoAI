@@ -41,6 +41,7 @@ export * from "./logic/goal";
 export * from "./logic/clinic-display";
 export * from "./logic/gamification";
 export * from "./logic/daily-insights";
+export * from "./logic/pricing";
 export * from "./logic/wellness";
 export * from "./logic/checkin";
 export * from "./logic/community-safety";
