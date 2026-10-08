@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { TrendingDown, TrendingFlat, TrendingUp } from "@mui/icons-material";
 import type { CycleLog, FlowLevel, Mood, Symptom } from "@mammoai/shared";
 import {
   DAILY_SYMPTOMS,
@@ -53,27 +54,76 @@ type Labels = ReturnType<typeof useI18n>["dict"]["menopause"];
 const FLOW_LEVELS: FlowLevel[] = ["spotting", "light", "medium", "heavy"];
 const MOODS: Mood[] = ["happy", "calm", "tired", "sad", "irritable", "anxious"];
 
-/** Natija qaysi og'irlik oralig'ida turganini KO'RSATADIGAN chiziq.
- *  Raqamning o'zi ("22") ayolga hech narsa demaydi — chegaralar aytadi. */
-function SeverityBar({ total, lowLabel, highLabel }: { total: number; lowLabel: string; highLabel: string }) {
-  const pct = Math.min(100, (total / MRS_TOTAL_MAX) * 100);
+/**
+ * MENO-06 — og'irlik o'lchagichi.
+ *
+ * Ilgari bu oddiy to'ldiriladigan chiziq edi: "22 / 44" va yarmigacha
+ * bo'yalgan poloska. Ayol uchun bu hech narsa demaydi — 22 ko'pmi yoki
+ * ozmi, qayerdan boshlab "og'ir" sanaladi?
+ *
+ * Endi o'lchagich MRS shkalasining O'Z chegaralarini ko'rsatadi
+ * (5 / 9 / 17) va zona nomlari yoziladi. Natija esa o'q bilan belgilanadi.
+ *
+ * RANG QARORI (dataviz tekshiruvi, 2026-10-08):
+ *   - To'rtta rangli zona SINALDI va RAD ETILDI: och qahrabo oq fonda
+ *     1.2:1 kontrast beradi, ya'ni zona umuman ko'rinmaydi.
+ *   - Shuning uchun o'q — QORA siyoh (har ikkala mavzuda ham o'qiladi),
+ *     og'irlik esa yorliqli chip bilan beriladi. Ya'ni ma'no hech qachon
+ *     faqat rangga tayanmaydi.
+ */
+const MRS_BANDS = [
+  { from: 0, to: 4, key: "sevNone" },
+  { from: 5, to: 8, key: "sevMild" },
+  { from: 9, to: 16, key: "sevModerate" },
+  { from: 17, to: MRS_TOTAL_MAX, key: "sevSevere" },
+] as const;
+
+function SeverityGauge({
+  total,
+  bandLabel,
+  caption,
+}: {
+  total: number;
+  bandLabel: string;
+  caption: string;
+}) {
+  const pct = (v: number) => Math.min(100, Math.max(0, (v / MRS_TOTAL_MAX) * 100));
+  const edges = [0, 5, 9, 17, MRS_TOTAL_MAX];
+
   return (
-    <div className="mt-2">
-      <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-surface-muted">
-        <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${pct}%` }} />
-        {/* Og'irlik chegaralari: 5 / 9 / 17 */}
-        {[5, 9, 17].map((edge) => (
+    <div className="pt-1">
+      <div className="relative h-2 w-full rounded-full bg-surface-muted">
+        {/* Chegaralar — shkalaning o'z nuqtalari (5 / 9 / 17). */}
+        {edges.slice(1, -1).map((edge) => (
+          <span key={edge} className="absolute top-0 h-2 w-px bg-border" style={{ left: `${pct(edge)}%` }} />
+        ))}
+        {/* Natija o'qi — QORA siyoh. Rang bu yerda ma'no tashimaydi:
+            dataviz tekshiruvi ko'rsatdiki, och rangli zonalar oq fonda
+            1.2:1 kontrast beradi, ya'ni umuman ko'rinmaydi. */}
+        <span
+          className="absolute -top-1 h-4 w-[3px] -translate-x-1/2 rounded-full bg-text-primary"
+          style={{ left: `${pct(total)}%` }}
+        />
+      </div>
+
+      {/* Zona NOMLARI o'q ostiga sig'maydi (0-4 oralig'i butun shkalaning
+          11% i), shuning uchun faqat chegara raqamlari turadi — nom esa
+          pastdagi izohda, to'liq holda. */}
+      <div className="relative mt-1 h-3">
+        {edges.map((edge) => (
           <span
             key={edge}
-            className="absolute top-0 h-full w-px bg-surface/50"
-            style={{ left: `${(edge / MRS_TOTAL_MAX) * 100}%` }}
-          />
+            className="absolute -translate-x-1/2 text-[10px] text-text-muted"
+            style={{ left: `${pct(edge)}%` }}
+          >
+            {edge}
+          </span>
         ))}
       </div>
-      <div className="mt-1 flex justify-between text-[10px] font-medium text-text-muted">
-        <span>{lowLabel}</span>
-        <span>{highLabel}</span>
-      </div>
+
+      <p className="mt-1 text-[11px] text-text-secondary">
+        <span className="font-semibold text-text-primary">{bandLabel}</span> — {caption}
+      </p>
     </div>
   );
 }
@@ -83,7 +133,7 @@ function DomainRow({ label, value, max }: { label: string; value: number; max: n
     <div className="flex items-center gap-2">
       <span className="w-28 shrink-0 text-[11px] font-semibold text-text-secondary">{label}</span>
       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
-        <div className="h-full rounded-full bg-primary/70" style={{ width: `${(value / max) * 100}%` }} />
+        <div className="h-full rounded-full bg-primary" style={{ width: `${(value / max) * 100}%` }} />
       </div>
       <span className="w-10 shrink-0 text-right text-[11px] font-bold text-text-primary">
         {value}/{max}
@@ -203,6 +253,9 @@ export function MenopauseScreen() {
   };
 
   const latestResult = latest ? scoreMrs(latest.scores as MrsScore) : null;
+  // Faol oraliq — "22" nima uchun og'ir ekanini AYTADI (17-44).
+  const activeBand =
+    MRS_BANDS.find((b) => (latest?.total ?? 0) >= b.from && (latest?.total ?? 0) <= b.to) ?? MRS_BANDS[0];
   const history = (assessments ?? []).slice(0, 6).reverse();
 
   return (
@@ -234,13 +287,35 @@ export function MenopauseScreen() {
                 <p className="text-4xl font-extrabold leading-none text-text-primary">
                   {t.scoreOf(latest!.total, MRS_TOTAL_MAX)}
                 </p>
-                <p className="pb-0.5 text-sm font-bold text-text-secondary">{severityLabel(latest!.severity)}</p>
+                {/* Og'irlik — rang EMAS, yorliqli chip. Rang faqat qo'shimcha
+                    belgi: ma'no so'zda turadi (dataviz qoidasi). */}
+                <span
+                  className={clsx(
+                    "mb-0.5 rounded-full px-2.5 py-1 text-xs font-bold",
+                    latest!.severity === "severe"
+                      ? "bg-danger/15 text-danger"
+                      : latest!.severity === "moderate"
+                      ? "bg-warning/20 text-text-primary"
+                      : "bg-success/15 text-success"
+                  )}
+                >
+                  {severityLabel(latest!.severity)}
+                </span>
               </div>
-              <SeverityBar total={latest!.total} lowLabel={t.sevNone} highLabel={t.sevSevere} />
-              <div className="space-y-1.5 pt-1">
-                {(Object.keys(MRS_DOMAIN_MAX) as MrsDomain[]).map((d) => (
-                  <DomainRow key={d} label={t.domains[d]} value={latestResult.byDomain[d]} max={MRS_DOMAIN_MAX[d]} />
-                ))}
+              <SeverityGauge
+                total={latest!.total}
+                bandLabel={severityLabel(latest!.severity)}
+                caption={t.gaugeRange(activeBand.from, activeBand.to)}
+              />
+              {/* Domenlar eng OG'IRIDAN boshlab — birinchi qator eng muhimi.
+                  Alifbo tartibi bu yerda hech narsa bermasdi. */}
+              <div className="space-y-1.5 pt-2">
+                {(Object.keys(MRS_DOMAIN_MAX) as MrsDomain[])
+                  .slice()
+                  .sort((a, b) => latestResult.byDomain[b] / MRS_DOMAIN_MAX[b] - latestResult.byDomain[a] / MRS_DOMAIN_MAX[a])
+                  .map((d) => (
+                    <DomainRow key={d} label={t.domains[d]} value={latestResult.byDomain[d]} max={MRS_DOMAIN_MAX[d]} />
+                  ))}
               </div>
               <p className="text-[11px] text-text-muted">{t.lastTaken(shortDate(latest!.createdAt))}</p>
             </>
@@ -277,17 +352,46 @@ export function MenopauseScreen() {
             <p className="text-base font-bold text-text-primary">{t.dynamicsTitle}</p>
             <p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{t.dynamicsHint}</p>
           </div>
+          {/* Asosiy javob RAQAMLARDA emas, bitta jumlada: yaxshilanyaptimi?
+              Ustunlar uni tasdiqlaydi, almashtirmaydi. */}
+          {(() => {
+            const first = history[0];
+            const last = history[history.length - 1];
+            const diff = last.total - first.total;
+            return (
+              <p className="flex items-center gap-1.5 text-sm font-bold text-text-primary">
+                {diff < 0 ? (
+                  <TrendingDown sx={{ fontSize: 18 }} className="text-success" />
+                ) : diff > 0 ? (
+                  <TrendingUp sx={{ fontSize: 18 }} className="text-danger" />
+                ) : (
+                  <TrendingFlat sx={{ fontSize: 18 }} className="text-text-muted" />
+                )}
+                {diff === 0 ? t.changeSame : diff < 0 ? t.changeDown(-diff) : t.changeUp(diff)}
+              </p>
+            );
+          })()}
           <div className="flex h-24 items-end justify-between gap-2 pt-1">
-            {history.map((a) => (
-              <div key={a.id} className="flex flex-1 flex-col items-center gap-1">
-                <span className="text-[10px] font-bold text-text-secondary">{a.total}</span>
-                <div
-                  className="w-full rounded-t-md bg-primary/70"
-                  style={{ height: `${Math.max(4, (a.total / MRS_TOTAL_MAX) * 64)}px` }}
-                />
-                <span className="text-[9px] text-text-muted">{shortDate(a.createdAt)}</span>
-              </div>
-            ))}
+            {history.map((a, i) => {
+              // Tanlab yorliqlash: har bir ustunga raqam yozilsa, chiziq
+              // emas, raqamlar devori bo'lib qoladi. Birinchi va oxirgisi
+              // o'zgarishni ko'rsatish uchun yetarli.
+              const labelled = i === 0 || i === history.length - 1;
+              return (
+                <div key={a.id} className="flex flex-1 flex-col items-center gap-1">
+                  <span className={clsx("text-[10px] font-bold", labelled ? "text-text-secondary" : "text-transparent")}>
+                    {a.total}
+                  </span>
+                  <div
+                    className="w-full rounded-t-md bg-primary"
+                    style={{ height: `${Math.max(4, (a.total / MRS_TOTAL_MAX) * 64)}px` }}
+                  />
+                  <span className={clsx("text-[9px]", labelled ? "text-text-muted" : "text-transparent")}>
+                    {shortDate(a.createdAt)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
