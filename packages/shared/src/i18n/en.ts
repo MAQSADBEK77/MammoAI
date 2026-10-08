@@ -1959,6 +1959,18 @@ const en: Dictionary = {
       "doctor-report": "The report is built from your long-term history, and keeping that history needs an account.",
     },
   },
+  enableReminders: {
+    title: "Reminders",
+    doneTitle: "Reminders are on",
+    doneBody: "You'll now get Telegram messages about your cycle, fertile window and screening dates. You can turn them off any time in your profile.",
+    continueButton: "Continue",
+    undo: "No, turn them off",
+  },
+  enableRemindersPrompt: {
+    text:
+      "Your MammoAI reminders are switched off \u2014 possibly because of a bug on our side: if the permission prompt failed, reminders used to be turned off silently.\n\nIf you turn them on, we'll let you know when your period is due, when your fertile window is, and when a screening is coming up. At most one message a day, and you can turn it off any time.",
+    button: "\ud83d\udd14 Turn reminders on",
+  },
   apiErrors: {
     pregnancy_date_future: "That date is in the future — your last period cannot be later than today.",
     pregnancy_date_too_old: "That date is too far back — a pregnancy does not run past 44 weeks. Please check the date.",

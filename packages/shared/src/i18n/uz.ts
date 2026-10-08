@@ -2164,6 +2164,18 @@ const uz = {
       "doctor-report": "Hisobot sizning uzoq muddatli tarixingizdan tuziladi — uni saqlab turish uchun hisob kerak.",
     },
   },
+  enableReminders: {
+    title: "Eslatmalar",
+    doneTitle: "Eslatmalar yoqildi",
+    doneBody: "Endi hayz, unumdor oyna va tekshiruv muddatlari haqida Telegram orqali xabar olasiz. Istalgan vaqtda profildan o'chirasiz.",
+    continueButton: "Davom etish",
+    undo: "Yo'q, o'chirib qo'ying",
+  },
+  enableRemindersPrompt: {
+    text:
+      "Sizda MammoAI eslatmalari o'chirilgan \u2014 ehtimol bu bizning xatomiz tufayli: ilgari ruxsat so'rovi yiqilsa, eslatma jimgina o'chib qolardi.\n\nYoqsangiz, hayzingiz kutilayotgan kun, unumdor oyna va tekshiruv muddatlari haqida xabar beramiz. Kuniga ko'pi bilan bitta xabar, istalgan vaqtda o'chirasiz.",
+    button: "\ud83d\udd14 Eslatmalarni yoqish",
+  },
   apiErrors: {
     pregnancy_date_future: "Bu sana kelajakda — oxirgi hayz sanasi bugundan keyin bo'lishi mumkin emas.",
     pregnancy_date_too_old: "Bu sana juda eski — homiladorlik muddati 44 haftadan oshmaydi. Sanani tekshiring.",
