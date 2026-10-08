@@ -68,8 +68,7 @@ import {
   SLOT_KEYS,
   deriveAdaptiveCycleSettings,
   getPregnancyStatus,
-  tashkentDateStr,
-} from "@mammoai/shared";
+  tashkentDateStr, predictCycle, daysBetween} from "@mammoai/shared";
 
 const now = () => new Date().toISOString();
 // DATA-ACCURACY-04: avval `now().slice(0, 10)` — bu server UTC vaqtidan
@@ -5089,10 +5088,19 @@ export async function getPartnerStatus(userId: string): Promise<PartnerStatusRes
     // topilgan "ikki manba" muammosining TO'RTINCHI nusxasi.
     const [settings, logs] = await Promise.all([getCycleSettings(partnerId), listCycleLogs(partnerId, 365)]);
     const adaptive = deriveAdaptiveCycleSettings(logs, settings);
-    if (adaptive) {
-      const diff = Math.round((new Date(today()).getTime() - new Date(adaptive.lastPeriodStart).getTime()) / 86400000);
-      const cycleLen = adaptive.averageCycleLength;
-      cycleDay = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
+    const prediction = adaptive ? predictCycle(adaptive, today()) : null;
+    // PARTNER-ONE-VOICE-01: ikkita tuzatish.
+    //
+    //  1) ESKIRGAN ma'lumotda raqam KO'RSATILMAYDI. Ayolning o'z ekrani
+    //     bunday holatda "Hayzingiz boshlandimi?" deb SO'RAYDI — hamkorga
+    //     esa ishonchli ko'rinishdagi son chiqarib qo'yish yolg'on bo'lardi.
+    //
+    //  2) MODUL OLIB TASHLANDI. Ilgari `diff % cycleLen` yozilgan edi:
+    //     ayol 33 kun oldin hayz ko'rgan va kechikkan bo'lsa, 29 kunlik
+    //     siklda bu "5-kun" bo'lib o'ralib ketardi — ya'ni hamkor
+    //     "hammasi joyida" degan xulosaga kelardi.
+    if (adaptive && prediction && !prediction.isStale) {
+      cycleDay = daysBetween(adaptive.lastPeriodStart, today()) + 1;
     }
   }
 
