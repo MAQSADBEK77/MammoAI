@@ -265,7 +265,13 @@ export async function runDailyReminders(): Promise<DailyReminderResult[]> {
       }
     }
     try {
-      await createSystemNotification(user.id, plan.notificationType ?? "daily_reminder", message);
+      // NOTIF-DELIVERY-01: yetkazilmagan bo'lsa sababi bilan birga yoziladi.
+      await createSystemNotification(
+        user.id,
+        plan.notificationType ?? "daily_reminder",
+        message,
+        telegramSent || pushSent ? null : (deliveryError ?? "kanal yo'q")
+      );
     } catch {
       // Ilova ichidagi yozuv muvaffaqiyatsiz bo'lsa ham — boshqa kanallar
       // (agar yuborilgan bo'lsa) baribir foydalanuvchiga yetgan.

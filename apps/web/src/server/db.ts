@@ -625,6 +625,12 @@ async function initSchema() {
     // bu safar bajarilmagan — DB sxema o'zgarishi alohida migratsiya
     // sifatida qilinishi kerak.
     () => sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS expo_push_token TEXT`,
+    // NOTIF-DELIVERY-01: yetkazish natijasi. Ilgari kunlik eslatma yozuvi
+    // Telegram yuborilgan-yuborilmaganidan QAT'I NAZAR yaratilardi, xato
+    // esa faqat funksiya natijasida qaytib, hech qayerda saqlanmasdi.
+    // Natijada botni bloklagan ayol ham bazada "85 ta xabar oldi" bo'lib
+    // ko'rinardi va "kimga yetmadi?" degan savolga umuman javob yo'q edi.
+    () => sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_error TEXT`,
     // FIX-04: OTP kodini cheksiz sinab ko'rishning oldini olish uchun —
     // repo.ts:verifyPhoneCode shu ustunni token bo'yicha oshirib boradi va
     // chegaradan oshsa tokenni bekor qiladi.

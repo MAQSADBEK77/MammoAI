@@ -4572,12 +4572,33 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
 
 /** Tizim (kunlik eslatma kabi) bildirishnomasi — haqiqiy "actor" yo'q
  * (`actor_user_id` NULL), shuning uchun UI'da hech kimning ismi ko'rsatilmaydi. */
-export async function createSystemNotification(userId: string, type: "daily_reminder" | "checkup_reminder", message: string): Promise<void> {
+export async function createSystemNotification(
+  userId: string,
+  type: "daily_reminder" | "checkup_reminder",
+  message: string,
+  /** NOTIF-DELIVERY-01: `null` — yetkazildi. Satr — yetkazilmadi va sababi
+   *  shu (masalan "bot was blocked by the user"). Yozuv baribir yaratiladi:
+   *  ayol ilovani ochsa xabarni o'sha yerda ko'radi. */
+  deliveryError: string | null = null
+): Promise<void> {
   await ensureSchema();
   await sql`
-    INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
-    VALUES (${randomUUID()}, ${userId}, NULL, ${type}, ${message}, ${now()})
+    INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at, delivery_error)
+    VALUES (${randomUUID()}, ${userId}, NULL, ${type}, ${message}, ${now()}, ${deliveryError})
   `;
+}
+
+/** Admin/diagnostika: oxirgi N soatda yetkazib bo'lmaganlar. */
+export async function countFailedReminderDeliveries(hours = 30): Promise<{ failed: number; delivered: number }> {
+  await ensureSchema();
+  const cutoff = new Date(Date.now() - hours * 3600 * 1000).toISOString();
+  const [row] = (await sql`
+    SELECT COUNT(*) FILTER (WHERE delivery_error IS NOT NULL)::int AS failed,
+           COUNT(*) FILTER (WHERE delivery_error IS NULL)::int AS delivered
+    FROM notifications
+    WHERE type IN ('daily_reminder','checkup_reminder') AND created_at > ${cutoff}
+  `) as unknown as { failed: number; delivered: number }[];
+  return row;
 }
 
 // FIX2-25: runDailyReminders() uchun idempotentlik tekshiruvi — cron
