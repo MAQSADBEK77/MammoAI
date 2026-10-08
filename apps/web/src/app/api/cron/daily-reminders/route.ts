@@ -2,9 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { runDailyReminders } from "@/server/daily-reminders";
 
 /**
- * Vercel Cron kuniga bir marta chaqiradi (vercel.json: har kuni 15:00 UTC
- * = 20:00 Toshkent vaqti) va so'rovga `Authorization: Bearer <CRON_SECRET>`
- * sarlavhasini qo'shadi.
+ * Vercel Cron kuniga IKKI marta chaqiradi (vercel.json: 04:00 va 15:00 UTC
+ * = Toshkent bo'yicha 09:00 va 20:00) va so'rovga
+ * `Authorization: Bearer <CRON_SECRET>` sarlavhasini qo'shadi.
+ *
+ * REMIND-HOUR-01: har bir chaqiruvda FAQAT o'sha oynaga biriktirilgan
+ * ayollarga yuboriladi (logic/reminder-time.ts). Kechki chaqiruv
+ * qo'shimcha ravishda zaxira vazifasini bajaradi — faolligi noma'lum
+ * yoki ertalabki oynada o'tkazib yuborilganlar o'sha yerda oladi.
+ * Shu sababli bitta chaqiruv o'tkazib yuborilsa ham hech kim xabarsiz
+ * qolmaydi.
  *
  * SEC-01 (2026-09-22) — ilgari himoya "agar secret sozlangan bo'lsa"
  * shartiga bog'langan edi:

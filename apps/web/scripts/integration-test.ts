@@ -389,6 +389,51 @@ async function main() {
   assert(afterLimit === null, "FIX-04: 5 ta noto'g'ri urinishdan keyin TO'G'RI kod ham qabul qilinmaydi (token bekor qilingan)");
   await sql`DELETE FROM phone_verifications WHERE token = ${otpToken}`;
 
+  // --- REMIND-HOUR-01: "bugun allaqachon oldimi?" KALENDAR kun bo'yicha ---
+  //
+  // Nega muhim: ertalabki oyna qo'shilgach, eski "oxirgi 20 soat" oynasi
+  // buzilardi — 20:00 va keyingi kun 09:00 orasi 13 soat, ya'ni ertalabki
+  // xabar JIMGINA to'silib qolardi. Endi Toshkent kalendar kuni bo'yicha,
+  // ya'ni oynalar joylashuvidan qat'i nazar to'g'ri ishlaydi.
+  {
+    const hUser = randomUUID();
+    await sql`INSERT INTO users (id, phone, created_at) VALUES (${hUser}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+    try {
+      assert(!(await hasSentDailyReminderRecently(hUser)), "REMIND-HOUR-01: hali hech narsa yuborilmagan");
+
+      // KECHA yuborilgan — bugungi xabarni TO'SMASLIGI kerak.
+      await sql`
+        INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
+        VALUES (${randomUUID()}, ${hUser}, NULL, 'daily_reminder', 'kechagi',
+                ((now() AT TIME ZONE 'Asia/Tashkent' - interval '1 day') AT TIME ZONE 'Asia/Tashkent')::text)
+      `;
+      assert(
+        !(await hasSentDailyReminderRecently(hUser)),
+        "REMIND-HOUR-01: KECHAGI xabar bugungisini to'smaydi (eski 20 soatlik oyna aynan shu yerda xato qilardi)"
+      );
+
+      // BUGUN yuborilgan — to'sishi kerak.
+      await sql`
+        INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
+        VALUES (${randomUUID()}, ${hUser}, NULL, 'daily_reminder', 'bugungi', now()::text)
+      `;
+      assert(await hasSentDailyReminderRecently(hUser), "REMIND-HOUR-01: bugun yuborilgan bo'lsa ikkinchi marta yuborilmaydi");
+
+      // Tekshiruv eslatmasi ham "bugungi xabar" hisoblanadi.
+      await sql`DELETE FROM notifications WHERE user_id = ${hUser}`;
+      await sql`
+        INSERT INTO notifications (id, user_id, actor_user_id, type, message, created_at)
+        VALUES (${randomUUID()}, ${hUser}, NULL, 'checkup_reminder', 'tekshiruv', now()::text)
+      `;
+      assert(
+        await hasSentDailyReminderRecently(hUser),
+        "REMIND-HOUR-01: tekshiruv eslatmasi ham bugungi xabar sanaladi (ikkinchisi yuborilmaydi)"
+      );
+    } finally {
+      await sql`DELETE FROM users WHERE id = ${hUser}`;
+    }
+  }
+
   // --- NOTIF-DELIVERY-01: eslatma yetkazildimi — endi saqlanadi ---
   //
   // Nega muhim: yozuv Telegram yuborilgan-yuborilmaganidan qat'i nazar
