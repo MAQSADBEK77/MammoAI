@@ -103,6 +103,25 @@ async function main() {
   if (notif.length === 0) console.log("  HECH QANDAY bildirishnoma yo'q — kunlik cron hech qachon ishlamagan ko'rinadi");
   else for (const r of notif) console.log(`  ${r.type.padEnd(22)} ${String(r.n).padStart(5)}   oxirgi: ${r.last_at}`);
 
+  // NOTIF-DELIVERY-01: yozuv yaratilishi "yetkazildi" degani EMAS — botni
+  // bloklagan ayolga ham yozuv yaratiladi. Endi sababi saqlanadi.
+  console.log("\n=== ESLATMA YETKAZILDIMI (7 kun) ===");
+  try {
+    const delivery = await sql<{ holat: string; n: number }[]>`
+      SELECT COALESCE(delivery_error, '(yetkazildi)') AS holat, COUNT(*)::int AS n
+      FROM notifications
+      WHERE type IN ('daily_reminder','checkup_reminder')
+        AND created_at::timestamptz > NOW() - INTERVAL '7 days'
+      GROUP BY 1 ORDER BY 2 DESC LIMIT 8
+    `;
+    if (delivery.length === 0) console.log("  ma'lumot yo'q");
+    else for (const r of delivery) console.log(`  ${String(r.n).padStart(5)}  ${r.holat.slice(0, 70)}`);
+  } catch {
+    // Ustun hali yaratilmagan (deploydan oldin) — diagnostika skripti shu
+    // sababli YIQILMASLIGI kerak, qolgan bo'limlar baribir foydali.
+    console.log("  (delivery_error ustuni hali yo'q — keyingi deploydan keyin to'ladi)");
+  }
+
   // Onboarding qaysi qadamda to'xtaydi — analytics'dan, LEKIN oqim bo'yicha
   // ajratilgan (Telegram oqimi `welcome`ni ko'rmaydi).
   // Onboarding qaysi qadamda to'xtaydi. `analytics_events`da qadam nomi

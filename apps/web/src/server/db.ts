@@ -802,6 +802,11 @@ async function initSchema() {
     // Kunlik eslatma (system) bildirishnomalari uchun — haqiqiy "actor"
     // (boshqa foydalanuvchi) yo'q, shuning uchun bu ustun endi ixtiyoriy.
     () => sql`ALTER TABLE notifications ALTER COLUMN actor_user_id DROP NOT NULL`,
+    // NOTIF-DELIVERY-01: yetkazish natijasi. Yozuv Telegram yuborilgan-
+    // yuborilmaganidan qat'i nazar yaratiladi (ayol ilovani ochsa xabarni
+    // o'sha yerda ko'radi), shuning uchun "yetdi"ni "yaratildi"dan
+    // ajratadigan ustun kerak. NULL — yetkazildi.
+    () => sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_error TEXT`,
   ]);
 
   // 2.7-bosqich: COMM-001 (moderatsiya) — ikkalasi ham yuqoridagi

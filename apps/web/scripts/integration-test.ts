@@ -389,6 +389,34 @@ async function main() {
   assert(afterLimit === null, "FIX-04: 5 ta noto'g'ri urinishdan keyin TO'G'RI kod ham qabul qilinmaydi (token bekor qilingan)");
   await sql`DELETE FROM phone_verifications WHERE token = ${otpToken}`;
 
+  // --- NOTIF-DELIVERY-01: eslatma yetkazildimi — endi saqlanadi ---
+  //
+  // Nega muhim: yozuv Telegram yuborilgan-yuborilmaganidan qat'i nazar
+  // yaratiladi (ayol ilovani ochsa xabarni o'sha yerda ko'rishi uchun).
+  // Shu sababli jadvalga qarab "yetdi" deb xulosa chiqarib bo'lmasdi —
+  // botni bloklagan ayol ham "xabar oldi" bo'lib ko'rinardi.
+  {
+    const nUser = randomUUID();
+    await sql`INSERT INTO users (id, phone, created_at) VALUES (${nUser}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+    try {
+      await createSystemNotification(nUser, "daily_reminder", "yetkazilgan xabar");
+      await createSystemNotification(nUser, "daily_reminder", "yetkazilmagan xabar", "bot was blocked by the user");
+      const rows = (await sql`
+        SELECT message, delivery_error FROM notifications WHERE user_id = ${nUser} ORDER BY message
+      `) as unknown as { message: string; delivery_error: string | null }[];
+      assert(rows.length === 2, "NOTIF-DELIVERY-01: ikkala yozuv ham yaratiladi");
+      const ok = rows.find((r) => r.message === "yetkazilgan xabar");
+      const bad = rows.find((r) => r.message === "yetkazilmagan xabar");
+      assert(ok?.delivery_error === null, "NOTIF-DELIVERY-01: yetkazilgan yozuvda xato bo'sh");
+      assert(
+        bad?.delivery_error === "bot was blocked by the user",
+        "NOTIF-DELIVERY-01: yetkazilmagan yozuvda SABAB saqlanadi"
+      );
+    } finally {
+      await sql`DELETE FROM users WHERE id = ${nUser}`;
+    }
+  }
+
   // --- EMOJI-ASSET-01: ishlatilgan har bir emoji uchun SVG fayli bormi ---
   //
   // Nega CI'da: Emoji komponenti fayl topilmasa tizim shriftiga tushadi,
