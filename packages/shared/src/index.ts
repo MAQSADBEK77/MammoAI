@@ -14,6 +14,7 @@ export * from "./logic/contractions";
 export * from "./logic/cycle";
 export * from "./logic/cycle-hero";
 export * from "./logic/reminder";
+export * from "./logic/reminder-time";
 export * from "./logic/cycle-phase";
 export * from "./logic/cycle-summary";
 export * from "./logic/cycle-history";

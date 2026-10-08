@@ -8,6 +8,7 @@
 // belgilanmagani. Ikkalasi ham yo'q bo'lsa — hech narsa yuborilmaydi.
 
 import { syncChecklistForUser } from "./checklist-sync";
+import { shouldSendAtHour } from "@mammoai/shared";
 import { daysBetween, lastFlowStreak, deriveAdaptiveCycleSettings, dictionaries, predictCycle, resolvePregnancyState, resolveReminder, tashkentDateStr } from "@mammoai/shared";
 import type { Language } from "@mammoai/shared";
 import {
@@ -221,7 +222,20 @@ export async function runDailyReminders(): Promise<DailyReminderResult[]> {
   const users = await listUsersForDailyReminders();
   const results: DailyReminderResult[] = [];
 
+  // REMIND-HOUR-01: hozirgi soat (Toshkent) — kim shu chaqiruvda xabar
+  // olishini shu belgilaydi.
+  const currentHour = Number(
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tashkent", hour: "2-digit", hour12: false }).format(new Date())
+  );
+
   for (const user of users) {
+    // REMIND-HOUR-01: ayolning o'z oynasi emasmi — o'tkazib yuboramiz.
+    // Kuniga bitta chaqiruv bo'lsa, zaxira oyna hammani qamrab oladi,
+    // ya'ni cron chastotasi oshirilmaguncha xatti-harakat o'zgarmaydi.
+    if (!shouldSendAtHour(user.preferredHour, currentHour)) {
+      results.push({ userId: user.id, sent: false, message: null });
+      continue;
+    }
     // FIX2-25: cron ikki marta chaqirilsa (retry, qo'lda qayta ishga
     // tushirish), idempotentlik tekshiruvi yo'qligi sabab HAR BIR
     // foydalanuvchiga xabar IKKI MARTA yuborilardi.

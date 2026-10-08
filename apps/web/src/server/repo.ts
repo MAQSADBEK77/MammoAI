@@ -4607,7 +4607,6 @@ export async function countFailedReminderDeliveries(hours = 30): Promise<{ faile
 // Aniq kalendar-kun chegarasi (Toshkent vaqti) o'rniga oxirgi ~20 soat
 // ichida allaqachon yuborilganmi deb tekshiradi — cron kuniga bir marta
 // ishlagani uchun bu farq qilmaydi, lekin vaqt-zonasi murakkabligidan qochadi.
-const DAILY_REMINDER_DEDUPE_HOURS = 20;
 
 /** REMIND-02: shu foydalanuvchiga umuman nechta kunlik eslatma yuborilgan.
  * Onboardingni tugatmaganlarga yuborishni uchtadan keyin to'xtatish uchun. */
@@ -4634,9 +4633,24 @@ export async function daysSinceCheckupNudge(userId: string): Promise<number | nu
 
 export async function hasSentDailyReminderRecently(userId: string): Promise<boolean> {
   await ensureSchema();
-  const cutoff = new Date(Date.now() - DAILY_REMINDER_DEDUPE_HOURS * 60 * 60 * 1000).toISOString();
+  // REMIND-HOUR-01: ilgari bu "oxirgi 20 soat" oynasi edi. Kuniga BITTA
+  // yuborish bo'lganda u to'g'ri ishlardi, lekin ertalabki oyna
+  // qo'shilgach buziladi: 20:00 va keyingi kun 09:00 orasi 13 soat, ya'ni
+  // oyna ichida — ertalabki xabar JIMGINA to'silib qolardi.
+  //
+  // Niyat esa boshqacha edi: "bugun allaqachon oldimi?". Endi aynan shu
+  // tekshiriladi — Toshkent KALENDAR kuni bo'yicha, ya'ni oynalar
+  // joylashuvidan qat'i nazar to'g'ri ishlaydi.
+  //
+  // Tekshiruv eslatmasi ham hisobga olinadi: u ham kunlik eslatma
+  // o'rniga yuboriladi, ya'ni ikkalasi bitta "bugungi xabar".
   const rows = (await sql`
-    SELECT 1 FROM notifications WHERE user_id = ${userId} AND type = 'daily_reminder' AND created_at > ${cutoff} LIMIT 1
+    SELECT 1 FROM notifications
+    WHERE user_id = ${userId}
+      AND type IN ('daily_reminder', 'checkup_reminder')
+      AND (created_at::timestamptz AT TIME ZONE 'Asia/Tashkent')::date
+          = (now() AT TIME ZONE 'Asia/Tashkent')::date
+    LIMIT 1
   `) as unknown as unknown[];
   return rows.length > 0;
 }
@@ -4649,15 +4663,52 @@ export async function hasSentDailyReminderRecently(userId: string): Promise<bool
  * foydalanuvchilar hech qachon kunlik eslatma olmasdi (roadmap 10-band bilan
  * tuzatildi). */
 export async function listUsersForDailyReminders(): Promise<
-  { id: string; language: Language; telegramUserId: string | null; expoPushToken: string | null }[]
+  {
+    id: string;
+    language: Language;
+    telegramUserId: string | null;
+    expoPushToken: string | null;
+    /** REMIND-HOUR-01: ayolning eng faol soati (Toshkent). Ma'lumot
+     *  yetarli bo'lmasa `null` — u holda eski vaqt ishlatiladi. */
+    preferredHour: number | null;
+  }[]
 > {
   await ensureSchema();
   const rows = (await sql`
-    SELECT id, language, telegram_user_id, expo_push_token FROM users
-    WHERE (telegram_user_id IS NOT NULL OR expo_push_token IS NOT NULL) AND notifications_enabled = TRUE
-      AND is_test_account = FALSE AND is_blocked = FALSE
-  `) as unknown as { id: string; language: Language; telegram_user_id: string | null; expo_push_token: string | null }[];
-  return rows.map((r) => ({ id: r.id, language: r.language, telegramUserId: r.telegram_user_id, expoPushToken: r.expo_push_token }));
+    WITH faollik AS (
+      SELECT user_id,
+             EXTRACT(HOUR FROM (created_at::timestamptz AT TIME ZONE 'Asia/Tashkent'))::int AS soat,
+             COUNT(*)::int AS n
+      FROM analytics_events
+      WHERE user_id IS NOT NULL AND created_at::timestamptz > now() - interval '60 days'
+      GROUP BY 1, 2
+    ), eng_faol AS (
+      SELECT user_id, soat,
+             ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY n DESC, soat ASC) AS rk,
+             SUM(n) OVER (PARTITION BY user_id) AS jami
+      FROM faollik
+    )
+    SELECT u.id, u.language, u.telegram_user_id, u.expo_push_token,
+           -- Kamida 5 ta hodisa: bitta tasodifiy ochish "odatiy vaqt" emas.
+           CASE WHEN f.jami >= 5 THEN f.soat ELSE NULL END AS preferred_hour
+    FROM users u
+    LEFT JOIN eng_faol f ON f.user_id = u.id AND f.rk = 1
+    WHERE (u.telegram_user_id IS NOT NULL OR u.expo_push_token IS NOT NULL) AND u.notifications_enabled = TRUE
+      AND u.is_test_account = FALSE AND u.is_blocked = FALSE
+  `) as unknown as {
+    id: string;
+    language: Language;
+    telegram_user_id: string | null;
+    expo_push_token: string | null;
+    preferred_hour: number | null;
+  }[];
+  return rows.map((r) => ({
+    id: r.id,
+    language: r.language,
+    telegramUserId: r.telegram_user_id,
+    expoPushToken: r.expo_push_token,
+    preferredHour: r.preferred_hour,
+  }));
 }
 
 export async function hasLoggedToday(userId: string): Promise<boolean> {
