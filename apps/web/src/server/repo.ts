@@ -6,6 +6,7 @@ import { PET_IDS, resolvePregnancyText, type PetChoice } from "@mammoai/shared";
 import type {
   AdminDoctor,
   AdminPregnancyWeek,
+  CyclePhase,
   ChronicCondition,
   ClinicSpecialty,
   CommunityFeedScope,
@@ -67,6 +68,7 @@ import {
   DEFAULT_SLOT_ASSIGNMENTS,
   SLOT_KEYS,
   deriveAdaptiveCycleSettings,
+  getCyclePhase,
   getPregnancyStatus,
   tashkentDateStr, predictCycle, daysBetween} from "@mammoai/shared";
 
@@ -5064,6 +5066,7 @@ export async function getPartnerStatus(userId: string): Promise<PartnerStatusRes
   let nextCheckup: { type: ChecklistItemType; date: string } | null = null;
   let todayMood: Mood | null = null;
   let cycleDay: number | null = null;
+  let cyclePhase: CyclePhase | null = null;
 
   if (partnerSharing.pregnancy) {
     const profile = await getPregnancyProfile(partnerId);
@@ -5101,6 +5104,14 @@ export async function getPartnerStatus(userId: string): Promise<PartnerStatusRes
     //     "hammasi joyida" degan xulosaga kelardi.
     if (adaptive && prediction && !prediction.isStale) {
       cycleDay = daysBetween(adaptive.lastPeriodStart, today()) + 1;
+      // PARTNER-PHASE-01: raqamning o'zi hamkorga hech narsa demaydi —
+      // "3-kun" nima degani? Faza esa tushuntirishga ilib ketadi.
+      cyclePhase = getCyclePhase(
+        cycleDay,
+        adaptive.averageCycleLength,
+        adaptive.averagePeriodLength,
+        adaptive.personalLutealPhase ?? undefined
+      );
     }
   }
 
@@ -5108,7 +5119,7 @@ export async function getPartnerStatus(userId: string): Promise<PartnerStatusRes
     linked: true,
     partner: partnerUser ? { id: partnerUser.id, name: partnerUser.name, avatarUrl: partnerUser.avatarUrl } : null,
     mySharing,
-    partnerData: { pregnancyWeek, nextCheckup, todayMood, cycleDay },
+    partnerData: { pregnancyWeek, nextCheckup, todayMood, cycleDay, cyclePhase },
     linkedSince: link.created_at,
     myInviteCode: null,
   };

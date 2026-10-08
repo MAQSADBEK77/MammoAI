@@ -599,6 +599,33 @@ const en: Dictionary = {
     },
   },
 
+  partnerPhase: {
+    sectionTitle: "What is happening now",
+    helpLabel: "What helps",
+    caution:
+      "This is general information, not a diagnosis. Don't use it to explain away her feelings — asking her is the better move.",
+    moodNote: "Below is the mood she logged herself — trust that over any guess.",
+    menstrual: {
+      name: "Menstrual phase",
+      body: "Oestrogen and progesterone are at their lowest. Cramps, lower back pain, fatigue and headaches are common these days.",
+      help: "Take on some of the housework, offer a warm drink, make an early night possible. Severe pain is not normal and needs a doctor.",
+    },
+    follicular: {
+      name: "Follicular phase",
+      body: "Oestrogen rises steadily. Energy and mood usually improve day by day.",
+      help: "A good time for plans together, walks and active things.",
+    },
+    ovulation: {
+      name: "Ovulation",
+      body: "Oestrogen peaks. Some women feel a mild twinge on one side of the abdomen.",
+      help: "If you are trying for a baby, these are the most fertile days. A mild twinge usually passes, but severe pain needs checking.",
+    },
+    luteal: {
+      name: "Luteal phase",
+      body: "Progesterone rises, then both hormones drop sharply before the period. Breast tenderness, bloating, disturbed sleep and mood swings are common in this phase.",
+      help: "Keep plans lighter and protect her sleep. Don't guess what she needs — ask.",
+    },
+  },
   cyclePhase: {
     menstrual: {
       name: "Menstrual phase",

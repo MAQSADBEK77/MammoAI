@@ -1,3 +1,4 @@
+import type { CyclePhase } from "./logic/cycle-phase";
 // Umumiy domen tiplari — CTO texnik hujjati §6 "Ma'lumotlar modeli"ga asoslangan.
 // Ham backend (apps/web/src/server), ham ikkala frontend shu tiplardan foydalanadi.
 
@@ -842,6 +843,10 @@ export interface PartnerSharedData {
   nextCheckup: { type: ChecklistItemType; date: string } | null;
   todayMood: Mood | null;
   cycleDay: number | null;
+  /** PARTNER-PHASE-01: sikl fazasi — hamkorga RAQAM emas, MA'NO kerak.
+   *  `cycleDay` bilan bir xil shartlarga bo'ysunadi (ulashilgan va
+   *  ma'lumot eskirmagan bo'lsa). */
+  cyclePhase: CyclePhase | null;
 }
 
 export interface PartnerStatusResponse {

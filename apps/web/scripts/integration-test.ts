@@ -432,6 +432,26 @@ async function main() {
         fresh.partnerData?.cycleDay === 3,
         `PARTNER-ONE-VOICE-01: hamkor ayolning o'zi ko'radigan kunni ko'radi (kutilgan 3, keldi: ${fresh.partnerData?.cycleDay})`
       );
+
+      // PARTNER-PHASE-01: raqam bilan birga FAZA ham keladi — ekranda
+      // tushuntirish shunga ilinadi. Eskirgan holatda esa ikkalasi ham
+      // bo'lmasligi kerak: izohsiz raqam ham, raqamsiz izoh ham yolg'on.
+      assert(
+        fresh.partnerData?.cyclePhase === "menstrual",
+        `PARTNER-PHASE-01: 3-kunda faza 'menstrual' bo'ladi (keldi: ${fresh.partnerData?.cyclePhase})`
+      );
+      assert(
+        stale.partnerData?.cyclePhase === null,
+        "PARTNER-PHASE-01: eskirgan ma'lumotda faza ham ko'rsatilmaydi"
+      );
+
+      // Ulashish o'chirilsa — ikkalasi ham yo'qoladi.
+      await updatePartnerSharing(her, { pregnancy: false, checkups: false, mood: false, period: false });
+      const hidden = await getPartnerStatus(him);
+      assert(
+        hidden.partnerData?.cycleDay === null && hidden.partnerData?.cyclePhase === null,
+        "PARTNER-PHASE-01: ayol hayz ma'lumotini ulashmasa, faza ham ko'rinmaydi"
+      );
     } finally {
       await sql`DELETE FROM users WHERE id IN (${her}, ${him})`;
     }
