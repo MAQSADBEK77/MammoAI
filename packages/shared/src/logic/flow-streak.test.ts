@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isPeriodFlow, lastFlowStreak, lastFlowStreakStart, lastPeriodDayStreakStart } from "./flow-streak";
+import { detectPeriodStarts } from "./cycle";
 
 describe("lastFlowStreakStart", () => {
   it("qayd bo'lmasa null", () => {
@@ -102,18 +103,37 @@ describe("lastPeriodDayStreakStart", () => {
     expect(lastPeriodDayStreakStart(logs)).toBe("2026-09-30");
   });
 
-  it("oldidagi dog'lanish hayz boshlanishini ORQAGA SURMAYDI", () => {
-    // 29-sentabr dog'lanish, 30-sentabr haqiqiy hayz -> boshlanish 30-si.
+  it("oldidagi dog'lanish hayzning BIR QISMI — boshlanish o'sha kun", () => {
+    // 29-sentabr dog'lanish, 30-sentabr haqiqiy hayz.
+    //
+    // PARTNER-ONE-VOICE-01: ilgari bu yerda 30-sentabr kutilardi, ya'ni
+    // dog'lanish chiqarib tashlanardi. Lekin `detectPeriodStarts` —
+    // bashorat, kalendar va hamkor ekranining manbasi — 29-sentabrni
+    // oladi. Ikki xil javob productionda ko'rindi: ayol "2-kun",
+    // hamkori "3-kun". Endi ikkalasi bitta qoidaga tayanadi.
     const logs = [
       { date: "2026-09-29", flow: "spotting" },
       { date: "2026-09-30", flow: "medium" },
     ];
-    expect(lastPeriodDayStreakStart(logs)).toBe("2026-09-30");
-    // Savol berish uchun esa seriya 29-sentabrdan boshlanadi.
+    expect(lastPeriodDayStreakStart(logs)).toBe("2026-09-29");
     expect(lastFlowStreak(logs)?.start).toBe("2026-09-29");
   });
 
-  it("eski hayz va yangi dog'lanish aralashmaydi", () => {
+  it("detectPeriodStarts bilan BIR XIL javob beradi", () => {
+    for (const logs of [
+      [{ date: "2026-09-29", flow: "spotting" }, { date: "2026-09-30", flow: "medium" }],
+      [{ date: "2026-10-01", flow: "heavy" }, { date: "2026-10-02", flow: "spotting" }],
+      [{ date: "2026-10-02", flow: "spotting" }],
+    ]) {
+      const starts = detectPeriodStarts(logs as never);
+      expect(lastPeriodDayStreakStart(logs)).toBe(starts.length ? starts[starts.length - 1] : null);
+    }
+  });
+
+  it("yangi dog'lanish hayz sifatida hisoblanmaydi — oxirgi HAQIQIY hayz qoladi", () => {
+    // Ekranning o'zida bu baribir "hayz ketyapti" degani emas: u yerda
+    // alohida chegara bor (boshlanishdan beri hayz uzunligidan ko'p
+    // o'tgan bo'lsa, "N-kun" ko'rsatilmaydi).
     const logs = [
       { date: "2026-09-01", flow: "medium" },
       { date: "2026-10-02", flow: "spotting" },

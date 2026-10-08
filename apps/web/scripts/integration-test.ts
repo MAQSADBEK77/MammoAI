@@ -45,6 +45,8 @@ import {
   logAdminAction,
   listAdminAuditLog,
   connectPartnerByCode,
+  getPartnerStatus,
+  updatePartnerSharing,
   createPhoneVerification,
   registerTelegramStart,
   confirmPhoneViaContact,
@@ -388,6 +390,52 @@ async function main() {
   const afterLimit = await verifyPhoneCode(otpToken, "123456"); // endi TO'G'RI kod ham
   assert(afterLimit === null, "FIX-04: 5 ta noto'g'ri urinishdan keyin TO'G'RI kod ham qabul qilinmaydi (token bekor qilingan)");
   await sql`DELETE FROM phone_verifications WHERE token = ${otpToken}`;
+
+  // --- PARTNER-ONE-VOICE-01: hamkorga ko'rsatiladigan sikl kuni ---
+  //
+  // Nega muhim: bu raqam ayolning O'Z ekranidagi bilan bir xil bo'lishi
+  // shart. Ikkita xato tuzatildi va ikkalasi ham faqat shu qatlamda
+  // ko'rinadi:
+  //   1) eskirgan ma'lumotda ham son ko'rsatilardi (ayolning ekrani esa
+  //      bunday holatda SAVOL beradi);
+  //   2) `diff % cycleLen` — kechikkan ayolning 33-kuni "5-kun" bo'lib
+  //      o'ralib ketardi, ya'ni hamkor "hammasi joyida" deb o'ylardi.
+  {
+    const her = randomUUID();
+    const him = randomUUID();
+    await sql`INSERT INTO users (id, phone, created_at) VALUES (${her}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+    await sql`INSERT INTO users (id, phone, created_at) VALUES (${him}, ${"+9989" + Math.floor(Math.random() * 1e8)}, now()::text)`;
+    try {
+      const code = await createPartnerInviteCode(her);
+      await connectPartnerByCode(him, code);
+      await updatePartnerSharing(her, { pregnancy: false, checkups: false, mood: false, period: true });
+
+      const dayStr = (back: number) => {
+        const d = new Date();
+        d.setDate(d.getDate() - back);
+        return d.toISOString().slice(0, 10);
+      };
+
+      // (a) ESKIRGAN: faqat onboarding sanasi, 200 kun oldin.
+      await updateCycleSettings(her, { lastPeriodStart: dayStr(200), averageCycleLength: 28, averagePeriodLength: 5 });
+      const stale = await getPartnerStatus(him);
+      assert(
+        stale.partnerData?.cycleDay === null,
+        `PARTNER-ONE-VOICE-01: eskirgan ma'lumotda hamkorga son KO'RSATILMAYDI (keldi: ${stale.partnerData?.cycleDay})`
+      );
+
+      // (b) HAQIQIY hayz: 2 kun oldin boshlangan -> 3-kun, modulsiz.
+      await upsertCycleLog(her, { date: dayStr(2), flow: "medium", mood: null, symptoms: [] });
+      await upsertCycleLog(her, { date: dayStr(1), flow: "medium", mood: null, symptoms: [] });
+      const fresh = await getPartnerStatus(him);
+      assert(
+        fresh.partnerData?.cycleDay === 3,
+        `PARTNER-ONE-VOICE-01: hamkor ayolning o'zi ko'radigan kunni ko'radi (kutilgan 3, keldi: ${fresh.partnerData?.cycleDay})`
+      );
+    } finally {
+      await sql`DELETE FROM users WHERE id IN (${her}, ${him})`;
+    }
+  }
 
   // --- REMIND-HOUR-01: "bugun allaqachon oldimi?" KALENDAR kun bo'yicha ---
   //

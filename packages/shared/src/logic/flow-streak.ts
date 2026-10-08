@@ -1,4 +1,4 @@
-import { daysBetween } from "./cycle";
+import { daysBetween, detectPeriodStarts } from "./cycle";
 
 /**
  * PERIOD-TRACK-05 — "bu kun HAYZ kunimi?" degan savolga YAGONA javob.
@@ -87,24 +87,27 @@ export function lastFlowStreakStart(logs: { date: string; flow: string | null }[
 }
 
 /**
- * PERIOD-TRACK-05 — hozirgi HAYZ seriyasining boshlanishi.
+ * PERIOD-TRACK-05 / PARTNER-ONE-VOICE-01 — hozirgi HAYZ seriyasining
+ * boshlanishi.
  *
- * `lastFlowStreak`dan farqi: bu yerda dog'lanish umuman qatnashmaydi.
- * Bosh ekrandagi "Hayz: N-kun" sarlavhasi va shunga o'xshash DA'VOlar
- * faqat shundan oziqlanishi kerak.
+ * Qoida `detectPeriodStarts` bilan AYNAN BIR XIL bo'lishi shart, chunki
+ * bashorat, kalendar va hamkor ekrani o'shanga tayanadi:
  *
- * Ilgari bu mantiq CycleScreen ichida alohida yozilgan va `l.flow`ga
- * tayangan edi — natijada bitta dog'lanish kuni "Hayz: 3-kun" degan
- * sarlavhani chiqarardi, bashorat esa o'sha paytda "4 kun kechikmoqda"
- * derdi. Endi qoida shu yerda, bitta joyda.
+ *   seriyada kamida bitta HAQIQIY oqim bo'lsa — bu hayz, va uning
+ *   boshlanishi birinchi qon ketish kuni (oldidagi dog'lanish ham
+ *   kiradi); seriya faqat dog'lanishdan iborat bo'lsa — bu hayz emas.
+ *
+ * ILGARIGI XATO: bu funksiya dog'lanishni butunlay chiqarib tashlardi,
+ * ya'ni "6-oktabr dog'lanish + 7-oktabr oqim" holatida boshlanishni
+ * 7-oktabr deb hisoblardi, bashorat esa 6-oktabr deb. Natijada ayolning
+ * o'z ekrani "Hayz: 2-kun", hamkorinikisi esa "sikl 3-kun" deb
+ * ko'rsatardi — production'dagi yagona ulangan juftlikda aynan shu
+ * holat topildi.
  */
 export function lastPeriodDayStreakStart(logs: { date: string; flow: string | null }[]): string | null {
-  const dates = [...new Set(logs.filter((l) => isPeriodFlow(l.flow)).map((l) => l.date))].sort();
-  if (dates.length === 0) return null;
-  let start = dates[dates.length - 1];
-  for (let i = dates.length - 2; i >= 0; i--) {
-    if (daysBetween(dates[i], start) === 1) start = dates[i];
-    else break;
-  }
-  return start;
+  // Qoidani QAYTA YOZMAYMIZ, manbadan olamiz: ikkita mustaqil amalga
+  // oshirishni sinxron tutib bo'lmaydi — aynan shu nomuvofiqlikka olib
+  // keldi.
+  const starts = detectPeriodStarts(logs as Parameters<typeof detectPeriodStarts>[0]);
+  return starts.length > 0 ? starts[starts.length - 1] : null;
 }
