@@ -1605,6 +1605,20 @@ const en: Dictionary = {
     pregnancyLogToday: "You haven't logged how you feel today. One minute, and your record for the doctor is complete 🤰",
   },
 
+  pricing: {
+    question: "Which price works for you?",
+    amount: (n: string) => `${n} UZS`,
+    monthlyLabel: "Monthly",
+    yearlyLabel: "Yearly",
+    perMonth: "per month",
+    perYear: "per year",
+    savingsBadge: (percent: number) => `${percent}% cheaper`,
+    honestNote: "Payment is not connected yet — nothing will be charged now. Your answer helps us set the right price.",
+    tooExpensive: "Neither — too expensive for me",
+    thanksAccepted: "Thank you. We'll tell you first once payment is live.",
+    thanksTooExpensive: "Thank you — that's an important answer. We'll revisit the price.",
+    changeAnswer: "Change answer",
+  },
   feedback: {
     menuLabel: "Give feedback",
     title: "Your feedback",

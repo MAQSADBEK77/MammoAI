@@ -1775,6 +1775,22 @@ const uz = {
     pregnancyLogToday: "Bugungi holatingizni belgilamadingiz. Bir daqiqa ajratsangiz, shifokorga ko'rsatadigan yozuvingiz to'liq bo'ladi 🤰",
   },
 
+  // PRICE-SIGNAL-01 — paywallda narx KO'RSATILADI va javob so'raladi.
+  // To'lov hali ulanmagan, shuning uchun matn hech narsa va'da qilmaydi.
+  pricing: {
+    question: "Qaysi narx sizga mos keladi?",
+    amount: (n: string) => `${n} so'm`,
+    monthlyLabel: "Oylik",
+    yearlyLabel: "Yillik",
+    perMonth: "oyiga",
+    perYear: "yiliga",
+    savingsBadge: (percent: number) => `${percent}% arzon`,
+    honestNote: "To'lov hali ulanmagan — hozir hech narsa yechilmaydi. Javobingiz narxni to'g'ri belgilashimizga yordam beradi.",
+    tooExpensive: "Hech qaysi — men uchun qimmat",
+    thanksAccepted: "Rahmat. To'lov ulangach, birinchi bo'lib sizga xabar beramiz.",
+    thanksTooExpensive: "Rahmat — bu muhim javob. Narxni qayta ko'rib chiqamiz.",
+    changeAnswer: "Javobni o'zgartirish",
+  },
   feedback: {
     menuLabel: "Fikr bildirish",
     title: "Fikr-mulohazangiz",

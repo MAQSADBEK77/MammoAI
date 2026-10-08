@@ -1604,6 +1604,20 @@ const ru: Dictionary = {
     pregnancyLogToday: "Вы не отметили самочувствие сегодня. Минута — и запись для врача будет полной 🤰",
   },
 
+  pricing: {
+    question: "Какая цена вам подходит?",
+    amount: (n: string) => `${n} сум`,
+    monthlyLabel: "Месячная",
+    yearlyLabel: "Годовая",
+    perMonth: "в месяц",
+    perYear: "в год",
+    savingsBadge: (percent: number) => `на ${percent}% дешевле`,
+    honestNote: "Оплата пока не подключена — сейчас ничего не спишется. Ваш ответ поможет нам выбрать правильную цену.",
+    tooExpensive: "Ни одна — для меня дорого",
+    thanksAccepted: "Спасибо. Когда подключим оплату, сообщим вам первой.",
+    thanksTooExpensive: "Спасибо — это важный ответ. Мы пересмотрим цену.",
+    changeAnswer: "Изменить ответ",
+  },
   feedback: {
     menuLabel: "Оставить отзыв",
     title: "Ваш отзыв",

@@ -459,6 +459,30 @@ async function initSchema() {
         updated_at TEXT NOT NULL
       )
     `,
+    // PRICE-SIGNAL-01 — paywallda narxni KO'RGAN ayolning javobi.
+    //
+    // Nega alohida jadval, `feedback_responses` emas: u yerda javob erkin
+    // matn ("Premium kk") — undan konversiyani HISOBLAB bo'lmaydi. Bu yerda
+    // tanlov cheklangan ro'yxat, ya'ni "narxni ko'rgan N ayoldan M tasi
+    // qimmat dedi" degan savolga bitta so'rov bilan javob beriladi.
+    //
+    // `price_uzs` ATAYLAB saqlanadi: narx keyin o'zgaradi, lekin eski javob
+    // o'SHA paytdagi narxga tegishli bo'lib qolishi kerak — aks holda
+    // narxni ko'targanimizdan keyin eski "roziman"lar yolg'onga aylanardi.
+    //
+    // Bitta ayol fikrini o'zgartirishi mumkin, shuning uchun PRIMARY KEY
+    // user_id EMAS: tarix saqlanadi, sanash esa DISTINCT bilan qilinadi.
+    () => sql`
+      CREATE TABLE IF NOT EXISTS premium_interest (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        choice TEXT NOT NULL,
+        source TEXT NOT NULL,
+        price_uzs INTEGER NOT NULL,
+        note TEXT,
+        created_at TEXT NOT NULL
+      )
+    `,
     // AI Yordamchining PROAKTIV tahlili ("faol tahlil" — roadmap) — foydalanuvchi
     // biror narsa so'ramasdan, Statistika ochilganda Gemini hisoblangan
     // ko'rsatkichlarni (sikl uzunligi, simptomlar, kayfiyat va h.k.) tabiiy
@@ -1147,6 +1171,8 @@ async function initSchema() {
     () => sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(type, created_at)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id, created_at ASC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback_responses(created_at DESC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_premium_interest_created ON premium_interest(created_at DESC)`,
+    () => sql`CREATE INDEX IF NOT EXISTS idx_premium_interest_user ON premium_interest(user_id)`,
     () => sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_user_id ON users(telegram_user_id) WHERE telegram_user_id IS NOT NULL`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_community_reports_status ON community_reports(status, created_at DESC)`,
     () => sql`CREATE INDEX IF NOT EXISTS idx_blocked_users_blocker ON blocked_users(blocker_id)`,

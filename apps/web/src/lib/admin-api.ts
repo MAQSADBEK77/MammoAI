@@ -354,6 +354,13 @@ export const adminApi = {
       request<{ subscription: Subscription }>(`/subscriptions/${userId}`, { method: "POST", body: JSON.stringify(payload) }),
     revoke: (userId: string) => request<{ ok: true }>(`/subscriptions/${userId}`, { method: "DELETE" }),
   },
+  // PRICE-SIGNAL-01 — paywallda narxni ko'rgan ayollarning javoblari.
+  premiumInterest: {
+    summary: () =>
+      request<{ byChoice: { monthly: number; yearly: number; too_expensive: number }; respondents: number }>(
+        "/premium-interest"
+      ),
+  },
   telegramBot: {
     get: () => request<TelegramBotSettings>("/telegram-bot"),
     update: (patch: { token?: string; name?: string; description?: string; shortDescription?: string }) =>

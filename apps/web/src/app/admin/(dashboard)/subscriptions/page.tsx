@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/admin-api";
 import type { AdminUserSummary } from "@/lib/admin-api";
 import type { Subscription } from "@mammoai/shared";
+import { PREMIUM_MONTHLY_UZS, PREMIUM_YEARLY_UZS, formatUzs } from "@mammoai/shared";
 import { Card, Button, Badge } from "@/components/ui";
 
 type SubRow = Subscription & { name: string | null; phone: string | null; active: boolean };
@@ -31,6 +32,11 @@ export default function AdminSubscriptionsPage() {
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  // PRICE-SIGNAL-01 — to'lov ulanmagunicha yagona "sotuv" ko'rsatkichi.
+  const [interest, setInterest] = useState<{
+    byChoice: { monthly: number; yearly: number; too_expensive: number };
+    respondents: number;
+  } | null>(null);
 
   const [userSearch, setUserSearch] = useState("");
   const [foundUsers, setFoundUsers] = useState<AdminUserSummary[]>([]);
@@ -56,6 +62,13 @@ export default function AdminSubscriptionsPage() {
     const timeout = setTimeout(loadSubs, 0);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      adminApi.premiumInterest.summary().then(setInterest).catch(() => setInterest(null));
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -114,6 +127,35 @@ export default function AdminSubscriptionsPage() {
           AI Yordamchi + chuqur Statistika — pullik. To&apos;lov provayderi hali ulanmagan, shuning uchun qo&apos;lda faollashtiriladi.
         </p>
       </div>
+
+      {interest && (
+        <Card className="flex flex-col gap-3">
+          <div>
+            <h2 className="text-base font-bold text-text-primary">Narxga munosabat</h2>
+            <p className="mt-0.5 text-xs text-text-secondary">
+              Paywallda narxni ko&apos;rgan ayollarning javobi. Har ayolning ENG OXIRGI javobi hisoblanadi.
+            </p>
+          </div>
+          {interest.respondents === 0 ? (
+            <p className="text-sm text-text-secondary">Hali javob yo&apos;q.</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              <InterestTile
+                label={`Oylik · ${formatUzs(PREMIUM_MONTHLY_UZS)} so'm`}
+                count={interest.byChoice.monthly}
+                total={interest.respondents}
+              />
+              <InterestTile
+                label={`Yillik · ${formatUzs(PREMIUM_YEARLY_UZS)} so'm`}
+                count={interest.byChoice.yearly}
+                total={interest.respondents}
+              />
+              <InterestTile label="Qimmat" count={interest.byChoice.too_expensive} total={interest.respondents} />
+            </div>
+          )}
+          <p className="text-xs text-text-muted">Jami javob bergan: {interest.respondents} ayol</p>
+        </Card>
+      )}
 
       <Card className="flex flex-col gap-3">
         <h2 className="text-base font-bold text-text-primary">Yangi Premium berish</h2>
@@ -236,6 +278,19 @@ export default function AdminSubscriptionsPage() {
           </table>
         </div>
       </Card>
+    </div>
+  );
+}
+
+/** Bitta javob turi — son VA ulush. Faqat son ko'rsatilsa, "12 ta" degan
+ * raqam katta ham, kichik ham tuyulishi mumkin; ulush buni hal qiladi. */
+function InterestTile({ label, count, total }: { label: string; count: number; total: number }) {
+  const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div className="flex flex-col gap-0.5 rounded-2xl bg-surface-muted p-3">
+      <span className="text-xs text-text-secondary">{label}</span>
+      <span className="text-xl font-bold text-text-primary">{count}</span>
+      <span className="text-xs text-text-muted">{percent}%</span>
     </div>
   );
 }

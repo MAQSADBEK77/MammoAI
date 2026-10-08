@@ -3,6 +3,7 @@
 // Backend — apps/web/src/app/api ichida, ikkalasiga ham xizmat qiladi (spec §8).
 
 import type { Contraction } from "./logic/contractions";
+import type { PremiumInterestChoice, PremiumInterestSource } from "./logic/pricing";
 import type {
   AnalyticsEventInput,
   AppNotification,
@@ -620,6 +621,15 @@ export function createApiClient(config: ApiClientConfig) {
     feedback: {
       submit: (payload: FeedbackSubmission) =>
         request<{ response: FeedbackResponse }>("/api/feedback", { method: "POST", body: JSON.stringify(payload) }),
+    },
+    // PRICE-SIGNAL-01 — paywallda narxni ko'rgan ayolning javobi.
+    premium: {
+      getInterest: () => request<{ choice: PremiumInterestChoice | null }>("/api/premium/interest"),
+      setInterest: (payload: { choice: PremiumInterestChoice; source: PremiumInterestSource; note?: string }) =>
+        request<{ ok: true; choice: PremiumInterestChoice }>("/api/premium/interest", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
     },
   };
 }
