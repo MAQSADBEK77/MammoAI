@@ -4723,7 +4723,12 @@ export async function hasLoggedToday(userId: string): Promise<boolean> {
 // mustaqil boshqaradi — `partner_links.user_a_shares`/`user_b_shares`.
 // ---------------------------------------------------------------------------
 
-const PARTNER_INVITE_TTL_HOURS = 24;
+// PARTNER-LINK-01: 24 soat juda qisqa edi. Productionda yaratilgan 29 ta
+// kodning HAMMASI muddati o'tgan holatda topildi va atigi 1 ta ulanish
+// bor edi. Taklif zanjiri uzun: ayol kodni ulashadi -> hamkor ilovani
+// o'rnatadi -> onboardingdan o'tadi -> kodni kiritadi. Buning hammasi
+// bir sutkada bo'lishi kamdan-kam.
+const PARTNER_INVITE_TTL_HOURS = 24 * 7;
 const DEFAULT_PARTNER_SHARING: PartnerShareSettings = { pregnancy: true, checkups: true, mood: true, period: false };
 
 // FIX-03: ilgari faqat 4 xonali raqam edi (~9000 variant) — kod hech qanday

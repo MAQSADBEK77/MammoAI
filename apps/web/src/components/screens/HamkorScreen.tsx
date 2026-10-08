@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Dialog, DialogTitle, DialogContent, Switch, Avatar } from "@mui/material";
 import {
   BarChartOutlined,
@@ -18,6 +19,7 @@ import { Button, Card, LoadingSpinner, ErrorState, ScreenHeader, Badge, Toast } 
 import { Emoji } from "@/components/Emoji";
 import { RegisterGate } from "@/components/RegisterGate";
 import { PartnerChatDialog } from "./PartnerChatDialog";
+import { getTelegramWebApp } from "@/lib/telegram";
 
 /**
  * "Hamkor" bo'limi — Figma referens (https://www.figma.com/make/M7nwCcQDmwjZsaadesxS88)
@@ -30,6 +32,10 @@ export function HamkorScreen() {
   const [status, setStatus] = useState<PartnerStatusResponse | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
   const [codeInput, setCodeInput] = useState("");
+  const searchParams = useSearchParams();
+  /** PARTNER-LINK-01: taklif havolasi `?kod=` bilan keladi — kodni qo'lda
+   *  ko'chirish bosqichi butunlay yo'qoladi. */
+  const invitedCode = (searchParams.get("kod") ?? "").trim().toUpperCase();
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -50,6 +56,18 @@ export function HamkorScreen() {
     const timeout = setTimeout(loadStatus, 0);
     return () => clearTimeout(timeout);
   }, [loadStatus]);
+
+  useEffect(() => {
+    // Havoladan kelgan kod — maydonga qo'yiladi va oyna ochiladi, ya'ni
+    // hamkorga faqat bitta tugma bosish qoladi.
+    if (!invitedCode || status?.linked) return;
+    const timeout = setTimeout(() => {
+      setCodeInput(invitedCode);
+      setConnectOpen(true);
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [invitedCode, status?.linked]);
+
 
   if (loadError) {
     return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: loadStatus }} />;
@@ -130,6 +148,64 @@ export function HamkorScreen() {
     }
   }
 
+  /**
+   * PARTNER-LINK-01 — taklifni HAVOLA qilib ulashish.
+   *
+   * Ilgari bu yerda faqat 6 belgili kod turardi: ayol uni ko'chirib,
+   * o'zi tushuntirishi kerak edi, hamkor esa ilovani mustaqil topib,
+   * o'rnatib, onboardingdan o'tib, kodni kiritishi kerak edi.
+   *
+   * O'lchandi (production, 2026-10-08): 19 ayol kod yaratgan, atigi 4 ta
+   * ulanish urinishi bo'lgan va 1 tasi ishlagan. Ya'ni zanjir kodni
+   * ulashish bosqichida uzilardi.
+   *
+   * Endi havola yuboriladi: hamkor bosadi -> Mini App ochiladi -> kod
+   * allaqachon kiritilgan bo'ladi.
+   */
+  async function shareInvite() {
+    // Kod hali yo'q bo'lsa — avval yaratamiz. Ilgari ulashish uchun
+    // ayol avval "Ulanish" oynasini ochishi kerak edi, ya'ni asosiy
+    // harakat bitta ortiqcha bosish ortida turardi.
+    let current = status?.myInviteCode ?? null;
+    if (!current) {
+      try {
+        const res = await api.partner.generateCode();
+        setStatus(res);
+        current = res.myInviteCode ?? null;
+      } catch {
+        flashMessage(dict.common.errorGeneric, "error");
+        return;
+      }
+    }
+    if (!current) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://mammo.uz";
+    const url = `${origin}/tg?next=${encodeURIComponent(`/hamkor?kod=${current}`)}`;
+    const text = dict.partner.inviteShareText;
+    const webApp = getTelegramWebApp();
+
+    // Telegram ichida — Telegram'ning o'z ulashish oynasi.
+    if (webApp?.openTelegramLink) {
+      webApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`);
+      return;
+    }
+    // Brauzerda — tizim ulashish oynasi.
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ text, url });
+        return;
+      } catch {
+        // Foydalanuvchi bekor qildi yoki qo'llab-quvvatlanmadi — pastdagi
+        // zaxiraga tushamiz.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      flashMessage(dict.partner.inviteLinkCopied);
+    } catch {
+      flashMessage(dict.partner.copyFailed, "error");
+    }
+  }
+
   async function copyCode() {
     const code = status!.myInviteCode;
     if (!code) return;
@@ -197,13 +273,17 @@ export function HamkorScreen() {
               o'rniga sabab ko'rsatiladi. Yuqoridagi tanishtiruv kartalari
               esa joyida qoladi — ayol nima yo'qotayotganini ko'rsin. */}
           <RegisterGate feature="partner">
-          <Button className="w-full" onClick={openConnectModal}>
+          {/* PARTNER-LINK-01: asosiy harakat — HAVOLA yuborish. Ilgari
+              ikkala tugma ham bitta oynani ochardi va ayol u yerdan kodni
+              qo'lda ko'chirishi kerak edi. O'lchandi: 19 ta koddan 1 tasi
+              ulanishga aylangan. */}
+          <Button className="w-full" onClick={shareInvite}>
             {/* FIX-UX-05: MUI Button ildizi flex (`display:inline-flex`) —
                 CSS Flexbox spec'iga ko'ra faqat bo'shliqdan iborat matn
                 tugunlari flex konteynerda umuman render qilinmaydi, shuning
                 uchun oddiy JSX bo'shlig'i emoji va matnni "yopishtirib"
                 qo'yardi. Aniq marja bilan almashtirildi. */}
-            <Emoji e="💑" size={16} className="mr-1.5" /> {dict.partner.connectButton}
+            <Emoji e="💑" size={16} className="mr-1.5" /> {dict.partner.inviteShareButton}
           </Button>
           <Button variant="ghost" className="w-full border border-border" onClick={openConnectModal}>
             {dict.partner.enterCodeButton}
@@ -297,6 +377,11 @@ export function HamkorScreen() {
               {status.myInviteCode ?? "…"} <ContentCopyOutlined sx={{ fontSize: 16 }} />
             </button>
             <p className="mt-1 text-xs text-text-muted">{dict.partner.sendCodeHint}</p>
+            {/* Asosiy yo'l — HAVOLA. Kod esa zaxira bo'lib qoladi:
+                hamkor ilovani allaqachon o'rnatgan bo'lsa, qo'lda kiritadi. */}
+            <Button className="mt-3 w-full" onClick={shareInvite} disabled={!status.myInviteCode}>
+              {dict.partner.inviteShareButton}
+            </Button>
           </div>
           <p className="text-center text-xs font-semibold text-text-muted">{dict.partner.orDivider}</p>
           <input

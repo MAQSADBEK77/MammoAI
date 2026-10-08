@@ -9,6 +9,7 @@ import { useTelegram } from "@/lib/telegram";
 import { useTelegramStartLink } from "@/lib/telegram-link";
 import { api } from "@/lib/api";
 import { LoadingSpinner, Button } from "@/components/ui";
+import { AFTER_ONBOARDING_KEY } from "@/lib/after-onboarding";
 
 const STATUS_POLL_MS = 2000;
 // WEB2-03: avvalgi kodda BU YERDA hech qanday chegara yo'q edi — agar
@@ -45,6 +46,24 @@ function TelegramMiniAppInner() {
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next");
   const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+
+  /**
+   * PARTNER-LINK-01: hamkor taklif havolasini bosganda u odatda YANGI
+   * foydalanuvchi bo'ladi — ya'ni onboardingga yo'naltiriladi va
+   * `next` (kod bilan birga) yo'qolardi. Aynan shu holat taklifning
+   * asosiy holati: ilovani o'rnatgan odam hamkorning o'zi.
+   *
+   * Shuning uchun manzil saqlab qo'yiladi va onboarding tugagach
+   * o'sha yerga qaytariladi.
+   */
+  useEffect(() => {
+    if (!rawNext || nextPath === "/") return;
+    try {
+      sessionStorage.setItem(AFTER_ONBOARDING_KEY, nextPath);
+    } catch {
+      // Xotira bloklangan — taklif oddiy yo'l bilan (kod qo'lda) davom etadi.
+    }
+  }, [rawNext, nextPath]);
 
   const telegramHref = useTelegramStartLink();
   const [phase, setPhase] = useState<Phase>("loading");
