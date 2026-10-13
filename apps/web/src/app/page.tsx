@@ -7,7 +7,7 @@ import { useSession } from "@/lib/session";
 import { useI18n } from "@/lib/i18n";
 import { LoadingSpinner } from "@/components/ui";
 import { LandingPage } from "@/components/LandingPage";
-import { isMedianApp } from "@/lib/median";
+import { isMedianApp, isMedianIOSApp } from "@/lib/median";
 import { useTelegramStartLink } from "@/lib/telegram-link";
 
 export default function RootPage() {
@@ -52,11 +52,19 @@ export default function RootPage() {
   // yo'naltiriladi — endi `telegramLink` hech qachon bo'sh bo'lmagani
   // uchun hech qanday "fetch tugashini kutish" yoki "veb onboarding'ga
   // zaxira" shart emas, effekt darhol ishga tushadi.
+  //
+  // APPREVIEW-01: iOS ilovasida esa Telegram'ga EMAS, ilovaning o'z
+  // onboarding'iga — Apple 4.2.3(i) ilova boshqa ilovani o'rnatmasdan
+  // ishlashini talab qiladi, Telegram'i yo'q tekshiruvchi esa shu yerda
+  // ilovaga umuman kira olmasdi. AUTH-04'dan beri onboarding hisobsiz
+  // (anonim) ishlaydi, ya'ni bu yo'l to'liq.
   const isMedian = isMedianApp();
+  const isIOSApp = isMedianIOSApp();
   useEffect(() => {
     if (!isMedian || status !== "anonymous") return;
-    window.location.href = telegramLink;
-  }, [isMedian, status, telegramLink]);
+    if (isIOSApp) router.replace("/onboarding");
+    else window.location.href = telegramLink;
+  }, [isMedian, isIOSApp, status, telegramLink, router]);
 
   if (status === "loading" || status === "onboarded" || (isMedian && status === "anonymous")) {
     return (

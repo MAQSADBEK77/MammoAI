@@ -7,6 +7,7 @@ import type { ChecklistCategory, ChecklistItem, ChecklistResponse } from "@mammo
 import { formatDateDisplay, CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useIsMedianIOSApp } from "@/lib/median";
 import { ProfileQuestionsCard } from "@/components/screens/ProfileQuestionsCard";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
@@ -47,6 +48,7 @@ export default function ChecklistPage() {
   const { onboardingProfile, refresh } = useSession();
   const { resolve } = useIllustrations();
   const router = useRouter();
+  const isIOSApp = useIsMedianIOSApp();
   const [data, setData] = useState<ChecklistResponse | null>(null);
   // MOTION-APP-03: "bajarildi" bosilganda holat-belgisining qisqa "pop"i —
   // mikro-tasdiq (Jamiyat'dagi layk-pop bilan bir xil umumiy klass).
@@ -287,8 +289,11 @@ export default function ChecklistPage() {
           ikkalasi ham ro'yxatni KO'RGANDAN keyingi qadam.
 
           REPORT-01: hisobot aynan shu ekranda, chunki ayol bu yerda
-          "shifokorga borishim kerak" degan qarorga keladi. */}
-      {!readOnly && (
+          "shifokorga borishim kerak" degan qarorga keladi.
+
+          APPREVIEW-01: hisobot Premium bo'lim — iOS ilovasida Premium
+          taklif qilinmaydi (Apple 3.1.1), shuning uchun u yerda yashirin. */}
+      {!readOnly && !isIOSApp && (
         <button onClick={() => router.push("/hisobot")} className="block w-full text-left">
           <Card interactive className="space-y-1">
             <p className="font-semibold text-text-primary">{dict.doctorReport.title}</p>

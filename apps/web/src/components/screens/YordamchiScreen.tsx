@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { SendRounded, ThumbUpAltOutlined, ThumbDownAltOutlined, WorkspacePremiumRounded } from "@mui/icons-material";
@@ -15,8 +15,49 @@ import { PremiumPricing } from "@/components/PremiumPricing";
 import { Emoji } from "@/components/Emoji";
 import { RegisterGate } from "@/components/RegisterGate";
 import { DURATION, EASE_BRAND } from "@/lib/motion";
+import { useIsMedianIOSApp } from "@/lib/median";
 
 const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
+
+/**
+ * APPREVIEW-01 — AI'ga ma'lumot yuborishdan OLDIN aniq rozilik.
+ *
+ * Xabar va sikl/homiladorlik konteksti uchinchi tomon AI provayderiga
+ * (server/ai-chat.ts — Gemini / Anthropic / Huawei) ketadi. Apple 5.1.2(i)
+ * buni ochiq aytib, ruxsat olishni talab qiladi; to'g'ri amaliyot sifatida
+ * barcha platformalarda bir xil. Qaror qurilmada saqlanadi — localStorage
+ * ishlamasa (xususiy rejim), shu sessiya davomida xotirada turadi va
+ * ayol rozilik oynasida qotib qolmaydi.
+ */
+const AI_CONSENT_KEY = "mammo.aiConsent.v1";
+let aiConsentInMemory = false;
+const aiConsentListeners = new Set<() => void>();
+
+function readAiConsent(): boolean {
+  if (aiConsentInMemory) return true;
+  try {
+    return window.localStorage.getItem(AI_CONSENT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveAiConsent() {
+  aiConsentInMemory = true;
+  try {
+    window.localStorage.setItem(AI_CONSENT_KEY, "1");
+  } catch {
+    // Saqlab bo'lmasa ham xotiradagi qiymat yetarli.
+  }
+  aiConsentListeners.forEach((listener) => listener());
+}
+
+function subscribeAiConsent(listener: () => void) {
+  aiConsentListeners.add(listener);
+  return () => {
+    aiConsentListeners.delete(listener);
+  };
+}
 
 /** MOTION-APP-04: har bir yangi xabar/pufakcha ekranga kirganda yengil
  * fade+ko'tarilish — `Reveal`dan farqli (scroll-ichida-ko'rinish emas,
@@ -51,6 +92,10 @@ export function YordamchiScreen() {
   const { dict } = useI18n();
   const { user } = useSession();
   const router = useRouter();
+  const isIOSApp = useIsMedianIOSApp();
+  // `null` — server render/gidratsiya (localStorage hali o'qilmagan).
+  const aiConsent = useSyncExternalStore<boolean | null>(subscribeAiConsent, readAiConsent, () => null);
+  const [aiConsentDeclined, setAiConsentDeclined] = useState(false);
 
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [draft, setDraft] = useState("");
@@ -95,7 +140,10 @@ export function YordamchiScreen() {
       observer.disconnect();
       window.removeEventListener("resize", update);
     };
-  }, []);
+    // APPREVIEW-01: rozilik kartasi ko'rinib turganda `rootRef` yo'q (chat
+    // chizilmagan) — rozilik berilgach o'lchov qayta boshlanishi kerak,
+    // aks holda kirish maydoni pastki menyu orqasida qolardi.
+  }, [aiConsent]);
   // "Takrorlanuvchi pattern" banneri paydo bo'lganda/yo'qolganda ham
   // (bu ustidagi elementlarning balandligini o'zgartiradi) darhol qayta
   // o'lchaymiz — ResizeObserver body darajasida bu holatni har doim ham
@@ -210,6 +258,51 @@ export function YordamchiScreen() {
     );
   }
 
+  // APPREVIEW-01: rozilik berilmaguncha suhbat ochilmaydi (izoh: AI_CONSENT_KEY).
+  // `null` — hali o'qilmagan; bir zumlik holat, hech narsa chizilmaydi.
+  if (aiConsent === null) return null;
+  if (!aiConsent) {
+    return (
+      <div className="flex flex-col gap-4">
+        <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
+        <Card className="flex flex-col gap-3 py-6">
+          <h2 className="text-lg font-bold text-text-primary">{dict.chat.aiConsentTitle}</h2>
+          <p className="text-sm leading-relaxed text-text-secondary">{dict.chat.aiConsentBody}</p>
+          <p className="text-xs text-text-muted">{dict.chat.disclaimer}</p>
+          {aiConsentDeclined && <p className="text-sm font-medium text-warning">{dict.chat.aiConsentDeclined}</p>}
+          <Button className="mt-2" onClick={saveAiConsent}>
+            {dict.chat.aiConsentAccept}
+          </Button>
+          {!aiConsentDeclined && (
+            <button
+              type="button"
+              onClick={() => setAiConsentDeclined(true)}
+              className="text-center text-sm font-semibold text-text-muted"
+            >
+              {dict.chat.aiConsentDecline}
+            </button>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
+  // APPREVIEW-01: iOS ilovasida limit tugaganda Premium tilga olinmaydi va
+  // so'rov formasiga yo'naltirilmaydi — ilova ichida pullik imkoniyat faqat
+  // Apple In-App Purchase orqali taklif qilinishi mumkin (3.1.1).
+  if (!canUseChat && isIOSApp) {
+    return (
+      <div className="flex flex-col gap-4">
+        <ScreenHeader title={dict.chat.title} subtitle={dict.chat.subtitle} />
+        <Card className="flex flex-col items-center gap-3 py-8 text-center">
+          <Emoji e="💬" size={28} />
+          <h2 className="text-lg font-bold text-text-primary">{dict.chat.limitReachedTitle}</h2>
+          <p className="max-w-sm text-sm text-text-secondary">{dict.chat.limitReachedBody}</p>
+        </Card>
+      </div>
+    );
+  }
+
   // MONETIZE-01: paywall endi FAQAT bepul xabarlar tugagach chiqadi —
   // ilgari u birinchi xabardanoq chiqib, ayolga yordamchi qanday
   // ishlashini ko'rsatmasdan pul so'rardi.
@@ -250,7 +343,13 @@ export function YordamchiScreen() {
       {freeLeft !== null && (
         <div className="rounded-2xl border border-border bg-surface-muted px-4 py-3">
           <p className="text-sm font-bold text-text-primary">
-            {freeLeft === 1 ? dict.chat.freeLastOne : dict.chat.freeLeft.replace("{n}", String(freeLeft))}
+            {isIOSApp
+              ? freeLeft === 1
+                ? dict.chat.limitLastOne
+                : dict.chat.limitLeft.replace("{n}", String(freeLeft))
+              : freeLeft === 1
+                ? dict.chat.freeLastOne
+                : dict.chat.freeLeft.replace("{n}", String(freeLeft))}
           </p>
           <p className="mt-0.5 text-xs text-text-secondary">{dict.chat.freeBannerBody}</p>
         </div>

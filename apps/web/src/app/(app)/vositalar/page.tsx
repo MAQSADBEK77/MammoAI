@@ -15,6 +15,7 @@ import {
 } from "@mui/icons-material";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { useIsMedianIOSApp } from "@/lib/median";
 import { ScreenHeader } from "@/components/ui";
 
 /**
@@ -38,6 +39,7 @@ export default function ToolsPage() {
   const router = useRouter();
   const { dict } = useI18n();
   const { onboardingProfile } = useSession();
+  const isIOSApp = useIsMedianIOSApp();
   const t = dict.tools;
 
   const isPartnerTracking = onboardingProfile?.primaryGoal === "partner_tracking";
@@ -49,8 +51,15 @@ export default function ToolsPage() {
     { href: "/maqolalar", label: t.articles, hint: t.articlesHint, Icon: ArticleOutlined, tint: "bg-primary/10", fg: "text-primary" },
     { href: "/shifokorlar", label: t.doctorsTile, hint: t.doctorsTileHint, Icon: MedicalInformationOutlined, tint: "bg-primary/10", fg: "text-primary" },
     { href: "/klinikalar", label: t.clinics, hint: t.clinicsHint, Icon: LocationOnOutlined, tint: "bg-accent/10", fg: "text-accent" },
-    { href: "/hisobot", label: t.report, hint: t.reportHint, Icon: MedicalInformationOutlined, tint: "bg-secondary/10", fg: "text-secondary" },
-    { href: "/statistika", label: t.stats, hint: t.statsHint, Icon: InsightsOutlined, tint: "bg-primary/10", fg: "text-primary" },
+    // APPREVIEW-01: hisobot va statistika — Premium bo'limlar; iOS
+    // ilovasida Premium taklif qilinmaydi (Apple 3.1.1), shuning uchun
+    // ular u yerda umuman ko'rsatilmaydi.
+    ...(isIOSApp
+      ? []
+      : [
+          { href: "/hisobot", label: t.report, hint: t.reportHint, Icon: MedicalInformationOutlined, tint: "bg-secondary/10", fg: "text-secondary" },
+          { href: "/statistika", label: t.stats, hint: t.statsHint, Icon: InsightsOutlined, tint: "bg-primary/10", fg: "text-primary" },
+        ]),
     { href: "/xavf-testi", label: t.riskQuiz, hint: t.riskQuizHint, Icon: QuizOutlined, tint: "bg-warning/10", fg: "text-warning" },
     // Homiladorlik vositalari faqat homiladorlarga: qolganlarga ular
     // shovqin, homiladorga esa kunlik savol.

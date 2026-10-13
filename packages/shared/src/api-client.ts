@@ -162,8 +162,10 @@ export interface PhoneCodeStartPayload {
 export interface PhoneCodeStartResponse {
   /** Keyingi (status/verify) chaqiruvlarda kerak bo'ladigan vaqtinchalik identifikator. */
   token: string;
-  /** Telegram botga olib boradigan chuqur havola — foydalanuvchi shuni bosishi kerak. */
-  deepLink: string;
+  /** Telegram botga olib boradigan chuqur havola — foydalanuvchi shuni bosishi kerak.
+   * APPREVIEW-01: `null` — kod allaqachon tayyor (App Store tekshiruvchisining
+   * test akkaunti), botga borish shart emas, darhol kod kiritiladi. */
+  deepLink: string | null;
 }
 
 export interface PhoneCodeVerifyResponse extends MeResponse {

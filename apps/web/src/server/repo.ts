@@ -864,12 +864,19 @@ interface PhoneVerificationRow {
   attempts: number;
 }
 
-export async function createPhoneVerification(phone: string, language: Language): Promise<{ token: string }> {
+/** `prefilledCode` — APPREVIEW-01: test akkaunti uchun kod Telegram botni
+ * kutmasdan darhol yoziladi (phone-code/start/route.ts). Qolgan hamma
+ * himoya — urinishlar soni, TTL, bir martalik ishlatish — o'zgarmaydi. */
+export async function createPhoneVerification(
+  phone: string,
+  language: Language,
+  prefilledCode: string | null = null
+): Promise<{ token: string }> {
   await ensureSchema();
   const id = randomUUID();
   const token = randomUUID().replace(/-/g, "");
   await sql`
-    INSERT INTO phone_verifications (id, token, phone, language, created_at) VALUES (${id}, ${token}, ${phone}, ${language}, ${now()})
+    INSERT INTO phone_verifications (id, token, phone, language, code, created_at) VALUES (${id}, ${token}, ${phone}, ${language}, ${prefilledCode}, ${now()})
   `;
   return { token };
 }

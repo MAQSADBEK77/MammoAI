@@ -1602,6 +1602,19 @@ const uz = {
     freeLastOne: "Oxirgi bepul xabaringiz",
     premiumExhaustedTitle: "Bepul xabarlaringiz tugadi",
     premiumExhaustedBody: "Yordamchi bilan suhbatni davom ettirish uchun Premium obuna kerak. Yozgan savollaringiz va javoblar saqlanib qoladi.",
+    // APPREVIEW-01: iOS ilovasida Premium tilga olinmaydi (Apple 3.1.1).
+    limitLeft: "{n} ta xabar qoldi",
+    limitLastOne: "Oxirgi xabaringiz",
+    limitReachedTitle: "Xabarlar limiti tugadi",
+    limitReachedBody: "Yordamchi bilan suhbat limiti tugadi. Yozgan savollaringiz va javoblar saqlanib qoladi.",
+    featureUnavailable: "Bu bo'lim ilovaning ushbu versiyasida mavjud emas.",
+    // APPREVIEW-01: Apple 5.1.2(i) — ma'lumot uchinchi tomon AI'ga
+    // yuborilishidan OLDIN aniq rozilik so'raladi.
+    aiConsentTitle: "AI yordamchi va ma'lumotlaringiz",
+    aiConsentBody: "Javob tayyorlash uchun xabaringiz va tegishli ma'lumotlaringiz (yoshingiz, sikl uzunligi, oxirgi hayz sanasi, homiladorlik haftasi, so'nggi yozuvlardagi kayfiyat va simptomlar) uchinchi tomon sun'iy intellekt xizmatiga yuboriladi: Google (Gemini), Anthropic (Claude) yoki Huawei Cloud. Ismingiz va telefon raqamingiz yuborilmaydi. Ma'lumotlar reklama uchun ishlatilmaydi.",
+    aiConsentAccept: "Roziman",
+    aiConsentDecline: "Hozir emas",
+    aiConsentDeclined: "Rozilik bermasangiz, yordamchidan foydalanib bo'lmaydi. Fikringizni istalgan vaqt o'zgartirishingiz mumkin.",
     insightsEmpty: "Statistika ko'rish uchun hali yetarli ma'lumot yo'q — sikl kunlaringizni davom ettirib qayd eting.",
     cycleLengthChartTitle: "Sikl uzunligi tarixi",
     symptomFrequencyChartTitle: "Simptomlar chastotasi (so'nggi 6 oy)",

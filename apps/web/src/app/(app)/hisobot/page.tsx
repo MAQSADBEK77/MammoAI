@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import { Button, Card, ErrorState, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { PremiumPricing } from "@/components/PremiumPricing";
 import { Emoji } from "@/components/Emoji";
+import { useIsMedianIOSApp } from "@/lib/median";
 
 /**
  * REPORT-01 — shifokor uchun hisobot.
@@ -24,6 +25,7 @@ import { Emoji } from "@/components/Emoji";
 export default function DoctorReportPage() {
   const { dict } = useI18n();
   const router = useRouter();
+  const isIOSApp = useIsMedianIOSApp();
   const [data, setData] = useState<{ report: DoctorReport; name: string | null } | null>(null);
   const [needsPremium, setNeedsPremium] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -47,6 +49,18 @@ export default function DoctorReportPage() {
 
   if (loadError) {
     return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: load }} />;
+  }
+
+  // APPREVIEW-01: iOS ilovasida Premium tilga olinmaydi (Apple 3.1.1);
+  // bu sahifaga kirish nuqtalari u yerda yashirilgan, bu faqat
+  // to'g'ridan-to'g'ri havola bilan kelinganda.
+  if (needsPremium && isIOSApp) {
+    return (
+      <div className="flex flex-col gap-4">
+        <ScreenHeader title={dict.doctorReport.title} subtitle={dict.doctorReport.subtitle} />
+        <Card className="py-8 text-center text-sm text-text-secondary">{dict.chat.featureUnavailable}</Card>
+      </div>
+    );
   }
 
   if (needsPremium) {

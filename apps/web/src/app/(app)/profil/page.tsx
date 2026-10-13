@@ -8,6 +8,7 @@ import { ApiError, BLOOD_TYPES, getModeAccentColors, resolvePet, translateApiErr
 import { useI18n } from "@/lib/i18n";
 import { useConfirm } from "@/lib/confirm";
 import { useSession } from "@/lib/session";
+import { useIsMedianIOSApp } from "@/lib/median";
 import { api } from "@/lib/api";
 import { Card, ErrorState, Toast } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
@@ -79,6 +80,7 @@ export default function ProfilePage() {
   const confirm = useConfirm();
   const { user, onboardingProfile, refresh } = useSession();
   const router = useRouter();
+  const isIOSApp = useIsMedianIOSApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showPetPicker, setShowPetPicker] = useState(false);
@@ -673,17 +675,20 @@ export default function ProfilePage() {
         </SettingsRow>
       </Card>
 
-      <div className="bg-aurora-pregnancy rounded-[28px] p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20">
-            <Emoji e="✨" size={22} />
-          </div>
-          <div>
-            <p className="font-semibold text-white">{dict.profile.premiumTitle}</p>
-            <p className="mt-1 text-sm text-white/80">{dict.profile.premiumSubtitle}</p>
+      {/* APPREVIEW-01: iOS ilovasida Premium tilga olinmaydi (Apple 3.1.1). */}
+      {!isIOSApp && (
+        <div className="bg-aurora-pregnancy rounded-[28px] p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20">
+              <Emoji e="✨" size={22} />
+            </div>
+            <div>
+              <p className="font-semibold text-white">{dict.profile.premiumTitle}</p>
+              <p className="mt-1 text-sm text-white/80">{dict.profile.premiumSubtitle}</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <Card className="space-y-1">
         <button

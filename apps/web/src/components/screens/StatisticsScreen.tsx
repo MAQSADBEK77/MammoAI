@@ -11,6 +11,7 @@ import { ScreenHeader, LoadingSpinner, ErrorState, Card, Button } from "@/compon
 import { PremiumPricing } from "@/components/PremiumPricing";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
 import { Emoji } from "@/components/Emoji";
+import { useIsMedianIOSApp } from "@/lib/median";
 
 /**
  * STATS-MOVE-01 — sikl statistikasi.
@@ -26,6 +27,7 @@ import { Emoji } from "@/components/Emoji";
 export function StatisticsScreen() {
   const { dict } = useI18n();
   const router = useRouter();
+  const isIOSApp = useIsMedianIOSApp();
   const [data, setData] = useState<{ summary: InsightsSummary; patterns: SymptomPattern[]; aiInsight: string | null } | null>(null);
   // Premium emasligi XATO emas — bu kutilgan holat, shuning uchun alohida.
   const [needsPremium, setNeedsPremium] = useState(false);
@@ -57,7 +59,12 @@ export function StatisticsScreen() {
     <div className="flex flex-col gap-4 pb-6">
       <ScreenHeader title={dict.chat.statisticsTab} subtitle={dict.chat.statisticsSubtitle} />
 
-      {needsPremium ? (
+      {/* APPREVIEW-01: iOS ilovasida Premium tilga olinmaydi (Apple 3.1.1);
+          bu bo'limga kirish nuqtalari u yerda yashirilgan, bu faqat to'g'ridan-
+          to'g'ri havola bilan kelinganda. */}
+      {needsPremium && isIOSApp ? (
+        <Card className="py-8 text-center text-sm text-text-secondary">{dict.chat.featureUnavailable}</Card>
+      ) : needsPremium ? (
         <Card className="flex flex-col items-center gap-3 py-8 text-center">
           <div className="bg-aurora-cycle flex h-14 w-14 items-center justify-center rounded-full">
             <WorkspacePremiumRounded sx={{ fontSize: 26 }} className="text-white" />

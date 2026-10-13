@@ -28,6 +28,7 @@ import { api } from "@/lib/api";
 import { Button, Card, LoadingSpinner, ErrorState, EmptyState, IconChip, Badge, DateWheelPicker } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { useAppDrawer } from "@/components/AppDrawer";
+import { useIsMedianIOSApp } from "@/lib/median";
 import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { MyCyclesCard } from "@/components/screens/MyCyclesCard";
@@ -87,6 +88,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   const { onboardingProfile, user, applyMeResponse } = useSession();
   const { openDrawer } = useAppDrawer();
   const router = useRouter();
+  const isIOSApp = useIsMedianIOSApp();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [data, setData] = useState<CycleResponse | null>(null);
@@ -1333,13 +1335,18 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
           aniqligi, simptomlarning fazalar bo'yicha taqsimoti). Ilgari AI
           Yordamchi ekranining ichida turardi — sababi texnik edi (ikkalasi
           ham Premium), foydalanuvchi mantig'i emas. Ayol o'z siklining
-          statistikasini AYNAN shu yerdan qidiradi. */}
-      <button onClick={() => router.push("/statistika")} className="block w-full text-left">
-        <Card interactive className="space-y-1">
-          <p className="font-semibold text-text-primary">{dict.chat.statisticsTab}</p>
-          <p className="text-sm text-text-secondary">{dict.chat.statisticsSubtitle}</p>
-        </Card>
-      </button>
+          statistikasini AYNAN shu yerdan qidiradi.
+
+          APPREVIEW-01: statistika Premium bo'lim — iOS ilovasida Premium
+          taklif qilinmaydi (Apple 3.1.1), shuning uchun u yerda yashirin. */}
+      {!isIOSApp && (
+        <button onClick={() => router.push("/statistika")} className="block w-full text-left">
+          <Card interactive className="space-y-1">
+            <p className="font-semibold text-text-primary">{dict.chat.statisticsTab}</p>
+            <p className="text-sm text-text-secondary">{dict.chat.statisticsSubtitle}</p>
+          </Card>
+        </button>
+      )}
 
       {/* OVERNIGHT-20: bu forma ILGARI oddiy inline <Card> edi — sahifada
           DailyInsightsCarousel'dan PASTDA render bo'lardi, ya'ni hero/tezkor

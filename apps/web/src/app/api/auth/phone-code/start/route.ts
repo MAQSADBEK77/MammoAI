@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { normalizeKnownPhone, type Language } from "@mammoai/shared";
+import { normalizeKnownPhone, parseReviewLoginCode, type Language } from "@mammoai/shared";
 import { jsonError } from "@/server/api-utils";
-import { checkPhoneCodeStartRateLimit, createPhoneVerification } from "@/server/repo";
+import { checkPhoneCodeStartRateLimit, createPhoneVerification, findTestAccountByPhone } from "@/server/repo";
 import { getTelegramBotUsername } from "@/server/telegram-bot";
 
 interface StartBody {
@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
     const identifier = normalizeKnownPhone(body.identifier ?? "");
     if (!identifier) {
       return NextResponse.json({ error: "To'g'ri telefon raqam kiriting" }, { status: 400 });
+    }
+
+    // APPREVIEW-01: App Store tekshiruvchisida Telegram yo'q — test
+    // akkaunti uchun kod muhit o'zgaruvchisidan olinadi va bot o'tkazib
+    // yuboriladi (izoh: packages/shared/src/logic/review-login.ts).
+    const reviewCode = parseReviewLoginCode(process.env.REVIEW_LOGIN_CODE);
+    if (reviewCode && (await findTestAccountByPhone(identifier))) {
+      const { token } = await createPhoneVerification(identifier, body.language ?? "uz", reviewCode);
+      return NextResponse.json({ token, deepLink: null });
     }
 
     const username = await getTelegramBotUsername();
