@@ -8,7 +8,7 @@ import { ApiError, BLOOD_TYPES, getModeAccentColors, resolvePet, translateApiErr
 import { useI18n } from "@/lib/i18n";
 import { useConfirm } from "@/lib/confirm";
 import { useSession } from "@/lib/session";
-import { useIsMedianIOSApp } from "@/lib/median";
+import { useIsIOSApp } from "@/lib/median";
 import { api } from "@/lib/api";
 import { Card, ErrorState, Toast } from "@/components/ui";
 import { Emoji } from "@/components/Emoji";
@@ -80,7 +80,7 @@ export default function ProfilePage() {
   const confirm = useConfirm();
   const { user, onboardingProfile, refresh } = useSession();
   const router = useRouter();
-  const isIOSApp = useIsMedianIOSApp();
+  const isIOSApp = useIsIOSApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showPetPicker, setShowPetPicker] = useState(false);

@@ -28,7 +28,7 @@ import { api } from "@/lib/api";
 import { Button, Card, LoadingSpinner, ErrorState, EmptyState, IconChip, Badge, DateWheelPicker } from "@/components/ui";
 import { MonthCalendar, type DayMarker } from "@/components/MonthCalendar";
 import { useAppDrawer } from "@/components/AppDrawer";
-import { useIsMedianIOSApp } from "@/lib/median";
+import { useIsIOSApp } from "@/lib/median";
 import { PhaseCard } from "@/components/PhaseCard";
 import { DailyInsightsCarousel } from "@/components/DailyInsightsCarousel";
 import { MyCyclesCard } from "@/components/screens/MyCyclesCard";
@@ -88,7 +88,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
   const { onboardingProfile, user, applyMeResponse } = useSession();
   const { openDrawer } = useAppDrawer();
   const router = useRouter();
-  const isIOSApp = useIsMedianIOSApp();
+  const isIOSApp = useIsIOSApp();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [data, setData] = useState<CycleResponse | null>(null);

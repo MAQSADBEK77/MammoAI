@@ -7,7 +7,7 @@ import type { ChecklistCategory, ChecklistItem, ChecklistResponse } from "@mammo
 import { formatDateDisplay, CHECKUP_CATEGORY, CHECKUP_OFFICIAL_TRACK } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { useIsMedianIOSApp } from "@/lib/median";
+import { useIsIOSApp } from "@/lib/median";
 import { ProfileQuestionsCard } from "@/components/screens/ProfileQuestionsCard";
 import { useIllustrations } from "@/lib/illustrations";
 import { api } from "@/lib/api";
@@ -48,7 +48,7 @@ export default function ChecklistPage() {
   const { onboardingProfile, refresh } = useSession();
   const { resolve } = useIllustrations();
   const router = useRouter();
-  const isIOSApp = useIsMedianIOSApp();
+  const isIOSApp = useIsIOSApp();
   const [data, setData] = useState<ChecklistResponse | null>(null);
   // MOTION-APP-03: "bajarildi" bosilganda holat-belgisining qisqa "pop"i —
   // mikro-tasdiq (Jamiyat'dagi layk-pop bilan bir xil umumiy klass).

@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 import { Button, Card, ErrorState, LoadingSpinner, ScreenHeader } from "@/components/ui";
 import { PremiumPricing } from "@/components/PremiumPricing";
 import { Emoji } from "@/components/Emoji";
-import { useIsMedianIOSApp } from "@/lib/median";
+import { useIsIOSApp } from "@/lib/median";
 
 /**
  * REPORT-01 — shifokor uchun hisobot.
@@ -25,7 +25,7 @@ import { useIsMedianIOSApp } from "@/lib/median";
 export default function DoctorReportPage() {
   const { dict } = useI18n();
   const router = useRouter();
-  const isIOSApp = useIsMedianIOSApp();
+  const isIOSApp = useIsIOSApp();
   const [data, setData] = useState<{ report: DoctorReport; name: string | null } | null>(null);
   const [needsPremium, setNeedsPremium] = useState(false);
   const [loadError, setLoadError] = useState(false);

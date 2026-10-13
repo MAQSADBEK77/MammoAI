@@ -15,7 +15,7 @@ import {
 } from "@mui/icons-material";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { useIsMedianIOSApp } from "@/lib/median";
+import { useIsIOSApp } from "@/lib/median";
 import { ScreenHeader } from "@/components/ui";
 
 /**
@@ -39,7 +39,7 @@ export default function ToolsPage() {
   const router = useRouter();
   const { dict } = useI18n();
   const { onboardingProfile } = useSession();
-  const isIOSApp = useIsMedianIOSApp();
+  const isIOSApp = useIsIOSApp();
   const t = dict.tools;
 
   const isPartnerTracking = onboardingProfile?.primaryGoal === "partner_tracking";

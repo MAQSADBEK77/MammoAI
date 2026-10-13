@@ -15,7 +15,7 @@ import { PremiumPricing } from "@/components/PremiumPricing";
 import { Emoji } from "@/components/Emoji";
 import { RegisterGate } from "@/components/RegisterGate";
 import { DURATION, EASE_BRAND } from "@/lib/motion";
-import { useIsMedianIOSApp } from "@/lib/median";
+import { useIsIOSApp } from "@/lib/median";
 
 const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
 
@@ -92,7 +92,7 @@ export function YordamchiScreen() {
   const { dict } = useI18n();
   const { user } = useSession();
   const router = useRouter();
-  const isIOSApp = useIsMedianIOSApp();
+  const isIOSApp = useIsIOSApp();
   // `null` — server render/gidratsiya (localStorage hali o'qilmagan).
   const aiConsent = useSyncExternalStore<boolean | null>(subscribeAiConsent, readAiConsent, () => null);
   const [aiConsentDeclined, setAiConsentDeclined] = useState(false);

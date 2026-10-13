@@ -11,7 +11,7 @@ import { ScreenHeader, LoadingSpinner, ErrorState, Card, Button } from "@/compon
 import { PremiumPricing } from "@/components/PremiumPricing";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
 import { Emoji } from "@/components/Emoji";
-import { useIsMedianIOSApp } from "@/lib/median";
+import { useIsIOSApp } from "@/lib/median";
 
 /**
  * STATS-MOVE-01 — sikl statistikasi.
@@ -27,7 +27,7 @@ import { useIsMedianIOSApp } from "@/lib/median";
 export function StatisticsScreen() {
   const { dict } = useI18n();
   const router = useRouter();
-  const isIOSApp = useIsMedianIOSApp();
+  const isIOSApp = useIsIOSApp();
   const [data, setData] = useState<{ summary: InsightsSummary; patterns: SymptomPattern[]; aiInsight: string | null } | null>(null);
   // Premium emasligi XATO emas — bu kutilgan holat, shuning uchun alohida.
   const [needsPremium, setNeedsPremium] = useState(false);
