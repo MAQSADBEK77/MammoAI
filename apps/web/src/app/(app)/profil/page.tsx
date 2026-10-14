@@ -462,7 +462,7 @@ export default function ProfilePage() {
                       deyarli ko'rinmasdi — u yerda asosiy matn rangi. */}
                   <span
                     className="text-xs font-semibold"
-                    style={{ color: active ? (resolvedTheme === "dark" ? "var(--color-text-primary)" : accent.primaryDark) : "var(--color-text-secondary)" }}
+                    style={{ color: active ? (resolvedTheme === "dark" ? "var(--color-text-primary)" : "var(--color-primary-ink)") : "var(--color-text-secondary)" }}
                   >
                     {dict.profile.modes[goal as keyof typeof dict.profile.modes]}
                   </span>
@@ -479,7 +479,7 @@ export default function ProfilePage() {
           <button
             onClick={() => (editingInfo ? saveInfo() : setEditingInfo(true))}
             disabled={saving}
-            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-primary-dark transition hover:bg-primary-light/30"
+            className="-my-2 flex items-center gap-1 rounded-full px-2.5 py-3 text-xs font-semibold text-primary-dark transition hover:bg-primary-light/30"
           >
             {editingInfo ? <Check sx={{ fontSize: 14 }} /> : <Pencil sx={{ fontSize: 14 }} />}
             {editingInfo ? dict.profile.doneButton : dict.profile.editButton}
@@ -674,7 +674,7 @@ export default function ProfilePage() {
 
       <Card className="space-y-1">
         <SettingsRow icon="❓" label={dict.profile.helpTitle} last>
-          <a href={`tel:${dict.profile.helpPhoneValue.replace(/\s/g, "")}`} className="text-right text-sm font-semibold text-primary-dark">
+          <a href={`tel:${dict.profile.helpPhoneValue.replace(/\s/g, "")}`} className="-my-2.5 py-2.5 text-right text-sm font-semibold text-primary-dark">
             {dict.profile.helpPhoneValue}
           </a>
         </SettingsRow>

@@ -11,7 +11,8 @@ export const colors = {
   primaryLight: "#FFB3CB",
   secondary: "#7C3AED", // manba: binafsha
   secondaryLight: "#C4B5FD",
-  accent: "#0D9488", // manba: moviy-yashil (unumdor oyna, homiladorlik uchun)
+  // DESIGN-A11Y-01: #0D9488 oq fonda 3.74:1 edi (AA: 4.5:1) — endi 5.47:1.
+  accent: "#0F766E", // manba: moviy-yashil (unumdor oyna, homiladorlik uchun)
   accentLight: "#5EEAD4",
 
   background: "#F9FAFB", // manba: asosiy ekranlar foni (juda och kulrang)
@@ -20,9 +21,9 @@ export const colors = {
 
   textPrimary: "#1F2937",
   textSecondary: "#4B5563",
-  // FIX2-09: #9CA3AF oq fonda 2.54:1 kontrast berardi (WCAG AA: 4.5:1 kerak)
-  // — endi 4.83:1 (dark-mode'da allaqachon ishlatilayotgan xuddi shu soya).
-  textMuted: "#6B7280",
+  // FIX2-09: #9CA3AF oq fonda 2.54:1 kontrast berardi (WCAG AA: 4.5:1 kerak).
+  // DESIGN-A11Y-01: #6B7280 kulrang fonda 4.39:1 edi — endi 5.25:1 (oqda 5.78:1).
+  textMuted: "#5F6673",
   border: "#E5E7EB",
 
   // FIX2-08: #57B894 oq fonda 2.42:1 kontrast berardi (WCAG AA: 4.5:1 kerak)
@@ -31,7 +32,7 @@ export const colors = {
   // yomonlashtirardi — quyidagi izohga qarang).
   success: "#1F7A5C",
   warning: "#E7A83F",
-  danger: "#E0506F",
+  danger: "#C53A5A", // DESIGN-A11Y-01: #E0506F oq fonda 3.79:1 edi — endi 5.09:1
 
 } as const;
 
@@ -46,12 +47,16 @@ export const darkColors = {
   surfaceMuted: "#1F2633",
   textPrimary: "#F3F4F6",
   textSecondary: "#B9C0CC",
-  textMuted: "#6B7280",
+  textMuted: "#8B93A1", // DESIGN-A11Y-01: #6B7280 kartada 3.56:1 edi — endi 5.57:1
   border: "#2A3140",
   // FIX2-08: `colors.success` yuqorida light-mode kontrasti uchun to'qroq
   // qilindi — bu o'zgarish to'q fonda kontrastni yomonlashtirardi, shuning
   // uchun qorong'u rejim ESKI (yorug'roq) qiymatni saqlaydi.
   success: "#57B894",
+  // DESIGN-A11Y-01: yorug' rejimdagi to'qroq soyalar to'q fonda yomonroq —
+  // qorong'u rejim eski qiymatlarni saqlaydi (globals.css bilan bir xil).
+  accent: "#0D9488",
+  danger: "#E0506F",
 } as const;
 
 // `colors`/`darkColors` `as const` bilan e'lon qilingani uchun har bir
@@ -109,7 +114,7 @@ export const gradients = {
   heroStrong: ["#FBD3E6", "#DCCEFA"] as [string, string],
   cycle: [colors.primary, colors.primaryDark] as [string, string],
   pregnancy: [colors.secondary, "#4C1D95"] as [string, string],
-  checkup: [colors.accent, "#0F766E"] as [string, string],
+  checkup: ["#0D9488", "#0F766E"] as [string, string],
   // Suzuvchi pastki navigatsiya paneli — chuqur tun-siyoh rang (Lunari
   // tungi rejimidan ilhomlangan), ustida gradient faol doira bilan.
   navBar: ["#241127", "#3B1B45"] as [string, string],

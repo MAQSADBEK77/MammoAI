@@ -17,9 +17,9 @@ import { Card } from "@/components/ui";
  * javob "qayerdaman?" degan savoldan uzoqlashardi.
  */
 const STATUS_TONE: Record<WeightGainStatus, string> = {
-  below: "text-warning",
+  below: "text-warning-text",
   within: "text-success",
-  above: "text-warning",
+  above: "text-warning-text",
 };
 
 export function WeightGainCard({

@@ -129,8 +129,8 @@ export function MonthCalendar({
                 marker === "period" && "bg-primary text-white",
                 // Dog'lanish: belgilangani ko'rinadi, lekin to'liq bo'yalmaydi.
                 marker === "spotting" && "border-2 border-primary bg-primary/15 text-primary-dark",
-                marker === "predicted" && "bg-primary-light text-primary-dark",
-                !marker && !phaseBg && phase === "menstrual" && "bg-primary-light text-primary-dark",
+                marker === "predicted" && "bg-primary-light text-[color-mix(in_srgb,var(--color-primary-dark)_70%,#000)]",
+                !marker && !phaseBg && phase === "menstrual" && "bg-primary-light text-[color-mix(in_srgb,var(--color-primary-dark)_70%,#000)]",
                 !marker && phaseBg && phaseBg,
                 !marker && !phase && "text-text-secondary hover:bg-surface-muted",
                 isToday ? "border-2 border-dashed border-primary-dark" : isMenstrualDay && "border-2 border-primary-dark",

@@ -269,7 +269,7 @@ export function YordamchiScreen() {
           <h2 className="text-lg font-bold text-text-primary">{dict.chat.aiConsentTitle}</h2>
           <p className="text-sm leading-relaxed text-text-secondary">{dict.chat.aiConsentBody}</p>
           <p className="text-xs text-text-muted">{dict.chat.disclaimer}</p>
-          {aiConsentDeclined && <p className="text-sm font-medium text-warning">{dict.chat.aiConsentDeclined}</p>}
+          {aiConsentDeclined && <p className="text-sm font-medium text-warning-text">{dict.chat.aiConsentDeclined}</p>}
           <Button className="mt-2" onClick={saveAiConsent}>
             {dict.chat.aiConsentAccept}
           </Button>
@@ -277,7 +277,7 @@ export function YordamchiScreen() {
             <button
               type="button"
               onClick={() => setAiConsentDeclined(true)}
-              className="text-center text-sm font-semibold text-text-muted"
+              className="py-2.5 text-center text-sm font-semibold text-text-muted"
             >
               {dict.chat.aiConsentDecline}
             </button>
@@ -357,7 +357,7 @@ export function YordamchiScreen() {
 
       {patterns.length > 0 && (
         <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
-          <p className="text-sm font-bold text-warning">{dict.chat.patternBannerTitle}</p>
+          <p className="text-sm font-bold text-warning-text">{dict.chat.patternBannerTitle}</p>
           <p className="mt-1 text-sm text-text-secondary">{dict.chat.patternBannerBody}</p>
         </div>
       )}
@@ -419,7 +419,7 @@ export function YordamchiScreen() {
                   {m.role === "user" && detectsMedicalConcern(m.content) && (
                     <ChatBubbleEnter className="flex justify-end">
                       <div className="flex max-w-[85%] flex-col gap-2 rounded-2xl rounded-br-sm bg-warning/10 px-4 py-2.5">
-                        <p className="text-xs font-medium text-warning">{dict.chat.medicalConcernBanner}</p>
+                        <p className="text-xs font-medium text-warning-text">{dict.chat.medicalConcernBanner}</p>
                         {/* OVERNIGHT-06 tuzatish: "/klinikalar" — RedirectToAsosiy
                             orqali "/asosiy"ga qaytaradigan ESKI/bekor qilingan
                             yo'l ekan (tirik tekshirishda topildi) — Klinikalar

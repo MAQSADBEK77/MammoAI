@@ -189,7 +189,7 @@ export function PregnancyAlbum({ currentWeek }: { currentWeek: number }) {
               <img src={p.photoUrl} alt="" className="aspect-square w-full object-cover" />
               {/* Bezakli "frame" — Instagram story naqshi, gradient pastki bant + hafta yorlig'i. */}
               <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/55 to-transparent px-2.5 pb-2 pt-6">
-                <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-primary">
+                <span className="rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-bold text-primary-dark">
                   {p.pregnancyWeek ? dict.pregnancy.albumWeekBadge(p.pregnancyWeek) : dict.pregnancy.albumNoWeek}
                 </span>
               </div>

@@ -18,7 +18,7 @@ import { ScreenHeader } from "@/components/ui";
  */
 const ACTION_STYLE: Record<WarningAction, { chip: string; bar: string }> = {
   emergency: { chip: "bg-danger/12 text-danger", bar: "bg-danger" },
-  maternity: { chip: "bg-warning/15 text-warning", bar: "bg-warning" },
+  maternity: { chip: "bg-warning/15 text-warning-text", bar: "bg-warning" },
   today: { chip: "bg-primary/10 text-primary", bar: "bg-primary" },
 };
 

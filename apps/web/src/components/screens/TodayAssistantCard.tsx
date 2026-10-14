@@ -7,7 +7,7 @@ import { Close } from "@mui/icons-material";
 import { useI18n } from "@/lib/i18n";
 import { Emoji } from "@/components/Emoji";
 import { Portal } from "@/components/Portal";
-import { dismissAssistantPeek, useAssistantPeek } from "@/lib/assistant-peek";
+import { dismissAssistantPeek, useAssistantCardPresence, useAssistantPeek } from "@/lib/assistant-peek";
 
 /**
  * TODAY-05 — yordamchining "mo'ralash" oynasi.
@@ -55,6 +55,7 @@ const TAIL_WIDTH = 46;
 export function TodayAssistantCard() {
   const { dict } = useI18n();
   const router = useRouter();
+  useAssistantCardPresence();
   const visible = useAssistantPeek();
   const [revealed, setRevealed] = useState(false);
   const [closing, setClosing] = useState(false);

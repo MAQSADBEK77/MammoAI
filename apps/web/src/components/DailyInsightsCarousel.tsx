@@ -43,7 +43,7 @@ export function DailyInsightsCarousel({ phase }: { phase: CyclePhase | null }) {
           — o'ngdagi xiralashish (fade) "yana bor" signalini beradi,
           scroll-snap esa har doim BUTUN kartaga to'g'ri to'xtaydi (yarim
           karta ko'rinib qolmaydi), tizim scrollbar'i esa yashiringan. */}
-      <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)] [-webkit-mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]">
+      <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)] [-webkit-mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]">
         {ids.map((id, i) => {
           const content = dict.cycle.dailyInsights[id];
           const clickable = DAILY_INSIGHT_LINK[id] === "assistant";

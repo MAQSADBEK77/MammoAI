@@ -593,7 +593,7 @@ function MonthGrid({
           >
             {/* Yorliq maydoni balandligi DOIM band — aks holda "BUGUN"
                 yorlig'i bor qator qolganlardan balandroq bo'lib qolardi. */}
-            <span className="flex h-3.5 items-center text-[9px] font-bold uppercase tracking-wide text-text-primary">
+            <span className="flex h-3.5 items-center text-[10px] font-bold uppercase tracking-wide text-text-primary">
               {isToday ? todayLabel : ""}
             </span>
             <span

@@ -48,8 +48,30 @@ export function dismissAssistantPeek() {
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
-/** `true` — yordamchi hozir "mo'ralab" turibdi (karta ko'rinadi). */
-export function useAssistantPeek(): boolean {
+/**
+ * DESIGN-NAV-01 — karta HAQIQATAN ekrandami. Karta faqat bosh sahifada
+ * (CycleScreen "today") chiziladi, "yopilmagan" holat esa localStorage'da —
+ * ilgari pastki menyudagi yordamchi bandi BOSHQA sahifalarda ham kattalashib,
+ * faol rangda turardi: masalan /vositalar'da ikkala band ham faol
+ * ko'rinib, ayol qaysi sahifada ekanini ajrata olmasdi.
+ */
+let cardsMounted = 0;
+
+/** TodayAssistantCard chaqiradi: mount/unmount bo'lganini bildiradi. */
+export function useAssistantCardPresence() {
+  useEffect(() => {
+    cardsMounted += 1;
+    window.dispatchEvent(new Event(CHANGE_EVENT));
+    return () => {
+      cardsMounted -= 1;
+      window.dispatchEvent(new Event(CHANGE_EVENT));
+    };
+  }, []);
+}
+
+/** `true` — yordamchi hozir "mo'ralab" turibdi (karta ko'rinadi).
+ * `requireCard` — faqat karta shu sahifada chizilgan bo'lsa (pastki menyu). */
+export function useAssistantPeek({ requireCard = false }: { requireCard?: boolean } = {}): boolean {
   // Birinchi renderda DOIM `false` — server va mijoz HTML'i mos kelishi uchun
   // (localStorage faqat brauzerda mavjud). `setTimeout(..., 0)` esa
   // lib/i18n.tsx'dagi bilan bir xil naqsh: holatni effekt tanasida
@@ -57,14 +79,14 @@ export function useAssistantPeek(): boolean {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const sync = () => setVisible(!readDismissed());
+    const sync = () => setVisible(!readDismissed() && (!requireCard || cardsMounted > 0));
     const timeout = setTimeout(sync, 0);
     window.addEventListener(CHANGE_EVENT, sync);
     return () => {
       clearTimeout(timeout);
       window.removeEventListener(CHANGE_EVENT, sync);
     };
-  }, []);
+  }, [requireCard]);
 
   return visible;
 }

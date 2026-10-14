@@ -249,9 +249,10 @@ export function Badge({
   const toneSx: Record<string, object> = {
     muted: { backgroundColor: "var(--color-surface-muted)", color: "var(--color-text-secondary)" },
     success: { backgroundColor: "color-mix(in srgb, var(--color-success) 15%, transparent)", color: "var(--color-success)" },
-    warning: { backgroundColor: "color-mix(in srgb, var(--color-warning) 15%, transparent)", color: "var(--color-warning)" },
+    warning: { backgroundColor: "color-mix(in srgb, var(--color-warning) 15%, transparent)", color: "var(--color-warning-text)" },
     danger: { backgroundColor: "color-mix(in srgb, var(--color-danger) 15%, transparent)", color: "var(--color-danger)" },
-    primary: { backgroundColor: "var(--color-primary-light)", color: "var(--color-primary-dark)" },
+    // DESIGN-A11Y-03: och pushti fonda primary-dark 2.87:1 edi.
+    primary: { backgroundColor: "var(--badge-primary-bg)", color: "var(--color-primary-ink)" },
   };
   return (
     <MuiChip

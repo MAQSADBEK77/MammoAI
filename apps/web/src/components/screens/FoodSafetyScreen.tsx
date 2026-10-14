@@ -29,7 +29,7 @@ const GROUP_ORDER: FoodGroup[] = ["dairy", "meat", "drinks", "produce", "other"]
 
 const VERDICT_STYLE: Record<FoodVerdict, string> = {
   safe: "bg-success/12 text-success",
-  limit: "bg-warning/15 text-warning",
+  limit: "bg-warning/15 text-warning-text",
   avoid: "bg-danger/12 text-danger",
 };
 

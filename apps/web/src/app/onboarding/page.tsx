@@ -2535,7 +2535,7 @@ function LoginStep({ telegramHref }: { telegramHref: string }) {
         >
           <GoogleIcon />
           {dict.auth.googleLogin}
-          <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold uppercase text-text-secondary">
+          <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-bold uppercase text-text-secondary">
             {dict.auth.comingSoon}
           </span>
         </button>

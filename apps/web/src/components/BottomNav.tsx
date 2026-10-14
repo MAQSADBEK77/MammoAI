@@ -37,7 +37,7 @@ export function BottomNav() {
   // "Hamkorimni kuzataman" (partner_tracking) foydalanuvchisida shaxsiy
   // sikl/homiladorlik ma'lumoti yo'q — Jamiyat (hayz/homiladorlik mavzusidagi
   // muhokamalar) ular uchun aloqador emas, shuning uchun ko'rsatilmaydi.
-  const peeking = useAssistantPeek();
+  const peeking = useAssistantPeek({ requireCard: true });
   const isPartnerTracking = onboardingProfile?.primaryGoal === "partner_tracking";
   // MENO-04: klimaks rejimida bosh ekran KALENDAR emas — u yerda sikl
   // bashorati ham, kalendar halqasi ham yo'q (bu davrda ular ma'nosiz).
@@ -162,7 +162,7 @@ export function BottomNav() {
               key={href}
               ref={href === "/yordamchi" ? assistantRef : undefined}
               href={href}
-              className="tap-target flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-1 text-[10px] font-bold transition"
+              className="tap-target flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-1 text-[10px] font-bold transition min-[360px]:text-[11px]"
             >
               {/* O'lcham `font-size` bilan emas, `scale` bilan o'zgaradi:
                   transform GPU'da ishlaydi va qo'shni bandlarni surib

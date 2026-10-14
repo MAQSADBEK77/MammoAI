@@ -379,14 +379,14 @@ export function MenopauseScreen() {
               const labelled = i === 0 || i === history.length - 1;
               return (
                 <div key={a.id} className="flex flex-1 flex-col items-center gap-1">
-                  <span className={clsx("text-[10px] font-bold", labelled ? "text-text-secondary" : "text-transparent")}>
+                  <span className={clsx("text-[11px] font-bold", labelled ? "text-text-secondary" : "text-transparent")}>
                     {a.total}
                   </span>
                   <div
                     className="w-full rounded-t-md bg-primary"
                     style={{ height: `${Math.max(4, (a.total / MRS_TOTAL_MAX) * 64)}px` }}
                   />
-                  <span className={clsx("text-[9px]", labelled ? "text-text-muted" : "text-transparent")}>
+                  <span className={clsx("text-[11px]", labelled ? "text-text-muted" : "text-transparent")}>
                     {shortDate(a.createdAt)}
                   </span>
                 </div>

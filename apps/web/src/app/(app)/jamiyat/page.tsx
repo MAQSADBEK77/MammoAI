@@ -60,7 +60,7 @@ function FilterChip({ active, label, onClick }: { active: boolean; label: string
     <button
       onClick={onClick}
       className={clsx(
-        "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition active:scale-95",
+        "shrink-0 rounded-full border px-3 py-2 text-xs font-medium transition active:scale-95",
         active
           ? "border-primary bg-primary text-white"
           : "border-border bg-surface text-text-secondary hover:border-primary-light hover:bg-primary-light/20 hover:text-primary-dark"
@@ -606,7 +606,7 @@ export default function CommunityPage() {
                 {/* COMM-001: tibbiy-shoshilinch ko'rinishdagi postlarda ogohlantirish —
                     tashxis emas, faqat shifokorga murojaat qilishni eslatish. */}
                 {detectsMedicalConcern(post.body) && (
-                  <p className="rounded-2xl bg-warning/10 px-3 py-2 text-xs font-medium text-warning">{dict.community.medicalConcernBanner}</p>
+                  <p className="rounded-2xl bg-warning/10 px-3 py-2 text-xs font-medium text-warning-text">{dict.community.medicalConcernBanner}</p>
                 )}
 
                 <div className="flex items-center gap-1 border-t border-border pt-2">

@@ -42,7 +42,7 @@ export function SelfCheckCard({ result, onOpen }: { result: RiskQuizResult | nul
                 className={clsx(
                   "shrink-0 rounded-full px-3 py-1 text-xs font-bold",
                   result.level === "high" && "bg-danger/15 text-danger",
-                  result.level === "medium" && "bg-warning/15 text-warning",
+                  result.level === "medium" && "bg-warning/15 text-warning-text",
                   result.level === "low" && "bg-success/15 text-success"
                 )}
               >
@@ -83,12 +83,12 @@ export function ArticlesRow({
     <section className="space-y-2.5">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-bold text-text-primary">{dict.cycle.articlesCardTitle}</h3>
-        <button type="button" onClick={onOpenAll} className="text-sm font-semibold text-primary-dark">
+        <button type="button" onClick={onOpenAll} className="-my-2.5 py-2.5 text-sm font-semibold text-primary-dark">
           {dict.cycle.viewAllLogsLabel}
         </button>
       </div>
 
-      <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
+      <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1">
         {articles.map((a) => (
           <button
             key={a.slug}
@@ -96,7 +96,7 @@ export function ArticlesRow({
             onClick={() => onOpen(a.slug)}
             className="w-52 shrink-0 snap-start rounded-2xl bg-surface p-4 text-left shadow-sm active:scale-[0.98]"
           >
-            <span className="inline-block rounded-full bg-secondary/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-secondary">
+            <span className="inline-block rounded-full bg-secondary/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-secondary">
               {dict.articles.categories[a.category]}
             </span>
             <p className="mt-2 line-clamp-2 text-sm font-bold leading-snug text-text-primary">{content(a.title)}</p>

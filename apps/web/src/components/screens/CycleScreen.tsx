@@ -1043,7 +1043,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
         <div className="flex justify-end">
           <button
             onClick={() => router.push("/profil")}
-            className="tap-target shrink-0 rounded-full bg-warning/15 px-3 py-1.5 text-xs font-bold text-warning"
+            className="tap-target shrink-0 rounded-full bg-warning/15 px-3 py-1.5 text-xs font-bold text-warning-text"
           >
             {dict.gamification.cycleScreenStreakPill(streakDays)}
           </button>
@@ -1233,7 +1233,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
                 <p className="mt-1 text-xs text-text-secondary">{dict.cycle.ovulationSignalPromptBody}</p>
                 <button
                   onClick={() => openLogging(today, todayLog)}
-                  className="tap-target mt-3 rounded-full bg-primary/15 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/25"
+                  className="tap-target mt-3 rounded-full bg-primary/15 px-4 py-2 text-xs font-semibold text-primary-ink transition hover:bg-primary/25"
                 >
                   {dict.cycle.ovulationSignalPromptButton}
                 </button>
@@ -1528,7 +1528,7 @@ export function CycleScreen({ variant = "classic" }: { variant?: CycleScreenVari
         <div className="flex items-center justify-between">
           <p className="text-base font-bold text-text-primary">{dict.cycle.recentLogsTitle}</p>
           {data.logs.length > 3 && (
-            <button type="button" onClick={() => setShowAllLogs((v) => !v)} className="text-sm font-semibold text-primary-dark">
+            <button type="button" onClick={() => setShowAllLogs((v) => !v)} className="-my-2.5 py-2.5 text-sm font-semibold text-primary-dark">
               {dict.cycle.viewAllLogsLabel}
             </button>
           )}

@@ -86,7 +86,7 @@ export function MyCyclesCard({ summary, onLogPeriod }: { summary: CycleSummary; 
               <span
                 className={clsx(
                   "flex shrink-0 items-center gap-1 text-xs font-bold uppercase tracking-wide",
-                  r.ok ? "text-success" : "text-warning"
+                  r.ok ? "text-success" : "text-warning-text"
                 )}
               >
                 {r.ok ? <CheckCircle sx={{ fontSize: 18 }} /> : <ErrorOutlined sx={{ fontSize: 18 }} />}

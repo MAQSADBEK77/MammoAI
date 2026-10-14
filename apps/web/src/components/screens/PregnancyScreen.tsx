@@ -37,7 +37,7 @@ const VITAL_TINT: Record<VitalType, string> = {
   heart_rate: "bg-primary/10 text-primary",
   blood_pressure: "bg-secondary/10 text-secondary",
   weight: "bg-accent/10 text-accent",
-  temperature: "bg-warning/10 text-warning",
+  temperature: "bg-warning/10 text-warning-text",
 };
 
 /** "Asosiy" (/asosiy) sahifasining Homiladorlik-rejim tarkibi — ilgari alohida

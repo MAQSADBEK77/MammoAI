@@ -131,7 +131,7 @@ export function InsightsPanel({
 
       {patterns.length > 0 && (
         <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
-          <p className="text-sm font-bold text-warning">{dict.chat.patternBannerTitle}</p>
+          <p className="text-sm font-bold text-warning-text">{dict.chat.patternBannerTitle}</p>
           <ul className="mt-1.5 flex flex-col gap-0.5">
             {patterns.map((p) => (
               <li key={p.symptom} className="text-sm text-text-secondary">

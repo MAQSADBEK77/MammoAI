@@ -108,7 +108,7 @@ export function DoctorsScreen() {
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-base font-bold leading-snug text-text-primary">{content(d.fullName)}</p>
-                  <p className="text-xs font-semibold text-primary">{specialtyLabel(d.specialty)}</p>
+                  <p className="text-xs font-semibold text-primary-ink">{specialtyLabel(d.specialty)}</p>
                   {d.qualification && <p className="mt-0.5 text-xs text-text-secondary">{d.qualification}</p>}
                   {d.experienceYears !== null && (
                     <p className="text-xs text-text-muted">{t.years(d.experienceYears)}</p>
@@ -124,7 +124,7 @@ export function DoctorsScreen() {
                       <p className="text-[11px] text-text-muted">{t.reviews(d.rating.count)}</p>
                     </>
                   ) : (
-                    <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold text-text-secondary">
+                    <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-bold text-text-secondary">
                       {t.newDoctor}
                     </span>
                   )}

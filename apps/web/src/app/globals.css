@@ -10,7 +10,10 @@
   --color-primary-light: #ffb3cb;
   --color-secondary: #7c3aed;
   --color-secondary-light: #c4b5fd;
-  --color-accent: #0d9488;
+  /* DESIGN-A11Y-01: #0d9488 oq fonda (va oq matn ostida) 3.74:1 edi — WCAG AA
+     4.5:1 talab qiladi. #0f766e — 5.47:1. Qorong'u rejim eski (yorug'roq)
+     qiymatni saqlaydi (pastda), chunki to'q fonda u yaxshiroq. */
+  --color-accent: #0f766e;
   --color-accent-light: #5eead4;
 
   --color-background: #f9fafb;
@@ -21,7 +24,14 @@
   --color-text-secondary: #4b5563;
   /* FIX2-09: #9ca3af oq fonda 2.54:1 kontrast berardi (WCAG AA: 4.5:1 kerak)
      — endi 4.83:1 (dark-mode'da allaqachon ishlatilayotgan xuddi shu soya). */
-  --color-text-muted: #6b7280;
+  /* DESIGN-A11Y-01: #6b7280 kulrang (surface-muted) fonda 4.39:1 edi — #5f6673
+     oq fonda 5.78:1, kulrang fonda 5.25:1. */
+  --color-text-muted: #5f6673;
+  /* DESIGN-A11Y-03: kichik pushti (rejim rangidagi) MATN uchun. `primary`
+     oq fonda 3.58:1, och pushti fonda `primary-dark` ham 2.87:1 edi.
+     primary-dark'ning to'qroq soyasi — har rejimda, har fonda >= 4.9:1.
+     <html>ning data-mode atributi bilan birga hisoblanadi (lib/session.tsx). */
+  --color-primary-ink: color-mix(in srgb, var(--color-primary-dark) 70%, #000);
   --color-border: #e5e7eb;
 
   /* FIX2-08: #57b894 oq fonda 2.42:1 kontrast berardi (WCAG AA: 4.5:1 kerak)
@@ -30,7 +40,12 @@
      to'q fonda (masalan #0b0f17) aksincha kontrastni YOMONLASHTIRARDI. */
   --color-success: #1f7a5c;
   --color-warning: #e7a83f;
-  --color-danger: #e0506f;
+  /* DESIGN-A11Y-02: amber MATN uchun. `text-warning` (#e7a83f) oq fonda
+     2.09:1 edi — "Cheklang", "Majburiy", ogohlantirish bannerlari deyarli
+     o'qilmasdi. Ikonkalar/fon `warning`da qoladi, matn shu tokenda. */
+  --color-warning-text: #92400e;
+  /* DESIGN-A11Y-01: #e0506f oq fonda 3.79:1 edi — #c53a5a 5.09:1. */
+  --color-danger: #c53a5a;
 
   /* "Aurora" kengaytmasi — packages/shared/src/design-tokens.ts bilan bir xil
      qiymatlar (gradients/glass/shadow). Suzuvchi tungi-siyoh navigatsiya paneli
@@ -45,6 +60,8 @@
 }
 
 :root {
+  /* DESIGN-A11Y-03: Badge "primary" — och tint fon + primary-ink matn. */
+  --badge-primary-bg: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
   --font-scale: 1;
   /* Telegram Mini App'da fullscreen rejimida shaffof qolgan sarlavha
      panelidan (yopish/menyu tugmalari) himoya qilish uchun qo'shimcha bo'sh
@@ -109,7 +126,17 @@
   --color-surface-muted: #1f2633;
   --color-text-primary: #f3f4f6;
   --color-text-secondary: #b9c0cc;
-  --color-text-muted: #6b7280;
+  /* DESIGN-A11Y-01: #6b7280 kartada 3.56:1, fonda 3.97:1 edi (AA: 4.5:1) —
+     sarlavha osti matnlari, izohlar va pastki menyu yozuvlari. #8b93a1 —
+     kartada 5.57:1, fonda 6.2:1. */
+  --color-text-muted: #8b93a1;
+  /* Brend ranglarining yorug' rejimdagi to'qroq soyalari to'q fonda
+     kontrastni pasaytirardi — bu yerda eski (yorug'roq) qiymatlar. */
+  --color-accent: #0d9488;
+  --color-danger: #e0506f;
+  --color-warning-text: #e7a83f;
+  --color-primary-ink: color-mix(in srgb, var(--color-primary) 55%, #fff);
+  --badge-primary-bg: color-mix(in srgb, var(--color-primary) 22%, var(--color-surface));
   --color-border: #2a3140;
   /* FIX2-08: :root'dagi --color-success endi to'qroq (light-mode kontrasti
      uchun) — bu to'q fonda kontrastni yomonlashtirardi, shuning uchun

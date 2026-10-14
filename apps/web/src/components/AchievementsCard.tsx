@@ -59,7 +59,7 @@ export function AchievementsCard() {
               >
                 <Emoji e={def.icon} size={20} />
               </div>
-              <p className="text-center text-[9px] font-semibold leading-tight text-text-secondary">{label.name}</p>
+              <p className="text-center text-[11px] font-semibold leading-tight text-text-secondary">{label.name}</p>
             </div>
           );
         })}

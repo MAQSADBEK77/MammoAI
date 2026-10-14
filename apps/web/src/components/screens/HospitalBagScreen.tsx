@@ -92,7 +92,7 @@ export function HospitalBagScreen() {
             <p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{t.bagReadyHint}</p>
           </div>
         ) : (
-          <p className="mt-3 text-xs font-semibold text-warning">{t.bagMissing(progress.missingEssential.length)}</p>
+          <p className="mt-3 text-xs font-semibold text-warning-text">{t.bagMissing(progress.missingEssential.length)}</p>
         )}
       </div>
 
@@ -121,7 +121,7 @@ export function HospitalBagScreen() {
                     {t.bagList[item.id as keyof typeof t.bagList]}
                   </span>
                   {item.essential && !on && (
-                    <span className="bg-warning/15 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold text-warning">
+                    <span className="bg-warning/15 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold text-warning-text">
                       {t.bagEssential}
                     </span>
                   )}

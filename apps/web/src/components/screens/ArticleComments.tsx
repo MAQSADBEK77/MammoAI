@@ -91,8 +91,8 @@ export function ArticleComments({ slug }: { slug: string }) {
           className="w-full resize-none rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-primary"
         />
         <div className="flex items-center justify-between gap-3">
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="h-4 w-4 accent-primary" />
+          <label className="flex items-center gap-2 py-2 text-sm text-text-secondary">
+            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="h-5 w-5 accent-primary" />
             {dict.community.postAnonymouslyLabel}
           </label>
           <Button onClick={submit} disabled={!draft.trim() || sending}>
