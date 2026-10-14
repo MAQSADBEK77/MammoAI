@@ -313,7 +313,7 @@ export function PregnancyScreen() {
         todayLabel={dict.cycle.todayLabel}
         week={status.currentWeek}
         sizeIcon={milestone.icon}
-        weekDayLabel={dict.pregnancy.weekDayLabel(status.currentWeek, status.currentDay)}
+        weekDayLabel={dict.pregnancy.weekDayLabel(status.completedWeeks, status.currentDay)}
         detailsLabel={dict.pregnancy.detailsButton}
         onOpenDetails={() => setShowWeekDetails(true)}
         menuLabel={dict.common.openMenu}
@@ -349,7 +349,7 @@ export function PregnancyScreen() {
         </div>
 
         <div className="flex justify-center gap-3">
-          <FloatingTag icon={<CalendarClock sx={{ fontSize: 18 }} className="text-pregnancy-accent" />} value={String(status.currentWeek)} label={dict.pregnancy.completedWeekLabel} />
+          <FloatingTag icon={<CalendarClock sx={{ fontSize: 18 }} className="text-pregnancy-accent" />} value={String(status.completedWeeks)} label={dict.pregnancy.completedWeekLabel} />
           <FloatingTag icon={<Hourglass sx={{ fontSize: 18 }} className="text-pregnancy-accent" />} value={String(weeksRemaining)} label={dict.pregnancy.remainingWeekLabel} />
         </div>
 

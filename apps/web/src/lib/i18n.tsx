@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { dictionaries, type Dictionary, type Language } from "@mammoai/shared";
+import { dictionaries, transliterateContentUz, type Dictionary, type Language } from "@mammoai/shared";
 
 const STORAGE_KEY = "mammoai_language";
 
@@ -15,7 +15,13 @@ interface I18nContextValue {
   language: Language;
   dict: Dictionary;
   setLanguage: (lang: Language) => void;
+  /** QA-I18N-01: bazadan kelgan (lotin yozuvidagi) kontentni joriy yozuvga
+   * moslaydi — kirillda o'giradi, boshqa tillarda o'zgarishsiz qaytaradi.
+   * Faqat bazadagi matn uchun: lug'at (`dict`) allaqachon to'g'ri yozuvda. */
+  content: (text: string) => string;
 }
+
+const asIs = (text: string) => text;
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
@@ -52,7 +58,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [language]);
 
   const value = useMemo<I18nContextValue>(
-    () => ({ language, dict: dictionaries[language], setLanguage }),
+    () => ({ language, dict: dictionaries[language], setLanguage, content: language === "uz-cyrl" ? transliterateContentUz : asIs }),
     [language, setLanguage]
   );
 

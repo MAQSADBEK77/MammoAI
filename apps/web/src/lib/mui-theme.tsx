@@ -60,10 +60,15 @@ export function MuiThemeProvider({ children }: { children: ReactNode }) {
             defaultProps: { elevation: 0 },
           },
           // globals.css'dagi `body` qoidasi (fon rangi, yuqori kontrast/shrift
-          // o'lchami reaktivligi) yagona manba bo'lib qolishi uchun MUI'ning
-          // o'z fon-rangini o'chiramiz.
+          // o'lchami reaktivligi) yagona manba bo'lib qolishi uchun MUI ham
+          // o'sha tokenni ishlatadi.
+          //
+          // QA-DARK-01: ilgari bu yerda "transparent" edi. CssBaseline
+          // globals.css'dan KEYIN yuklanib, `body` fonini o'chirib qo'yardi —
+          // `bg-background` o'rami bo'lmagan sahifalarda (/kirish, /maxfiylik)
+          // qorong'u rejimda oq fon ustida oq matn chiqardi.
           MuiCssBaseline: {
-            styleOverrides: { body: { backgroundColor: "transparent" } },
+            styleOverrides: { body: { backgroundColor: "var(--color-background)" } },
           },
         },
       }),

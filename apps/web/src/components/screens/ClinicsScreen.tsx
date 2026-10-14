@@ -7,13 +7,11 @@ import {
   NavigationOutlined as NavigationIcon,
   PlaceOutlined,
   VerifiedUserOutlined,
-  Star,
-  AccessTimeOutlined,
   PhoneOutlined,
   MyLocationOutlined,
 } from "@mui/icons-material";
 import type { Clinic, ClinicSpecialty } from "@mammoai/shared";
-import { getClinicRating, getClinicHours, isTopClinic, haversineDistanceKm } from "@mammoai/shared";
+import { haversineDistanceKm } from "@mammoai/shared";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { Badge, Card, LinkButton, LoadingSpinner, ErrorState, ScreenHeader, SegmentedControl, StatTile } from "@/components/ui";
@@ -39,7 +37,7 @@ const SPECIALTIES: ClinicSpecialty[] = [
 /** "Asosiy" (/asosiy) sahifasining Klinikalar bo'limi — ilgari alohida
  * /klinikalar sahifasi edi, endi Asosiy ichiga bo'lim sifatida qo'shildi. */
 export function ClinicsScreen() {
-  const { dict } = useI18n();
+  const { dict, content } = useI18n();
   const searchParams = useSearchParams();
   const checklistItemId = searchParams.get("checklistItemId");
   // CONCERN-01: "Muammolar" ekranidan kelganda kerakli mutaxassis oldindan
@@ -113,13 +111,14 @@ export function ClinicsScreen() {
     const base = (clinics ?? []).filter(
       (c) =>
         (filter === "all" || c.specialties.includes(filter)) &&
-        (!q || c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q))
+        // QA-I18N-01: kirillda ko'rsatilgan nom bo'yicha qidirilsa ham topilsin.
+        (!q || [c.name, c.address, content(c.name), content(c.address)].some((v) => v.toLowerCase().includes(q)))
     );
     if (nearestMode !== "on" || !userCoords) return base;
     return [...base].sort(
       (a, b) => haversineDistanceKm(userCoords, { lat: a.lat, lng: a.lng }) - haversineDistanceKm(userCoords, { lat: b.lat, lng: b.lng })
     );
-  }, [clinics, filter, search, nearestMode, userCoords]);
+  }, [clinics, filter, search, nearestMode, userCoords, content]);
 
   if (loadError) {
     return <ErrorState message={dict.common.errorGeneric} retry={{ label: dict.common.retryButton, onClick: load }} />;
@@ -200,24 +199,16 @@ export function ClinicsScreen() {
       ) : (
         <div className="space-y-3">
           {filtered.map((clinic) => {
-            const rating = getClinicRating(clinic.id);
-            const isTop = isTopClinic(rating);
             const distanceKm = nearestMode === "on" && userCoords ? haversineDistanceKm(userCoords, { lat: clinic.lat, lng: clinic.lng }) : null;
             return (
               <Card key={clinic.id} className="space-y-3" onMouseEnter={() => track(clinic, "view")}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1.5">
-                    {isTop && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-primary-light/60 px-2.5 py-1 text-xs font-bold text-primary-dark">
-                        <Star sx={{ fontSize: 14 }} /> {dict.clinics.topClinicBadge}
-                      </span>
-                    )}
-                    <p className="font-bold text-text-primary">{clinic.name}</p>
-                  </div>
-                  <span className="flex shrink-0 items-center gap-1 pt-1 text-sm font-bold text-text-primary">
-                    <Star sx={{ fontSize: 16 }} className="text-warning" /> {rating.toFixed(1)}
-                  </span>
-                </div>
+                {/* QA-CLINIC-01: reyting, "Top klinika" belgisi va ish vaqti
+                    OLIB TASHLANDI — ular klinika id'sidan hisoblangan soxta
+                    qiymatlar edi (clinic-display.ts), "namunaviy" degan
+                    ogohlantirishsiz haqiqiydek ko'rsatilardi. Ayol noto'g'ri
+                    vaqtda klinikaga borishi mumkin edi. Haqiqiy reyting/soat
+                    ustunlari bazaga qo'shilganda qaytariladi. */}
+                <p className="font-bold text-text-primary">{content(clinic.name)}</p>
 
                 <div className="flex flex-wrap gap-1.5">
                   {clinic.freeScreening && <Badge tone="success">{dict.clinics.freeScreeningBadge}</Badge>}
@@ -228,14 +219,9 @@ export function ClinicsScreen() {
                   )}
                 </div>
 
-                <div className="space-y-1">
-                  <p className="flex items-center gap-1.5 text-sm text-text-secondary">
-                    <PlaceOutlined sx={{ fontSize: 16 }} className="shrink-0 text-text-muted" /> {clinic.address}
-                  </p>
-                  <p className="flex items-center gap-1.5 text-sm text-text-secondary">
-                    <AccessTimeOutlined sx={{ fontSize: 16 }} className="shrink-0 text-text-muted" /> {getClinicHours(clinic.id)}
-                  </p>
-                </div>
+                <p className="flex items-center gap-1.5 text-sm text-text-secondary">
+                  <PlaceOutlined sx={{ fontSize: 16 }} className="shrink-0 text-text-muted" /> {content(clinic.address)}
+                </p>
 
                 <div className="flex flex-wrap gap-1.5">
                   {clinic.specialties.map((s) => (

@@ -150,6 +150,28 @@ export function latinToCyrillicUz(text: string): string {
   return result;
 }
 
+/**
+ * QA-I18N-01 — bazadagi lotin yozuvidagi KONTENT (maqola, klinika, shifokor)
+ * uchun. Lug'at (`uz-cyrl.ts`) avtomatik o'giriladi, bazadagi matn esa
+ * o'girilmasdi — kirill tanlagan ayol interfeysni kirillda, maqolani esa
+ * lotinda ko'rardi.
+ *
+ * `latinToCyrillicUz`dan farqi: so'zma-so'z ishlaydi va o'zbekcha bo'lmagan
+ * so'zga tegmaydi — aks holda "HPV" -> "ҲПВ", "City Medical" -> buzuq matn:
+ * - katta harfli qisqartmalar (HPV, PCOS, NIAM) — lotinchada qoladi;
+ * - ichida katta harf bor brendlar (MammoAI, iPhone) — lotinchada qoladi;
+ * - o'zbek lotin alifbosida yo'q harfli so'zlar (c — "ch"dan tashqari, w) —
+ *   inglizcha nom, lotinchada qoladi.
+ */
+export function transliterateContentUz(text: string): string {
+  return text.replace(/[A-Za-z][A-Za-z'ʻʼ‘’`´]*/g, (word) => {
+    if (word.length >= 2 && word === word.toUpperCase()) return word;
+    if (/[a-z][A-Z]/.test(word)) return word;
+    if (/w|c(?!h)/i.test(word)) return word;
+    return latinToCyrillicUz(word);
+  });
+}
+
 /** Berilgan obyektni (satr/funksiya/massiv/ichma-ich obyektlar) chuqur aylanib,
  * har bir matn qiymatini (va funksiya natijasini) kirillga o'giradi — shu
  * orqali `uz.ts` lug'ati bilan bir xil shaklda yangi lug'at hosil bo'ladi. */

@@ -22,7 +22,7 @@ import { Card, LoadingSpinner, ScreenHeader } from "@/components/ui";
  *      yuqori turmaydi (packages/shared/logic/doctor-rating.ts).
  */
 export function DoctorsScreen() {
-  const { dict } = useI18n();
+  const { dict, content } = useI18n();
   const t = dict.doctors;
   const [doctors, setDoctors] = useState<DoctorListItem[] | null>(null);
   const [specialty, setSpecialty] = useState<string | null>(null);
@@ -107,7 +107,7 @@ export function DoctorsScreen() {
             <Card key={d.id} className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-bold leading-snug text-text-primary">{d.fullName}</p>
+                  <p className="text-base font-bold leading-snug text-text-primary">{content(d.fullName)}</p>
                   <p className="text-xs font-semibold text-primary">{specialtyLabel(d.specialty)}</p>
                   {d.qualification && <p className="mt-0.5 text-xs text-text-secondary">{d.qualification}</p>}
                   {d.experienceYears !== null && (

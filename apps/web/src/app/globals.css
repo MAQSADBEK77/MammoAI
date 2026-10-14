@@ -288,6 +288,12 @@ body {
   background: linear-gradient(135deg, #fde6ef 0%, #efe7fc 100%);
 }
 
+/* QA-DARK-02: qorong'u rejimda matn och rangga o'tadi, fon esa och pushti
+   qolib, "Birgalikda kuzating" sarlavhasi (HamkorScreen) ko'rinmay qolardi. */
+[data-theme="dark"] .bg-aurora-hero {
+  background: linear-gradient(135deg, #3b1d2b 0%, #2a2142 100%);
+}
+
 .bg-aurora-cycle {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 }

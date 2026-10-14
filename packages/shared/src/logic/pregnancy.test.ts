@@ -20,6 +20,14 @@ describe("dueDateFromLmp / lmpFromDueDate", () => {
 });
 
 describe("getPregnancyStatus", () => {
+  it("muddat: to'liq haftalar + kunlar (8+5), tartib raqami esa 9-hafta", () => {
+    // LMP 14-avgust, bugun 14-oktabr = 61 kun = 8 hafta 5 kun.
+    const status = getPregnancyStatus({ lastMenstrualPeriod: "2026-08-14", dueDate: null }, "2026-10-14");
+    expect(status?.completedWeeks).toBe(8);
+    expect(status?.currentDay).toBe(5);
+    expect(status?.currentWeek).toBe(9);
+  });
+
   it("LMP va due date ikkalasi ham bo'lmasa null qaytaradi", () => {
     expect(getPregnancyStatus({ lastMenstrualPeriod: null, dueDate: null })).toBeNull();
   });

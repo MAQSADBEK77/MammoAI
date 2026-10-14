@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { latinToCyrillicUz } from "./transliterate";
+import { latinToCyrillicUz, transliterateContentUz } from "./transliterate";
 
 describe("latinToCyrillicUz — asosiy qoidalar", () => {
   it("digraflar va tutuq belgisi", () => {
@@ -54,5 +54,24 @@ describe("yo' — digraf emas, 'y' + 'o''", () => {
   it("yog' va yo'g'on — farq tutuq belgisining O'RNIDA", () => {
     expect(latinToCyrillicUz("yog'")).toBe("ёғ");
     expect(latinToCyrillicUz("yo'g'on")).toBe("йўғон");
+  });
+});
+
+describe("transliterateContentUz — bazadagi kontent", () => {
+  it("o'zbekcha matnni kirillga o'giradi", () => {
+    expect(transliterateContentUz("Bachadon bo'yni saratoni skriningi: nima uchun va qanday")).toBe(
+      "Бачадон бўйни саратони скрининги: нима учун ва қандай"
+    );
+    expect(transliterateContentUz("Toshkent sh., Bobur ko'chasi 100")).toBe("Тошкент ш., Бобур кўчаси 100");
+  });
+
+  it("qisqartmalar, brendlar va inglizcha nomlar lotinchada qoladi", () => {
+    expect(transliterateContentUz("HPV va PCOS haqida")).toBe("HPV ва PCOS ҳақида");
+    expect(transliterateContentUz("MammoAI ilovasi")).toBe("MammoAI иловаси");
+    expect(transliterateContentUz("City Medical Center")).toBe("City Medical Center");
+  });
+
+  it("raqam, tinish belgisi va emoji o'zgarmaydi", () => {
+    expect(transliterateContentUz("7–8 yil — 🌸 (2 kun)")).toBe("7–8 йил — 🌸 (2 кун)");
   });
 });

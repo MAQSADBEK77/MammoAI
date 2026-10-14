@@ -5258,10 +5258,14 @@ export async function listChatMessages(userId: string, limit = 50): Promise<Chat
  *
  * KUNLIK limitdan (chat_daily_usage) farqi: bu UMRBOD hisoblagich va
  * hech qachon nolga qaytmaydi. */
-export async function countUserChatMessages(userId: string): Promise<number> {
+/** QA-CHAT-01: JAVOB OLINGAN xabarlar soni (bepul limit uchun). Ilgari
+ * foydalanuvchi xabarlari sanalardi — AI ishlamay qolganda xabar saqlanib
+ * qolardi (ataylab, yo'qolmasin deb), lekin javobsiz urinish ham 5 ta
+ * bepul xabardan birini yeb qo'yardi. Endi faqat javob sanaladi. */
+export async function countAnsweredChatMessages(userId: string): Promise<number> {
   await ensureSchema();
   const rows = (await sql`
-    SELECT count(*)::int AS count FROM chat_messages WHERE user_id = ${userId} AND role = 'user'
+    SELECT count(*)::int AS count FROM chat_messages WHERE user_id = ${userId} AND role = 'assistant'
   `) as unknown as { count: number }[];
   return rows[0]?.count ?? 0;
 }

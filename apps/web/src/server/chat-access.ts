@@ -10,7 +10,7 @@
 // Bepul xabarlar UMRBOD (har kuni yangilanmaydi) — aks holda bu Premiumning
 // o'rnini bosuvchi bepul tarifga aylanib qolardi.
 
-import { countUserChatMessages, hasPremiumAccess } from "./repo";
+import { countAnsweredChatMessages, hasPremiumAccess } from "./repo";
 
 export const FREE_MESSAGE_ALLOWANCE = 5;
 
@@ -25,7 +25,7 @@ export interface ChatAccess {
 }
 
 export async function getChatAccess(userId: string): Promise<ChatAccess> {
-  const [hasPremium, used] = await Promise.all([hasPremiumAccess(userId), countUserChatMessages(userId)]);
+  const [hasPremium, used] = await Promise.all([hasPremiumAccess(userId), countAnsweredChatMessages(userId)]);
   const freeMessagesLeft = Math.max(FREE_MESSAGE_ALLOWANCE - used, 0);
   return {
     hasPremium,

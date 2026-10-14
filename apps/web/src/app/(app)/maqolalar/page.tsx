@@ -11,7 +11,7 @@ import { Badge, Card, EmptyState, ErrorState, LoadingSpinner, ScreenHeader, Segm
 type Tab = "all" | "saved";
 
 export default function ArticlesPage() {
-  const { dict } = useI18n();
+  const { dict, content } = useI18n();
   const [articles, setArticles] = useState<Article[] | null>(null);
   // UX-01: `.catch()` YO'Q edi — so'rov yiqilsa `articles` hech qachon
   // to'lmasdi va sahifa ABADIY "yuklanmoqda" holatida qotib qolardi.
@@ -110,8 +110,8 @@ export default function ArticlesPage() {
               <div className="flex items-start gap-3 p-4">
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <Badge>{dict.articles.categories[article.category]}</Badge>
-                  <p className="font-semibold text-text-primary">{article.title}</p>
-                  <p className="line-clamp-2 text-sm text-text-secondary">{article.excerpt}</p>
+                  <p className="font-semibold text-text-primary">{content(article.title)}</p>
+                  <p className="line-clamp-2 text-sm text-text-secondary">{content(article.excerpt)}</p>
                 </div>
                 <ChevronRight sx={{ fontSize: 18 }} className="mt-1 shrink-0 text-text-muted" />
               </div>

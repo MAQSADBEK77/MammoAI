@@ -12,7 +12,7 @@ import { Badge, Card, LoadingSpinner, ErrorState, Toast } from "@/components/ui"
 import { ArticleComments } from "@/components/screens/ArticleComments";
 
 export default function ArticleDetailPage() {
-  const { dict } = useI18n();
+  const { dict, content } = useI18n();
   const params = useParams<{ slug: string }>();
   const [article, setArticle] = useState<Article | null>(null);
   // WEB3-11: ClinicsScreen'dagi FIX-UX-08 bilan bir xil naqsh — .catch()
@@ -86,7 +86,7 @@ export default function ArticleDetailPage() {
           )}
         </button>
       </div>
-      <h1 className="text-2xl font-bold text-text-primary">{article.title}</h1>
+      <h1 className="text-2xl font-bold text-text-primary">{content(article.title)}</h1>
 
       {/* CONTENT-01: kim tekshirgani va qancha vaqt olishi — sarlavha
           ostida, matndan OLDIN. Sog'liq kontentida "kimning so'zi" degan
@@ -95,8 +95,8 @@ export default function ArticleDetailPage() {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted">
         {article.authorName && (
           <span className="font-semibold text-text-secondary">
-            {article.authorName}
-            {article.authorCredential && <span className="font-normal text-text-muted">, {article.authorCredential}</span>}
+            {content(article.authorName)}
+            {article.authorCredential && <span className="font-normal text-text-muted">, {content(article.authorCredential)}</span>}
           </span>
         )}
         <span>{dict.articles.readingTime(article.readingMinutes)}</span>
@@ -112,7 +112,7 @@ export default function ArticleDetailPage() {
       )}
 
       <Card>
-        <ArticleBody body={article.body} />
+        <ArticleBody body={content(article.body)} />
       </Card>
 
       {article.sources.length > 0 && (
@@ -150,7 +150,7 @@ export default function ArticleDetailPage() {
               {picks.map((a) => (
                 <Link key={a.slug} href={`/maqolalar/${a.slug}`} className="block">
                   <div className="rounded-2xl bg-surface-muted px-4 py-3 transition active:scale-[0.99]">
-                    <p className="text-sm font-bold leading-snug text-text-primary">{a.title}</p>
+                    <p className="text-sm font-bold leading-snug text-text-primary">{content(a.title)}</p>
                     <p className="mt-0.5 text-xs text-text-muted">
                       {dict.articles.categories[a.category]} · {dict.articles.readingTime(a.readingMinutes)}
                     </p>

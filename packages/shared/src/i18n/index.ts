@@ -9,7 +9,7 @@ import { ApiError } from "../api-client";
 export const dictionaries: Record<Language, Dictionary> = { uz, "uz-cyrl": uzCyrl, ru, en };
 export type { Dictionary };
 export { uz, ru, en, uzCyrl };
-export { latinToCyrillicUz } from "./transliterate";
+export { latinToCyrillicUz, transliterateContentUz } from "./transliterate";
 
 /**
  * FIX2-20: server validatsiya/limit xatolarini o'zbekcha xom matn o'rniga

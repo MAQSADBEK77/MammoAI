@@ -61,12 +61,17 @@ const SETTING_KEY = "gemini_api_key";
 // necha barobar oshiradi. Tartib: eng yangi (sifatliroq) birinchi.
 // `-latest` taxallusi birinchi — u doim joriy tavsiya etilganga ishora
 // qiladi va model eskirganda ro'yxat o'z-o'zidan yangilanadi.
+// AI-TIMEOUT-01: O'LCHANGAN (2026-10-14) — `gemini-flash-latest` va
+// `gemini-3.7-flash` javob bermay osilib turadi, qolganlari ~2 s'da javob
+// beradi. Ular ro'yxat OXIRIGA surildi: aks holda har bir yangi (sovuq)
+// server instansiyasida ayol birinchi javobni ~30 s kutardi (2 × timeout).
+// Tiklansa — tartibni qaytarish mumkin.
 const GEMINI_MODELS = [
-  "gemini-flash-latest",
-  "gemini-3.7-flash",
   "gemini-3.6-flash",
   "gemini-3.5-flash",
   "gemini-3.1-flash-lite",
+  "gemini-flash-latest",
+  "gemini-3.7-flash",
 ];
 export type AiProvider = "gemini" | "huawei_maas" | "anthropic";
 export const AI_PROVIDERS: AiProvider[] = ["gemini", "huawei_maas", "anthropic"];
@@ -94,6 +99,17 @@ const MAX_TOKENS = 2048;
 // keladi (~2s), ya'ni kutish qimmat emas.
 const MAX_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1200;
+// AI-TIMEOUT-01: so'rov uchun qattiq chegara. Ilgari `fetch`da timeout YO'Q
+// edi — O'LCHANGAN (2026-10-14): `gemini-flash-latest` va `gemini-3.7-flash`
+// umuman javob qaytarmay osilib turadi (25 s'dan keyin ham), qolgan
+// modellar ~2 s'da javob beradi. Timeout'siz zanjir birinchi modelda abadiy
+// qotib, ayol "Yozmoqda..." ni cheksiz ko'rardi. Oddiy javob 2–6 s.
+const REQUEST_TIMEOUT_MS = 15_000;
+// Osilib qolgan/ishlamagan modelni shu muddat davomida chetlab o'tamiz —
+// aks holda HAR bir xabar o'sha 15 s'ni qayta kutardi (instansiya issiq
+// turgan paytda modul xotirasi saqlanadi).
+const MODEL_COOLDOWN_MS = 10 * 60_000;
+const modelCooldownUntil = new Map<string, number>();
 const CONTEXT_LOG_LIMIT = 6; // oxirgi N ta kunlik yozuv — system promptga to'liq tafsilot bilan
 const PATTERN_WINDOW_DAYS = 90;
 const PATTERN_MIN_OCCURRENCES = 3;
@@ -320,8 +336,13 @@ async function postWithRetry(provider: AiProvider, url: string, init: RequestIni
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     let res: Response;
     try {
-      res = await fetch(url, init);
+      res = await fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
     } catch (error) {
+      // AI-TIMEOUT-01: javob kelmadi — qayta urinish befoyda (o'sha model
+      // yana osiladi), darhol keyingi modelga/provayderga o'tamiz.
+      if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+        throw new ProviderDownError(provider, `${REQUEST_TIMEOUT_MS / 1000} s ichida javob bermadi`);
+      }
       // Tarmoq darajasidagi uzilish — javob umuman kelmadi.
       if (attempt === MAX_ATTEMPTS) throw new ProviderDownError(provider, `tarmoq xatosi: ${String(error)}`);
       await sleep(RETRY_DELAY_MS);
@@ -370,11 +391,20 @@ export async function callGemini(systemPrompt: string, history: AiHistory): Prom
   if (!apiKey) throw new ProviderDownError("gemini", "API kaliti sozlanmagan");
 
   const failures: string[] = [];
-  for (const model of GEMINI_MODELS) {
+  // AI-TIMEOUT-01: yaqinda ishlamagan modellar oxiriga suriladi (butunlay
+  // tashlanmaydi — hammasi "sovish"da bo'lsa ham urinib ko'riladi).
+  const nowMs = Date.now();
+  const ordered = [...GEMINI_MODELS].sort(
+    (a, b) => Number((modelCooldownUntil.get(a) ?? 0) > nowMs) - Number((modelCooldownUntil.get(b) ?? 0) > nowMs)
+  );
+  for (const model of ordered) {
     try {
-      return await callGeminiModel(apiKey, model, systemPrompt, history);
+      const text = await callGeminiModel(apiKey, model, systemPrompt, history);
+      modelCooldownUntil.delete(model);
+      return text;
     } catch (error) {
       if (!(error instanceof ProviderDownError)) throw error;
+      modelCooldownUntil.set(model, Date.now() + MODEL_COOLDOWN_MS);
       failures.push(`${model}: ${error.detail}`);
     }
   }

@@ -76,7 +76,7 @@ export function ArticlesRow({
   onOpen: (slug: string) => void;
   onOpenAll: () => void;
 }) {
-  const { dict } = useI18n();
+  const { dict, content } = useI18n();
   if (articles.length === 0) return null;
 
   return (
@@ -99,8 +99,8 @@ export function ArticlesRow({
             <span className="inline-block rounded-full bg-secondary/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-secondary">
               {dict.articles.categories[a.category]}
             </span>
-            <p className="mt-2 line-clamp-2 text-sm font-bold leading-snug text-text-primary">{a.title}</p>
-            <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-text-secondary">{a.excerpt}</p>
+            <p className="mt-2 line-clamp-2 text-sm font-bold leading-snug text-text-primary">{content(a.title)}</p>
+            <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-text-secondary">{content(a.excerpt)}</p>
           </button>
         ))}
       </div>

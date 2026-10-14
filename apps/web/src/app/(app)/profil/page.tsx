@@ -78,7 +78,7 @@ function resizeImageToDataUri(file: File): Promise<string> {
 export default function ProfilePage() {
   const { dict, language, setLanguage } = useI18n();
   const confirm = useConfirm();
-  const { user, onboardingProfile, refresh } = useSession();
+  const { user, onboardingProfile, refresh, resolvedTheme } = useSession();
   const router = useRouter();
   const isIOSApp = useIsIOSApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -458,7 +458,12 @@ export default function ProfilePage() {
                   }}
                 >
                   <Emoji e={icon} size={22} />
-                  <span className="text-xs font-semibold" style={{ color: active ? accent.primaryDark : "var(--color-text-secondary)" }}>
+                  {/* QA-DARK-03: qorong'u rejimda to'q pushti matn pushti fonda
+                      deyarli ko'rinmasdi — u yerda asosiy matn rangi. */}
+                  <span
+                    className="text-xs font-semibold"
+                    style={{ color: active ? (resolvedTheme === "dark" ? "var(--color-text-primary)" : accent.primaryDark) : "var(--color-text-secondary)" }}
+                  >
                     {dict.profile.modes[goal as keyof typeof dict.profile.modes]}
                   </span>
                 </button>

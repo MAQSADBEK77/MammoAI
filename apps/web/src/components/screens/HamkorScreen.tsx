@@ -19,7 +19,7 @@ import { Button, Card, LoadingSpinner, ErrorState, ScreenHeader, Badge, Toast } 
 import { Emoji } from "@/components/Emoji";
 import { RegisterGate } from "@/components/RegisterGate";
 import { PartnerChatDialog } from "./PartnerChatDialog";
-import { getTelegramWebApp } from "@/lib/telegram";
+import { getTelegramWebApp, isTelegramContext } from "@/lib/telegram";
 
 /**
  * "Hamkor" bo'limi — Figma referens (https://www.figma.com/make/M7nwCcQDmwjZsaadesxS88)
@@ -184,7 +184,10 @@ export function HamkorScreen() {
     const webApp = getTelegramWebApp();
 
     // Telegram ichida — Telegram'ning o'z ulashish oynasi.
-    if (webApp?.openTelegramLink) {
+    // QA-PARTNER-01: `isTelegramContext` SHART — SDK har sahifada yuklanib
+    // `openTelegramLink`ni brauzerda ham beradi; ilgari oddiy brauzer va iOS
+    // ilovasida tizim ulashish oynasi o'rniga t.me/share'ga otib yuborilardi.
+    if (webApp?.openTelegramLink && isTelegramContext(webApp)) {
       webApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`);
       return;
     }
@@ -202,7 +205,11 @@ export function HamkorScreen() {
       await navigator.clipboard.writeText(`${text} ${url}`);
       flashMessage(dict.partner.inviteLinkCopied);
     } catch {
+      // QA-PARTNER-02: "kodni qo'lda ko'chiring" deyilardi, lekin kod ekranda
+      // YO'Q edi — boshi berk ko'cha. Endi kod ko'rinadigan oyna ochiladi.
+      // (iOS WebView'da nusxalash `await`dan keyin rad etiladi — bu nazariy emas.)
       flashMessage(dict.partner.copyFailed, "error");
+      setConnectOpen(true);
     }
   }
 

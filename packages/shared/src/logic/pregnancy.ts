@@ -50,7 +50,12 @@ export function checkDueDate(dueDate: string, today: string): PregnancyDateProbl
 export interface PregnancyStatus {
   dueDate: string;
   lastMenstrualPeriod: string;
-  currentWeek: number; // 1-42
+  currentWeek: number; // 1-42 — NECHANCHI haftada (haftalik kontent shu bo'yicha)
+  /** QA-PREG-01: TO'LIQ o'tgan haftalar (homiladorlik muddati "8 hafta 5 kun"
+   * = 8+5). Ilgari ekranda `currentWeek` (tartib raqami, 9) + `currentDay`
+   * birlashtirilib "9 hafta, 5 kun" deb ko'rsatilardi — muddat bir hafta
+   * KO'P chiqardi. "O'tgan hafta" plitkasi ham shu xatoni takrorlardi. */
+  completedWeeks: number;
   currentDay: number; // shu hafta ichidagi kun, 0-6
   trimester: 1 | 2 | 3;
   daysRemaining: number;
@@ -65,12 +70,13 @@ export function getPregnancyStatus(
   if (!lmp || !dueDate) return null;
 
   const elapsedDays = Math.max(0, daysBetween(lmp, today));
-  const currentWeek = Math.min(42, Math.floor(elapsedDays / 7) + 1);
+  const completedWeeks = Math.min(42, Math.floor(elapsedDays / 7));
+  const currentWeek = Math.min(42, completedWeeks + 1);
   const currentDay = elapsedDays % 7;
   const trimester: 1 | 2 | 3 = currentWeek <= 13 ? 1 : currentWeek <= 27 ? 2 : 3;
   const daysRemaining = Math.max(0, daysBetween(today, dueDate));
 
-  return { dueDate, lastMenstrualPeriod: lmp, currentWeek, currentDay, trimester, daysRemaining };
+  return { dueDate, lastMenstrualPeriod: lmp, currentWeek, completedWeeks, currentDay, trimester, daysRemaining };
 }
 
 // ---------------------------------------------------------------------------
