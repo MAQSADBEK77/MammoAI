@@ -1385,7 +1385,7 @@ const uz = {
   riskQuiz: {
     title: "O'z-o'zini tekshirish testi",
     disclaimer:
-      "Bu tibbiy tashxis emas — faqat umumiy xavf omillariga asoslangan yo'naltiruvchi test. Aniq baholash uchun shifokorga murojaat qiling.",
+      "Bu tibbiy tashxis emas va xavf bahosi ham emas — javoblaringizga qarab shifokor bilan nimani muhokama qilishni tavsiya qiladigan yo'naltiruvchi so'rovnoma.",
     startButton: "Testni boshlash",
     submitButton: "Natijani ko'rish",
     questions: {
@@ -1399,9 +1399,11 @@ const uz = {
     },
     resultTitle: "Natijangiz",
     levels: {
-      low: { label: "Past xavf", description: "Hozircha alohida xavf omillari aniqlanmadi. Muntazam tekshiruvlarni davom ettiring." },
-      medium: { label: "O'rtacha xavf", description: "Ba'zi xavf omillari mavjud — yaqin oylarda ginekolog bilan maslahatlashish tavsiya etiladi." },
-      high: { label: "Yuqori xavf", description: "Bir nechta xavf omillari aniqlandi — imkon qadar tezroq shifokorga murojaat qiling." },
+      // QA-RISK-01: daraja ("Past/O'rtacha/Yuqori xavf") emas, TAVSIYA — ilova
+      // xavf bahosi bermaydi (Play listing va Health deklaratsiyasiga mos).
+      low: { label: "Muntazam tekshiruvlar", description: "Javoblaringizga ko'ra hozircha alohida tavsiya yo'q. Yoshingizga mos muntazam tekshiruvlarni davom ettiring." },
+      medium: { label: "Ginekolog bilan maslahatlashing", description: "Ba'zi javoblaringiz shifokor bilan muhokama qilishga arziydi — yaqin oylarda ginekolog bilan maslahatlashing." },
+      high: { label: "Shifokorga murojaat qiling", description: "Bir nechta javobingiz shifokor bilan muhokama qilishga arziydi — imkon qadar tezroq shifokorga murojaat qiling." },
     },
     findClinicButton: "Eng yaqin klinikani ko'rish",
   },
@@ -1670,8 +1672,8 @@ const uz = {
     reportHint: "Qabulga olib boring",
     stats: "Statistika",
     statsHint: "Sikl va simptomlar tahlili",
-    riskQuiz: "Xavf testi",
-    riskQuizHint: "Shaxsiy xavf darajangiz",
+    riskQuiz: "O'z-o'zini tekshirish",
+    riskQuizHint: "Qaysi tekshiruv kerakligini bilib oling",
     concerns: "Sizni nima bezovta qilyapti",
     concernsHint: "12 ta yo'nalish bo'yicha yordam",
     food: "Mumkinmi?",

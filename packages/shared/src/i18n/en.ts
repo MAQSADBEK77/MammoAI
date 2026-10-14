@@ -1257,7 +1257,7 @@ const en: Dictionary = {
   riskQuiz: {
     title: "Self-check test",
     disclaimer:
-      "This is not a medical diagnosis — just a guiding test based on general risk factors. Consult a doctor for an accurate assessment.",
+      "This is not a medical diagnosis or a risk assessment — just a guiding questionnaire that suggests what to discuss with a doctor based on your answers.",
     startButton: "Start the test",
     submitButton: "See result",
     questions: {
@@ -1271,9 +1271,9 @@ const en: Dictionary = {
     },
     resultTitle: "Your result",
     levels: {
-      low: { label: "Low risk", description: "No particular risk factors identified so far. Keep up with regular checkups." },
-      medium: { label: "Medium risk", description: "Some risk factors are present — consulting a gynecologist in the coming months is recommended." },
-      high: { label: "High risk", description: "Several risk factors were identified — please see a doctor as soon as possible." },
+      low: { label: "Regular checkups", description: "Based on your answers there is nothing specific to act on right now. Keep up with age-appropriate regular checkups." },
+      medium: { label: "Talk to a gynecologist", description: "Some of your answers are worth discussing with a doctor — see a gynecologist in the coming months." },
+      high: { label: "See a doctor", description: "Several of your answers are worth discussing with a doctor — please see one as soon as possible." },
     },
     findClinicButton: "Find the nearest clinic",
   },
@@ -1509,8 +1509,8 @@ const en: Dictionary = {
     reportHint: "Take it to your appointment",
     stats: "Statistics",
     statsHint: "Cycle and symptom analysis",
-    riskQuiz: "Risk quiz",
-    riskQuizHint: "Your personal risk level",
+    riskQuiz: "Self-check",
+    riskQuizHint: "Find out which checkups to discuss",
     concerns: "What is bothering you",
     concernsHint: "Help across 12 areas",
     food: "Can I eat this?",
