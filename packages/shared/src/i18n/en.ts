@@ -166,13 +166,15 @@ const en: Dictionary = {
     accountSecurity:
       "Your account is created via your phone number, without a verification code — so we recommend not sharing your phone number with others.",
     operator:
-      "This app (Women's Health / MammoAI) is developed and operated by Maqsadbek Usmonov as an independent developer.",
+      "This app (Women's Health / MammoAI) is developed and operated by \"AGORA LABS\" LLC (MChJ; tax ID 313385186, Fergana, Uzbekistan).",
     contact:
       "For questions, complaints, or requests about your data, contact: maqsadbekusmonov8@gmail.com",
     deletion:
       "You can export your data from the Profile section at any time. To permanently delete your account and all related data, use the \"Delete account permanently\" button in the Profile section — deletion happens immediately and cannot be undone. If you can't access the app, you can send the same request to the email address above.",
     medicalDisclaimer:
       "This app does not provide medical diagnoses and does not replace professional medical advice — always consult a qualified doctor before making decisions about your health.",
+    aiServices:
+      "AI assistant and third-party AI services: when you use the AI assistant (chat), your message and the data needed for a reply — your age, cycle length, last period date, pregnancy week, and mood and symptoms from recent entries — are sent to a third-party artificial intelligence service: Google LLC (Gemini API), Anthropic PBC (Claude API) or Huawei Cloud (ModelArts). This starts only after you give separate consent in the chat — without consent nothing is sent. For the short AI analysis in the Statistics section, only aggregated cycle statistics (average cycle length, symptom and mood frequency) are sent. Your name and phone number are never sent. This data is used only to prepare replies for you and never for advertising; the providers process it under their own privacy policies and API terms.",
     notForChildren:
       "The app is intended for users 18 and older and does not knowingly collect data from children under 13.",
     // ONB-CONSENT-01: alohida-alohida rozilik (Clue/Flo naqshi).
@@ -186,7 +188,8 @@ const en: Dictionary = {
     consentPrivacySuffix: ".",
     consentHealthLabel:
       "I agree to my health data — cycle, symptoms, check-ups — being processed so the app can provide its service.",
-    consentHealthNote: "This data is never sold and never used for advertising.",
+    consentHealthNote:
+      "This data is never sold and never used for advertising. If you use the AI assistant, your message and related data (age, cycle, pregnancy week, symptoms) are sent to a third-party AI service — Google (Gemini), Anthropic (Claude) or Huawei Cloud — to prepare a reply. This happens only after you give separate consent in the chat.",
     acceptAll: "Accept all",
     hideOffer: "Close the text",
     offerTitle: "Public Offer Agreement",
@@ -1844,7 +1847,7 @@ const en: Dictionary = {
       "Our checkup schedule is based on Uzbekistan's Ministry of Health national program, uzaig.uz national clinical protocols, and WHO recommendations. This isn't a medical consultation — see a specialist for an exact diagnosis.",
     trustTitle: "Why MammoAI?",
     trustItems: [
-      { title: "Privacy first", desc: "Your data is encrypted and never shared with anyone, including advertisers." },
+      { title: "Privacy first", desc: "Your data is encrypted, never sold, and never shared with advertisers." },
       { title: "Completely free", desc: "All core features are available at no cost." },
       { title: "In your language", desc: "Interface and recommendations in Uzbek (Latin/Cyrillic), Russian, and English." },
       { title: "Local clinics", desc: "A database of clinics in Uzbekistan and information on free mammography programs." },

@@ -180,13 +180,15 @@ const uz = {
     accountSecurity:
       "Akkauntingiz telefon raqamingiz orqali, tasdiqlash kodisiz yaratiladi — shuning uchun telefon raqamingizni boshqalar bilan baham ko'rmaslikni tavsiya qilamiz.",
     operator:
-      "Ushbu ilovani (Ayollar salomatligi / MammoAI) mustaqil dasturchi sifatida Maqsadbek Usmonov ishlab chiqmoqda va boshqaradi.",
+      "Ushbu ilovani (Ayollar salomatligi / MammoAI) \"AGORA LABS\" MChJ (STIR 313385186, Farg'ona shahri, O'zbekiston) ishlab chiqadi va boshqaradi.",
     contact:
       "Savollaringiz, shikoyatlaringiz yoki ma'lumotlaringiz bo'yicha so'rovlaringiz uchun: maqsadbekusmonov8@gmail.com",
     deletion:
       "Ma'lumotlaringizni istalgan vaqt Profil bo'limidan eksport qilishingiz mumkin. Akkauntingizni va unga tegishli barcha ma'lumotlarni butunlay o'chirish uchun Profil bo'limidagi \"Akkauntni butunlay o'chirish\" tugmasidan foydalaning — bu amal darhol va qaytarib bo'lmaydigan tarzda bajariladi. Ilovadan foydalana olmasangiz ham, yuqoridagi email manziliga yozib, xuddi shu so'rovni yuborishingiz mumkin.",
     medicalDisclaimer:
       "Ushbu ilova tibbiy tashxis qo'ymaydi va shifokor maslahati o'rnini bosmaydi — sog'lig'ingiz bo'yicha qaror qabul qilishdan oldin har doim malakali shifokorga murojaat qiling.",
+    aiServices:
+      "AI yordamchi va uchinchi tomon AI xizmatlari: AI yordamchidan (chat) foydalanganingizda xabaringiz va javob uchun zarur ma'lumotlar — yoshingiz, sikl uzunligi, oxirgi hayz sanasi, homiladorlik haftasi, so'nggi yozuvlardagi kayfiyat va simptomlar — uchinchi tomon sun'iy intellekt xizmatiga yuboriladi: Google LLC (Gemini API), Anthropic PBC (Claude API) yoki Huawei Cloud (ModelArts). Bu chatda alohida rozilik berganingizdan keyingina boshlanadi — roziliksiz hech narsa yuborilmaydi. Statistika bo'limidagi qisqa AI tahlil uchun esa faqat umumlashtirilgan sikl statistikasi (o'rtacha sikl uzunligi, simptom va kayfiyat chastotasi) yuboriladi. Ismingiz va telefon raqamingiz hech qachon yuborilmaydi. Bu ma'lumotlar faqat sizga javob tayyorlash uchun ishlatiladi, reklama uchun ishlatilmaydi; xizmatlar ularni o'z maxfiylik siyosati va API shartlari asosida qayta ishlaydi.",
     notForChildren:
       "Ilova 18 yoshdan katta foydalanuvchilar uchun mo'ljallangan va bolalar (13 yoshgacha)dan ongli ravishda ma'lumot yig'maydi.",
     // ONB-CONSENT-01: alohida-alohida rozilik (Clue/Flo naqshi).
@@ -201,7 +203,9 @@ const uz = {
     consentPrivacySuffix: " o'qib chiqdim.",
     consentHealthLabel:
       "Sog'lig'im haqidagi ma'lumotlarni — hayz sikli, simptomlar, tekshiruvlar — ilova xizmatini ko'rsatish uchun qayta ishlashga roziman.",
-    consentHealthNote: "Bu ma'lumotlar sotilmaydi va reklama uchun ishlatilmaydi.",
+    // APPREVIEW-03: Apple 5.1.2(i) — AI'ga yuborish rozilik ekranidayoq aytiladi.
+    consentHealthNote:
+      "Bu ma'lumotlar sotilmaydi va reklama uchun ishlatilmaydi. AI yordamchidan foydalansangiz, javob tayyorlash uchun xabaringiz va tegishli ma'lumotlar (yosh, sikl, homiladorlik haftasi, simptomlar) uchinchi tomon AI xizmatiga — Google (Gemini), Anthropic (Claude) yoki Huawei Cloud'ga yuboriladi. Bu faqat chatda alohida rozilik berganingizdan keyin bo'ladi.",
     acceptAll: "Hammasiga roziman",
     hideOffer: "Matnni yopish",
     offerTitle: "Ommaviy oferta",
@@ -2058,7 +2062,7 @@ const uz = {
       "Tekshiruv jadvalimiz O'zbekiston SSV milliy dasturi, uzaig.uz milliy klinik protokollari va JSSST (WHO) tavsiyalariga asoslangan. Bu shifokor konsultatsiyasi emas — aniq tashxis yoki davolash uchun mutaxassisga murojaat qiling.",
     trustTitle: "Nega aynan MammoAI?",
     trustItems: [
-      { title: "Maxfiylik birinchi o'rinda", desc: "Ma'lumotlaringiz shifrlanadi va hech kimga, hatto reklama beruvchilarga ham berilmaydi." },
+      { title: "Maxfiylik birinchi o'rinda", desc: "Ma'lumotlaringiz shifrlanadi, sotilmaydi va reklama beruvchilarga berilmaydi." },
       { title: "To'liq bepul", desc: "Barcha asosiy imkoniyatlar hech qanday to'lovsiz mavjud." },
       { title: "O'zbek tilida", desc: "Interfeys va tavsiyalar o'zbek (lotin/kirill), rus va ingliz tillarida." },
       { title: "Mahalliy klinikalar", desc: "O'zbekistondagi klinikalar bazasi va bepul mammografiya dasturlari haqida ma'lumot." },

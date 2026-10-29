@@ -17,6 +17,7 @@ export default function PrivacyPolicyPage() {
         <p>{dict.privacy.body}</p>
         <p>{dict.privacy.dataCollected}</p>
         <p>{dict.privacy.noSelling}</p>
+        <p>{dict.privacy.aiServices}</p>
         <p>{dict.privacy.accountSecurity}</p>
         <p>{dict.privacy.medicalDisclaimer}</p>
         <p>{dict.privacy.notForChildren}</p>
