@@ -612,8 +612,13 @@ export function createApiClient(config: ApiClientConfig) {
     },
     insights: {
       /** AI Yordamchi ekranining "Statistika" segmenti — sikl uzunligi
-       * tarixi, simptom chastotasi, kayfiyat taqsimoti, og'riqli kunlar/sikl. */
-      get: () => request<{ summary: InsightsSummary; patterns: SymptomPattern[]; aiInsight: string | null }>("/api/insights"),
+       * tarixi, simptom chastotasi, kayfiyat taqsimoti, og'riqli kunlar/sikl.
+       * APPREVIEW-04: `ai` — foydalanuvchi AI rozilik berganmi; bermagan
+       * bo'lsa server AI tahlilini so'ramaydi (`aiInsight` null keladi). */
+      get: (options: { ai: boolean }) =>
+        request<{ summary: InsightsSummary; patterns: SymptomPattern[]; aiInsight: string | null }>(
+          options.ai ? "/api/insights?ai=1" : "/api/insights"
+        ),
     },
     gamification: {
       /** Kunlik yozuv ketma-ketligi + yutuq nishonlari — Premium emas. */

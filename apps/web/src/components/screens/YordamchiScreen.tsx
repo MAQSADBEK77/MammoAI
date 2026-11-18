@@ -16,48 +16,9 @@ import { Emoji } from "@/components/Emoji";
 import { RegisterGate } from "@/components/RegisterGate";
 import { DURATION, EASE_BRAND } from "@/lib/motion";
 import { useIsIOSApp } from "@/lib/median";
+import { readAiConsent, saveAiConsent, subscribeAiConsent } from "@/lib/ai-consent";
 
 const FEEDBACK_PROMPT_AFTER_REPLIES = 5;
-
-/**
- * APPREVIEW-01 — AI'ga ma'lumot yuborishdan OLDIN aniq rozilik.
- *
- * Xabar va sikl/homiladorlik konteksti uchinchi tomon AI provayderiga
- * (server/ai-chat.ts — Gemini / Anthropic / Huawei) ketadi. Apple 5.1.2(i)
- * buni ochiq aytib, ruxsat olishni talab qiladi; to'g'ri amaliyot sifatida
- * barcha platformalarda bir xil. Qaror qurilmada saqlanadi — localStorage
- * ishlamasa (xususiy rejim), shu sessiya davomida xotirada turadi va
- * ayol rozilik oynasida qotib qolmaydi.
- */
-const AI_CONSENT_KEY = "mammo.aiConsent.v1";
-let aiConsentInMemory = false;
-const aiConsentListeners = new Set<() => void>();
-
-function readAiConsent(): boolean {
-  if (aiConsentInMemory) return true;
-  try {
-    return window.localStorage.getItem(AI_CONSENT_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function saveAiConsent() {
-  aiConsentInMemory = true;
-  try {
-    window.localStorage.setItem(AI_CONSENT_KEY, "1");
-  } catch {
-    // Saqlab bo'lmasa ham xotiradagi qiymat yetarli.
-  }
-  aiConsentListeners.forEach((listener) => listener());
-}
-
-function subscribeAiConsent(listener: () => void) {
-  aiConsentListeners.add(listener);
-  return () => {
-    aiConsentListeners.delete(listener);
-  };
-}
 
 /** MOTION-APP-04: har bir yangi xabar/pufakcha ekranga kirganda yengil
  * fade+ko'tarilish — `Reveal`dan farqli (scroll-ichida-ko'rinish emas,
@@ -258,7 +219,7 @@ export function YordamchiScreen() {
     );
   }
 
-  // APPREVIEW-01: rozilik berilmaguncha suhbat ochilmaydi (izoh: AI_CONSENT_KEY).
+  // APPREVIEW-01: rozilik berilmaguncha suhbat ochilmaydi (izoh: lib/ai-consent.ts).
   // `null` — hali o'qilmagan; bir zumlik holat, hech narsa chizilmaydi.
   if (aiConsent === null) return null;
   if (!aiConsent) {

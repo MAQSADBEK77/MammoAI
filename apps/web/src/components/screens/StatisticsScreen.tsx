@@ -12,6 +12,7 @@ import { PremiumPricing } from "@/components/PremiumPricing";
 import { InsightsPanel } from "@/components/screens/InsightsPanel";
 import { Emoji } from "@/components/Emoji";
 import { useIsIOSApp } from "@/lib/median";
+import { readAiConsent } from "@/lib/ai-consent";
 
 /**
  * STATS-MOVE-01 — sikl statistikasi.
@@ -36,8 +37,9 @@ export function StatisticsScreen() {
   const load = useCallback(() => {
     setLoadError(false);
     setNeedsPremium(false);
+    // APPREVIEW-04: AI tahlil faqat Yordamchi'da rozilik berilgan bo'lsa.
     api.insights
-      .get()
+      .get({ ai: readAiConsent() })
       .then(setData)
       .catch((err: unknown) => {
         // 402 — Premium talab qilinadi (paywall), boshqasi — haqiqiy xato.
